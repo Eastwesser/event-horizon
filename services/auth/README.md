@@ -55,6 +55,7 @@ grpcurl -plaintext -d '{"email":"bob@example.com","password":"secret123"}' \
 grpcurl -plaintext -d '{"email":"bob@example.com","password":"secret123"}' \
   localhost:50051 auth.AuthService/Login
 ```
+
 # FINAL:
 
 ГОТОВО! Auth сервис работает как часы!
@@ -65,11 +66,11 @@ grpcurl -plaintext -d '{"email":"bob@example.com","password":"secret123"}' \
 ✅ Логин — работает, JWT выдаётся
 ✅ Валидация паролей — работает
 
-Компонент	            Статус
+Компонент	              Статус
 gRPC сервер	            ✅ слушает :50051
 PostgreSQL подключение	✅ через pgxpool
 Хэширование паролей	    ✅ bcrypt
-JWT генерация	        ✅ HS256
+JWT генерация	          ✅ HS256
 User repository	        ✅ CRUD операции
 Reflection API	        ✅ включил
 ```
