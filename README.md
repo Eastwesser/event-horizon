@@ -1,162 +1,121 @@
+# EventHorizon 🎮
+
+Игровая платформа с микросервисной архитектурой, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
+
+## Архитектура (30.04.2026)
 ```text
-eventhorizon/
-├── services/
-│   ├── auth/           # авторизация (JWT, OAuth, "забыли пароль")
-│   │   ├── cmd/main.go
-│   │   ├── internal/...
-│   │   ├── proto/      # gRPC .proto файлы
-│   │   └── Dockerfile
-│   ├── game/           # игровая логика (шестиугольники, флаппи)
-│   │   ├── cmd/main.go
-│   │   ├── internal/...
-│   │   ├── proto/      # gRPC .proto файлы
-│   │   └── Dockerfile
-│   ├── leaderboard/    # highscore, топ-10, обновления через NATS
-│   │   ├── cmd/main.go
-│   │   ├── internal/...
-│   │   ├── proto/
-│   │   └── Dockerfile
-│   ├── billing/        # лампочки, билетики, этажи
-│   │   ├── cmd/main.go
-│   │   ├── internal/...
-│   │   ├── proto/
-│   │   └── Dockerfile
-│   └── gateway/        # API Gateway (Gin, WebSocket, маршрутизация)
-│       ├── cmd/main.go
-│       ├── internal/...
-│       └── Dockerfile
-├── monitoring/         # Prometheus + Grafana + Loki
-│   ├── prometheus.yml
-│   ├── grafana/
-│   └── docker-compose.monitoring.yml
-├── deployments/        # Kubernetes или docker-compose для кластера
-│   ├── docker-compose.cluster.yml
-│   └── configs/
-├── scripts/
-│   ├── loadtest.js
-│   └── seed.sql
-├── frontend/           # Angular
-├── Makefile            # make up-cluster, make down-cluster, make test
-└── README.md
+┌─────────┐ HTTP        ┌─────────┐ gRPC      ┌─────────┐
+│ Client  │ ──────────► │ Gateway │ ────────► │ Auth    │
+└─────────┘             └─────────┘           └─────────┘
+                            │                       │
+                            │ NATS                  │ PostgreSQL
+                            ▼                       ▼
+                        ┌─────────┐             ┌─────────┐
+                        │ NATS    │             │ DB      │
+                        │JetStream│             │ :5460   │
+                        └─────────┘             └─────────┘
+                            │
+                            │ Subscribe
+                            ▼
+                    ┌─────────────────┐
+                    │   Leaderboard   │
+                    │ Redis Sorted Set│
+                    └─────────────────┘
 ```
 
-# RUN:
-
-```bash
-docker-compose -f deployments/docker-compose.cluster.yml up -d
-```
-
-# CHECK HEALTH:
-
-```bash
-# Postgres
-docker exec event-horizon-postgres pg_isready -U eventhorizon
-# Ожидаем: /var/run/postgresql:5432 - accepting connections
-
-# Проверить Redis
-docker exec event-horizon-redis redis-cli ping
-# → PONG
-
-# NATS
-docker exec event-horizon-nats nats-server --version
-# Ожидаем: nats-server version 2.10.x
-
-# Проверить, что NATS включил JetStream
-docker logs event-horizon-nats | head -20
-# Должно быть что-то про "JetStream" в логах
-```
-
-# CHECK SERVICES:
-
-```bash
-# Остановить всё
-docker-compose -f deployments/docker-compose.cluster.yml down
-
-# Запустить заново
-docker-compose -f deployments/docker-compose.cluster.yml up -d
-
-# Проверить
-docker ps
-```
-
-# Что мы имеем в итоге
+## Сервисы
 ```text
-Сервис	    Порт (host)	    Статус	    Особенности
-
-PostgreSQL	5433	        healthy	    Пользователь eventhorizon, БД eventhorizon
-Redis	    6379	        healthy	    Стандартный
-NATS	    4222, 8222	    healthy	    JetStream включён
+| Сервис      | Порт (gRPC) | PostgreSQL | Redis |
+|-------------|-------------|------------|-------|
+| Auth        | 50051       | 5460       | 6379  |
+| Game        | 50052       | 5461       | 6380  |
+| Billing     | 50053       | 5462       | 6381  |
+| Leaderboard | 50054       | 5463       | 6382  |
+| Gateway     | 8080 (HTTP) | -          | -     |
 ```
 
-# FIND AND KILL THE PORT IN USE:
+## Быстрый старт
+
+### 1. Поднять инфраструктуру
+
 ```bash
-# Check if in use:
-sudo lsof -i :5432
-
-# KILL PORT (WARNING!!!)
-sudo kill -9 1234
-# OR
-sudo fuser -k 5432/tcp 
+make up
 ```
 
-# PRUNING OPTION (NUKE):
+### 2. Запустить сервисы
+
 ```bash
-# Удалить остановленные контейнеры
-docker container prune -f
+# Терминал 1 - Auth
+cd services/auth && go run cmd/main.go
 
-# Удалить неиспользуемые образы
-docker image prune -f
+# Терминал 2 - Gateway
+cd services/gateway && go run cmd/main.go
 
-# Удалить всё, что не используется (аккуратно!)
-docker system prune -f
+# Терминал 3 - NATS subscriber (опционально)
+nats sub "event.>" --server localhost:4222
 ```
 
+### 3. Тестирование
 
+```bash
+# Регистрация
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret123"}'
 
-# 1. Базы данных: "сразу разделить" — правильное решение
+# Логин
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret123"}'
+```
 
-## у каждого микросервиса своя PostgreSQL + свой Redis.
+## Команды Make
+
+```bash
+make up          # Поднять инфраструктуру (Docker)
+make down        # Остановить инфраструктуру
+make ps          # Статус контейнеров
+make logs        # Логи инфраструктуры
+make clean       # Остановить и удалить volumes
+```
+
+## Порты (host)
 
 ```text
-PostgreSQL Auth    :5433 + Redis Auth    :6379 (сессии, кеш)
-PostgreSQL Game    :5434 + Redis Game    :6380 (игровые состояния)
-PostgreSQL Billing :5435 + Redis Billing :6381 (идемпотентность)
-PostgreSQL Leader  :5436 + Redis Leader  :6382 (топ-10)
+Сервис	                    Порт	    Назначение
+
+PostgreSQL (auth)	        5460	    Основная БД
+PostgreSQL (game)	        5461	    Игровая БД
+PostgreSQL (billing)	    5462	    Платёжная БД
+PostgreSQL (leaderboard)	5463	    БД для топа
+
+Redis	                    6379-6382	Кеши/сессии
+
+NATS	                    4222	    Событийная шина
+NATS monitoring	            8222	    Метрики
+
+Gateway	8080	HTTP API
 ```
 
-## Почему это правильно для цели (10k RPS):
+## Документация
 
-Аспект	                Общая БД	                        Раздельные БД
+- История и планы     [event_horizon/confluence/history]
+- Технический долг    [event_horizon/confluence/tech_debt]
+- FAQ                 [event_horizon/confluence/faq] 
 
-Масштабирование	        ❌ Один инстанс узкое место	        ✅ Каждый сервис скейлится отдельно
-Отказоустойчивость	    ❌ Падение БД — всё падает	        ✅ Auth упал — игра продолжается
-Схемы	                ❌ Трудно менять, все зависят	    ✅ Меняешь схему auth независимо
-DevOps	                ✅ Одна БД проще	                    ❌ 4+ БД, 4+ Redis
+## Будущие заметки:
+- Graceful shutdown для всех сервисов
+- NATS кластер из 3 нод
+- Prometheus + Grafana мониторинг
+- CQRS для leaderboard (улучшение)
+- Envoy как API gateway (опционально)
 
-"Мы выбрали Database per Service, потому что даже в pet-проекте важно эмулировать реальную архитектуру. 
-Данные консистентны через события (NATS), не через shared database."
-
-
-
-
-
-
-ТЕХДОЛГ
-
-1) Добавить ЛБ в конце мвп (написать свой, а другой пусть энджинэкс будет)
-
-
-2) Про паттерн "одна на запись, много на чтение"
-
-Это CQRS (Command Query Responsibility Segregation) — очень мощный паттерн. Для твоего проекта:
-
-Leaderboard идеально подходит: запись рекордов через NATS, чтение топа из Redis
-Billing возможно: запись покупок в PostgreSQL, чтение баланса из Redis
-Но не сейчас. Сначала сделай простую версию, потом добавишь CQRS как "улучшение на собеседовании".
-
-3) Добавить Энвой в качестве апи гейтвея.
-
-4) Graceful shutdown для всех сервисов
-Сейчас auth просто падает по Ctrl+C. Нужно ловить SIGTERM, закрывать gRPC сервер, пул соединений с БД, NATS подключения.
-
-
+## Статус
+```text
+✅ Auth service (JWT, регистрация, логин)
+✅ Gateway (HTTP → gRPC прокси)
+✅ NATS JetStream (события публикуются)
+⏳ Game service (в разработке)
+⏳ Leaderboard (в разработке)
+⏳ Billing service (в плане)
+```
