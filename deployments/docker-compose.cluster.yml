@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: eventhorizon
       POSTGRES_DB: eventhorizon
     ports:
-      - "5433:5432"
+      - "5460:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,6 +29,66 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-game:
+      image: postgres:16-alpine
+      container_name: event-horizon-postgres-game
+      environment:
+        POSTGRES_USER: eventhorizon
+        POSTGRES_PASSWORD: eventhorizon
+        POSTGRES_DB: eventhorizon_game
+      ports:
+        - "5461:5432"
+      volumes:
+        - postgres_game_data:/var/lib/postgresql/data
+      healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
+
+  redis-game:
+      image: redis:7-alpine
+      container_name: event-horizon-redis-game
+      ports:
+        - "6380:6379"
+      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }    
+
+  postgres-billing:
+      image: postgres:16-alpine
+      container_name: event-horizon-postgres-billing
+      environment:
+        POSTGRES_USER: eventhorizon
+        POSTGRES_PASSWORD: eventhorizon
+        POSTGRES_DB: eventhorizon_billing
+      ports:
+        - "5462:5432"
+      volumes:
+        - postgres_billing_data:/var/lib/postgresql/data
+      healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
+
+  redis-billing:
+      image: redis:7-alpine
+      container_name: event-horizon-redis-billing
+      ports:
+        - "6381:6379"
+      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
+
+  postgres-leaderboard:
+      image: postgres:16-alpine
+      container_name: event-horizon-postgres-leaderboard
+      environment:
+        POSTGRES_USER: eventhorizon
+        POSTGRES_PASSWORD: eventhorizon
+        POSTGRES_DB: eventhorizon_leaderboard
+      ports:
+        - "5463:5432"
+      volumes:
+        - postgres_leaderboard_data:/var/lib/postgresql/data
+      healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
+
+  redis-leaderboard:
+      image: redis:7-alpine
+      container_name: event-horizon-redis-leaderboard
+      ports:
+        - "6382:6379"
+      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
+
   nats:
     image: nats:2.10-alpine
     container_name: event-horizon-nats
@@ -45,3 +105,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  postgres_game_data:
+  postgres_billing_data:
+  postgres_leaderboard_data:
