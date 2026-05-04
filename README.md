@@ -112,10 +112,10 @@ Gateway	8080	HTTP API
 
 ## Статус
 ```text
-✅ Auth service (JWT, регистрация, логин)
-✅ Gateway (HTTP → gRPC прокси)
-✅ NATS JetStream (события публикуются)
-⏳ Game service (в разработке)
-⏳ Leaderboard (в разработке)
-⏳ Billing service (в плане)
+✅ 1) Auth service (JWT, регистрация, логин)
+✅ 2) Gateway (HTTP → gRPC прокси)
+✅ 3) NATS JetStream (события публикуются)
+✅ 4) Leaderboard (Redis Sorted Set + NATS subscription)
+⏳ 5) Game service (в разработке)
+⏳ 6) Billing service (в плане)
 ```
