@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package game;
+
+option go_package = "event_horizon/services/game/proto;game";
+
+service GameService {
+    // Отправка результата игры с полной валидацией
+    rpc SubmitScore(SubmitScoreRequest) returns (SubmitScoreResponse);
+    
+    // Получение информации об игре (уровни, правила)
+    rpc GetGameInfo(GetGameInfoRequest) returns (GetGameInfoResponse);
+}
+
+message SubmitScoreRequest {
+    string user_id = 1;
+    string game_id = 2;           // "hexagon" или "flappy"
+    int32 level = 3;               // уровень сложности (1-5)
+    int32 score = 4;
+    
+    // Для полной валидации (Путь В)
+    string seed = 5;               // начальное состояние
+    repeated Move moves = 6;       // все ходы игрока
+    
+    // Для отладки (опционально)
+    int32 client_version = 10;
+}
+
+message Move {
+    int32 from_x = 1;
+    int32 from_y = 2;
+    int32 to_x = 3;
+    int32 to_y = 4;
+    int32 timestamp = 5;           // ms от начала игры
+}
+
+message SubmitScoreResponse {
+    bool success = 1;
+    int32 new_highscore = 2;       // новый рекорд игрока (если побит)
+    int32 rank = 3;                // место в мировом топе
+    string message = 4;
+    
+    // Награды
+    int32 lamps_earned = 10;       // лампочки за активность
+    int32 tickets_earned = 11;     // билетики за рекорд
+}
+
+message GetGameInfoRequest {
+    string game_id = 1;
+}
+
+message GetGameInfoResponse {
+    string game_id = 1;
+    string name = 2;
+    string description = 3;
+    repeated LevelInfo levels = 4;
+}
+
+message LevelInfo {
+    int32 level = 1;
+    int32 target_score = 2;        // сколько очков нужно для прохода
+    int32 reward_lamps = 3;
+    int32 reward_tickets = 4;
+}
