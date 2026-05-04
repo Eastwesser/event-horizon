@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package leaderboard;
+
+option go_package = "event_horizon/services/leaderboard/proto;leaderboard";
+
+service LeaderboardService {
+    // Получить топ-N игроков для конкретной игры
+    rpc GetTopScores(GetTopScoresRequest) returns (GetTopScoresResponse);
+    
+    // Получить место конкретного игрока в топе
+    rpc GetPlayerRank(GetPlayerRankRequest) returns (GetPlayerRankResponse);
+    
+    // Обновить рекорд (будет вызываться через NATS, но gRPC тоже держим)
+    rpc UpdateScore(UpdateScoreRequest) returns (UpdateScoreResponse);
+}
+
+message GetTopScoresRequest {
+    string game_id = 1;      // "hexagon" или "flappy"
+    int32 limit = 2;          // сколько записей (макс 100)
+}
+
+message GetTopScoresResponse {
+    repeated ScoreEntry entries = 1;
+}
+
+message GetPlayerRankRequest {
+    string game_id = 1;
+    string user_id = 2;
+}
+
+message GetPlayerRankResponse {
+    int32 rank = 1;           // 1 = первое место
+    int32 score = 2;
+}
+
+message UpdateScoreRequest {
+    string game_id = 1;
+    string user_id = 2;
+    string user_email = 3;    // для отображения в топе
+    int32 score = 4;
+}
+
+message UpdateScoreResponse {
+    bool success = 1;
+    int32 new_rank = 2;       // новый ранг после обновления
+    string message = 3;
+}
+
+message ScoreEntry {
+    int32 rank = 1;
+    string user_id = 2;
+    string user_email = 3;
+    int32 score = 4;
+    int64 updated_at = 5;     // Unix timestamp
+}
