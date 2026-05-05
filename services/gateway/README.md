@@ -564,3 +564,8 @@ Envoy — замена самописному gateway для production (L7 ба
 Auth Service — gRPC сервер аутентификации
 Leaderboard Service — будет подписан на NATS события
 NATS JetStream — событийная шина
+
+
+cd ~/event_horizon/services/gateway
+go mod tidy
+go build -o gateway ./cmd/main.go
