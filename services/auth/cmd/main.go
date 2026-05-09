@@ -1,19 +1,23 @@
 package main
 
 import (
-	"context"
-	"log"
-	"net"
-	
-	"github.com/jackc/pgx/v5/pgxpool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	
-	"event_horizon/services/auth/internal/config"
-	"event_horizon/services/auth/internal/handler"
-	"event_horizon/services/auth/internal/repository"
-	"event_horizon/services/auth/internal/service"
-	pb "event_horizon/services/auth/proto"
+    "context"
+    "log"
+    "net"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/jackc/pgx/v5/pgxpool"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/reflection"
+
+    "event_horizon/services/auth/internal/config"
+    "event_horizon/services/auth/internal/handler"
+    "event_horizon/services/auth/internal/repository"
+    "event_horizon/services/auth/internal/service"
+    pb "event_horizon/services/auth/proto"
 )
 
 func main() {
@@ -42,9 +46,27 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-	
-	log.Printf("Auth service listening on :%s", cfg.GRPCPort)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+
+	// Запуск в горутине
+    go func() {
+        log.Printf("🔐 Auth service listening on :%s", cfg.GRPCPort)
+        if err := grpcServer.Serve(lis); err != nil {
+            log.Fatalf("Failed to serve: %v", err)
+        }
+    }()
+
+    // Graceful shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    log.Println("Shutting down auth service gracefully...")
+
+    // Даём время завершить текущие запросы
+    time.Sleep(2 * time.Second)
+
+    grpcServer.GracefulStop()
+    dbpool.Close()
+
+    log.Println("Auth service stopped gracefully")
 }

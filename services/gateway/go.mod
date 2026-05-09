@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	github.com/gin-gonic/gin v1.12.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/nats-io/nats.go v1.51.0
 	google.golang.org/grpc v1.81.0
 )

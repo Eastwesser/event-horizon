@@ -11,6 +11,7 @@ import (
     "time"
 
     "github.com/gin-gonic/gin"
+    "github.com/gorilla/websocket"
     "github.com/nats-io/nats.go"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
@@ -20,7 +21,100 @@ import (
     gamePb "event_horizon/services/game/proto"
 )
 
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+// WebSocket клиент
+type WSClient struct {
+    hub  *Hub
+    conn *websocket.Conn
+    send chan []byte
+}
+
+// Hub управляет всеми WebSocket соединениями
+type Hub struct {
+    clients    map[*WSClient]bool
+    broadcast  chan []byte
+    register   chan *WSClient
+    unregister chan *WSClient
+}
+
+func NewHub() *Hub {
+    return &Hub{
+        clients:    make(map[*WSClient]bool),
+        broadcast:  make(chan []byte),
+        register:   make(chan *WSClient),
+        unregister: make(chan *WSClient),
+    }
+}
+
+func (h *Hub) Run() {
+    for {
+        select {
+        case client := <-h.register:
+            h.clients[client] = true
+            log.Printf("🟢 WebSocket client connected. Total: %d", len(h.clients))
+
+        case client := <-h.unregister:
+            if _, ok := h.clients[client]; ok {
+                delete(h.clients, client)
+                close(client.send)
+            }
+            log.Printf("🔴 WebSocket client disconnected. Total: %d", len(h.clients))
+
+        case message := <-h.broadcast:
+            for client := range h.clients {
+                select {
+                case client.send <- message:
+                default:
+                    close(client.send)
+                    delete(h.clients, client)
+                }
+            }
+        }
+    }
+}
+
+func (h *Hub) Broadcast(message []byte) {
+    h.broadcast <- message
+}
+
+func (c *WSClient) readPump() {
+    defer func() {
+        c.hub.unregister <- c
+        c.conn.Close()
+    }()
+
+    for {
+        _, _, err := c.conn.ReadMessage()
+        if err != nil {
+            break
+        }
+        // Пока игнорируем сообщения от клиента (только для keep-alive)
+    }
+}
+
+func (c *WSClient) writePump() {
+    defer c.conn.Close()
+
+    for {
+        select {
+        case message, ok := <-c.send:
+            if !ok {
+                c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+                return
+            }
+            c.conn.WriteMessage(websocket.TextMessage, message)
+        }
+    }
+}
+
 func main() {
+    // Создаём WebSocket Hub
+    hub := NewHub()
+    go hub.Run()
+
     // Подключаемся к Auth gRPC
     authClient, err := client.NewAuthClient("localhost:50051")
     if err != nil {
@@ -41,7 +135,7 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to connect to NATS: %v", err)
     }
-    defer nc.Drain() // Drain вместо Close для graceful
+    defer nc.Drain()
 
     js, err := nc.JetStream()
     if err != nil {
@@ -58,11 +152,39 @@ func main() {
         log.Printf("Stream might already exist: %v", err)
     }
 
+    // Подписываемся на NATS для обновления топа
+    _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
+        hub.Broadcast(msg.Data)
+        log.Printf("📡 Broadcasted score update to WebSocket clients")
+    }, nats.Durable("gateway-websocket"))
+    if err != nil {
+        log.Printf("Failed to subscribe to score.updated: %v", err)
+    }
+
     // Gin сервер
     r := gin.Default()
 
     r.GET("/health", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
+    })
+
+    // WebSocket эндпоинт
+    r.GET("/ws/leaderboard", func(c *gin.Context) {
+        conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+        if err != nil {
+            log.Printf("WebSocket upgrade failed: %v", err)
+            return
+        }
+
+        client := &WSClient{
+            hub:  hub,
+            conn: conn,
+            send: make(chan []byte, 256),
+        }
+        hub.register <- client
+
+        go client.writePump()
+        go client.readPump()
     })
 
     // Регистрация
@@ -121,7 +243,6 @@ func main() {
             UserID string `json:"user_id"`
             GameID string `json:"game_id"`
             Level  int32  `json:"level"`
-            Score  int32  `json:"score"`
             Seed   string `json:"seed"`
             Moves  []struct {
                 FromX     int32 `json:"fromX"`
@@ -152,7 +273,6 @@ func main() {
             UserId:    req.UserID,
             GameId:    req.GameID,
             Level:     req.Level,
-            Score:     req.Score,
             Seed:      req.Seed,
             Moves:     moves,
         })
@@ -170,36 +290,31 @@ func main() {
         Handler: r,
     }
 
-    // Graceful shutdown в отдельной горутине
     go func() {
         if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
             log.Fatalf("Failed to start server: %v", err)
         }
     }()
 
-    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream)")
+    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream & WebSocket)")
+    log.Println("   WebSocket endpoint: ws://localhost:8080/ws/leaderboard")
 
-    // Ожидаем сигнал завершения
+    // Graceful shutdown
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit
 
     log.Println("Shutting down gateway gracefully...")
 
-    // Контекст с таймаутом для завершения
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    // Останавливаем HTTP сервер
     if err := srv.Shutdown(ctx); err != nil {
         log.Printf("HTTP server shutdown error: %v", err)
     }
 
-    // Закрываем gRPC клиентов
     authClient.Close()
     gameConn.Close()
-
-    // Дренируем NATS
     nc.Drain()
 
     log.Println("Gateway stopped gracefully")
