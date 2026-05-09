@@ -6,6 +6,7 @@ import (
     "os"
     "os/signal"
     "syscall"
+    "time"
 
     "github.com/nats-io/nats.go"
     "google.golang.org/grpc"
@@ -26,14 +27,25 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to connect to NATS: %v", err)
     }
-    defer nc.Close()
+    defer nc.Drain()
 
     js, err := nc.JetStream()
     if err != nil {
         log.Fatalf("Failed to create JetStream context: %v", err)
     }
 
-    // Создаём репозиторий и сервис
+    // Создаём stream для score.updated
+    _, err = js.AddStream(&nats.StreamConfig{
+        Name:     "SCORES",
+        Subjects: []string{"score.updated"},
+        Storage:  nats.FileStorage,
+        MaxAge:   24 * time.Hour,
+    })
+    if err != nil {
+        log.Printf("Stream might already exist: %v", err)
+    }
+
+    // Репозиторий и сервис
     gameRepo := repository.NewPostgresGameRepo()
     gameService := service.NewGameService(gameRepo, js)
     gameHandler := handler.NewGameHandler(gameService)
@@ -43,26 +55,33 @@ func main() {
     pb.RegisterGameServiceServer(grpcServer, gameHandler)
     reflection.Register(grpcServer)
 
-    // Graceful shutdown
-    go func() {
-        sigCh := make(chan os.Signal, 1)
-        signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-        <-sigCh
-        log.Println("Shutting down gracefully...")
-        grpcServer.GracefulStop()
-        nc.Drain()
-        os.Exit(0)
-    }()
-
+    // Listener
     lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
     if err != nil {
         log.Fatalf("Failed to listen: %v", err)
     }
 
-    log.Printf("🎮 Game service listening on :%s", cfg.GRPCPort)
-    log.Printf("   NATS: %s", cfg.NATSUrl)
+    // Запуск gRPC сервера в горутине
+    go func() {
+        log.Printf("🎮 Game service listening on :%s", cfg.GRPCPort)
+        log.Printf("   NATS: %s", cfg.NATSUrl)
+        if err := grpcServer.Serve(lis); err != nil {
+            log.Fatalf("Failed to serve: %v", err)
+        }
+    }()
 
-    if err := grpcServer.Serve(lis); err != nil {
-        log.Fatalf("Failed to serve: %v", err)
-    }
+    // Graceful shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    log.Println("Shutting down game service gracefully...")
+
+    // Останавливаем gRPC сервер
+    grpcServer.GracefulStop()
+
+    // Дренируем NATS
+    nc.Drain()
+
+    log.Println("Game service stopped gracefully")
 }

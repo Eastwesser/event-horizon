@@ -1,9 +1,14 @@
 package main
 
 import (
+    "context"
     "encoding/json"
     "log"
     "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
 
     "github.com/gin-gonic/gin"
     "github.com/nats-io/nats.go"
@@ -24,10 +29,7 @@ func main() {
     defer authClient.Close()
 
     // Подключаемся к Game gRPC
-    gameConn, err := grpc.NewClient(
-        "localhost:50052", 
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
-    )
+    gameConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to game: %v", err)
     }
@@ -39,7 +41,7 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to connect to NATS: %v", err)
     }
-    defer nc.Close()
+    defer nc.Drain() // Drain вместо Close для graceful
 
     js, err := nc.JetStream()
     if err != nil {
@@ -56,6 +58,7 @@ func main() {
         log.Printf("Stream might already exist: %v", err)
     }
 
+    // Gin сервер
     r := gin.Default()
 
     r.GET("/health", func(c *gin.Context) {
@@ -112,7 +115,7 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
-    // Submit score (прокси в Game)
+    // Submit score
     r.POST("/api/game/submit", func(c *gin.Context) {
         var req struct {
             UserID string `json:"user_id"`
@@ -134,7 +137,6 @@ func main() {
             return
         }
 
-        // Конвертируем moves
         moves := make([]*gamePb.Move, len(req.Moves))
         for i, m := range req.Moves {
             moves[i] = &gamePb.Move{
@@ -146,7 +148,6 @@ func main() {
             }
         }
 
-        // Вызываем Game сервис
         resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
             UserId:    req.UserID,
             GameId:    req.GameID,
@@ -163,8 +164,43 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
-    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream)")
-    if err := r.Run(":8080"); err != nil {
-        log.Fatalf("Failed to start server: %v", err)
+    // HTTP сервер
+    srv := &http.Server{
+        Addr:    ":8080",
+        Handler: r,
     }
+
+    // Graceful shutdown в отдельной горутине
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("Failed to start server: %v", err)
+        }
+    }()
+
+    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream)")
+
+    // Ожидаем сигнал завершения
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    log.Println("Shutting down gateway gracefully...")
+
+    // Контекст с таймаутом для завершения
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    // Останавливаем HTTP сервер
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Printf("HTTP server shutdown error: %v", err)
+    }
+
+    // Закрываем gRPC клиентов
+    authClient.Close()
+    gameConn.Close()
+
+    // Дренируем NATS
+    nc.Drain()
+
+    log.Println("Gateway stopped gracefully")
 }

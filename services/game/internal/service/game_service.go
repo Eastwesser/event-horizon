@@ -17,7 +17,7 @@ type SubmitScoreRequest struct {
     UserID string
     GameID string
     Level  int
-    Score  int
+    // Score int — УДАЛЕНО
     Seed   string
     Moves  []hexagonValidator.Move
 }
@@ -65,8 +65,8 @@ func NewGameService(repo repository.GameRepository, js nats.JetStreamContext) Ga
 }
 
 func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error) {
-    // 1. Валидация игры (эмуляция на сервере)
-    valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, req.Score)
+    // 1. Валидация игры — сервер сам вычисляет счёт
+    valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0) // finalScore не нужен
     if err != nil {
         return nil, fmt.Errorf("validation error: %w", err)
     }
