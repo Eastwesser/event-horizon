@@ -1,0 +1,177 @@
+openapi: 3.0.0
+info:
+  title: EventHorizon Gateway API
+  description: API для фронтенда (React/Angular)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  example: secret123
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  email:
+                    type: string
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  tokenType:
+                    type: string
+                  expiresIn:
+                    type: integer
+
+  /api/game/submit:
+    post:
+      summary: Submit game score (server-side validation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - game_id
+                - level
+                - seed
+                - moves
+              properties:
+                user_id:
+                  type: string
+                game_id:
+                  type: string
+                  enum: [hexagon, flappy]
+                level:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                seed:
+                  type: string
+                  description: Deterministic seed for board generation
+                moves:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      fromX:
+                        type: integer
+                      fromY:
+                        type: integer
+                      toX:
+                        type: integer
+                      toY:
+                        type: integer
+                      timestamp:
+                        type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  newHighscore:
+                    type: integer
+                  message:
+                    type: string
+                  lampsEarned:
+                    type: integer
+                  ticketsEarned:
+                    type: integer
+
+  /ws/leaderboard:
+    get:
+      summary: WebSocket connection for real-time leaderboard
+      description: |
+        Подключитесь к этому эндпоинту через WebSocket.
+        При каждом обновлении топа (кто-то побил рекорд) вы будете получать сообщение:
+        
+        ```json
+        {
+          "game_id": "hexagon",
+          "user_id": "user-123",
+          "score": 1500,
+          "is_record": true,
+          "level": 3,
+          "timestamp": 1234567890
+        }
+        ```
+      responses:
+        '101':
+        description: WebSocket upgrade successful 
