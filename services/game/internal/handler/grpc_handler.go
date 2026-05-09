@@ -40,11 +40,22 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
         }
     }
 
+    // moves := make([]service.Move, len(req.Moves))
+    // for i, m := range req.Moves {
+    //     moves[i] = service.Move{
+    //         FromX:     int(m.FromX),
+    //         FromY:     int(m.FromY),
+    //         ToX:       int(m.ToX),
+    //         ToY:       int(m.ToY),
+    //         Timestamp: m.Timestamp,
+    //     }
+    // }
+
+    // score больше не передаём — сервер сам вычислит
     resp, err := h.gameService.SubmitScore(ctx, &service.SubmitScoreRequest{
         UserID:    req.UserId,
         GameID:    req.GameId,
         Level:     int(req.Level),
-        Score:     int(req.Score),
         Seed:      req.Seed,
         Moves:     moves,
     })
