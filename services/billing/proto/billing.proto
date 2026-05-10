@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package billing;
+
+option go_package = "event_horizon/services/billing/proto;billing";
+
+service BillingService {
+    // Получить баланс пользователя по типу валюты
+    rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+    
+    // Получить все балансы пользователя
+    rpc GetAllBalances(GetAllBalancesRequest) returns (GetAllBalancesResponse);
+    
+    // Начислить валюту (внутренний вызов)
+    rpc AddCurrency(AddCurrencyRequest) returns (AddCurrencyResponse);
+    
+    // Списать валюту (внутренний вызов)
+    rpc SpendCurrency(SpendCurrencyRequest) returns (SpendCurrencyResponse);
+    
+    // Получить историю транзакций
+    rpc GetTransactionHistory(GetTransactionHistoryRequest) returns (GetTransactionHistoryResponse);
+}
+
+// Валюты
+enum CurrencyType {
+    CURRENCY_UNSPECIFIED = 0;
+    LAMPS = 1;    // за активность
+    TICKETS = 2;  // пассивный доход с этажей
+}
+
+// Запрос баланса
+message GetBalanceRequest {
+    string user_id = 1;
+    CurrencyType currency = 2;
+}
+
+message GetBalanceResponse {
+    string user_id = 1;
+    CurrencyType currency = 2;
+    int32 balance = 3;
+    int64 updated_at = 4;
+}
+
+// Все балансы
+message GetAllBalancesRequest {
+    string user_id = 1;
+}
+
+message GetAllBalancesResponse {
+    string user_id = 1;
+    repeated BalanceEntry balances = 2;
+}
+
+message BalanceEntry {
+    CurrencyType currency = 1;
+    int32 balance = 2;
+    int64 updated_at = 3;
+}
+
+// Начисление валюты
+message AddCurrencyRequest {
+    string user_id = 1;
+    CurrencyType currency = 2;
+    int32 amount = 3;
+    string reason = 4;        // "daily_play", "new_record", "level_up", "purchase"
+    string reference_id = 5;  // idempotency key (например, "score.event.uuid")
+}
+
+message AddCurrencyResponse {
+    bool success = 1;
+    int32 new_balance = 2;
+    string message = 3;
+}
+
+// Списание валюты
+message SpendCurrencyRequest {
+    string user_id = 1;
+    CurrencyType currency = 2;
+    int32 amount = 3;
+    string reason = 4;        // "hint", "reroll", "continue"
+    string reference_id = 5;  // idempotency key
+}
+
+message SpendCurrencyResponse {
+    bool success = 1;
+    int32 new_balance = 2;
+    string message = 3;
+}
+
+// История транзакций
+message GetTransactionHistoryRequest {
+    string user_id = 1;
+    CurrencyType currency = 2;
+    int32 limit = 3;   // макс 100
+    int32 offset = 4;
+}
+
+message GetTransactionHistoryResponse {
+    repeated Transaction transactions = 1;
+    int32 total = 2;
+}
+
+message Transaction {
+    string id = 1;
+    string user_id = 2;
+    CurrencyType currency = 3;
+    int32 amount = 4;
+    int32 balance_after = 5;
+    string reason = 6;
+    string reference_id = 7;
+    int64 created_at = 8;
+}
