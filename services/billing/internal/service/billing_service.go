@@ -1,93 +1,140 @@
-package service
+package main
 
 import (
     "context"
-    "fmt"
+    "encoding/json"
     "log"
-    "time"
+    "net"
+    "os"
+    "os/signal"
+    "syscall"
 
-    "github.com/redis/go-redis/v9"
+    "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/nats-io/nats.go"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/reflection"
 
+    "event_horizon/services/billing/internal/config"
+    "event_horizon/services/billing/internal/handler"
     "event_horizon/services/billing/internal/repository"
+    "event_horizon/services/billing/internal/service"
+    pb "event_horizon/services/billing/proto"
 )
 
-type BillingService interface {
-    GetBalance(ctx context.Context, userID string, currency repository.CurrencyType) (int, error)
-    AddCurrency(ctx context.Context, userID string, currency repository.CurrencyType, amount int, reason, referenceID string) (int, error)
-    SpendCurrency(ctx context.Context, userID string, currency repository.CurrencyType, amount int, reason, referenceID string) (int, error)
-    GetTransactionHistory(ctx context.Context, userID string, currency repository.CurrencyType, limit, offset int) ([]repository.Transaction, int, error)
+type ScoreEvent struct {
+    UserID        string `json:"user_id"`
+    GameID        string `json:"game_id"`
+    Score         int    `json:"score"`
+    IsRecord      bool   `json:"is_record"`
+    Level         int    `json:"level"`
+    LampsEarned   int    `json:"lamps_earned"`
+    TicketsEarned int    `json:"tickets_earned"`
+    Timestamp     int64  `json:"timestamp"`
 }
 
-type billingService struct {
-    pgRepo  *repository.PostgresBillingRepo
-    redisRepo *repository.RedisBillingRepo
-}
+func main() {
+    cfg := config.Load()
 
-func NewBillingService(pgRepo *repository.PostgresBillingRepo, redisRepo *repository.RedisBillingRepo) BillingService {
-    return &billingService{
-        pgRepo:    pgRepo,
-        redisRepo: redisRepo,
-    }
-}
-
-func (s *billingService) GetBalance(ctx context.Context, userID string, currency repository.CurrencyType) (int, error) {
-    // Сначала пробуем получить из Redis кеша
-    cached, err := s.redisRepo.GetBalance(ctx, userID, currency)
-    if err != nil && err != redis.Nil {
-        log.Printf("Redis get error: %v", err)
-    }
-    if cached >= 0 {
-        return cached, nil
-    }
-
-    // Если нет в кеше — идём в PostgreSQL
-    balance, err := s.pgRepo.GetBalance(ctx, userID, currency)
+    // Подключение к PostgreSQL
+    dbURL := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
+    dbpool, err := pgxpool.New(context.Background(), dbURL)
     if err != nil {
-        return 0, err
+        log.Fatalf("Unable to connect to database: %v", err)
     }
+    defer dbpool.Close()
 
-    // Сохраняем в кеш на 5 минут
-    s.redisRepo.SetBalance(ctx, userID, currency, balance, 5*time.Minute)
+    // Подключение к Redis
+    redisRepo := repository.NewRedisBillingRepo(cfg.RedisAddr, cfg.RedisDB)
 
-    return balance, nil
-}
-
-func (s *billingService) AddCurrency(ctx context.Context, userID string, currency repository.CurrencyType, amount int, reason, referenceID string) (int, error) {
-    if amount <= 0 {
-        return 0, fmt.Errorf("amount must be positive")
-    }
-
-    // Обновляем баланс в PostgreSQL
-    newBalance, err := s.pgRepo.AddBalance(ctx, userID, currency, amount, reason, referenceID)
+    // Подключение к NATS
+    nc, err := nats.Connect(cfg.NATSUrl)
     if err != nil {
-        return 0, err
+        log.Fatalf("Failed to connect to NATS: %v", err)
     }
+    defer nc.Drain()
 
-    // Инвалидируем кеш
-    s.redisRepo.DeleteBalance(ctx, userID, currency)
-
-    return newBalance, nil
-}
-
-func (s *billingService) SpendCurrency(ctx context.Context, userID string, currency repository.CurrencyType, amount int, reason, referenceID string) (int, error) {
-    if amount <= 0 {
-        return 0, fmt.Errorf("amount must be positive")
-    }
-
-    newBalance, err := s.pgRepo.SpendBalance(ctx, userID, currency, amount, reason, referenceID)
+    js, err := nc.JetStream()
     if err != nil {
-        return 0, err
+        log.Fatalf("Failed to create JetStream context: %v", err)
     }
 
-    // Инвалидируем кеш
-    s.redisRepo.DeleteBalance(ctx, userID, currency)
+    // Репозитории и сервис
+    pgRepo := repository.NewPostgresBillingRepo(dbpool)
+    billingService := service.NewBillingService(pgRepo, redisRepo)
+    billingHandler := handler.NewBillingHandler(billingService)
 
-    return newBalance, nil
-}
+    // gRPC сервер
+    grpcServer := grpc.NewServer()
+    pb.RegisterBillingServiceServer(grpcServer, billingHandler)
+    reflection.Register(grpcServer)
 
-func (s *billingService) GetTransactionHistory(ctx context.Context, userID string, currency repository.CurrencyType, limit, offset int) ([]repository.Transaction, int, error) {
-    if limit <= 0 || limit > 100 {
-        limit = 20
+    // Подписка на NATS (начисление валюты за рекорды)
+    _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
+        var event ScoreEvent
+        if err := json.Unmarshal(msg.Data, &event); err != nil {
+            log.Printf("Failed to unmarshal score event: %v", err)
+            return
+        }
+
+        log.Printf("📡 Received score event for user %s, score=%d, lamps=%d, tickets=%d",
+            event.UserID, event.Score, event.LampsEarned, event.TicketsEarned)
+
+        // Начисление валюты (используем context.Background для NATS)
+        if event.LampsEarned > 0 {
+            _, err := billingService.AddCurrency(context.Background(), event.UserID,
+                repository.Lamps, event.LampsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+            if err != nil {
+                log.Printf("Failed to add lamps: %v", err)
+            } else {
+                log.Printf("💰 Added %d lamps to user %s", event.LampsEarned, event.UserID)
+            }
+        }
+
+        if event.TicketsEarned > 0 {
+            _, err := billingService.AddCurrency(context.Background(), event.UserID,
+                repository.Tickets, event.TicketsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+            if err != nil {
+                log.Printf("Failed to add tickets: %v", err)
+            } else {
+                log.Printf("🎫 Added %d tickets to user %s", event.TicketsEarned, event.UserID)
+            }
+        }
+
+        msg.Ack()
+    }, nats.Durable("billing-durable"), nats.ManualAck())
+
+    if err != nil {
+        log.Printf("Warning: failed to subscribe to score.updated: %v", err)
+    } else {
+        log.Println("📡 Subscribed to NATS: score.updated (for rewards)")
     }
-    return s.pgRepo.GetTransactionHistory(ctx, userID, currency, limit, offset)
+
+    // Listener
+    lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+    if err != nil {
+        log.Fatalf("Failed to listen: %v", err)
+    }
+
+    go func() {
+        log.Printf("💰 Billing service listening on :%s", cfg.GRPCPort)
+        log.Printf("   PostgreSQL: %s:%s/%s", cfg.DBHost, cfg.DBPort, cfg.DBName)
+        log.Printf("   Redis: %s (DB %d)", cfg.RedisAddr, cfg.RedisDB)
+        log.Printf("   NATS: %s", cfg.NATSUrl)
+        if err := grpcServer.Serve(lis); err != nil {
+            log.Fatalf("Failed to serve: %v", err)
+        }
+    }()
+
+    // Graceful shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    log.Println("Shutting down billing service gracefully...")
+
+    grpcServer.GracefulStop()
+    dbpool.Close()
+    nc.Drain()
+
+    log.Println("Billing service stopped gracefully")
 }
