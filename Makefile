@@ -19,7 +19,8 @@ proto:
 	@echo "Generating protobuf..."
 	# Тут позже добавим реальную генерацию
 
-all:
+.PHONY: all
+all: stop-services
 	@echo "🚀 Starting all services..."
 	docker-compose -f deployments/docker-compose.cluster.yml up -d
 	cd services/auth && go build -o auth-service ./cmd/main.go && ./auth-service &
@@ -27,7 +28,7 @@ all:
 	cd services/game && go build -o game-service ./cmd/main.go && ./game-service &
 	cd services/billing && go build -o billing-service ./cmd/main.go && ./billing-service &
 	cd services/gateway && go build -o gateway ./cmd/main.go && ./gateway &
-	@echo "✅ All services started"	
+	@echo "✅ All services started"
 
 .PHONY: start-services
 start-services:
@@ -52,3 +53,6 @@ stop-services:
 
 .PHONY: restart-services
 restart: stop all	
+
+.PHONY: restart
+restart: stop-services all
