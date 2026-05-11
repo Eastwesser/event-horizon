@@ -1,8 +1,10 @@
 package main
 
 import (
+    "bytes"
     "context"
     "encoding/json"
+    "io"
     "log"
     "net/http"
     "os"
@@ -16,6 +18,7 @@ import (
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 
+    "event_horizon/services/gateway/internal/cache"
     "event_horizon/services/gateway/internal/client"
     authPb "event_horizon/services/auth/proto"
     gamePb "event_horizon/services/game/proto"
@@ -237,8 +240,22 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
+    // Создаём кеш (TTL 2 секунды)
+    scoreCache := cache.NewScoreCache(2 * time.Second)
+
     // Submit score
     r.POST("/api/game/submit", func(c *gin.Context) {
+        // Читаем тело запроса для кеша
+        body, _ := c.GetRawData()
+        c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+        
+        // Проверяем кеш
+        cacheKey := string(body)
+        if cached, ok := scoreCache.Get(cacheKey); ok {
+            c.Data(http.StatusOK, "application/json", cached)
+            return
+        }
+        
         var req struct {
             UserID string `json:"user_id"`
             GameID string `json:"game_id"`
@@ -270,18 +287,20 @@ func main() {
         }
 
         resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
-            UserId:    req.UserID,
-            GameId:    req.GameID,
-            Level:     req.Level,
-            Seed:      req.Seed,
-            Moves:     moves,
-        })
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-            return
-        }
+        UserId:    req.UserID,
+        GameId:    req.GameID,
+        Level:     req.Level,
+        Seed:      req.Seed,
+        Moves:     moves,
+    })
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
 
-        c.JSON(http.StatusOK, resp)
+    respJSON, _ := json.Marshal(resp)
+    scoreCache.Set(cacheKey, respJSON)
+    c.JSON(http.StatusOK, resp)
     })
 
     // HTTP сервер
