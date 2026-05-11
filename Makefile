@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean
+.PHONY: up down logs ps clean proto all start-services stop-services restart status
 
 up:
 	docker-compose -f deployments/docker-compose.cluster.yml up -d
@@ -17,42 +17,44 @@ clean:
 
 proto:
 	@echo "Generating protobuf..."
-	# Тут позже добавим реальную генерацию
 
-.PHONY: all
-all: stop-services
-	@echo "🚀 Starting all services..."
-	docker-compose -f deployments/docker-compose.cluster.yml up -d
-	cd services/auth && go build -o auth-service ./cmd/main.go && ./auth-service &
-	cd services/leaderboard && go build -o leaderboard-service ./cmd/main.go && ./leaderboard-service &
-	cd services/game && go build -o game-service ./cmd/main.go && ./game-service &
-	cd services/billing && go build -o billing-service ./cmd/main.go && ./billing-service &
-	cd services/gateway && go build -o gateway ./cmd/main.go && ./gateway &
-	@echo "✅ All services started"
-
-.PHONY: start-services
-start-services:
-	@echo "🚀 Starting all services..."
-	cd services/auth && ./auth-service > /tmp/auth.log 2>&1 &
-	cd services/leaderboard && ./leaderboard-service > /tmp/leaderboard.log 2>&1 &
-	cd services/game && ./game-service > /tmp/game.log 2>&1 &
-	cd services/billing && ./billing-service > /tmp/billing.log 2>&1 &
-	cd services/gateway && ./gateway > /tmp/gateway.log 2>&1 &
-	@echo "✅ All services started"
-	@echo "📝 Logs: /tmp/{auth,leaderboard,game,billing,gateway}.log"
-
-.PHONY: stop-services
+# Остановить все сервисы
 stop-services:
 	@echo "🛑 Stopping all services..."
-	@pkill -f "auth-service" || true
-	@pkill -f "leaderboard-service" || true
-	@pkill -f "game-service" || true
-	@pkill -f "billing-service" || true
-	@pkill -f "gateway" || true
-	@echo "✅ All services stopped"	
+	-pkill -f "auth-service"
+	-pkill -f "leaderboard-service"
+	-pkill -f "game-service"
+	-pkill -f "billing-service"
+	-pkill -f "gateway"
+	@echo "✅ All services stopped"
 
-.PHONY: restart-services
-restart: stop all	
+# Запустить все сервисы (каждая команда в своей подоболочке)
+start-services:
+	@echo "🚀 Starting all services..."
+	cd /home/denismatveev/event_horizon/services/auth && go build -o auth-service ./cmd/main.go && ./auth-service > /tmp/auth.log 2>&1 &
+	cd /home/denismatveev/event_horizon/services/leaderboard && go build -o leaderboard-service ./cmd/main.go && ./leaderboard-service > /tmp/leaderboard.log 2>&1 &
+	cd /home/denismatveev/event_horizon/services/game && go build -o game-service ./cmd/main.go && ./game-service > /tmp/game.log 2>&1 &
+	cd /home/denismatveev/event_horizon/services/billing && go build -o billing-service ./cmd/main.go && ./billing-service > /tmp/billing.log 2>&1 &
+	cd /home/denismatveev/event_horizon/services/gateway && go build -o gateway ./cmd/main.go && ./gateway > /tmp/gateway.log 2>&1 &
+	sleep 2
+	@echo "✅ All services started"
 
-.PHONY: restart
-restart: stop-services all
+# Перезапустить всё
+restart: stop-services start-services
+	@echo "🔄 Restart completed"
+
+# Запустить всё
+all: start-services
+	@echo "🎮 EventHorizon is running!"
+
+# Быстрая проверка статуса
+status:
+	@echo "🔍 Checking services..."
+	@pgrep -f "auth-service" && echo "✅ Auth running" || echo "❌ Auth not running"
+	@pgrep -f "leaderboard-service" && echo "✅ Leaderboard running" || echo "❌ Leaderboard not running"
+	@pgrep -f "game-service" && echo "✅ Game running" || echo "❌ Game not running"
+	@pgrep -f "billing-service" && echo "✅ Billing running" || echo "❌ Billing not running"
+	@pgrep -f "gateway" && echo "✅ Gateway running" || echo "❌ Gateway not running"
+	@echo ""
+	@echo "🐳 Docker containers:"
+	@docker-compose -f deployments/docker-compose.cluster.yml ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || echo "Docker not running"
