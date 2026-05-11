@@ -2,10 +2,12 @@ package repository
 
 import (
     "context"
+	"errors"
     "database/sql"
     "fmt"
     "time"
-
+	
+	"github.com/jackc/pgx/v5"
     "github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -69,22 +71,23 @@ func (r *PostgresBillingRepo) AddBalance(ctx context.Context, userID string, cur
     }
     defer tx.Rollback(ctx)
 
-    // Получаем текущий баланс
     var currentBalance int
     query := `SELECT balance FROM user_currencies WHERE user_id = $1 AND currency_type = $2`
     err = tx.QueryRow(ctx, query, userID, currency).Scan(&currentBalance)
-    if err != nil && err != sql.ErrNoRows {
-        return 0, err
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            currentBalance = 0
+        } else {
+            return 0, err
+        }
     }
 
     newBalance := currentBalance + amount
 
-    if currentBalance == 0 && err == sql.ErrNoRows {
-        // Вставляем новую запись
+    if currentBalance == 0 && errors.Is(err, pgx.ErrNoRows) {
         insertQuery := `INSERT INTO user_currencies (user_id, currency_type, balance) VALUES ($1, $2, $3)`
         _, err = tx.Exec(ctx, insertQuery, userID, currency, newBalance)
     } else {
-        // Обновляем существующую
         updateQuery := `UPDATE user_currencies SET balance = $1, updated_at = NOW() WHERE user_id = $2 AND currency_type = $3`
         _, err = tx.Exec(ctx, updateQuery, newBalance, userID, currency)
     }
@@ -92,7 +95,6 @@ func (r *PostgresBillingRepo) AddBalance(ctx context.Context, userID string, cur
         return 0, err
     }
 
-    // Записываем транзакцию
     txQuery := `INSERT INTO transactions (user_id, currency_type, amount, balance_after, reason, reference_id) 
                 VALUES ($1, $2, $3, $4, $5, $6)`
     _, err = tx.Exec(ctx, txQuery, userID, currency, amount, newBalance, reason, referenceID)
