@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "log"
+    "sync"
     "time"
 
     "github.com/redis/go-redis/v9"
@@ -90,4 +91,44 @@ func (s *billingService) GetTransactionHistory(ctx context.Context, userID strin
         limit = 20
     }
     return s.pgRepo.GetTransactionHistory(ctx, userID, currency, limit, offset)
+}
+
+// TransactionBatch для групповой записи
+type TransactionBatch struct {
+    transactions []repository.Transaction
+    mu           sync.Mutex
+}
+
+func NewTransactionBatch() *TransactionBatch {
+    return &TransactionBatch{
+        transactions: make([]repository.Transaction, 0, 100),
+    }
+}
+
+func (b *TransactionBatch) Add(tx repository.Transaction) {
+    b.mu.Lock()
+    defer b.mu.Unlock()
+    b.transactions = append(b.transactions, tx)
+}
+
+func (b *TransactionBatch) Flush(ctx context.Context, pgRepo *repository.PostgresBillingRepo) {
+    b.mu.Lock()
+    defer b.mu.Unlock()
+    
+    if len(b.transactions) == 0 {
+        return
+    }
+    
+    // Batch insert в PostgreSQL
+    if err := pgRepo.BatchInsertTransactions(ctx, b.transactions); err != nil {
+        log.Printf("Failed to batch insert transactions: %v", err)
+    }
+    
+    b.transactions = b.transactions[:0]
+}
+
+func (b *TransactionBatch) Len() int {
+    b.mu.Lock()
+    defer b.mu.Unlock()
+    return len(b.transactions)
 }

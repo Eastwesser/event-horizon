@@ -182,3 +182,34 @@ func (r *PostgresBillingRepo) GetTransactionHistory(ctx context.Context, userID 
 
     return transactions, total, nil
 }
+
+// BatchInsertTransactions массовая вставка транзакций
+func (r *PostgresBillingRepo) BatchInsertTransactions(ctx context.Context, transactions []Transaction) error {
+    if len(transactions) == 0 {
+        return nil
+    }
+    
+    tx, err := r.db.Begin(ctx)
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback(ctx)
+    
+    // Используем COPY для массовой вставки
+    copyFrom := pgx.CopyFromSlice(len(transactions), func(i int) ([]any, error) {
+        t := transactions[i]
+        return []any{
+            t.ID, t.UserID, t.Currency, t.Amount,
+            t.BalanceAfter, t.Reason, t.ReferenceID, t.CreatedAt,
+        }, nil
+    })
+    
+    _, err = tx.CopyFrom(ctx, pgx.Identifier{"transactions"},
+        []string{"id", "user_id", "currency_type", "amount", "balance_after", "reason", "reference_id", "created_at"},
+        copyFrom)
+    if err != nil {
+        return err
+    }
+    
+    return tx.Commit(ctx)
+}

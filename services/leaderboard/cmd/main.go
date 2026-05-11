@@ -62,38 +62,53 @@ func main() {
         log.Printf("Stream might already exist: %v", err)
     }
 
-    // Подписываемся на события score.updated
+    // Batch ack channel (Канал для batch ack)
+    ackChan := make(chan *nats.Msg, 1000)
+    ticker := time.NewTicker(100 * time.Millisecond)
+
+    go func() {
+        batch := make([]*nats.Msg, 0, 100)
+        for {
+            select {
+            case msg := <-ackChan:
+                batch = append(batch, msg)
+                if len(batch) >= 100 {
+                    for _, m := range batch {
+                        m.Ack()
+                    }
+                    batch = batch[:0]
+                }
+            case <-ticker.C:
+                if len(batch) > 0 {
+                    for _, m := range batch {
+                        m.Ack()
+                    }
+                    batch = batch[:0]
+                }
+            }
+        }
+    }()
+
+    // Единая подписка
     _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
         var event ScoreEvent
         if err := json.Unmarshal(msg.Data, &event); err != nil {
-            log.Printf("Failed to unmarshal score event: %v", err)
+            log.Printf("Failed to unmarshal: %v", err)
             return
         }
 
-        log.Printf("📡 Received score update via NATS: game=%s user=%s score=%d",
-            event.GameID, event.UserID, event.Score)
+        log.Printf("📡 Received score: game=%s user=%s score=%d", event.GameID, event.UserID, event.Score)
 
-        // Обновляем leaderboard (используем context.Background для NATS сообщений)
-        newRank, err := leaderboardService.UpdateScore(
-            context.Background(),
-            event.GameID,
-            event.UserID,
-            event.UserEmail,
-            event.Score,
-        )
-        if err != nil {
+        // Быстрое обновление без ранга
+        if err := leaderboardService.UpdateScoreOnly(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Score); err != nil {
             log.Printf("Failed to update score: %v", err)
-            return
         }
 
-        log.Printf("✅ Score updated for %s, new rank: %d", event.UserID, newRank)
-
-        // Подтверждаем обработку сообщения (для JetStream)
-        msg.Ack()
+        ackChan <- msg
     }, nats.Durable("leaderboard-durable"), nats.ManualAck())
 
     if err != nil {
-        log.Printf("Warning: failed to subscribe to score.updated: %v", err)
+        log.Printf("Warning: failed to subscribe: %v", err)
     } else {
         log.Println("📡 Subscribed to NATS: score.updated")
     }

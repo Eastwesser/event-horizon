@@ -18,6 +18,7 @@ type ScoreEntry struct {
 
 type LeaderboardRepository interface {
     UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error)
+    UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error
     GetTopScores(ctx context.Context, gameID string, limit int) ([]ScoreEntry, error)
     GetPlayerRank(ctx context.Context, gameID, userID string) (int, int, error)
 }
@@ -60,6 +61,23 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
     return int(rank) + 1, nil
 }
 
+// UpdateScoreOnly обновляет счёт без получения ранга (быстрее)
+func (r *RedisLeaderboardRepo) UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error {
+    key := fmt.Sprintf("leaderboard:%s", gameID)
+    
+    member := &redis.Z{
+        Score:  float64(score),
+        Member: userID,
+    }
+    if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
+        return err
+    }
+    
+    emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
+    r.client.HSet(ctx, emailKey, userID, userEmail)
+    return nil
+}
+
 func (r *RedisLeaderboardRepo) GetTopScores(ctx context.Context, gameID string, limit int) ([]ScoreEntry, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
     emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
@@ -90,6 +108,7 @@ func (r *RedisLeaderboardRepo) GetTopScores(ctx context.Context, gameID string, 
     return entries, nil
 }
 
+// GetPlayerRank отдельный вызов, когда нужен ранг
 func (r *RedisLeaderboardRepo) GetPlayerRank(ctx context.Context, gameID, userID string) (int, int, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
     

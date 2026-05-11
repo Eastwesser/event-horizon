@@ -11,6 +11,7 @@ type LeaderboardService interface {
     GetTopScores(ctx context.Context, gameID string, limit int) ([]repository.ScoreEntry, error)
     GetPlayerRank(ctx context.Context, gameID, userID string) (int, int, error)
     UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error)
+    UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error
 }
 
 type leaderboardService struct {
@@ -37,4 +38,8 @@ func (s *leaderboardService) UpdateScore(ctx context.Context, gameID, userID, us
         return 0, fmt.Errorf("game_id and user_id are required")
     }
     return s.repo.UpdateScore(ctx, gameID, userID, userEmail, score)
+}
+
+func (s *leaderboardService) UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error {
+    return s.repo.UpdateScoreOnly(ctx, gameID, userID, userEmail, score)
 }
