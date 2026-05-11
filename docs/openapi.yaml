@@ -175,3 +175,85 @@ paths:
       responses:
         '101':
         description: WebSocket upgrade successful 
+        
+  /api/billing/balance:
+    get:
+      summary: Get user balance
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: currency
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [lamps, tickets]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  currency:
+                    type: string
+                  balance:
+                    type: integer
+
+  /api/billing/balance/all:
+    get:
+      summary: Get all user balances
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  balances:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        currency:
+                          type: string
+                        balance:
+                          type: integer
+
+  /api/billing/history:
+    get:
+      summary: Get transaction history
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: currency
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Success      
