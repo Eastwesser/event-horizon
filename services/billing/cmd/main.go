@@ -2,12 +2,13 @@ package main
 
 import (
     "context"
+    "encoding/json"
     "log"
     "net"
     "os"
     "os/signal"
     "syscall"
-    "time"
+    // "time" — УДАЛИТЬ, не используется
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/nats-io/nats.go"
@@ -20,6 +21,18 @@ import (
     "event_horizon/services/billing/internal/service"
     pb "event_horizon/services/billing/proto"
 )
+
+// ScoreEvent структура для парсинга NATS сообщений
+type ScoreEvent struct {
+    UserID        string `json:"user_id"`
+    GameID        string `json:"game_id"`
+    Score         int    `json:"score"`
+    IsRecord      bool   `json:"is_record"`
+    Level         int    `json:"level"`
+    LampsEarned   int    `json:"lamps_earned"`
+    TicketsEarned int    `json:"tickets_earned"`
+    Timestamp     int64  `json:"timestamp"`
+}
 
 func main() {
     cfg := config.Load()
@@ -59,22 +72,19 @@ func main() {
 
     // Подписка на NATS (начисление валюты за рекорды)
     _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
-        var event struct {
-            UserID        string `json:"user_id"`
-            GameID        string `json:"game_id"`
-            Score         int    `json:"score"`
-            IsRecord      bool   `json:"is_record"`
-            Level         int    `json:"level"`
-            LampsEarned   int    `json:"lamps_earned"`
-            TicketsEarned int    `json:"tickets_earned"`
-            Timestamp     int64  `json:"timestamp"`
+        var event ScoreEvent
+        if err := json.Unmarshal(msg.Data, &event); err != nil {
+            log.Printf("Failed to unmarshal score event: %v", err)
+            return
         }
-        // Парсинг события (упрощённо)
-        log.Printf("📡 Received score event for user %s", event.UserID)
 
-        // Начисление валюты
+        log.Printf("📡 Received score event for user %s, lamps=%d, tickets=%d",
+            event.UserID, event.LampsEarned, event.TicketsEarned)
+
+        // Начисление валюты (используем context.Background() вместо msg.Context)
         if event.LampsEarned > 0 {
-            _, err := billingService.AddCurrency(msg.Context(), event.UserID, repository.Lamps, event.LampsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+            _, err := billingService.AddCurrency(context.Background(), event.UserID,
+                repository.Lamps, event.LampsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
             if err != nil {
                 log.Printf("Failed to add lamps: %v", err)
             } else {
@@ -83,7 +93,8 @@ func main() {
         }
 
         if event.TicketsEarned > 0 {
-            _, err := billingService.AddCurrency(msg.Context(), event.UserID, repository.Tickets, event.TicketsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+            _, err := billingService.AddCurrency(context.Background(), event.UserID,
+                repository.Tickets, event.TicketsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
             if err != nil {
                 log.Printf("Failed to add tickets: %v", err)
             } else {
