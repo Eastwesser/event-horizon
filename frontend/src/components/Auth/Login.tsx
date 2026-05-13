@@ -9,7 +9,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -18,18 +18,15 @@ export function Login() {
       const response = await login(email, password);
       const { access_token } = response.data;
       
-      localStorage.setItem('accessToken', access_token);
-      navigate('/');
+      if (access_token) {
+        localStorage.setItem('accessToken', access_token);
+        window.dispatchEvent(new Event('storage'));
+        navigate('/');
+      }
     } catch (err: any) {
-      // Обрабатываем разные типы ошибок
       const status = err.response?.status;
       const message = err.response?.data?.error || err.response?.data?.message;
-      // После успешного логина
-        // if (response.data.access_token) {
-        // localStorage.setItem('accessToken', response.data.access_token);
-        // console.log('Token saved:', response.data.access_token.substring(0, 20) + '...');
-        // navigate('/');
-        // }
+      
       if (status === 401 || message?.includes('invalid credentials')) {
         setError('Неверный email или пароль. Попробуйте ещё раз.');
       } else if (status === 404) {

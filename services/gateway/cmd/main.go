@@ -113,7 +113,7 @@ func (c *WSClient) writePump() {
     }
 }
 
-func authMiddleware(authClient pb.AuthServiceClient) gin.HandlerFunc {
+func authMiddleware(authClient authPb.AuthServiceClient) gin.HandlerFunc {
   return func(c *gin.Context) {
     token := c.GetHeader("Authorization")
     if token == "" {
@@ -127,7 +127,7 @@ func authMiddleware(authClient pb.AuthServiceClient) gin.HandlerFunc {
     }
     
     // Валидируем через Auth сервис
-    resp, err := authClient.ValidateToken(c.Request.Context(), &pb.ValidateTokenRequest{Token: token})
+    resp, err := authClient.ValidateToken(c.Request.Context(), &authPb.ValidateTokenRequest{Token: token})
     if err != nil || !resp.Valid {
       c.AbortWithStatusJSON(401, gin.H{"error": "Invalid token"})
       return

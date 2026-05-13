@@ -135,3 +135,74 @@ h1 {
 .logout-btn:hover {
   background: rgba(255,255,255,0.3);
 }
+
+.game-container {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 15px;
+}
+
+.score, .level {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.tray {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 15px;
+}
+
+.tray h3 {
+  margin-bottom: 1rem;
+  color: #ffd700;
+}
+
+.tray-stacks {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.tray-stack {
+  width: 80px;
+  height: 80px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.tray-stack:hover {
+  transform: scale(1.05);
+}
+
+.tray-stack .emoji {
+  font-size: 2rem;
+}
+
+.tray-stack .count {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: rgba(0,0,0,0.5);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
