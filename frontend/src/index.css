@@ -107,3 +107,31 @@ h1 {
 .auth-container a:hover {
   text-decoration: underline;
 }
+
+.success {
+  color: #4ade80;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  background: rgba(74, 222, 128, 0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.home-container {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.logout-btn {
+  margin-top: 2rem;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.logout-btn:hover {
+  background: rgba(255,255,255,0.3);
+}

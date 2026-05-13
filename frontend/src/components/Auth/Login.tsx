@@ -9,7 +9,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -18,13 +18,25 @@ export function Login() {
       const response = await login(email, password);
       const { access_token } = response.data;
       
-      // Сохраняем токен в localStorage
       localStorage.setItem('accessToken', access_token);
-      
-      // Перенаправляем на главную
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      // Обрабатываем разные типы ошибок
+      const status = err.response?.status;
+      const message = err.response?.data?.error || err.response?.data?.message;
+      // После успешного логина
+        // if (response.data.access_token) {
+        // localStorage.setItem('accessToken', response.data.access_token);
+        // console.log('Token saved:', response.data.access_token.substring(0, 20) + '...');
+        // navigate('/');
+        // }
+      if (status === 401 || message?.includes('invalid credentials')) {
+        setError('Неверный email или пароль. Попробуйте ещё раз.');
+      } else if (status === 404) {
+        setError('Пользователь с таким email не найден.');
+      } else {
+        setError('Ошибка соединения. Попробуйте позже.');
+      }
     } finally {
       setLoading(false);
     }
@@ -32,33 +44,35 @@ export function Login() {
 
   return (
     <div className="auth-container">
-      <h2>Вход</h2>
+      <h2>Вход в Блинопёк</h2>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Email:</label>
+          <label>🍳 Email:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@mail.com"
             required
           />
         </div>
         <div>
-          <label>Пароль:</label>
+          <label>🔒 Пароль:</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••"
             required
           />
         </div>
         {error && <div className="error">{error}</div>}
         <button type="submit" disabled={loading}>
-          {loading ? 'Загрузка...' : 'Войти'}
+          {loading ? '🥞 Загрузка...' : '🍴 Войти'}
         </button>
       </form>
       <p>
-        Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+        👋 Нет аккаунта? <a href="/register">Зарегистрироваться</a>
       </p>
     </div>
   );
