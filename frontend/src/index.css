@@ -1,0 +1,109 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #ffd700;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.auth-container {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.auth-container h2 {
+  margin-bottom: 1.5rem;
+  color: #ffd700;
+}
+
+.auth-container form div {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.auth-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.auth-container input:focus {
+  outline: none;
+  background: rgba(255,255,255,0.3);
+}
+
+.auth-container button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #ffd700;
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.auth-container button:hover:not(:disabled) {
+  transform: scale(1.02);
+  background: #ffed4a;
+}
+
+.auth-container button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #ff6b6b;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.auth-container p {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.auth-container a {
+  color: #ffd700;
+  text-decoration: none;
+}
+
+.auth-container a:hover {
+  text-decoration: underline;
+}
