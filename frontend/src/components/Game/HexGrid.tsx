@@ -15,7 +15,7 @@ interface HexGridProps {
 export function HexGrid({ tiles, onDrop }: HexGridProps) {
   const [{ isOver }, dropRef] = useDrop(() => ({
     accept: 'pancake',
-    drop: (item: any, monitor) => {
+    drop: (item: any, _monitor) => {
       // Для простоты пока используем координаты из item
       // TODO: нормальное определение координат по позиции мыши
       const coord = { q: 0, r: 0 };
