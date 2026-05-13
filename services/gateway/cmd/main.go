@@ -113,6 +113,32 @@ func (c *WSClient) writePump() {
     }
 }
 
+func authMiddleware(authClient pb.AuthServiceClient) gin.HandlerFunc {
+  return func(c *gin.Context) {
+    token := c.GetHeader("Authorization")
+    if token == "" {
+      c.AbortWithStatusJSON(401, gin.H{"error": "Missing authorization header"})
+      return
+    }
+    
+    // Убираем "Bearer " если есть
+    if len(token) > 7 && token[:7] == "Bearer " {
+      token = token[7:]
+    }
+    
+    // Валидируем через Auth сервис
+    resp, err := authClient.ValidateToken(c.Request.Context(), &pb.ValidateTokenRequest{Token: token})
+    if err != nil || !resp.Valid {
+      c.AbortWithStatusJSON(401, gin.H{"error": "Invalid token"})
+      return
+    }
+    
+    c.Set("user_id", resp.UserId)
+    c.Set("email", resp.Email)
+    c.Next()
+  }
+}
+
 func main() {
     // Создаём WebSocket Hub
     hub := NewHub()
