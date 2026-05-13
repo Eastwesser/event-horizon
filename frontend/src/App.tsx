@@ -2,9 +2,27 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { Home } from './components/Home';
+import { useEffect, useState } from 'react';
+
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('accessToken');
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('accessToken'));
+
+  useEffect(() => {
+    // Следим за изменениями в localStorage
+    const handleStorageChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('accessToken'));
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Также следим за кастомным событием
+    window.addEventListener('authChange', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authChange', handleStorageChange);
+    };
+  }, []);
 
   return (
     <BrowserRouter>

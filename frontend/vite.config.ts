@@ -9,7 +9,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path, // не меняем путь
+        rewrite: (path) => path,
       },
       '/ws': {
         target: 'ws://localhost:8080',
