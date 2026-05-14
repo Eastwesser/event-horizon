@@ -206,3 +206,13 @@ h1 {
   padding: 2px 8px;
   border-radius: 20px;
 }
+
+.hex-grid-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 20px;
+  margin: 1rem 0;
+}
