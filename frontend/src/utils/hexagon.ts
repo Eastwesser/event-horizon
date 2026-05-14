@@ -4,45 +4,53 @@ export interface HexCoord {
   r: number;
 }
 
-// 19 гексагонов
-export const HEX_GRID: HexCoord[] = [
-  // Центр
-  { q: 0, r: 0 },
-  // Кольцо 1
-  { q: -1, r: 0 }, { q: 1, r: 0 },
-  { q: -1, r: 1 }, { q: 0, r: 1 }, { q: 1, r: 1 },
-  // Кольцо 2
-  { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -1, r: 2 }, 
-  { q: 0, r: 2 }, { q: 1, r: 2 }, { q: 2, r: 1 }, { q: 2, r: 0 },
-  // Кольцо 3
-  { q: -2, r: 2 }, { q: -1, r: 3 }, { q: 0, r: 3 }, 
-  { q: 1, r: 3 }, { q: 2, r: 2 },
-  // Кольцо 4
-  { q: -1, r: 4 }, { q: 0, r: 4 }, { q: 1, r: 4 },
-];
+// Правильная 19-гексовая сетка (ромб)
+export const HEX_GRID: HexCoord[] = [];
+for (let q = -2; q <= 2; q++) {
+  for (let r = -2; r <= 2; r++) {
+    const s = -q - r;
+    if (Math.abs(q) + Math.abs(r) + Math.abs(s) <= 4) {
+      HEX_GRID.push({ q, r });
+    }
+  }
+}
+console.log('HEX_GRID length:', HEX_GRID.length); // Должно быть 19
 
-// // Конвертация axial в пиксельные координаты
-// const HEX_WIDTH = 80;   // было 60
-// const HEX_HEIGHT = 92;  // было 70
+// Размер гекса (радиус)
+const HEX_RADIUS = 40;
 
-// export function hexToPixel(q: number, r: number): { x: number; y: number } {
-//   const x = HEX_WIDTH * (Math.sqrt(3) * q + Math.sqrt(3) / 2 * r);
-//   const y = HEX_HEIGHT * (3/2 * r);
-//   return { x, y };
-// }
-
+// Конвертация axial в пиксельные координаты
 export function hexToPixel(q: number, r: number): { x: number; y: number } {
-  const size = 40;
-  const x = size * (Math.sqrt(3) * q + Math.sqrt(3) / 2 * r);
-  const y = size * (3 / 2 * r);
+  const width = HEX_RADIUS * 2;
+  const height = Math.sqrt(3) * HEX_RADIUS;
+  
+  const x = width * (q + r / 2);
+  const y = height * r;
+  
   return { x, y };
+}
+
+// Получить вершины гекса для отрисовки
+export function getHexagonPoints(radius: number): string {
+  const points = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 2 + (Math.PI * 2 * i) / 6;
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    points.push(`${x},${y}`);
+  }
+  return points.join(' ');
 }
 
 // Получить соседей гекса
 export function getNeighbors(coord: HexCoord): HexCoord[] {
   const directions = [
-    { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
-    { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 },
+    { q: 1, r: 0 },   // право
+    { q: 1, r: -1 },  // верхний правый
+    { q: 0, r: -1 },  // верхний левый
+    { q: -1, r: 0 },  // лево
+    { q: -1, r: 1 },  // нижний левый
+    { q: 0, r: 1 },   // нижний правый
   ];
   return directions.map(d => ({ q: coord.q + d.q, r: coord.r + d.r }));
 }
@@ -81,3 +89,7 @@ export const pancakeColor: Record<PancakeType, string> = {
   cranberry: '#FF69B4',
   pancake: '#DEB887',
 };
+
+// Пустой цвет
+export const EMPTY_COLOR = '#2a2a4a';
+export const HEX_STROKE = '#ffd700';
