@@ -216,3 +216,67 @@ h1 {
   border-radius: 20px;
   margin: 1rem 0;
 }
+
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.game-over-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #ffd700;
+  border-radius: 30px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 400px;
+}
+
+.game-over-modal h2 {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+.game-over-modal p {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.game-over-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 15px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.game-over-buttons button:first-child {
+  background: #ffd700;
+  color: #1a1a2e;
+}
+
+.game-over-buttons button:last-child {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.game-over-buttons button:hover {
+  transform: scale(1.05);
+}

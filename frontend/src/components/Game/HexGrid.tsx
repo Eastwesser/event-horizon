@@ -110,12 +110,32 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
               />
               {type !== 'empty' && (
                 <>
-                  <text x="0" y="-8" textAnchor="middle" fill="#fff" fontSize="24" fontWeight="bold">
+                <text 
+                  x="0" y="-8" 
+                  textAnchor="middle" 
+                  fill="#fff" 
+                  fontSize="24" 
+                  fontWeight="bold"
+                  style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}
+                >
+                  {pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞'}
+                </text>
+                <text 
+                  x="0" y="24" 
+                  textAnchor="middle" 
+                  fill="#ffd700" 
+                  fontSize="16" 
+                  fontWeight="bold"
+                  style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}
+                >
+                  x{count}
+                </text>
+                  {/* <text x="0" y="-8" textAnchor="middle" fill="#fff" fontSize="24" fontWeight="bold">
                     {pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞'}
                   </text>
                   <text x="0" y="24" textAnchor="middle" fill="#ffd700" fontSize="16" fontWeight="bold">
                     x{count}
-                  </text>
+                  </text> */}
                 </>
               )}
             </g>
