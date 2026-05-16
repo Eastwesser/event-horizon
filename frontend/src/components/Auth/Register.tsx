@@ -19,6 +19,7 @@ export function Register() {
     try {
       const response = await register(email, password);
       if (response.data.success) {
+        localStorage.setItem('userId', response.data.userId);
         setSuccess('Регистрация прошла успешно! Перенаправляем на вход...');
         setTimeout(() => navigate('/login'), 2000);
       } else {

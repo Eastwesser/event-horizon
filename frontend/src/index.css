@@ -280,3 +280,62 @@ h1 {
 .game-over-buttons button:hover {
   transform: scale(1.05);
 }
+
+.balance {
+  display: flex;
+  gap: 1rem;
+  background: rgba(0,0,0,0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+}
+
+.lamps, .tickets {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.leaderboard-btn {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.leaderboard-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.leaderboard-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #ffd700;
+  border-radius: 30px;
+  padding: 2rem;
+  min-width: 400px;
+}
+
+.leaderboard-modal table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+
+.leaderboard-modal th, .leaderboard-modal td {
+  padding: 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,215,0,0.3);
+}
+
+.leaderboard-modal th {
+  color: #ffd700;
+}

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { type HexCoord, type PancakeType, HEX_GRID, getNeighbors } from '../utils/hexagon';
+import api from '../services/api';
 
 interface HexTile {
   coord: HexCoord;
@@ -21,6 +22,7 @@ interface GameState {
   targetScore: number;
   isGameOver: boolean;
   finalScore: number;
+  gameMoves: any[];
   
   // Actions
   initGame: () => void;
@@ -31,6 +33,7 @@ interface GameState {
   calculateScore: (count: number) => void;
   checkLevelUp: () => void;
   checkGameOver: () => void;
+  submitScore: () => Promise<void>;
 }
 
 // Флаг для предотвращения гонки (вне store)
@@ -46,6 +49,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   finalScore: 0,
 
   initGame: () => {
+    gameMoves: [],
     // Создаём пустое поле
     const tiles: HexTile[] = HEX_GRID.map(coord => ({
       coord,
@@ -73,6 +77,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
+    set({ gameMoves: [...get().gameMoves, { coord, trayId, timestamp: Date.now() }] });
+
     const { tray, tiles, isGameOver } = get();
     if (isGameOver) return;
     
@@ -236,7 +242,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-
   checkAndClearStack: (coord: HexCoord) => {
     const { tiles, calculateScore } = get();
     const tile = tiles.find(t => t.coord.q === coord.q && t.coord.r === coord.r);
@@ -308,10 +313,62 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     
     const gameOver = !hasEmptyHex || !hasValidMove;
-    
+
     if (gameOver) {
       const { score } = get();
       set({ isGameOver: true, finalScore: score });
+      get().submitScore(); // 👈 добавляем
     }
   },
+
+  // submitScore: async () => {
+  //   const { score, level, tiles, finalScore, isGameOver } = get();
+  //   if (!isGameOver) return;
+    
+  //   const userId = localStorage.getItem('userId');
+  //   if (!userId) return;
+    
+  //   // Собираем все ходы из игровой сессии (нужно сохранять)
+  //   const moves: any[] = [];
+  //   // TODO: сохранять ходы в отдельный массив во время игры
+    
+  //   try {
+  //     const response = await api.post('/game/submit', {
+  //       user_id: userId,
+  //       game_id: 'hexagon',
+  //       level: level,
+  //       seed: 'game_seed_' + Date.now(),
+  //       moves: moves,
+  //     });
+      
+  //     console.log('✅ Score submitted:', response.data);
+  //     // Можно показать уведомление о награде
+  //   } catch (err) {
+  //     console.error('Failed to submit score:', err);
+  //   }
+  // },
+
+submitScore: async () => {
+    const { score, level, gameMoves, finalScore, isGameOver } = get();
+    if (!isGameOver) return;
+    
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
+    try {
+      const response = await api.post('/game/submit', {
+        user_id: userId,
+        game_id: 'hexagon',
+        level: level,
+        seed: 'game_seed_' + Date.now(),
+        moves: gameMoves,
+      });
+      
+      console.log('✅ Score submitted:', response.data);
+      set({ gameMoves: [] }); // очищаем после отправки
+    } catch (err) {
+      console.error('Failed to submit score:', err);
+    }
+  },
+
 }));
