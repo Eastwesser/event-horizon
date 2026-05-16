@@ -9,7 +9,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -20,6 +20,7 @@ export function Login() {
       
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
+        localStorage.setItem('userId', response.data.user_id);
         window.dispatchEvent(new Event('storage'));
         navigate('/');
       }
