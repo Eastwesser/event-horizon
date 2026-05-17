@@ -339,3 +339,18 @@ h1 {
 .leaderboard-modal th {
   color: #ffd700;
 }
+
+.endgame-btn {
+  background: rgba(255, 100, 100, 0.3);
+  border: 1px solid #ff6666;
+  color: #ffaaaa;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.endgame-btn:hover {
+  background: rgba(255, 100, 100, 0.5);
+  transform: scale(1.02);
+}

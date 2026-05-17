@@ -12,23 +12,18 @@ export function Leaderboard() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
-    
     const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
-    
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         setEntries(data.entries || []);
       } catch (e) {
-        console.error('Failed to parse leaderboard data:', e);
+        console.error('Failed to parse:', e);
       }
     };
-    
     ws.onerror = (error) => console.error('WebSocket error:', error);
-    
     return () => ws.close();
-  }, [isOpen]);
+  }, []); // без зависимости от isOpen — постоянно слушаем
 
   return (
     <>
