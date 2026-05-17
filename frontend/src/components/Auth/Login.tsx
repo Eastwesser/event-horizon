@@ -16,11 +16,13 @@ export function Login() {
 
     try {
       const response = await login(email, password);
-      const { access_token } = response.data;
+      const { access_token, user_id } = response.data;  // 👈 убедись, что сервер возвращает user_id
       
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
-        localStorage.setItem('userId', response.data.user_id);
+        localStorage.setItem('userId', user_id);
+        // localStorage.setItem('userId', response.data.user_id);
+        alert('✅ Saved userId: ' + user_id);  // 👈 добавить
         window.dispatchEvent(new Event('storage'));
         navigate('/');
       }

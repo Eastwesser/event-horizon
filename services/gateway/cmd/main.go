@@ -263,11 +263,32 @@ func main() {
         eventJSON, _ := json.Marshal(eventData)
         js.Publish("event.user.logged_in", eventJSON)
 
-        c.JSON(http.StatusOK, resp)
+        // Возвращаем ответ с user_id
+        c.JSON(http.StatusOK, gin.H{
+            "access_token": resp.AccessToken,
+            "token_type":   resp.TokenType,
+            "expires_in":   resp.ExpiresIn,
+            "user_id":      resp.UserId,  // 👈 добавляем user_id
+        })
     })
 
     // Создаём кеш (TTL 2 секунды)
     scoreCache := cache.NewScoreCache(2 * time.Second)
+
+    // Billing прокси
+    r.GET("/api/billing/balance/all", func(c *gin.Context) {
+        // Проверяем токен
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+            return
+        }
+        
+        // Проксируем запрос к Billing сервису
+        // TODO: добавить gRPC клиент для Billing
+        c.JSON(http.StatusOK, gin.H{"lamps": 0, "tickets": 0})
+    })
+
 
     // Submit score
     r.POST("/api/game/submit", func(c *gin.Context) {

@@ -321,7 +321,7 @@ h1 {
   border: 2px solid #ffd700;
   border-radius: 30px;
   padding: 2rem;
-  min-width: 400px;
+  min-width: 500px;
 }
 
 .leaderboard-modal table {
@@ -331,7 +331,7 @@ h1 {
 }
 
 .leaderboard-modal th, .leaderboard-modal td {
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   text-align: center;
   border-bottom: 1px solid rgba(255,215,0,0.3);
 }
