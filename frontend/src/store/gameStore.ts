@@ -80,6 +80,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // Ручное завершение игры
   setGameOver: (finalScore: number) => {
+    alert('setGameOver called! finalScore: ' + finalScore);
     set({ isGameOver: true, finalScore });
     get().submitScore();
   },
@@ -312,25 +313,68 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
-    const { level, gameMoves, isGameOver } = get();
-    if (!isGameOver) return;
-    
-    const userId = localStorage.getItem('userId');
-    if (!userId) return;
-    
-    try {
-      const response = await api.post('/game/submit', {
-        user_id: userId,
-        game_id: 'hexagon',
-        level: level,
-        seed: 'game_seed_' + Date.now(),
-        moves: gameMoves,
+      // Alert для визуальной отладки
+      alert('1️⃣ submitScore started');
+      
+      console.log('🎯 submitScore called, isGameOver:', get().isGameOver);
+      const { level, gameMoves, isGameOver } = get();
+      
+      alert('2️⃣ isGameOver: ' + isGameOver + ', level: ' + level + ', moves: ' + gameMoves.length);
+      console.log('📊 isGameOver:', isGameOver, 'level:', level, 'moves:', gameMoves.length);
+      
+      if (!isGameOver) {
+          alert('❌ Game not over, skipping');
+          console.log('❌ Game not over, skipping submit');
+          return;
+      }
+      
+      const userId = localStorage.getItem('userId');
+      alert('3️⃣ userId from localStorage: ' + userId);
+      console.log('📡 userId from localStorage:', userId);
+      
+      if (!localStorage.getItem('userId')) {
+          localStorage.setItem('userId', '70bdc424-37b4-4bce-a205-7586b0a9e91d');
+          alert('⚠️ Forced userId: 70bdc424-37b4-4bce-a205-7586b0a9e91d');
+      }
+
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload.user_id;
+          localStorage.setItem('userId', userId);
+      }
+
+      if (!userId) {
+          alert('❌ No userId found!');
+          console.error('❌ No userId found in localStorage');
+          return;
+      }
+      
+      alert('4️⃣ Sending to backend...');
+      console.log('📤 Request data:', {
+          user_id: userId,
+          game_id: 'hexagon',
+          level: level,
+          seed: 'game_seed_' + Date.now(),
+          moves: gameMoves,
       });
       
-      console.log('✅ Score submitted:', response.data);
-      set({ gameMoves: [] });
-    } catch (err) {
-      console.error('Failed to submit score:', err);
-    }
+      try {
+          const response = await api.post('/game/submit', {
+              user_id: userId,
+              game_id: 'hexagon',
+              level: level,
+              seed: 'game_seed_' + Date.now(),
+              moves: gameMoves,
+          });
+          
+          alert('✅ Score submitted: ' + JSON.stringify(response.data));
+          console.log('✅ Score submitted:', response.data);
+          set({ gameMoves: [] });
+      } catch (err: any) {
+          alert('❌ Failed: ' + (err.message || JSON.stringify(err)));
+          console.error('❌ Failed to submit score:', err);
+      }
   },
+
 }));

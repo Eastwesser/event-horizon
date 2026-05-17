@@ -43,7 +43,9 @@ export function Home() {
   };
 
   const handleEndGame = () => {
+    console.log('End game button clicked');  // 👈 
     if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
+      console.log('Calling setGameOver with score:', score);  // 👈 
       setGameOver(score);
     }
   };
