@@ -34,6 +34,7 @@ interface GameState {
   checkLevelUp: () => void;
   checkGameOver: () => void;
   submitScore: () => Promise<void>;
+  setGameOver: (finalScore: number) => void;  // 👈 новый метод
 }
 
 // Флаг для предотвращения гонки (вне store)
@@ -47,9 +48,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   targetScore: 100,
   isGameOver: false,
   finalScore: 0,
+  gameMoves: [],
 
   initGame: () => {
-    gameMoves: [],
     // Создаём пустое поле
     const tiles: HexTile[] = HEX_GRID.map(coord => ({
       coord,
@@ -72,11 +73,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       level: 1, 
       targetScore: 100,
       isGameOver: false,
-      finalScore: 0 
+      finalScore: 0,
+      gameMoves: []
     });
   },
 
+  // Ручное завершение игры
+  setGameOver: (finalScore: number) => {
+    set({ isGameOver: true, finalScore });
+    get().submitScore();
+  },
+
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
+    // Сохраняем ход
     set({ gameMoves: [...get().gameMoves, { coord, trayId, timestamp: Date.now() }] });
 
     const { tray, tiles, isGameOver } = get();
@@ -93,11 +102,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     // Если гекс пустой
     if (targetTile.type === 'empty' as const) {
-      // Начинаем с новой стопки
       let totalCount = trayItem.count;
       let mergedTiles = [coord];
       
-      // Находим всех соседей того же типа
       const neighbors = getNeighbors(coord);
       for (const neighbor of neighbors) {
         const neighborTile = newTiles.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
@@ -107,16 +114,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
       
-      // Обновляем доску
       newTiles = newTiles.map(t => {
-        // Очищаем всех объединённых соседей
         if (mergedTiles.some(m => m.q === t.coord.q && m.r === t.coord.r)) {
           return { ...t, type: 'empty' as const, count: 0 };
         }
         return t;
       });
       
-      // Добавляем новую объединённую стопку
       newTiles = newTiles.map(t => {
         if (t.coord.q === coord.q && t.coord.r === coord.r) {
           return { ...t, type: trayItem.type, count: totalCount };
@@ -124,26 +128,20 @@ export const useGameStore = create<GameState>((set, get) => ({
         return t;
       });
       
-      // Удаляем использованную стопку из подноса
       newTray = tray.filter(t => t.id !== trayId);
-      
       set({ tiles: newTiles, tray: newTray });
       
       if (newTray.length === 0) {
         get().refreshTray();
       }
       
-      // Проверяем очистку стопки
       setTimeout(() => get().checkAndClearStack(coord), 50);
-      // Проверяем дальнейшие слияния
       setTimeout(() => get().mergeStacks(coord), 100);
     } 
-    // Если на клетке уже есть стопка того же типа
     else if (targetTile.type === trayItem.type) {
       let totalCount = targetTile.count + trayItem.count;
       let mergedTiles = [coord];
       
-      // Находим всех соседей того же типа (для объединения)
       const neighbors = getNeighbors(coord);
       for (const neighbor of neighbors) {
         const neighborTile = newTiles.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
@@ -153,16 +151,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
       
-      // Обновляем доску
       newTiles = newTiles.map(t => {
-        // Очищаем всех объединённых соседей
         if (mergedTiles.some(m => m.q === t.coord.q && m.r === t.coord.r)) {
           return { ...t, type: 'empty' as const, count: 0 };
         }
         return t;
       });
       
-      // Добавляем новую объединённую стопку
       newTiles = newTiles.map(t => {
         if (t.coord.q === coord.q && t.coord.r === coord.r) {
           return { ...t, type: trayItem.type, count: totalCount };
@@ -181,7 +176,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       setTimeout(() => get().mergeStacks(coord), 100);
     }
     
-    // Проверяем окончание игры и уровень
     setTimeout(() => get().checkGameOver(), 200);
     get().checkLevelUp();
   },
@@ -206,7 +200,6 @@ export const useGameStore = create<GameState>((set, get) => ({
           for (const neighbor of neighbors) {
             const neighborTile = newTiles.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
             if (neighborTile && neighborTile.type !== 'empty' as const && neighborTile.type === tile.type) {
-              // Объединяем соседнюю стопку в текущую
               newTiles = newTiles.map(t => {
                 if (t.coord.q === tile.coord.q && t.coord.r === tile.coord.r) {
                   return { ...t, count: t.count + neighborTile.count };
@@ -230,7 +223,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
       
-      // После всех слияний проверяем очистку
       const currentTiles = get().tiles;
       for (const tile of currentTiles) {
         if (tile.type !== 'empty' && tile.count >= 10) {
@@ -256,7 +248,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
       set({ tiles: newTiles });
       
-      // После очистки проверяем соседей для новых слияний
       setTimeout(() => {
         get().mergeStacks(coord);
       }, 50);
@@ -276,9 +267,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ tray: newTray });
   },
 
+  // Новая формула очков (менее щадящая)
   calculateScore: (count: number) => {
     const { score, level } = get();
-    const pointsEarned = count * level;
+    const pointsEarned = Math.floor(count * Math.sqrt(level)); // 5 блинов на 100 уровне ≈ 50 очков
     set({ score: score + pointsEarned });
   },
 
@@ -297,10 +289,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { tiles, tray, isGameOver } = get();
     if (isGameOver) return;
     
-    // Проверяем, есть ли свободные гексы
     const hasEmptyHex = tiles.some(t => t.type === 'empty');
     
-    // Проверяем, есть ли ходы (можно ли положить стопку с подноса)
     let hasValidMove = false;
     for (const stack of tray) {
       for (const hex of tiles) {
@@ -317,39 +307,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (gameOver) {
       const { score } = get();
       set({ isGameOver: true, finalScore: score });
-      get().submitScore(); // 👈 добавляем
+      get().submitScore();
     }
   },
 
-  // submitScore: async () => {
-  //   const { score, level, tiles, finalScore, isGameOver } = get();
-  //   if (!isGameOver) return;
-    
-  //   const userId = localStorage.getItem('userId');
-  //   if (!userId) return;
-    
-  //   // Собираем все ходы из игровой сессии (нужно сохранять)
-  //   const moves: any[] = [];
-  //   // TODO: сохранять ходы в отдельный массив во время игры
-    
-  //   try {
-  //     const response = await api.post('/game/submit', {
-  //       user_id: userId,
-  //       game_id: 'hexagon',
-  //       level: level,
-  //       seed: 'game_seed_' + Date.now(),
-  //       moves: moves,
-  //     });
-      
-  //     console.log('✅ Score submitted:', response.data);
-  //     // Можно показать уведомление о награде
-  //   } catch (err) {
-  //     console.error('Failed to submit score:', err);
-  //   }
-  // },
-
-submitScore: async () => {
-    const { score, level, gameMoves, finalScore, isGameOver } = get();
+  submitScore: async () => {
+    const { level, gameMoves, isGameOver } = get();
     if (!isGameOver) return;
     
     const userId = localStorage.getItem('userId');
@@ -365,10 +328,9 @@ submitScore: async () => {
       });
       
       console.log('✅ Score submitted:', response.data);
-      set({ gameMoves: [] }); // очищаем после отправки
+      set({ gameMoves: [] });
     } catch (err) {
       console.error('Failed to submit score:', err);
     }
   },
-
 }));
