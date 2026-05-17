@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { HexGrid } from './Game/HexGrid';
@@ -20,8 +20,7 @@ export function Home() {
     addPancakeToHex, 
     isGameOver, 
     finalScore,
-    setGameOver,      // добавим в store
-    submitScore       // из store
+    setGameOver
   } = useGameStore();
 
   useEffect(() => {
@@ -43,10 +42,9 @@ export function Home() {
     addPancakeToHex(item.id, coord);
   };
 
-  // Ручное завершение игры
   const handleEndGame = () => {
     if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
-      setGameOver(score);  // вызываем метод из store
+      setGameOver(score);
     }
   };
 
