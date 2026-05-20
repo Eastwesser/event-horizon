@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface LeaderboardEntry {
   rank: number;
@@ -10,20 +10,71 @@ interface LeaderboardEntry {
 export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
+    wsRef.current = ws;
+    
+    ws.onopen = () => {
+      console.log('✅ WebSocket connected');
+    };
+    
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setEntries(data.entries || []);
+        console.log('📥 WebSocket raw data:', data);
+        
+        // Если пришёл массив записей
+        if (Array.isArray(data)) {
+          setEntries(data);
+        }
+        // Если пришёл объект с полем entries
+        else if (data.entries && Array.isArray(data.entries)) {
+          setEntries(data.entries);
+        }
+        // Если пришло одно событие score.updated — нужно запросить полный топ
+        else if (data.user_id && data.score) {
+          console.log('📊 New score event, fetching full leaderboard...');
+          fetchLeaderboard();
+        }
+        // Если пришёл пустой объект — игнорируем
+        else {
+          console.log('⏳ Unknown data format, requesting leaderboard...');
+          fetchLeaderboard();
+        }
       } catch (e) {
         console.error('Failed to parse:', e);
       }
     };
-    ws.onerror = (error) => console.error('WebSocket error:', error);
-    return () => ws.close();
-  }, []); // без зависимости от isOpen — постоянно слушаем
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+    
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // Функция запроса топа через HTTP
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
+      if (response.ok) {
+        const data = await response.json();
+        setEntries(data.entries || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+    }
+  };
 
   return (
     <>
@@ -35,29 +86,28 @@ export function Leaderboard() {
         <div className="leaderboard-overlay">
           <div className="leaderboard-modal">
             <h2>🏆 Лучшие блинопёки 🏆</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Игрок</th>
-                  <th>Очки</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map(entry => (
-                  <tr key={entry.userId}>
-                    <td>{entry.rank}</td>
-                    <td>{entry.userEmail?.split('@')[0] || entry.userId.slice(0, 8)}</td>
-                    <td>{entry.score}</td>
-                  </tr>
-                ))}
-                {entries.length === 0 && (
+            {entries.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '2rem' }}>Нет данных</p>
+            ) : (
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan={3}>Нет данных</td>
+                    <th>#</th>
+                    <th>Игрок</th>
+                    <th>Очки</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {entries.map((entry, idx) => (
+                    <tr key={entry.userId || idx}>
+                      <td>{entry.rank || idx + 1}</td>
+                      <td>{entry.userEmail?.split('@')[0] || entry.userId?.slice(0, 8) || 'Аноним'}</td>
+                      <td>{entry.score}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
             <button onClick={() => setIsOpen(false)}>Закрыть</button>
           </div>
         </div>

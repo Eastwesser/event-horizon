@@ -87,7 +87,18 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
     // Сохраняем ход
-    set({ gameMoves: [...get().gameMoves, { coord, trayId, timestamp: Date.now() }] });
+    // set({ gameMoves: [...get().gameMoves, { coord, trayId, timestamp: Date.now() }] });
+
+    // set({ gameMoves: [...get().gameMoves, { 
+    //     fromX: coord.fromX ?? coord.q ?? 0,
+    //     fromY: coord.fromY ?? coord.r ?? 0,
+    //     toX: coord.toX ?? 0,
+    //     toY: coord.toY ?? 0,
+    //     timestamp: Date.now() 
+    // }] });
+
+    // Временное решение: не отправляем ходы
+    set({ gameMoves: [] }); // очищаем, не сохраняем ходы
 
     const { tray, tiles, isGameOver } = get();
     if (isGameOver) return;
@@ -313,6 +324,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
+
       // Alert для визуальной отладки
       alert('1️⃣ submitScore started');
       
@@ -328,7 +340,27 @@ export const useGameStore = create<GameState>((set, get) => ({
           return;
       }
       
-      const userId = localStorage.getItem('userId');
+      // const userId = localStorage.getItem('userId');
+
+           // 🔧 Восстанавливаем userId из токена, если его нет в localStorage
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+          const token = localStorage.getItem('accessToken');
+          if (token) {
+              try {
+                  const payload = JSON.parse(atob(token.split('.')[1]));
+                  userId = payload.user_id;
+                  if (userId) {
+                      localStorage.setItem('userId', userId);
+                      alert('🔧 Restored userId from token: ' + userId);
+                  }
+              } catch (e) {
+                  console.error('Failed to parse token', e);
+              }
+          }
+      }
+
+
       alert('3️⃣ userId from localStorage: ' + userId);
       console.log('📡 userId from localStorage:', userId);
       
@@ -356,16 +388,27 @@ export const useGameStore = create<GameState>((set, get) => ({
           game_id: 'hexagon',
           level: level,
           seed: 'game_seed_' + Date.now(),
-          moves: gameMoves,
+          // moves: gameMoves,
+          moves: [], // пока пустой массив
+
       });
       
       try {
+          console.log('📤 REQUEST DATA:', {
+              user_id: userId,
+              game_id: 'hexagon',
+              level: level,
+              seed: 'game_seed_' + Date.now(),
+              // moves: gameMoves,
+              moves: [], // пока пустой массив
+          });
           const response = await api.post('/game/submit', {
               user_id: userId,
               game_id: 'hexagon',
               level: level,
               seed: 'game_seed_' + Date.now(),
-              moves: gameMoves,
+              // moves: gameMoves,
+              moves: [], // пока пустой массив
           });
           
           alert('✅ Score submitted: ' + JSON.stringify(response.data));
