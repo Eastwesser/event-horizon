@@ -18,6 +18,7 @@ require (
 require (
 	event_horizon/services/auth v0.0.0
 	event_horizon/services/game v0.0.0
+	event_horizon/services/leaderboard v0.0.0
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
@@ -53,3 +54,5 @@ require (
 replace event_horizon/services/auth => ../auth
 
 replace event_horizon/services/game => ../game
+
+replace event_horizon/services/leaderboard => ../leaderboard
