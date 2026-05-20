@@ -289,6 +289,13 @@ func main() {
         c.JSON(http.StatusOK, gin.H{"lamps": 0, "tickets": 0})
     })
 
+    r.GET("/api/leaderboard", func(c *gin.Context) {
+        // Проксируем запрос к leaderboard сервису
+        gameID := c.Query("game_id")
+        limit := c.Query("limit")
+        // Вызываем leaderboard через gRPC или напрямую
+        c.JSON(http.StatusOK, gin.H{"entries": []})
+    })
 
     // Submit score
     r.POST("/api/game/submit", func(c *gin.Context) {
