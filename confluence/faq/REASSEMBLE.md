@@ -25,6 +25,11 @@ go build -o auth-service ./cmd/main.go
 
 # Запускаем всё
 cd ~/event_horizon
+
+make down
+
+make up
+
 make all
 
 # Проверяем статус
