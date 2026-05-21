@@ -31,6 +31,25 @@ export function Home() {
     }
   }, [token, navigate, initGame]);
 
+  useEffect(() => {
+      const token = localStorage.getItem('accessToken');
+      const savedUserId = localStorage.getItem('userId');
+      console.log('🔍 Home mount - token:', !!token, 'userId:', savedUserId);
+      
+      if (token && !savedUserId) {
+          try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              const userId = payload.user_id;
+              if (userId) {
+                  localStorage.setItem('userId', userId);
+                  console.log('🔧 Restored userId from token:', userId);
+              }
+          } catch (e) {
+              console.error('Failed to parse token', e);
+          }
+      }
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userId');

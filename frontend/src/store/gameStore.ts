@@ -341,9 +341,27 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
       
       // const userId = localStorage.getItem('userId');
+      let userId = localStorage.getItem('userId');
+      console.log('🎯 submitScore - userId from localStorage:', userId);
 
            // 🔧 Восстанавливаем userId из токена, если его нет в localStorage
-      let userId = localStorage.getItem('userId');
+      // let userId = localStorage.getItem('userId');
+      // if (!userId) {
+      //     const token = localStorage.getItem('accessToken');
+      //     if (token) {
+      //         try {
+      //             const payload = JSON.parse(atob(token.split('.')[1]));
+      //             userId = payload.user_id;
+      //             if (userId) {
+      //                 localStorage.setItem('userId', userId);
+      //                 alert('🔧 Restored userId from token: ' + userId);
+      //             }
+      //         } catch (e) {
+      //             console.error('Failed to parse token', e);
+      //         }
+      //     }
+      // }
+      // Если нет — пробуем достать из токена
       if (!userId) {
           const token = localStorage.getItem('accessToken');
           if (token) {
@@ -352,7 +370,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                   userId = payload.user_id;
                   if (userId) {
                       localStorage.setItem('userId', userId);
-                      alert('🔧 Restored userId from token: ' + userId);
+                      console.log('🔧 Fallback: restored userId from token:', userId);
                   }
               } catch (e) {
                   console.error('Failed to parse token', e);
@@ -360,6 +378,10 @@ export const useGameStore = create<GameState>((set, get) => ({
           }
       }
 
+      if (!userId) {
+          console.error('❌ No userId found!');
+          return;
+      }
 
       alert('3️⃣ userId from localStorage: ' + userId);
       console.log('📡 userId from localStorage:', userId);

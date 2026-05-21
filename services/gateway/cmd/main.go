@@ -3,6 +3,7 @@ package main
 import (
     "bytes"
     "context"
+    "encoding/base64"
     "encoding/json"
     "io"
     "log"
@@ -10,6 +11,7 @@ import (
     "os"
     "os/signal"
     "strconv"
+    "strings"
     "syscall"
     "time"
 
@@ -197,28 +199,65 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
+    // r.POST("/api/auth/login", func(c *gin.Context) {
+    //     var req authPb.LoginRequest
+    //     if err := c.ShouldBindJSON(&req); err != nil {
+    //         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    //         return
+    //     }
+    //     resp, err := authClient.GetClient().Login(c.Request.Context(), &req)
+    //     if err != nil {
+    //         c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+    //         return
+    //     }
+    //     eventData := map[string]interface{}{
+    //         "event": "user.logged_in",
+    //         "email": req.Email,
+    //     }
+    //     eventJSON, _ := json.Marshal(eventData)
+    //     js.Publish("event.user.logged_in", eventJSON)
+    //     c.JSON(http.StatusOK, gin.H{
+    //         "access_token": resp.AccessToken,
+    //         "token_type":   resp.TokenType,
+    //         "expires_in":   resp.ExpiresIn,
+    //         "user_id":      resp.UserId,
+    //     })
+    // })
     r.POST("/api/auth/login", func(c *gin.Context) {
         var req authPb.LoginRequest
         if err := c.ShouldBindJSON(&req); err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
+
         resp, err := authClient.GetClient().Login(c.Request.Context(), &req)
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
             return
         }
-        eventData := map[string]interface{}{
-            "event": "user.logged_in",
-            "email": req.Email,
+
+        // Если UserId пустой — достаём из токена
+        userId := resp.UserId
+        if userId == "" {
+            // Парсим токен
+            parts := strings.Split(resp.AccessToken, ".")
+            if len(parts) == 3 {
+                payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+                if err == nil {
+                    var claims map[string]interface{}
+                    json.Unmarshal(payload, &claims)
+                    if uid, ok := claims["user_id"].(string); ok {
+                        userId = uid
+                    }
+                }
+            }
         }
-        eventJSON, _ := json.Marshal(eventData)
-        js.Publish("event.user.logged_in", eventJSON)
+
         c.JSON(http.StatusOK, gin.H{
             "access_token": resp.AccessToken,
             "token_type":   resp.TokenType,
             "expires_in":   resp.ExpiresIn,
-            "user_id":      resp.UserId,
+            "user_id":      userId,
         })
     })
 
