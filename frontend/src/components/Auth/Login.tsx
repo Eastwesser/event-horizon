@@ -9,20 +9,38 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
       const response = await login(email, password);
-      const { access_token, user_id } = response.data;  // 👈 убедись, что сервер возвращает user_id
+      console.log('📡 Login response:', response.data);
+      
+      const { access_token, user_id } = response.data;
       
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
-        localStorage.setItem('userId', user_id);
-        // localStorage.setItem('userId', response.data.user_id);
-        alert('✅ Saved userId: ' + user_id);  // 👈 добавить
+        
+        // Сохраняем userId (он уже есть в ответе)
+        if (user_id) {
+          localStorage.setItem('userId', user_id);
+          console.log('✅ Saved userId:', user_id);
+        } else {
+          // Fallback: парсим из токена
+          try {
+            const payload = JSON.parse(atob(access_token.split('.')[1]));
+            const extractedUserId = payload.user_id;
+            if (extractedUserId) {
+              localStorage.setItem('userId', extractedUserId);
+              console.log('🔧 Extracted userId from token:', extractedUserId);
+            }
+          } catch (e) {
+            console.error('Failed to parse token', e);
+          }
+        }
+        
         window.dispatchEvent(new Event('storage'));
         navigate('/');
       }
