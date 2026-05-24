@@ -31,13 +31,15 @@ func (c Coord) Neighbors() []Coord {
 type Tile struct {
     Type  string  // "twix", "oreo", "snickers", "empty"
     Coord Coord
+    Count int     // 👈 количество блинов в стопке
 }
 
 // Board — гексагональная доска
 type Board struct {
-    Width  int
-    Height int
-    Tiles  map[Coord]*Tile
+    Width      int
+    Height     int
+    Tiles      map[Coord]*Tile
+    TotalScore int   // 👈 общий счёт за игру
 }
 
 // NewBoard создаёт доску заданного размера
@@ -46,6 +48,7 @@ func NewBoard(width, height int) *Board {
         Width:  width,
         Height: height,
         Tiles:  make(map[Coord]*Tile),
+        TotalScore: 0,
     }
     return board
 }
@@ -53,9 +56,18 @@ func NewBoard(width, height int) *Board {
 // SetTile устанавливает плитку на координату
 func (b *Board) SetTile(q, r int, tileType string) {
     coord := Coord{Q: q, R: r}
+    
+    // Если плитка уже существует, сохраняем её Count
+    existing := b.Tiles[coord]
+    count := 1 // новая стопка начинается с 1 блина
+    if existing != nil {
+        count = existing.Count
+    }
+    
     b.Tiles[coord] = &Tile{
         Type:  tileType,
         Coord: coord,
+        Count: count,
     }
 }
 
@@ -102,15 +114,57 @@ func (b *Board) IsValidMove(from, to Coord) bool {
     return true
 }
 
-// MoveTile перемещает плитку
+// MoveTile перемещает плитку и проверяет, не набралось ли 10
 func (b *Board) MoveTile(from, to Coord) error {
     if !b.IsValidMove(from, to) {
         return fmt.Errorf("invalid move: %v -> %v", from, to)
     }
 
     fromTile := b.GetTile(from.Q, from.R)
+    if fromTile == nil {
+        return fmt.Errorf("no tile at source")
+    }
+    
+    // Перемещаем стопку
+    movingCount := fromTile.Count
     b.SetTile(to.Q, to.R, fromTile.Type)
+    
+    // Увеличиваем счёт на целевой клетке
+    toTile := b.GetTile(to.Q, to.R)
+    if toTile != nil {
+        toTile.Count = movingCount
+    }
+    
     b.SetTile(from.Q, from.R, "empty")
+
+    // Проверяем стопку на целевой клетке
+    toTile = b.GetTile(to.Q, to.R)
+    if toTile != nil && toTile.Type != "empty" {
+        totalCount := toTile.Count
+        neighbors := to.Neighbors()
+        for _, neighbor := range neighbors {
+            neighborTile := b.GetTile(neighbor.Q, neighbor.R)
+            if neighborTile != nil && neighborTile.Type != "empty" && neighborTile.Type == toTile.Type {
+                totalCount += neighborTile.Count
+                b.SetTile(neighbor.Q, neighbor.R, "empty")
+            }
+        }
+        
+        // Обновляем стопку с новым суммарным Count
+        toTile.Count = totalCount
+        
+        // Если стопка достигла 10 или больше
+        if totalCount >= 10 {
+            b.TotalScore += totalCount
+            fmt.Printf("🎉 Cleared stack of %d! Total score: %d\n", totalCount, b.TotalScore)
+            b.SetTile(to.Q, to.R, "empty")
+        } else {
+            // Обновляем Count в tile
+            b.SetTile(to.Q, to.R, toTile.Type)
+            toTile.Count = totalCount
+        }
+    }
+    
     return nil
 }
 
@@ -219,29 +273,35 @@ func (b *Board) IsSolvable() bool {
     return false
 }
 
-// CalculateScore вычисляет очки (за совпадающие группы)
+// // CalculateScore вычисляет очки (за совпадающие группы)
+// func (b *Board) CalculateScore() int {
+//     visited := make(map[Coord]bool)
+//     totalScore := 0
+
+//     for coord, tile := range b.Tiles {
+//         if tile.Type == "empty" || visited[coord] {
+//             continue
+//         }
+
+//         // Находим группу одинаковых плиток
+//         group := b.findGroup(coord, tile.Type)
+//         for _, c := range group {
+//             visited[c] = true
+//         }
+
+//         // Очки за группу: размер группы в квадрате
+//         if len(group) >= 2 {
+//             totalScore += len(group) * len(group)
+//         }
+//     }
+//     fmt.Printf("🔢 CalculateScore: totalScore = %d\n", totalScore) // 👈 отладка
+//     return totalScore
+// }
+
+// CalculateScore возвращает общий счёт за игру
 func (b *Board) CalculateScore() int {
-    visited := make(map[Coord]bool)
-    totalScore := 0
-
-    for coord, tile := range b.Tiles {
-        if tile.Type == "empty" || visited[coord] {
-            continue
-        }
-
-        // Находим группу одинаковых плиток
-        group := b.findGroup(coord, tile.Type)
-        for _, c := range group {
-            visited[c] = true
-        }
-
-        // Очки за группу: размер группы в квадрате
-        if len(group) >= 2 {
-            totalScore += len(group) * len(group)
-        }
-    }
-
-    return totalScore
+    fmt.Printf("🔍 CalculateScore: TotalScore = %d\n", b.TotalScore)
+    return b.TotalScore
 }
 
 // findGroup находит все связанные плитки одного типа (BFS)
