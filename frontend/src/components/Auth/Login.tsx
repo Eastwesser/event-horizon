@@ -50,27 +50,24 @@ export function Login() {
         localStorage.setItem('accessToken', access_token);
         
         // Сохраняем userId
-        if (user_id) {
-            localStorage.setItem('userId', user_id);
-            console.log('✅ Saved userId:', user_id);
-        } else {
-            // Fallback: парсим из токена
+        let finalUserId = user_id;
+        if (!finalUserId) {
             try {
                 const payload = JSON.parse(atob(access_token.split('.')[1]));
-                const extractedUserId = payload.user_id;
-                if (extractedUserId) {
-                    localStorage.setItem('userId', extractedUserId);
-                    console.log('🔧 Extracted userId from token:', extractedUserId);
-                }
+                finalUserId = payload.user_id;
             } catch (e) {
                 console.error('Failed to parse token', e);
             }
         }
         
-        window.dispatchEvent(new Event('storage'));
+        if (finalUserId) {
+            localStorage.setItem('userId', finalUserId);
+            console.log('✅ Saved userId:', finalUserId);
+        }
+        
         navigate('/');
-      }
-      
+    }
+
     } catch (err: any) {
       const status = err.response?.status;
       const message = err.response?.data?.error || err.response?.data?.message;
