@@ -48,6 +48,7 @@ export function Leaderboard() {
       }
     };
     
+    
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
