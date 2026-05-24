@@ -9,7 +9,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -20,30 +20,57 @@ export function Login() {
       
       const { access_token, user_id } = response.data;
       
+      // if (access_token) {
+      //   localStorage.setItem('accessToken', access_token);
+      //   localStorage.setItem(`userId`, user_id)
+      //   console.log('✅ Saved userId:', user_id);
+
+      //   // Сохраняем userId (он уже есть в ответе)
+      //   if (user_id) {
+      //     localStorage.setItem('userId', user_id);
+      //     console.log('✅ Saved userId:', user_id);
+      //   } else {
+      //     // Fallback: парсим из токена
+      //     try {
+      //       const payload = JSON.parse(atob(access_token.split('.')[1]));
+      //       const extractedUserId = payload.user_id;
+      //       if (extractedUserId) {
+      //         localStorage.setItem('userId', extractedUserId);
+      //         console.log('🔧 Extracted userId from token:', extractedUserId);
+      //       }
+      //     } catch (e) {
+      //       console.error('Failed to parse token', e);
+      //     }
+      //   }
+        
+      //   window.dispatchEvent(new Event('storage'));
+      //   navigate('/');
+      // }
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
         
-        // Сохраняем userId (он уже есть в ответе)
+        // Сохраняем userId
         if (user_id) {
-          localStorage.setItem('userId', user_id);
-          console.log('✅ Saved userId:', user_id);
+            localStorage.setItem('userId', user_id);
+            console.log('✅ Saved userId:', user_id);
         } else {
-          // Fallback: парсим из токена
-          try {
-            const payload = JSON.parse(atob(access_token.split('.')[1]));
-            const extractedUserId = payload.user_id;
-            if (extractedUserId) {
-              localStorage.setItem('userId', extractedUserId);
-              console.log('🔧 Extracted userId from token:', extractedUserId);
+            // Fallback: парсим из токена
+            try {
+                const payload = JSON.parse(atob(access_token.split('.')[1]));
+                const extractedUserId = payload.user_id;
+                if (extractedUserId) {
+                    localStorage.setItem('userId', extractedUserId);
+                    console.log('🔧 Extracted userId from token:', extractedUserId);
+                }
+            } catch (e) {
+                console.error('Failed to parse token', e);
             }
-          } catch (e) {
-            console.error('Failed to parse token', e);
-          }
         }
         
         window.dispatchEvent(new Event('storage'));
         navigate('/');
       }
+      
     } catch (err: any) {
       const status = err.response?.status;
       const message = err.response?.data?.error || err.response?.data?.message;

@@ -35,20 +35,74 @@ func NewRedisLeaderboardRepo(addr string, db int) *RedisLeaderboardRepo {
     return &RedisLeaderboardRepo{client: client}
 }
 
+// func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error) {
+//     key := fmt.Sprintf("leaderboard:%s", gameID)
+    
+//     // 👇 Получаем текущий счёт
+//     currentScore, err := r.client.ZScore(ctx, key, userID).Result()
+//     if err == redis.Nil {
+//         currentScore = 0
+//     } else if err != nil {
+//         return 0, err
+//     }
+    
+//     newScore := int(currentScore) + score  // 👈 СУММИРУЕМ, а не заменяем
+    
+//     member := &redis.Z{
+//         Score:  float64(newScore),
+//         Member: userID,
+//     }
+    
+//     if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
+//         return 0, err
+//     }
+    
+//     // Добавляем в Sorted Set (score = очки)
+//     member := &redis.Z{
+//         Score:  float64(score),
+//         Member: userID,
+//     }
+//     err := r.client.ZAdd(ctx, key, *member).Err()
+//     if err != nil {
+//         return 0, err
+//     }
+    
+//     // Сохраняем email отдельно (для отображения в топе)
+//     emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
+//     r.client.HSet(ctx, emailKey, userID, userEmail)
+    
+//     // Получаем новый ранг
+//     rank, err := r.client.ZRevRank(ctx, key, userID).Result()
+//     if err != nil {
+//         return 0, err
+//     }
+    
+//     return int(rank) + 1, nil
+// }
+
 func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
     
-    // Добавляем в Sorted Set (score = очки)
-    member := &redis.Z{
-        Score:  float64(score),
-        Member: userID,
-    }
-    err := r.client.ZAdd(ctx, key, *member).Err()
-    if err != nil {
+    // Получаем текущий счёт
+    currentScore, err := r.client.ZScore(ctx, key, userID).Result()
+    if err == redis.Nil {
+        currentScore = 0
+    } else if err != nil {
         return 0, err
     }
     
-    // Сохраняем email отдельно (для отображения в топе)
+    newScore := int(currentScore) + score // СУММИРУЕМ
+    
+    // Обновляем счёт
+    member := &redis.Z{
+        Score:  float64(newScore),
+        Member: userID,
+    }
+    if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
+        return 0, err
+    }
+    
+    // Сохраняем email отдельно
     emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
     r.client.HSet(ctx, emailKey, userID, userEmail)
     
