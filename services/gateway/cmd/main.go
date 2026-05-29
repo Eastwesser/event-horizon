@@ -322,6 +322,7 @@ func main() {
             GameID string `json:"game_id"`
             Level  int32  `json:"level"`
             Score  int32  `json:"score"`
+            UserEmail string `json:"user_email"`
             Seed   string `json:"seed"`
             Moves  []struct {
                 FromX     int32 `json:"fromX"`
@@ -353,6 +354,7 @@ func main() {
             GameId: req.GameID,
             Level:  req.Level,
             Score:  req.Score,   // 👈 добавляем!
+            UserEmail: req.UserEmail,
             Seed:   req.Seed,
             Moves:  moves,
         })

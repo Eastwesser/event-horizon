@@ -17,8 +17,9 @@ message SubmitScoreRequest {
     string game_id = 2;            // "hexagon" или "flappy"
     int32 level = 3;               // уровень сложности (1-5)
     int32 score = 4;               // добавить счет
-    string seed = 5;               // начальное состояние (для валидации)
-    repeated Move moves = 6;       // все ходы игрока
+    string user_email = 5;
+    string seed = 6;               // начальное состояние (для валидации)
+    repeated Move moves = 7;       // все ходы игрока
     int32 client_version = 10;     // для отладки (опционально)
     
     // Поле score УДАЛЕНО — сервер сам вычислит!
