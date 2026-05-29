@@ -79,23 +79,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   // Ручное завершение игры
+  // setGameOver: (finalScore: number) => {
+  //   alert('setGameOver called! finalScore: ' + finalScore);
+  //   set({ isGameOver: true, finalScore });
+  //   get().submitScore();
+  // },
+
   setGameOver: (finalScore: number) => {
-    alert('setGameOver called! finalScore: ' + finalScore);
-    set({ isGameOver: true, finalScore });
+    console.log('🎮 setGameOver called with finalScore:', finalScore);
+    set({ isGameOver: true, finalScore, score: finalScore }); // 👈 обновляем score тоже
     get().submitScore();
   },
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
-    // Сохраняем ход
-    // set({ gameMoves: [...get().gameMoves, { coord, trayId, timestamp: Date.now() }] });
-
-    // set({ gameMoves: [...get().gameMoves, { 
-    //     fromX: coord.fromX ?? coord.q ?? 0,
-    //     fromY: coord.fromY ?? coord.r ?? 0,
-    //     toX: coord.toX ?? 0,
-    //     toY: coord.toY ?? 0,
-    //     timestamp: Date.now() 
-    // }] });
 
     // Временное решение: не отправляем ходы
     set({ gameMoves: [] }); // очищаем, не сохраняем ходы
@@ -424,15 +420,26 @@ export const useGameStore = create<GameState>((set, get) => ({
               // moves: gameMoves,
               moves: [], // пока пустой массив
           });
+
+          // const currentScore = get().score;
+          const currentScore = get().finalScore || get().score;
+          console.log('🎯 Score to send:', currentScore);
+          console.log('🔍 DEBUG - currentScore from store:', currentScore);
+          console.log('🔍 DEBUG - finalScore from store:', get().finalScore);
+          console.log('🎯 FINAL SCORE BEFORE SEND:', currentScore);
+          console.log('🎯 Current score before submit:', currentScore);
+
+          console.log('🎯 Current score from store:', currentScore);
+          
           const response = await api.post('/game/submit', {
               user_id: userId,
               game_id: 'hexagon',
               level: level,
+              score: currentScore,  // 👈 используем
               seed: 'game_seed_' + Date.now(),
-              // moves: gameMoves,
-              moves: [], // пока пустой массив
+              moves: [],
           });
-          
+                    
           alert('✅ Score submitted: ' + JSON.stringify(response.data));
           console.log('✅ Score submitted:', response.data);
           set({ gameMoves: [] });

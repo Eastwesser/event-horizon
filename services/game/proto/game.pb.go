@@ -26,8 +26,9 @@ type SubmitScoreRequest struct {
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`                        // "hexagon" или "flappy"
 	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`                                       // уровень сложности (1-5)
-	Seed          string                 `protobuf:"bytes,4,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
-	Moves         []*Move                `protobuf:"bytes,5,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
+	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`                                       // добавить счет
+	Seed          string                 `protobuf:"bytes,5,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
+	Moves         []*Move                `protobuf:"bytes,6,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
 	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"` // для отладки (опционально)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -80,6 +81,13 @@ func (x *SubmitScoreRequest) GetGameId() string {
 func (x *SubmitScoreRequest) GetLevel() int32 {
 	if x != nil {
 		return x.Level
+	}
+	return 0
+}
+
+func (x *SubmitScoreRequest) GetScore() int32 {
+	if x != nil {
+		return x.Score
 	}
 	return 0
 }
@@ -450,13 +458,14 @@ var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\"\xb9\x01\n" +
+	"\x10proto/game.proto\x12\x04game\"\xcf\x01\n" +
 	"\x12SubmitScoreRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x14\n" +
-	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x12\n" +
-	"\x04seed\x18\x04 \x01(\tR\x04seed\x12 \n" +
-	"\x05moves\x18\x05 \x03(\v2\n" +
+	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x14\n" +
+	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x12\n" +
+	"\x04seed\x18\x05 \x01(\tR\x04seed\x12 \n" +
+	"\x05moves\x18\x06 \x03(\v2\n" +
 	".game.MoveR\x05moves\x12%\n" +
 	"\x0eclient_version\x18\n" +
 	" \x01(\x05R\rclientVersion\"x\n" +

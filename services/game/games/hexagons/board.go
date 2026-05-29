@@ -116,6 +116,8 @@ func (b *Board) IsValidMove(from, to Coord) bool {
 
 // MoveTile перемещает плитку и проверяет, не набралось ли 10
 func (b *Board) MoveTile(from, to Coord) error {
+    fmt.Printf("🔷 MoveTile: from (%d,%d) to (%d,%d)\n", from.Q, from.R, to.Q, to.R)
+
     if !b.IsValidMove(from, to) {
         return fmt.Errorf("invalid move: %v -> %v", from, to)
     }
@@ -165,6 +167,7 @@ func (b *Board) MoveTile(from, to Coord) error {
         }
     }
     
+    fmt.Printf("🔷 Current TotalScore: %d\n", b.TotalScore)
     return nil
 }
 
