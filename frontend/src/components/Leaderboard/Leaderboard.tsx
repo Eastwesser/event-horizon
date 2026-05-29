@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 interface LeaderboardEntry {
   rank: number;
   userId: string;
-  userEmail: string;
+  user_email: string;
   score: number;
 }
 
@@ -12,6 +12,20 @@ export function Leaderboard() {
   const [isOpen, setIsOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
+  // Функция запроса топа через HTTP
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
+      if (response.ok) {
+        const data = await response.json();
+        setEntries(data.entries || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+    }
+  };
+
+  // WebSocket соединение (постоянное)
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
     wsRef.current = ws;
@@ -25,21 +39,14 @@ export function Leaderboard() {
         const data = JSON.parse(event.data);
         console.log('📥 WebSocket raw data:', data);
         
-        // Если пришёл массив записей
         if (Array.isArray(data)) {
           setEntries(data);
-        }
-        // Если пришёл объект с полем entries
-        else if (data.entries && Array.isArray(data.entries)) {
+        } else if (data.entries && Array.isArray(data.entries)) {
           setEntries(data.entries);
-        }
-        // Если пришло одно событие score.updated — нужно запросить полный топ
-        else if (data.user_id && data.score) {
+        } else if (data.user_id && data.score) {
           console.log('📊 New score event, fetching full leaderboard...');
           fetchLeaderboard();
-        }
-        // Если пришёл пустой объект — игнорируем
-        else {
+        } else {
           console.log('⏳ Unknown data format, requesting leaderboard...');
           fetchLeaderboard();
         }
@@ -47,7 +54,6 @@ export function Leaderboard() {
         console.error('Failed to parse:', e);
       }
     };
-    
     
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
@@ -64,38 +70,15 @@ export function Leaderboard() {
     };
   }, []);
 
-  // Функция запроса топа через HTTP
-  const fetchLeaderboard = async () => {
-    try {
-      const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
-      if (response.ok) {
-        const data = await response.json();
-        setEntries(data.entries || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch leaderboard:', err);
-    }
-  };
-
-  const fetchLeaderboard1 = async () => {
-      try {
-          const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
-          const data = await response.json();
-          setEntries(data.entries || []);
-      } catch (err) {
-          console.error('Failed to fetch:', err);
-      }
-  };
-
   // При открытии модального окна
   const handleOpen = () => {
-      setIsOpen(true);
-      fetchLeaderboard();
+    setIsOpen(true);
+    fetchLeaderboard();
   };
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="leaderboard-btn">
+      <button onClick={handleOpen} className="leaderboard-btn">
         🏆 Топ-10
       </button>
       
@@ -118,7 +101,7 @@ export function Leaderboard() {
                   {entries.map((entry, idx) => (
                     <tr key={entry.userId || idx}>
                       <td>{entry.rank || idx + 1}</td>
-                      <td>{entry.userEmail?.split('@')[0] || entry.userId?.slice(0, 8) || 'Аноним'}</td>
+                      <td>{entry.user_email?.split('@')[0] || entry.userId?.slice(0, 8) || 'Аноним'}</td>
                       <td>{entry.score}</td>
                     </tr>
                   ))}

@@ -39,9 +39,12 @@ export function Login() {
                 console.error('Failed to parse token', e);
             }
         }
+        window.dispatchEvent(new Event('storage'));  // 👈 добавляем
         navigate('/');
+        } else {
+            setError('Не удалось получить токен');
       }
-
+      
     } catch (err: any) {
       const status = err.response?.status;
       const message = err.response?.data?.error || err.response?.data?.message;
