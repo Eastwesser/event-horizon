@@ -85,10 +85,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   //   get().submitScore();
   // },
 
+  // setGameOver: (finalScore: number) => {
+  //   console.log('🎮 setGameOver called with finalScore:', finalScore);
+  //   set({ isGameOver: true, finalScore, score: finalScore }); // 👈 обновляем score тоже
+  //   get().submitScore();
+  // },
+
   setGameOver: (finalScore: number) => {
-    console.log('🎮 setGameOver called with finalScore:', finalScore);
-    set({ isGameOver: true, finalScore, score: finalScore }); // 👈 обновляем score тоже
-    get().submitScore();
+      console.log('🎮 setGameOver with finalScore:', finalScore);
+      console.log('🎮 Current store score:', get().score);
+      set({ isGameOver: true, finalScore, score: finalScore });
+      get().submitScore();
   },
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
@@ -423,6 +430,15 @@ export const useGameStore = create<GameState>((set, get) => ({
 
           // const currentScore = get().score;
           const currentScore = get().finalScore || get().score;
+          console.log('🎯 Sending score:', currentScore);
+          console.log('📤 Full request:', {
+              user_id: userId,
+              game_id: 'hexagon',
+              level: level,
+              score: currentScore,
+              seed: 'game_seed_' + Date.now(),
+              moves: [],
+          });
           console.log('🎯 Score to send:', currentScore);
           console.log('🔍 DEBUG - currentScore from store:', currentScore);
           console.log('🔍 DEBUG - finalScore from store:', get().finalScore);

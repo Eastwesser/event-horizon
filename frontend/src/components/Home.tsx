@@ -61,11 +61,18 @@ export function Home() {
     addPancakeToHex(item.id, coord);
   };
 
+  // const handleEndGame = () => {
+  //   console.log('End game button clicked');  // 👈 
+  //   if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
+  //     console.log('Calling setGameOver with score:', score);  // 👈 
+  //     setGameOver(score);
+  //   }
+  // };
+
   const handleEndGame = () => {
-    console.log('End game button clicked');  // 👈 
+    console.log('End game button clicked, current score:', score);
     if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
-      console.log('Calling setGameOver with score:', score);  // 👈 
-      setGameOver(score);
+        setGameOver(score);
     }
   };
 

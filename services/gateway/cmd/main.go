@@ -308,6 +308,7 @@ func main() {
 
     r.POST("/api/game/submit", func(c *gin.Context) {
         body, _ := c.GetRawData()
+        log.Printf("📥 Gateway received: %s", string(body))  // 👈 добавить
         c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
         cacheKey := string(body)
@@ -320,6 +321,7 @@ func main() {
             UserID string `json:"user_id"`
             GameID string `json:"game_id"`
             Level  int32  `json:"level"`
+            Score  int32  `json:"score"`
             Seed   string `json:"seed"`
             Moves  []struct {
                 FromX     int32 `json:"fromX"`
@@ -350,6 +352,7 @@ func main() {
             UserId: req.UserID,
             GameId: req.GameID,
             Level:  req.Level,
+            Score:  req.Score,   // 👈 добавляем!
             Seed:   req.Seed,
             Moves:  moves,
         })
