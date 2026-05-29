@@ -14,10 +14,11 @@ service GameService {
 
 message SubmitScoreRequest {
     string user_id = 1;
-    string game_id = 2;           // "hexagon" или "flappy"
+    string game_id = 2;            // "hexagon" или "flappy"
     int32 level = 3;               // уровень сложности (1-5)
-    string seed = 4;               // начальное состояние (для валидации)
-    repeated Move moves = 5;       // все ходы игрока
+    int32 score = 4;               // добавить счет
+    string seed = 5;               // начальное состояние (для валидации)
+    repeated Move moves = 6;       // все ходы игрока
     int32 client_version = 10;     // для отладки (опционально)
     
     // Поле score УДАЛЕНО — сервер сам вычислит!

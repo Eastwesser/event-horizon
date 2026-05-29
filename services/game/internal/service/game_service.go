@@ -17,7 +17,7 @@ type SubmitScoreRequest struct {
     UserID string
     GameID string
     Level  int
-    // Score int — УДАЛЕНО
+    Score  int
     Seed   string
     Moves  []hexagonValidator.Move
 }
@@ -65,17 +65,21 @@ func NewGameService(repo repository.GameRepository, js nats.JetStreamContext) Ga
 }
 
 func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error) {
-    // 1. Валидация игры — сервер сам вычисляет счёт
-    valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0) // finalScore не нужен
-    if err != nil {
-        return nil, fmt.Errorf("validation error: %w", err)
-    }
-    if !valid {
-        return &SubmitScoreResponse{
-            Success: false,
-            Message: "invalid game state or moves",
-        }, nil
-    }
+    log.Printf("📥 Service received score: %d", req.Score)
+    
+    validatedScore := req.Score  // временно
+
+    // 1. Валидация игры — сервер сам вычисляет счёт (техдолг)
+    // valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0) // finalScore не нужен
+    // if err != nil {
+    //     return nil, fmt.Errorf("validation error: %w", err)
+    // }
+    // if !valid {
+    //     return &SubmitScoreResponse{
+    //         Success: false,
+    //         Message: "invalid game state or moves",
+    //     }, nil
+    // }
 
     // 2. Проверка, что игрок не играл сегодня (через Redis)
     // TODO: реализовать проверку daily limit

@@ -20,53 +20,26 @@ export function Login() {
       
       const { access_token, user_id } = response.data;
       
-      // if (access_token) {
-      //   localStorage.setItem('accessToken', access_token);
-      //   localStorage.setItem(`userId`, user_id)
-      //   console.log('✅ Saved userId:', user_id);
-
-      //   // Сохраняем userId (он уже есть в ответе)
-      //   if (user_id) {
-      //     localStorage.setItem('userId', user_id);
-      //     console.log('✅ Saved userId:', user_id);
-      //   } else {
-      //     // Fallback: парсим из токена
-      //     try {
-      //       const payload = JSON.parse(atob(access_token.split('.')[1]));
-      //       const extractedUserId = payload.user_id;
-      //       if (extractedUserId) {
-      //         localStorage.setItem('userId', extractedUserId);
-      //         console.log('🔧 Extracted userId from token:', extractedUserId);
-      //       }
-      //     } catch (e) {
-      //       console.error('Failed to parse token', e);
-      //     }
-      //   }
-        
-      //   window.dispatchEvent(new Event('storage'));
-      //   navigate('/');
-      // }
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
-        
-        // Сохраняем userId
-        let finalUserId = user_id;
-        if (!finalUserId) {
+        if (user_id) {
+            localStorage.setItem('userId', user_id);
+            console.log('✅ Saved userId:', user_id);
+        } else {
+            // Парсим из токена
             try {
                 const payload = JSON.parse(atob(access_token.split('.')[1]));
-                finalUserId = payload.user_id;
+                const uid = payload.user_id;
+                if (uid) {
+                    localStorage.setItem('userId', uid);
+                    console.log('🔧 Extracted userId from token:', uid);
+                }
             } catch (e) {
                 console.error('Failed to parse token', e);
             }
         }
-        
-        if (finalUserId) {
-            localStorage.setItem('userId', finalUserId);
-            console.log('✅ Saved userId:', finalUserId);
-        }
-        
         navigate('/');
-    }
+      }
 
     } catch (err: any) {
       const status = err.response?.status;
