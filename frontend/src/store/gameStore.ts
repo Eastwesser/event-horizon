@@ -342,29 +342,10 @@ export const useGameStore = create<GameState>((set, get) => ({
           console.log('❌ Game not over, skipping submit');
           return;
       }
-      
-      // const userId = localStorage.getItem('userId');
+
       let userId = localStorage.getItem('userId');
       console.log('🎯 submitScore - userId from localStorage:', userId);
 
-           // 🔧 Восстанавливаем userId из токена, если его нет в localStorage
-      // let userId = localStorage.getItem('userId');
-      // if (!userId) {
-      //     const token = localStorage.getItem('accessToken');
-      //     if (token) {
-      //         try {
-      //             const payload = JSON.parse(atob(token.split('.')[1]));
-      //             userId = payload.user_id;
-      //             if (userId) {
-      //                 localStorage.setItem('userId', userId);
-      //                 alert('🔧 Restored userId from token: ' + userId);
-      //             }
-      //         } catch (e) {
-      //             console.error('Failed to parse token', e);
-      //         }
-      //     }
-      // }
-      // Если нет — пробуем достать из токена
       if (!userId) {
           const token = localStorage.getItem('accessToken');
           if (token) {
@@ -446,12 +427,15 @@ export const useGameStore = create<GameState>((set, get) => ({
           console.log('🎯 Current score before submit:', currentScore);
 
           console.log('🎯 Current score from store:', currentScore);
-          
+
+          const userEmail = localStorage.getItem('userEmail') || '';
+
           const response = await api.post('/game/submit', {
               user_id: userId,
               game_id: 'hexagon',
               level: level,
               score: currentScore,  // 👈 используем
+              user_email: userEmail,  // 👈 добавляем
               seed: 'game_seed_' + Date.now(),
               moves: [],
           });

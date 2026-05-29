@@ -77,6 +77,22 @@ export function Leaderboard() {
     }
   };
 
+  const fetchLeaderboard1 = async () => {
+      try {
+          const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
+          const data = await response.json();
+          setEntries(data.entries || []);
+      } catch (err) {
+          console.error('Failed to fetch:', err);
+      }
+  };
+
+  // При открытии модального окна
+  const handleOpen = () => {
+      setIsOpen(true);
+      fetchLeaderboard();
+  };
+
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="leaderboard-btn">

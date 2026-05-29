@@ -64,6 +64,7 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
         GameID:    req.GameId,
         Level:     int(req.Level),
         Score:     int(req.Score),  // 👈 добавляем!
+        UserEmail: req.UserEmail,  // 👈 добавляем
         Seed:      req.Seed,
         Moves:     moves,
     })

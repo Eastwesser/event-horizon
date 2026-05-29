@@ -24,7 +24,8 @@ export function Login() {
         localStorage.setItem('accessToken', access_token);
         if (user_id) {
             localStorage.setItem('userId', user_id);
-            console.log('✅ Saved userId:', user_id);
+            localStorage.setItem('userEmail', email);
+            console.log('✅ Saved userId:', user_id, 'email:', email);
         } else {
             // Парсим из токена
             try {

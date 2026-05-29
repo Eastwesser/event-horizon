@@ -18,6 +18,7 @@ type SubmitScoreRequest struct {
     GameID string
     Level  int
     Score  int
+    UserEmail string  // 👈 добавляем
     Seed   string
     Moves  []hexagonValidator.Move
 }
@@ -104,7 +105,7 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     event := map[string]interface{}{
         "user_id":    req.UserID,
         "game_id":    req.GameID,
-        "user_email": "", // TODO: получить из Auth или gateway
+        "user_email": req.UserEmail,
         "score":      validatedScore,
         "is_record":  isNewRecord,
         "level":      req.Level,
