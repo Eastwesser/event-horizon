@@ -3,6 +3,7 @@ package repository
 import (
     "context"
     "fmt"
+    "log"
     "time"
 
     "github.com/redis/go-redis/v9"
@@ -39,7 +40,7 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
     key := fmt.Sprintf("leaderboard:%s", gameID)
     emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
     
-    // Всегда обновляем email (даже если пустой)
+    // Сохраняем email
     if userEmail != "" {
         r.client.HSet(ctx, emailKey, userID, userEmail)
     }
@@ -52,7 +53,8 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
         return 0, err
     }
     
-    newScore := int(currentScore) + score // СУММИРУЕМ
+    newScore := int(currentScore) + score
+    log.Printf("💰 Summing score for %s: %d + %d = %d", userID, int(currentScore), score, newScore)
     
     // Обновляем счёт
     member := &redis.Z{
@@ -63,7 +65,6 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
         return 0, err
     }
     
-    // Получаем новый ранг
     rank, err := r.client.ZRevRank(ctx, key, userID).Result()
     if err != nil {
         return 0, err
@@ -81,8 +82,19 @@ func (r *RedisLeaderboardRepo) UpdateScoreOnly(ctx context.Context, gameID, user
         r.client.HSet(ctx, emailKey, userID, userEmail)
     }
     
+    // Получаем текущий счёт
+    currentScore, err := r.client.ZScore(ctx, key, userID).Result()
+    if err == redis.Nil {
+        currentScore = 0
+    } else if err != nil {
+        return err
+    }
+    
+    newScore := int(currentScore) + score  // СУММИРУЕМ
+    log.Printf("💰 SUMMING (fast): user=%s, current=%.0f, add=%d, new=%d", userID, currentScore, score, newScore)
+    
     member := &redis.Z{
-        Score:  float64(score),
+        Score:  float64(newScore),
         Member: userID,
     }
     if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
