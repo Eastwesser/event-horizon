@@ -65,27 +65,94 @@ func NewGameService(repo repository.GameRepository, js nats.JetStreamContext) Ga
     }
 }
 
+// func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error) {
+//     log.Printf("📥 Service received score: %d", req.Score)
+    
+//     validatedScore := req.Score  // временно
+
+//     // 1. Валидация игры — сервер сам вычисляет счёт (техдолг)
+//     // valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0) // finalScore не нужен
+//     // if err != nil {
+//     //     return nil, fmt.Errorf("validation error: %w", err)
+//     // }
+//     // if !valid {
+//     //     return &SubmitScoreResponse{
+//     //         Success: false,
+//     //         Message: "invalid game state or moves",
+//     //     }, nil
+//     // }
+
+//     // 2. Проверка, что игрок не играл сегодня (через Redis)
+//     // TODO: реализовать проверку daily limit
+
+//     // 3. Получаем текущий рекорд игрока
+//     currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID)
+//     if err != nil {
+//         log.Printf("Failed to get highscore: %v", err)
+//     }
+
+//     isNewRecord := validatedScore > currentHighscore
+
+//     // 4. Сохраняем новый рекорд, если нужно
+//     if isNewRecord {
+//         err = s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore)
+//         if err != nil {
+//             log.Printf("Failed to save highscore: %v", err)
+//         }
+//     }
+
+//     // 5. Публикуем событие в NATS (всегда, даже если не рекорд?)
+//     event := map[string]interface{}{
+//         "user_id":    req.UserID,
+//         "game_id":    req.GameID,
+//         "user_email": req.UserEmail,
+//         "score":      validatedScore,
+//         "is_record":  isNewRecord,
+//         "level":      req.Level,
+//         "lamps_earned":  lampsEarned,   // 👈 добавить
+//         "tickets_earned": ticketsEarned, // 👈 добавить
+//         "timestamp":  time.Now().Unix(),
+//     }
+//     eventData, _ := json.Marshal(event)
+    
+//     _, err = s.js.Publish("score.updated", eventData)
+//     if err != nil {
+//         log.Printf("Failed to publish to NATS: %v", err)
+//     } else {
+//         log.Printf("📡 Published score.updated: user=%s, game=%s, score=%d, is_record=%v",
+//             req.UserID, req.GameID, validatedScore, isNewRecord)
+//     }
+
+//     // 6. Получаем ранг из leaderboard (опционально, через gRPC)
+//     rank := 0
+//     // TODO: вызвать leaderboard.GetPlayerRank
+
+//     // 7. Начисляем награды
+//     lampsEarned := 10  // базовая награда за игру
+//     ticketsEarned := 0
+//     if isNewRecord {
+//         ticketsEarned = validatedScore / 100
+//         if ticketsEarned > 100 {
+//             ticketsEarned = 100
+//         }
+//     }
+
+//     return &SubmitScoreResponse{
+//         Success:       true,
+//         NewHighscore:  validatedScore,
+//         Rank:          rank,
+//         Message:       "score submitted successfully",
+//         LampsEarned:   lampsEarned,
+//         TicketsEarned: ticketsEarned,
+//     }, nil
+// }
+
 func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error) {
     log.Printf("📥 Service received score: %d", req.Score)
     
-    validatedScore := req.Score  // временно
+    validatedScore := req.Score
 
-    // 1. Валидация игры — сервер сам вычисляет счёт (техдолг)
-    // valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0) // finalScore не нужен
-    // if err != nil {
-    //     return nil, fmt.Errorf("validation error: %w", err)
-    // }
-    // if !valid {
-    //     return &SubmitScoreResponse{
-    //         Success: false,
-    //         Message: "invalid game state or moves",
-    //     }, nil
-    // }
-
-    // 2. Проверка, что игрок не играл сегодня (через Redis)
-    // TODO: реализовать проверку daily limit
-
-    // 3. Получаем текущий рекорд игрока
+    // Получаем текущий рекорд
     currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID)
     if err != nil {
         log.Printf("Failed to get highscore: %v", err)
@@ -93,7 +160,7 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
 
     isNewRecord := validatedScore > currentHighscore
 
-    // 4. Сохраняем новый рекорд, если нужно
+    // Сохраняем рекорд
     if isNewRecord {
         err = s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore)
         if err != nil {
@@ -101,34 +168,8 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         }
     }
 
-    // 5. Публикуем событие в NATS (всегда, даже если не рекорд?)
-    event := map[string]interface{}{
-        "user_id":    req.UserID,
-        "game_id":    req.GameID,
-        "user_email": req.UserEmail,
-        "score":      validatedScore,
-        "is_record":  isNewRecord,
-        "level":      req.Level,
-        "lamps_earned":  lampsEarned,   // 👈 добавить
-        "tickets_earned": ticketsEarned, // 👈 добавить
-        "timestamp":  time.Now().Unix(),
-    }
-    eventData, _ := json.Marshal(event)
-    
-    _, err = s.js.Publish("score.updated", eventData)
-    if err != nil {
-        log.Printf("Failed to publish to NATS: %v", err)
-    } else {
-        log.Printf("📡 Published score.updated: user=%s, game=%s, score=%d, is_record=%v",
-            req.UserID, req.GameID, validatedScore, isNewRecord)
-    }
-
-    // 6. Получаем ранг из leaderboard (опционально, через gRPC)
-    rank := 0
-    // TODO: вызвать leaderboard.GetPlayerRank
-
-    // 7. Начисляем награды
-    lampsEarned := 10  // базовая награда за игру
+    // 👇 НАЧИСЛЯЕМ НАГРАДЫ (до публикации)
+    lampsEarned := 10
     ticketsEarned := 0
     if isNewRecord {
         ticketsEarned = validatedScore / 100
@@ -137,10 +178,36 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         }
     }
 
+    log.Printf("🎯 isNewRecord=%v, validatedScore=%d, lamps=%d, tickets=%d", 
+    isNewRecord, validatedScore, lampsEarned, ticketsEarned)
+
+    // 👇 ПУБЛИКУЕМ СОБЫТИЕ (после того как награды вычислены)
+    event := map[string]interface{}{
+        "user_id":         req.UserID,
+        "game_id":         req.GameID,
+        "user_email":      req.UserEmail,
+        "score":           validatedScore,
+        "is_record":       isNewRecord,
+        "level":           req.Level,
+        "lamps_earned":    lampsEarned,
+        "tickets_earned":  ticketsEarned,
+        "timestamp":       time.Now().Unix(),
+    }
+    eventData, _ := json.Marshal(event)
+    
+    _, err = s.js.Publish("score.updated", eventData)
+    if err != nil {
+        log.Printf("Failed to publish to NATS: %v", err)
+    } else {
+        log.Printf("📡 Published score.updated: user=%s, game=%s, score=%d, is_record=%v, lamps=%d, tickets=%d",
+            req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
+    }
+
+    // Ответ
     return &SubmitScoreResponse{
         Success:       true,
         NewHighscore:  validatedScore,
-        Rank:          rank,
+        Rank:          0,
         Message:       "score submitted successfully",
         LampsEarned:   lampsEarned,
         TicketsEarned: ticketsEarned,
