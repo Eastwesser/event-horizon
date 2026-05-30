@@ -87,7 +87,8 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
         ref={svgRef}
         className="hex-grid-svg"
         width="100%" 
-        height="auto" 
+        // height="auto" 
+        height="100%"
         viewBox={`${-50} ${-50} ${width + 100} ${height + 100}`}
         style={{ maxWidth: '900px', margin: '0 auto', cursor: isOver ? 'copy' : 'default' }}
       >

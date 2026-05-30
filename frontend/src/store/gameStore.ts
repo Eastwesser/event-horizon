@@ -487,6 +487,27 @@ export const useGameStore = create<GameState>((set, get) => ({
             moves: [],  // 👈 временно пустой массив
             // moves: get().gameMoves,  // 👈 отправляем реальные ходы
           });  
+          
+          // В конце игры, когда сохраняется рекорд
+          // В submitScore
+          // После успешного ответа от API
+          if (response.status === 200 || response.data) {
+            // Сохраняем статистику в localStorage
+            const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+            const currentBest = savedScores.hexagon || 0;
+
+            if (currentScore > currentBest) {
+              savedScores.hexagon = currentScore;
+              localStorage.setItem('gameScores', JSON.stringify(savedScores));
+            }
+            
+            const played = parseInt(localStorage.getItem('hexagonGamesPlayed') || '0');
+            localStorage.setItem('hexagonGamesPlayed', String(played + 1));
+            
+            // Сохраняем общий счёт (суммируем все игры)
+            const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
+            localStorage.setItem('totalScore', String(totalScore + currentScore));
+          }
 
           alert('✅ Score submitted: ' + JSON.stringify(response.data));
           console.log('✅ Score submitted:', response.data);
