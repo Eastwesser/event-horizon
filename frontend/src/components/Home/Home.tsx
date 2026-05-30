@@ -4,7 +4,7 @@ const games = [
   {
     id: 'hexagon',
     name: 'Никуся — Блинопёк',
-    description: 'Гексагональный пазл с блинами',
+    description: 'Гексагональный пазл с блинчиками',
     icon: '🥞',
     path: '/game/hexagon',
     available: true,
@@ -27,7 +27,7 @@ const games = [
   },
   {
     id: 'memory',
-    name: 'Меморина',
+    name: 'Мемония',
     description: 'Найди пары карт',
     icon: '🎴',
     path: '/game/memory',
