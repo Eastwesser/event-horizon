@@ -35,7 +35,7 @@ make all
 # Проверяем статус
 make status
 
-# FULL RESTART
+# FULL RESTART (clears db!)
 
 cd ~/event_horizon
 
