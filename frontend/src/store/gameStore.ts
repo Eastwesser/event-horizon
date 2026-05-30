@@ -14,6 +14,14 @@ interface TrayStack {
   count: number;
 }
 
+interface GameMove {
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    timestamp: number;
+}
+
 interface GameState {
   score: number;
   level: number;
@@ -22,8 +30,9 @@ interface GameState {
   targetScore: number;
   isGameOver: boolean;
   finalScore: number;
-  gameMoves: any[];
-  
+  // gameMoves: any[];
+  gameMoves: GameMove[];
+
   // Actions
   initGame: () => void;
   addPancakeToHex: (trayId: number, coord: HexCoord) => void;
@@ -100,8 +109,18 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
 
-    // Временное решение: не отправляем ходы
-    set({ gameMoves: [] }); // очищаем, не сохраняем ходы
+    // Сохраняем ход в правильном формате для бэкенда
+    const move = {
+        fromX: 0,     // откуда? (поднос, не клетка)
+        fromY: 0,
+        toX: coord.q,
+        toY: coord.r,
+        timestamp: Date.now(),
+    };
+    set({ gameMoves: [...get().gameMoves, move] });
+
+    // // Временное решение: не отправляем ходы
+    // set({ gameMoves: [] }); // очищаем, не сохраняем ходы
 
     const { tray, tiles, isGameOver } = get();
     if (isGameOver) return;
@@ -394,8 +413,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           game_id: 'hexagon',
           level: level,
           seed: 'game_seed_' + Date.now(),
-          // moves: gameMoves,
-          moves: [], // пока пустой массив
+          moves: gameMoves,
+          // moves: [], // пока пустой массив
 
       });
       
@@ -405,7 +424,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               game_id: 'hexagon',
               level: level,
               seed: 'game_seed_' + Date.now(),
-              // moves: gameMoves,
+              // moves: get().gameMoves,  // 👈 отправляем реальные ходы
               moves: [], // пока пустой массив
           });
 
@@ -418,7 +437,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               level: level,
               score: currentScore,
               seed: 'game_seed_' + Date.now(),
-              moves: [],
+              moves: get().gameMoves,  // 👈 отправляем реальные ходы
           });
           console.log('🎯 Score to send:', currentScore);
           console.log('🔍 DEBUG - currentScore from store:', currentScore);
@@ -430,16 +449,25 @@ export const useGameStore = create<GameState>((set, get) => ({
 
           const userEmail = localStorage.getItem('userEmail') || '';
 
+          // const response = await api.post('/game/submit', {
+          //     user_id: userId,
+          //     game_id: 'hexagon',
+          //     level: level,
+          //     score: currentScore,  // 👈 используем
+          //     user_email: userEmail,  // 👈 добавляем
+          //     seed: 'game_seed_' + Date.now(),
+          //     moves: get().gameMoves,  // 👈 отправляем реальные ходы
+          // });
           const response = await api.post('/game/submit', {
-              user_id: userId,
-              game_id: 'hexagon',
-              level: level,
-              score: currentScore,  // 👈 используем
-              user_email: userEmail,  // 👈 добавляем
-              seed: 'game_seed_' + Date.now(),
-              moves: [],
-          });
-                    
+            user_id: userId,
+            game_id: 'hexagon',
+            level: level,
+            score: currentScore,
+            user_email: userEmail,
+            seed: 'game_seed_' + Date.now(),
+            moves: [],  // 👈 временно пустой массив
+          });  
+
           alert('✅ Score submitted: ' + JSON.stringify(response.data));
           console.log('✅ Score submitted:', response.data);
           set({ gameMoves: [] });
