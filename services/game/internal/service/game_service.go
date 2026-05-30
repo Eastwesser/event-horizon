@@ -148,6 +148,18 @@ func NewGameService(repo repository.GameRepository, js nats.JetStreamContext) Ga
 // }
 
 func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error) {
+    // Включаем валидацию
+    valid, validatedScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, 0)
+    if err != nil {
+        return nil, fmt.Errorf("validation error: %w", err)
+    }
+    if !valid {
+        return &SubmitScoreResponse{
+            Success: false,
+            Message: "invalid game state or moves",
+        }, nil
+    }    
+
     log.Printf("📥 Service received score: %d", req.Score)
     
     validatedScore := req.Score
