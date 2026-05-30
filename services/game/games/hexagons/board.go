@@ -2,8 +2,82 @@ package hexagons
 
 import (
     "fmt"
+    "log"
+    "log/slog"
     "math/rand"
+    "os"
 )
+
+var logger *slog.Logger
+
+func init() {
+    logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+    }))
+}
+
+// MoveTile — с логами
+func (b *Board) MoveTile(from, to Coord) error {
+    logger.Debug("MoveTile called", "from", from, "to", to)
+    
+    if !b.IsValidMove(from, to) {
+        logger.Warn("Invalid move", "from", from, "to", to)
+        return fmt.Errorf("invalid move: %v -> %v", from, to)
+    }
+
+    fromTile := b.GetTile(from.Q, from.R)
+    if fromTile == nil {
+        return fmt.Errorf("no tile at source")
+    }
+    
+    movingCount := fromTile.Count
+    logger.Debug("Moving tile", "type", fromTile.Type, "count", movingCount)
+    
+    b.SetTile(to.Q, to.R, fromTile.Type)
+    b.SetTile(from.Q, from.R, "empty")
+
+    toTile := b.GetTile(to.Q, to.R)
+    if toTile != nil && toTile.Type != "empty" {
+        totalCount := toTile.Count
+        neighbors := to.Neighbors()
+        
+        for _, neighbor := range neighbors {
+            neighborTile := b.GetTile(neighbor.Q, neighbor.R)
+            if neighborTile != nil && neighborTile.Type != "empty" && neighborTile.Type == toTile.Type {
+                logger.Debug("Merging neighbor", "neighbor", neighbor, "count", neighborTile.Count)
+                totalCount += neighborTile.Count
+                b.SetTile(neighbor.Q, neighbor.R, "empty")
+            }
+        }
+        
+        toTile.Count = totalCount
+        if totalCount >= 10 {
+            b.TotalScore += totalCount
+            logger.Info("🎉 Stack cleared!", 
+                "count", totalCount, 
+                "new_total", b.TotalScore,
+                "total_score_before", b.TotalScore - totalCount,
+            )
+        }
+        // if totalCount >= 10 {
+        //     b.TotalScore += totalCount
+        //     logger.Info("🎉 Stack cleared!", "count", totalCount, "new_total", b.TotalScore)
+        //     b.SetTile(to.Q, to.R, "empty")
+        // } else {
+        //     logger.Debug("Stack updated", "count", totalCount)
+        // }
+    }
+    
+    logger.Debug("MoveTile completed", "total_score", b.TotalScore)
+    log.Printf("💰 TotalScore after move: %d", b.TotalScore)
+    return nil
+}
+
+// CalculateScore — с логом
+func (b *Board) CalculateScore() int {
+    logger.Debug("CalculateScore called", "total_score", b.TotalScore)
+    return b.TotalScore
+}
 
 // Coord — кубические координаты гексагона
 type Coord struct {
@@ -114,62 +188,62 @@ func (b *Board) IsValidMove(from, to Coord) bool {
     return true
 }
 
-// MoveTile перемещает плитку и проверяет, не набралось ли 10
-func (b *Board) MoveTile(from, to Coord) error {
-    fmt.Printf("🔷 MoveTile: from (%d,%d) to (%d,%d)\n", from.Q, from.R, to.Q, to.R)
+// // MoveTile перемещает плитку и проверяет, не набралось ли 10
+// func (b *Board) MoveTile(from, to Coord) error {
+//     fmt.Printf("🔷 MoveTile: from (%d,%d) to (%d,%d)\n", from.Q, from.R, to.Q, to.R)
 
-    if !b.IsValidMove(from, to) {
-        return fmt.Errorf("invalid move: %v -> %v", from, to)
-    }
+//     if !b.IsValidMove(from, to) {
+//         return fmt.Errorf("invalid move: %v -> %v", from, to)
+//     }
 
-    fromTile := b.GetTile(from.Q, from.R)
-    if fromTile == nil {
-        return fmt.Errorf("no tile at source")
-    }
+//     fromTile := b.GetTile(from.Q, from.R)
+//     if fromTile == nil {
+//         return fmt.Errorf("no tile at source")
+//     }
     
-    // Перемещаем стопку
-    movingCount := fromTile.Count
-    b.SetTile(to.Q, to.R, fromTile.Type)
+//     // Перемещаем стопку
+//     movingCount := fromTile.Count
+//     b.SetTile(to.Q, to.R, fromTile.Type)
     
-    // Увеличиваем счёт на целевой клетке
-    toTile := b.GetTile(to.Q, to.R)
-    if toTile != nil {
-        toTile.Count = movingCount
-    }
+//     // Увеличиваем счёт на целевой клетке
+//     toTile := b.GetTile(to.Q, to.R)
+//     if toTile != nil {
+//         toTile.Count = movingCount
+//     }
     
-    b.SetTile(from.Q, from.R, "empty")
+//     b.SetTile(from.Q, from.R, "empty")
 
-    // Проверяем стопку на целевой клетке
-    toTile = b.GetTile(to.Q, to.R)
-    if toTile != nil && toTile.Type != "empty" {
-        totalCount := toTile.Count
-        neighbors := to.Neighbors()
-        for _, neighbor := range neighbors {
-            neighborTile := b.GetTile(neighbor.Q, neighbor.R)
-            if neighborTile != nil && neighborTile.Type != "empty" && neighborTile.Type == toTile.Type {
-                totalCount += neighborTile.Count
-                b.SetTile(neighbor.Q, neighbor.R, "empty")
-            }
-        }
+//     // Проверяем стопку на целевой клетке
+//     toTile = b.GetTile(to.Q, to.R)
+//     if toTile != nil && toTile.Type != "empty" {
+//         totalCount := toTile.Count
+//         neighbors := to.Neighbors()
+//         for _, neighbor := range neighbors {
+//             neighborTile := b.GetTile(neighbor.Q, neighbor.R)
+//             if neighborTile != nil && neighborTile.Type != "empty" && neighborTile.Type == toTile.Type {
+//                 totalCount += neighborTile.Count
+//                 b.SetTile(neighbor.Q, neighbor.R, "empty")
+//             }
+//         }
         
-        // Обновляем стопку с новым суммарным Count
-        toTile.Count = totalCount
+//         // Обновляем стопку с новым суммарным Count
+//         toTile.Count = totalCount
         
-        // Если стопка достигла 10 или больше
-        if totalCount >= 10 {
-            b.TotalScore += totalCount
-            fmt.Printf("🎉 Cleared stack of %d! Total score: %d\n", totalCount, b.TotalScore)
-            b.SetTile(to.Q, to.R, "empty")
-        } else {
-            // Обновляем Count в tile
-            b.SetTile(to.Q, to.R, toTile.Type)
-            toTile.Count = totalCount
-        }
-    }
+//         // Если стопка достигла 10 или больше
+//         if totalCount >= 10 {
+//             b.TotalScore += totalCount
+//             fmt.Printf("🎉 Cleared stack of %d! Total score: %d\n", totalCount, b.TotalScore)
+//             b.SetTile(to.Q, to.R, "empty")
+//         } else {
+//             // Обновляем Count в tile
+//             b.SetTile(to.Q, to.R, toTile.Type)
+//             toTile.Count = totalCount
+//         }
+//     }
     
-    fmt.Printf("🔷 Current TotalScore: %d\n", b.TotalScore)
-    return nil
-}
+//     fmt.Printf("🔷 Current TotalScore: %d\n", b.TotalScore)
+//     return nil
+// }
 
 // GenerateInitialBoard генерирует начальное состояние (детерминированно по seed)
 func GenerateInitialBoard(seed string, level int) (*Board, error) {
@@ -301,11 +375,11 @@ func (b *Board) IsSolvable() bool {
 //     return totalScore
 // }
 
-// CalculateScore возвращает общий счёт за игру
-func (b *Board) CalculateScore() int {
-    fmt.Printf("🔍 CalculateScore: TotalScore = %d\n", b.TotalScore)
-    return b.TotalScore
-}
+// // CalculateScore возвращает общий счёт за игру
+// func (b *Board) CalculateScore() int {
+//     fmt.Printf("🔍 CalculateScore: TotalScore = %d\n", b.TotalScore)
+//     return b.TotalScore
+// }
 
 // findGroup находит все связанные плитки одного типа (BFS)
 func (b *Board) findGroup(start Coord, tileType string) []Coord {

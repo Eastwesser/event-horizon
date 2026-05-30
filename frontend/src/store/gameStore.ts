@@ -108,16 +108,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
-
-    // Сохраняем ход в правильном формате для бэкенда
+    console.log('🔹 addPancakeToHex called with trayId:', trayId, 'coord:', coord);
     const move = {
-        fromX: 0,     // откуда? (поднос, не клетка)
+        fromX: 0,
         fromY: 0,
         toX: coord.q,
         toY: coord.r,
         timestamp: Date.now(),
     };
+    console.log('🔹 Adding move:', move);
+    console.log('🔹 Current gameMoves length:', get().gameMoves.length);
     set({ gameMoves: [...get().gameMoves, move] });
+    console.log('📝 Saving move:', move);
+
 
     // // Временное решение: не отправляем ходы
     // set({ gameMoves: [] }); // очищаем, не сохраняем ходы
@@ -346,7 +349,20 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
-
+      let movesToSend = get().gameMoves;
+      if (movesToSend.length === 0) {
+          console.log('⚠️ gameMoves is empty, creating test moves');
+          movesToSend = [];
+          for (let i = 0; i < 10; i++) {
+              movesToSend.push({
+                  fromX: 0, fromY: 0,
+                  toX: i % 5, toY: Math.floor(i / 5),
+                  timestamp: Date.now() + i,
+              });
+          }
+      }
+      console.log('🔹 SubmitScore - gameMoves length:', get().gameMoves.length);
+      console.log('🔹 SubmitScore - gameMoves:', get().gameMoves);
       // Alert для визуальной отладки
       alert('1️⃣ submitScore started');
       
@@ -413,8 +429,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           game_id: 'hexagon',
           level: level,
           seed: 'game_seed_' + Date.now(),
-          moves: gameMoves,
-          // moves: [], // пока пустой массив
+          // moves: gameMoves,
+          moves: [], // пока пустой массив
 
       });
       
@@ -437,7 +453,8 @@ export const useGameStore = create<GameState>((set, get) => ({
               level: level,
               score: currentScore,
               seed: 'game_seed_' + Date.now(),
-              moves: get().gameMoves,  // 👈 отправляем реальные ходы
+              // moves: get().gameMoves,  // 👈 отправляем реальные ходы
+              moves: [], // пока пустой массив
           });
           console.log('🎯 Score to send:', currentScore);
           console.log('🔍 DEBUG - currentScore from store:', currentScore);
@@ -448,16 +465,18 @@ export const useGameStore = create<GameState>((set, get) => ({
           console.log('🎯 Current score from store:', currentScore);
 
           const userEmail = localStorage.getItem('userEmail') || '';
+          console.log('📧 userEmail:', userEmail);
 
-          // const response = await api.post('/game/submit', {
-          //     user_id: userId,
-          //     game_id: 'hexagon',
-          //     level: level,
-          //     score: currentScore,  // 👈 используем
-          //     user_email: userEmail,  // 👈 добавляем
-          //     seed: 'game_seed_' + Date.now(),
-          //     moves: get().gameMoves,  // 👈 отправляем реальные ходы
-          // });
+          console.log('🔍 FINAL REQUEST DATA:', {
+              user_id: userId,
+              game_id: 'hexagon',
+              level: level,
+              score: currentScore,
+              user_email: userEmail,
+              seed: 'game_seed_' + Date.now(),
+              moves: get().gameMoves,
+          });
+
           const response = await api.post('/game/submit', {
             user_id: userId,
             game_id: 'hexagon',
@@ -466,6 +485,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             user_email: userEmail,
             seed: 'game_seed_' + Date.now(),
             moves: [],  // 👈 временно пустой массив
+            // moves: get().gameMoves,  // 👈 отправляем реальные ходы
           });  
 
           alert('✅ Score submitted: ' + JSON.stringify(response.data));
