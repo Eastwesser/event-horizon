@@ -24,6 +24,15 @@ func NewGameHandler(svc service.GameService) *GameHandler {
 }
 
 func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreRequest) (*pb.SubmitScoreResponse, error) {
+    log.Printf("📥 HANDLER RAW: %+v", req)
+    
+    if req.UserId == "" || req.GameId == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id and game_id are required")
+    }
+    
+    log.Printf("📥 HANDLER: user=%s, game=%s, level=%d, score=%d, moves=%d, email=%s", 
+        req.UserId, req.GameId, req.Level, req.Score, len(req.Moves), req.UserEmail)
+
     log.Printf(
         "📥 Received SubmitScore: user_id=%s, game_id=%s, level=%d, score=%d", 
         req.UserId, 

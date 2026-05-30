@@ -62,3 +62,14 @@ make status
 
 # 8. Проверить, что Gateway отвечает
 curl http://localhost:8080/health
+
+# После краша:
+
+cd ~/event_horizon
+make stop-services
+docker-compose -f deployments/docker-compose.cluster.yml down
+docker-compose -f deployments/docker-compose.cluster.yml up -d
+make all
+make status
+
+(or just: ./restart.sh)

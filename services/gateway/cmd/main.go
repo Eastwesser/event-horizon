@@ -429,6 +429,16 @@ func main() {
             }
         }
 
+        log.Printf("📤 SENDING to Game: %+v", &gamePb.SubmitScoreRequest{
+            UserId: req.UserID,
+            GameId: req.GameID,
+            Level:  req.Level,
+            Score:  req.Score,
+            UserEmail: req.UserEmail,
+            Seed:   req.Seed,
+            Moves:  moves,
+        })
+
         resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
             UserId: req.UserID,
             GameId: req.GameID,
