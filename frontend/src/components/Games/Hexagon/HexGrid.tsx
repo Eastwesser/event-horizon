@@ -1,4 +1,5 @@
 import { useDrop } from 'react-dnd';
+import { useRef } from 'react';
 import { 
   type HexCoord, 
   hexToPixel, 
@@ -8,7 +9,7 @@ import {
   pancakeColor, 
   EMPTY_COLOR, 
   HEX_STROKE 
-} from '../../utils/hexagon';
+} from '../../../utils/hexagon';
 
 interface HexTile {
   coord: HexCoord;
@@ -22,10 +23,10 @@ interface HexGridProps {
 }
 
 export function HexGrid({ tiles, onDrop }: HexGridProps) {
-  const RADIUS = 45;
+  const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
+  const svgRef = useRef<SVGSVGElement>(null);
   
-  // Вычисляем размеры SVG
   const allPixels = HEX_GRID.map(coord => hexToPixel(coord.q, coord.r));
   const minX = Math.min(...allPixels.map(p => p.x)) - RADIUS;
   const maxX = Math.max(...allPixels.map(p => p.x)) + RADIUS;
@@ -37,16 +38,12 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
   const offsetX = -minX;
   const offsetY = -minY;
 
-  // Функция для поиска гекса по координатам мыши
   const getHexAtPixel = (x: number, y: number): HexCoord | null => {
-    // Переводим координаты мыши в систему координат SVG
-    const svgX = x - offsetX;
-    const svgY = y - offsetY;
-    
+    // Координаты уже относительно SVG viewBox
     for (const coord of HEX_GRID) {
       const { x: hexX, y: hexY } = hexToPixel(coord.q, coord.r);
-      const dx = svgX - hexX;
-      const dy = svgY - hexY;
+      const dx = x - (hexX + offsetX);
+      const dy = y - (hexY + offsetY);
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance <= RADIUS) {
         return coord;
@@ -59,19 +56,24 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
     accept: 'pancake',
     drop: (item: any, monitor) => {
       const clientOffset = monitor.getClientOffset();
-      if (!clientOffset) return;
+      if (!clientOffset || !svgRef.current) return;
       
-      // Получаем позицию мыши относительно SVG
-      const svgElement = document.querySelector('.hex-grid-svg');
-      if (!svgElement) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const svgX = clientOffset.x - rect.left;
+      const svgY = clientOffset.y - rect.top;
       
-      const rect = svgElement.getBoundingClientRect();
-      const x = clientOffset.x - rect.left;
-      const y = clientOffset.y - rect.top;
-      
-      const coord = getHexAtPixel(x, y);
-      if (coord) {
-        onDrop(item, coord);
+      // Получаем размеры SVG и viewBox
+      const svgRect = svgRef.current.viewBox?.baseVal;
+      if (svgRect) {
+        const scaleX = svgRect.width / rect.width;
+        const scaleY = svgRect.height / rect.height;
+        const viewBoxX = svgX * scaleX + svgRect.x;
+        const viewBoxY = svgY * scaleY + svgRect.y;
+        
+        const coord = getHexAtPixel(viewBoxX, viewBoxY);
+        if (coord) {
+          onDrop(item, coord);
+        }
       }
     },
     collect: (monitor) => ({
@@ -82,6 +84,7 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
   return (
     <div ref={dropRef as any} className="hex-grid-container">
       <svg 
+        ref={svgRef}
         className="hex-grid-svg"
         width="100%" 
         height="auto" 
@@ -96,46 +99,22 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
           const fillColor = type === 'empty' ? EMPTY_COLOR : (pancakeColor[type as keyof typeof pancakeColor] || '#DEB887');
           
           return (
-            <g 
-              key={`${coord.q},${coord.r}`} 
-              transform={`translate(${x + offsetX}, ${y + offsetY})`}
-              style={{ cursor: 'pointer' }}
-            >
+            <g key={`${coord.q},${coord.r}`} transform={`translate(${x + offsetX}, ${y + offsetY})`}>
               <polygon
                 points={points}
                 fill={fillColor}
                 stroke={HEX_STROKE}
-                strokeWidth="3"
+                strokeWidth="2"
                 opacity={isOver ? 0.9 : 1}
               />
               {type !== 'empty' && (
                 <>
-                <text 
-                  x="0" y="-8" 
-                  textAnchor="middle" 
-                  fill="#fff" 
-                  fontSize="24" 
-                  fontWeight="bold"
-                  style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}
-                >
-                  {pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞'}
-                </text>
-                <text 
-                  x="0" y="24" 
-                  textAnchor="middle" 
-                  fill="#ffd700" 
-                  fontSize="16" 
-                  fontWeight="bold"
-                  style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}
-                >
-                  x{count}
-                </text>
-                  {/* <text x="0" y="-8" textAnchor="middle" fill="#fff" fontSize="24" fontWeight="bold">
+                  <text x="0" y="-6" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
                     {pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞'}
                   </text>
-                  <text x="0" y="24" textAnchor="middle" fill="#ffd700" fontSize="16" fontWeight="bold">
+                  <text x="0" y="18" textAnchor="middle" fill="#ffd700" fontSize="12" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
                     x{count}
-                  </text> */}
+                  </text>
                 </>
               )}
             </g>

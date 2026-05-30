@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { HexGrid } from './Game/HexGrid';
-import { Tray } from './Game/Tray';
-import { Balance } from './Billing/Balance';
-import { Leaderboard } from './Leaderboard/Leaderboard';
-import { useGameStore } from '../store/gameStore';
+import { HexGrid } from './HexGrid';
+import { Tray } from './Tray';
+import { Balance } from '../../Billing/Balance';
+import { Leaderboard } from '../../Leaderboard/Leaderboard';
+import { useGameStore } from '../../../store/gameStore';
 
-export function Home() {
+export function HexagonGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const { 
@@ -31,67 +31,44 @@ export function Home() {
     }
   }, [token, navigate, initGame]);
 
-  useEffect(() => {
-      const token = localStorage.getItem('accessToken');
-      const savedUserId = localStorage.getItem('userId');
-      console.log('🔍 Home mount - token:', !!token, 'userId:', savedUserId);
-      
-      if (token && !savedUserId) {
-          try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
-              const userId = payload.user_id;
-              if (userId) {
-                  localStorage.setItem('userId', userId);
-                  console.log('🔧 Restored userId from token:', userId);
-              }
-          } catch (e) {
-              console.error('Failed to parse token', e);
-          }
-      }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('userId');
-    window.dispatchEvent(new Event('storage'));
-    navigate('/login');
-  };
-
   const handleDrop = (item: any, coord: any) => {
     addPancakeToHex(item.id, coord);
   };
 
-  // const handleEndGame = () => {
-  //   console.log('End game button clicked');  // 👈 
-  //   if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
-  //     console.log('Calling setGameOver with score:', score);  // 👈 
-  //     setGameOver(score);
-  //   }
-  // };
-
   const handleEndGame = () => {
     console.log('End game button clicked, current score:', score);
     if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
-        setGameOver(score);
+      setGameOver(score);
     }
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="game-container">
+
         <div className="game-header">
+
           <div className="score">🥞 Счёт: {score}</div>
           <div className="level">🍴 Уровень: {level}</div>
+          
+          <div className="header-buttons">
+            <button onClick={handleEndGame} className="endgame-btn">
+              ⏹️ Завершить
+            </button>
+            <button onClick={handleBack} className="back-btn">
+              ← На главную
+            </button>
+          </div>
+
           <Balance />
           <Leaderboard />
-          <button onClick={handleEndGame} className="endgame-btn">
-            ⏹️ Завершить
-          </button>
-          <button onClick={handleLogout} className="logout-btn">
-            🚪 Выйти
-          </button>
+
         </div>
-        
+      
         <HexGrid tiles={tiles} onDrop={handleDrop} />
         <Tray stacks={tray} />
       </div>
@@ -104,7 +81,7 @@ export function Home() {
             <p>Никуся-Блинопёк счастлива! 🎉</p>
             <div className="game-over-buttons">
               <button onClick={() => initGame()}>🔄 Новая игра</button>
-              <button onClick={handleLogout}>🚪 Выйти</button>
+              <button onClick={handleBack}>🏠 На главную</button>  {/* 👈 вместо handleLogout */}
             </div>
           </div>
         </div>

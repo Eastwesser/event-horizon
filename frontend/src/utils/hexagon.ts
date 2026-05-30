@@ -14,19 +14,12 @@ for (let q = -2; q <= 2; q++) {
     }
   }
 }
-console.log('HEX_GRID length:', HEX_GRID.length); // Должно быть 19
-
-// Размер гекса (радиус)
-const HEX_RADIUS = 40;
 
 // Конвертация axial в пиксельные координаты
 export function hexToPixel(q: number, r: number): { x: number; y: number } {
-  const width = HEX_RADIUS * 2;
-  const height = Math.sqrt(3) * HEX_RADIUS;
-  
-  const x = width * (q + r / 2);
-  const y = height * r;
-  
+  const size = 40;
+  const x = size * (Math.sqrt(3) * q + Math.sqrt(3) / 2 * r);
+  const y = size * (3 / 2 * r);
   return { x, y };
 }
 
@@ -45,51 +38,26 @@ export function getHexagonPoints(radius: number): string {
 // Получить соседей гекса
 export function getNeighbors(coord: HexCoord): HexCoord[] {
   const directions = [
-    { q: 1, r: 0 },   // право
-    { q: 1, r: -1 },  // верхний правый
-    { q: 0, r: -1 },  // верхний левый
-    { q: -1, r: 0 },  // лево
-    { q: -1, r: 1 },  // нижний левый
-    { q: 0, r: 1 },   // нижний правый
+    { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
+    { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 },
   ];
   return directions.map(d => ({ q: coord.q + d.q, r: coord.r + d.r }));
 }
 
-// Типы блинов (начинки)
+// Типы блинов
 export type PancakeType = 
-  | 'nutella'
-  | 'strawberry'
-  | 'fish'
-  | 'sausage'
-  | 'chicken'
-  | 'caesar'
-  | 'cranberry'
-  | 'pancake';
+  | 'nutella' | 'strawberry' | 'fish' | 'sausage'
+  | 'chicken' | 'caesar' | 'cranberry' | 'pancake';
 
-// Эмодзи для типов блинов
 export const pancakeEmoji: Record<PancakeType, string> = {
-  nutella: '🍫',
-  strawberry: '🍓',
-  fish: '🐟',
-  sausage: '🌭',
-  chicken: '🍗',
-  caesar: '🥗',
-  cranberry: '🍒',
-  pancake: '🥞',
+  nutella: '🍫', strawberry: '🍓', fish: '🐟', sausage: '🌭',
+  chicken: '🍗', caesar: '🥗', cranberry: '🍒', pancake: '🥞',
 };
 
-// Цвета для типов блинов
 export const pancakeColor: Record<PancakeType, string> = {
-  nutella: '#8B4513',
-  strawberry: '#FF6B6B',
-  fish: '#FFA500',
-  sausage: '#CD5C5C',
-  chicken: '#FFD700',
-  caesar: '#90EE90',
-  cranberry: '#FF69B4',
-  pancake: '#DEB887',
+  nutella: '#8B4513', strawberry: '#FF6B6B', fish: '#FFA500', sausage: '#CD5C5C',
+  chicken: '#FFD700', caesar: '#90EE90', cranberry: '#FF69B4', pancake: '#DEB887',
 };
 
-// Пустой цвет
 export const EMPTY_COLOR = '#2a2a4a';
 export const HEX_STROKE = '#ffd700';
