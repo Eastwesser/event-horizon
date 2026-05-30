@@ -19,7 +19,7 @@ export function LeaderboardFull() {
         </thead>
         <tbody>
           {entries.map((entry, idx) => (
-            <tr key={entry.userId}>
+            <tr key={entry.userId || `row-${idx}`}>
               <td>{idx + 1}</td>
               <td>{entry.user_email?.split('@')[0] || 'Аноним'}</td>
               <td>{entry.score}</td>
