@@ -1,5 +1,6 @@
 import { useDrag } from 'react-dnd';
-import { pancakeEmoji, pancakeColor, type PancakeType } from '../../utils/hexagon';
+import { pancakeEmoji, pancakeColor, type PancakeType } from '../../../utils/hexagon';
+
 
 interface TrayStack {
   id: number;

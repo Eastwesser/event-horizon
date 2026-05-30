@@ -1,21 +1,22 @@
+// frontend/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
-import { Home } from './components/Home';
+import { Home } from './components/Home/Home';
+import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
+import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
+import { Profile } from './components/Profile/Profile';
 import { useEffect, useState } from 'react';
-
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('accessToken'));
 
   useEffect(() => {
-    // Следим за изменениями в localStorage
     const handleStorageChange = () => {
       setIsAuthenticated(!!localStorage.getItem('accessToken'));
     };
     
     window.addEventListener('storage', handleStorageChange);
-    // Также следим за кастомным событием
     window.addEventListener('authChange', handleStorageChange);
     
     return () => {
@@ -27,13 +28,28 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <h1>🍴 Никуся — Блинопёк 🥞</h1>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route 
             path="/" 
             element={isAuthenticated ? <Home /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/game/hexagon" 
+            element={isAuthenticated ? <HexagonGame /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/game/flappy" 
+            element={isAuthenticated ? <div>Flappy Bird — скоро</div> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/leaderboard" 
+            element={isAuthenticated ? <LeaderboardFull /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/profile" 
+            element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
