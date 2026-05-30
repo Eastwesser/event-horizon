@@ -72,12 +72,13 @@ func main() {
 
     // Подписка на NATS (начисление валюты за рекорды)
     _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
+        
         var event ScoreEvent
         if err := json.Unmarshal(msg.Data, &event); err != nil {
             log.Printf("Failed to unmarshal score event: %v", err)
             return
         }
-
+        log.Printf("📦 1 Full event: %+v", event)
         log.Printf("📡 Received score event for user %s, lamps=%d, tickets=%d",
             event.UserID, event.LampsEarned, event.TicketsEarned)
 
@@ -91,7 +92,7 @@ func main() {
                 log.Printf("💰 Added %d lamps to user %s", event.LampsEarned, event.UserID)
             }
         }
-
+        log.Printf("📦 2 Full event: %+v", event)
         if event.TicketsEarned > 0 {
             _, err := billingService.AddCurrency(context.Background(), event.UserID,
                 repository.Tickets, event.TicketsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
@@ -101,7 +102,7 @@ func main() {
                 log.Printf("🎫 Added %d tickets to user %s", event.TicketsEarned, event.UserID)
             }
         }
-
+        log.Printf("📦 3 Full event: %+v", event)
         msg.Ack()
     }, nats.Durable("billing-durable"), nats.ManualAck())
 

@@ -109,6 +109,8 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         "score":      validatedScore,
         "is_record":  isNewRecord,
         "level":      req.Level,
+        "lamps_earned":  lampsEarned,   // 👈 добавить
+        "tickets_earned": ticketsEarned, // 👈 добавить
         "timestamp":  time.Now().Unix(),
     }
     eventData, _ := json.Marshal(event)

@@ -76,3 +76,19 @@ fresh-start: stop-services down
 	$(MAKE) migrate-auth-up
 	$(MAKE) start-services
 	@echo "✅ Fresh start completed"	
+
+# Миграции
+migrate-auth:
+	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
+
+migrate-billing:
+	cd services/billing && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5462/eventhorizon_billing?sslmode=disable" up
+
+migrate-game:
+	cd services/game && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5461/eventhorizon_game?sslmode=disable" up
+
+migrate-leaderboard:
+	cd services/leaderboard && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5463/eventhorizon_leaderboard?sslmode=disable" up
+
+migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard
+	@echo "✅ All migrations applied"	
