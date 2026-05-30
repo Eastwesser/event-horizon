@@ -344,3 +344,54 @@ services/game/games/hexagons/board.go — координатная систем�
 services/game/games/hexagons/validator.go — логика валидации
 frontend/src/store/gameStore.ts — сохранение moves
 services/game/internal/service/game_service.go — включение/отключение валидации
+
+Про библиотеки
+
+Да, есть отличные решения для общей типизации между Go и TypeScript:
+
+Инструмент	Что делает	Сложность
+buf.build	Генерация gRPC клиентов для Go и TS из proto	🟢 Простая
+protoc + protoc-gen-ts	Генерирует TypeScript типы из .proto	🟡 Средняя
+connect-go	Альтернатива gRPC с лучшей поддержкой TS	🟢 Простая
+openapi-generator	Генерация клиентов из OpenAPI спецификации	🟡 Средняя
+Что мы могли бы сделать
+
+У нас уже есть .proto файлы для Auth, Game, Billing, Leaderboard. Из них можно сгенерировать TypeScript типы:
+
+bash
+npm install @protobuf-ts/plugin
+protoc --plugin=protoc-gen-ts=... --ts_out=frontend/src/proto proto/*.proto
+Тогда и фронтенд, и бэкенд будут использовать одни и те же структуры данных.
+
+Для координат гексагонов
+
+Можно вынести типы в общую библиотеку:
+
+text
+pkg/
+├── hexagon/
+│   ├── coord.go      # Go структуры
+│   └── coord.ts      # TypeScript интерфейсы (генерируются или дублируются)
+└── ...
+Но TypeScript интерфейсы из Go не сгенерировать автоматически (можно через прото-файлы).
+
+Паттерн адаптера — правильная идея
+
+go
+// backend
+type ValidatorMove struct {
+    FromX int32
+    FromY int32
+    ToX   int32
+    ToY   int32
+}
+
+func adaptFromFrontend(move FrontendMove) ValidatorMove {
+    return ValidatorMove{
+        FromX: move.FromX,
+        FromY: move.FromY,
+        ToX:   convertQtoX(move.ToX),  // 👈 адаптация координат
+        ToY:   convertRtoY(move.ToY),
+    }
+}
+Но требует понимания обеих систем координат.
