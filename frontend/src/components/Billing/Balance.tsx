@@ -13,9 +13,16 @@ export function Balance() {
     const fetchBalances = async () => {
       try {
         const response = await api.get('/billing/balance/all');
-        const lamps = response.data.balances?.find((b: any) => b.currency === 'lamps')?.balance || 0;
-        const tickets = response.data.balances?.find((b: any) => b.currency === 'tickets')?.balance || 0;
-        setBalances({ lamps, tickets });
+        console.log('📊 RAW Balance response:', response.data);
+        console.log('📊 lamps:', response.data.lamps);
+        console.log('📊 tickets:', response.data.tickets);
+        console.log('📊 Balance response final:', response.data);
+        
+        // Сервер возвращает { lamps: X, tickets: Y }
+        setBalances({
+          lamps: response.data.lamps || 0,
+          tickets: response.data.tickets || 0,
+        });
       } catch (err) {
         console.error('Failed to fetch balance:', err);
       }

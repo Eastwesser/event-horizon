@@ -5,6 +5,7 @@ import (
     "context"
     "encoding/base64"
     "encoding/json"
+    "fmt"
     "io"
     "log"
     "net/http"
@@ -26,6 +27,7 @@ import (
     authPb "event_horizon/services/auth/proto"
     gamePb "event_horizon/services/game/proto"
     leaderboardPb "event_horizon/services/leaderboard/proto"
+    billingPb "event_horizon/services/billing/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -108,6 +110,35 @@ func (c *WSClient) writePump() {
             c.conn.WriteMessage(websocket.TextMessage, message)
         }
     }
+}
+
+func getUserIDFromToken(tokenString string) (string, error) {
+    parts := strings.Split(tokenString, " ")
+    if len(parts) == 2 && parts[0] == "Bearer" {
+        tokenString = parts[1]
+    }
+    
+    parts = strings.Split(tokenString, ".")
+    if len(parts) != 3 {
+        return "", fmt.Errorf("invalid token format")
+    }
+    
+    payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+    if err != nil {
+        return "", err
+    }
+    
+    var claims map[string]interface{}
+    if err := json.Unmarshal(payload, &claims); err != nil {
+        return "", err
+    }
+    
+    userID, ok := claims["user_id"].(string)
+    if !ok {
+        return "", fmt.Errorf("user_id not found in token")
+    }
+    
+    return userID, nil
 }
 
 func main() {
@@ -199,30 +230,6 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
-    // r.POST("/api/auth/login", func(c *gin.Context) {
-    //     var req authPb.LoginRequest
-    //     if err := c.ShouldBindJSON(&req); err != nil {
-    //         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-    //         return
-    //     }
-    //     resp, err := authClient.GetClient().Login(c.Request.Context(), &req)
-    //     if err != nil {
-    //         c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-    //         return
-    //     }
-    //     eventData := map[string]interface{}{
-    //         "event": "user.logged_in",
-    //         "email": req.Email,
-    //     }
-    //     eventJSON, _ := json.Marshal(eventData)
-    //     js.Publish("event.user.logged_in", eventJSON)
-    //     c.JSON(http.StatusOK, gin.H{
-    //         "access_token": resp.AccessToken,
-    //         "token_type":   resp.TokenType,
-    //         "expires_in":   resp.ExpiresIn,
-    //         "user_id":      resp.UserId,
-    //     })
-    // })
     r.POST("/api/auth/login", func(c *gin.Context) {
         var req authPb.LoginRequest
         if err := c.ShouldBindJSON(&req); err != nil {
@@ -263,14 +270,87 @@ func main() {
 
     scoreCache := cache.NewScoreCache(2 * time.Second)
 
+    billingConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to billing: %v", err)
+    }
+    defer billingConn.Close()
+    billingClient := billingPb.NewBillingServiceClient(billingConn)
+
     r.GET("/api/billing/balance/all", func(c *gin.Context) {
         token := c.GetHeader("Authorization")
         if token == "" {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
             return
         }
-        c.JSON(http.StatusOK, gin.H{"lamps": 0, "tickets": 0})
+        
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            return
+        }
+        
+        resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
+            UserId: userID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        
+        var lamps, tickets int32
+        for _, b := range resp.Balances {
+            if b.Currency == billingPb.CurrencyType_LAMPS {
+                lamps = b.Balance
+            } else if b.Currency == billingPb.CurrencyType_TICKETS {
+                tickets = b.Balance
+            }
+        }
+        
+        c.JSON(http.StatusOK, gin.H{
+            "lamps":   lamps,
+            "tickets": tickets,
+        })
     })
+
+    // r.GET("/api/billing/balance/all1", func(c *gin.Context) {
+    //     token := c.GetHeader("Authorization")
+    //     if token == "" {
+    //         c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+    //         return
+    //     }
+        
+    //     // Извлекаем user_id из токена (или из запроса)
+    //     // Временно: получаем user_id из контекста (нужно добавить authMiddleware)
+    //     userID := c.Query("user_id")
+    //     if userID == "" {
+    //         c.JSON(http.StatusBadRequest, gin.H{"error": "user_id required"})
+    //         return
+    //     }
+        
+    //     resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
+    //         UserId: userID,
+    //     })
+    //     if err != nil {
+    //         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+    //         return
+    //     }
+        
+    //     // Конвертируем ответ
+    //     var lamps, tickets int32
+    //     for _, b := range resp.Balances {
+    //         if b.Currency == billingPb.CurrencyType_LAMPS {
+    //             lamps = b.Balance
+    //         } else if b.Currency == billingPb.CurrencyType_TICKETS {
+    //             tickets = b.Balance
+    //         }
+    //     }
+        
+    //     c.JSON(http.StatusOK, gin.H{
+    //         "lamps":   lamps,
+    //         "tickets": tickets,
+    //     })
+    // })
 
     r.GET("/api/leaderboard", func(c *gin.Context) {
         gameID := c.Query("game_id")

@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/nats-io/nats.go v1.51.0
+	github.com/nats-io/nats.go v1.52.0
 	google.golang.org/grpc v1.81.1
 )
 
@@ -17,6 +17,7 @@ require (
 
 require (
 	event_horizon/services/auth v0.0.0
+	event_horizon/services/billing v0.0.0
 	event_horizon/services/game v0.0.0
 	event_horizon/services/leaderboard v0.0.0
 	github.com/bytedance/gopkg v0.1.3 // indirect
@@ -56,3 +57,5 @@ replace event_horizon/services/auth => ../auth
 replace event_horizon/services/game => ../game
 
 replace event_horizon/services/leaderboard => ../leaderboard
+
+replace event_horizon/services/billing => ../billing
