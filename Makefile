@@ -58,3 +58,21 @@ status:
 	@echo ""
 	@echo "🐳 Docker containers:"
 	@docker-compose -f deployments/docker-compose.cluster.yml ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || echo "Docker not running"
+
+# Миграции Auth
+migrate-auth-up:
+	@echo "📦 Running auth migrations up..."
+	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
+
+migrate-auth-reset:
+	@echo "🔄 Resetting auth migrations..."
+	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" reset
+
+# Полный рестарт с миграциями
+fresh-start: stop-services down
+	@echo "🧹 Fresh start with migrations..."
+	docker-compose -f deployments/docker-compose.cluster.yml up -d
+	sleep 3
+	$(MAKE) migrate-auth-up
+	$(MAKE) start-services
+	@echo "✅ Fresh start completed"	
