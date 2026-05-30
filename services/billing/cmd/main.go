@@ -3,12 +3,13 @@ package main
 import (
     "context"
     "encoding/json"
+    "fmt"
     "log"
     "net"
     "os"
     "os/signal"
     "syscall"
-    // "time" — УДАЛИТЬ, не используется
+    "time"
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/nats-io/nats.go"
@@ -81,28 +82,49 @@ func main() {
         log.Printf("📦 1 Full event: %+v", event)
         log.Printf("📡 Received score event for user %s, lamps=%d, tickets=%d",
             event.UserID, event.LampsEarned, event.TicketsEarned)
+        
+        referenceID := msg.Header.Get("Nats-Msg-Id")
+        if referenceID == "" {
+            referenceID = fmt.Sprintf("%s-%d", event.UserID, time.Now().UnixNano())
+        }  
+        
+        /*
+            Проблема: один referenceID для двух валют
+            
+            Ты используешь один и тот же referenceID и для лампочек, и для тикетов. 
+            Если лампочки уже записали транзакцию с этим ID, то тикеты не могут записать ту же самую.    
+        */
 
-        // Начисление валюты (используем context.Background() вместо msg.Context)
+        // Уникальный ID для лампочек
+        lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, time.Now().UnixNano())
+        
+        // Уникальный ID для тикетов
+        ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, time.Now().UnixNano())
+
+        // Начисление валюты LAMPS (используем context.Background() вместо msg.Context)
         if event.LampsEarned > 0 {
             _, err := billingService.AddCurrency(context.Background(), event.UserID,
-                repository.Lamps, event.LampsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+                repository.Lamps, event.LampsEarned, "game_reward", lampsRefID)
             if err != nil {
                 log.Printf("Failed to add lamps: %v", err)
             } else {
                 log.Printf("💰 Added %d lamps to user %s", event.LampsEarned, event.UserID)
             }
         }
-        log.Printf("📦 2 Full event: %+v", event)
+        log.Printf("📦 Lamps event: %+v", event)
+
+        // Начисление валюты TICKETS (используем context.Background() вместо msg.Context)
         if event.TicketsEarned > 0 {
             _, err := billingService.AddCurrency(context.Background(), event.UserID,
-                repository.Tickets, event.TicketsEarned, "game_reward", msg.Header.Get("Nats-Msg-Id"))
+                repository.Tickets, event.TicketsEarned, "game_reward", ticketsRefID)
             if err != nil {
                 log.Printf("Failed to add tickets: %v", err)
             } else {
                 log.Printf("🎫 Added %d tickets to user %s", event.TicketsEarned, event.UserID)
             }
         }
-        log.Printf("📦 3 Full event: %+v", event)
+        log.Printf("📦 Tickets event: %+v", event)
+
         msg.Ack()
     }, nats.Durable("billing-durable"), nats.ManualAck())
 
