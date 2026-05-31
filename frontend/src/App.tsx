@@ -7,6 +7,7 @@ import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { useEffect, useState } from 'react';
+import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('accessToken'));
@@ -42,6 +43,10 @@ function App() {
           <Route 
             path="/game/flappy" 
             element={isAuthenticated ? <div>Flappy Bird — скоро</div> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/game/memory" 
+            element={isAuthenticated ? <MemoryGame /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/leaderboard" 

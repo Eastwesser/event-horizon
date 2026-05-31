@@ -1,0 +1,303 @@
+/* frontend/src/components/Games/Memonia/memory.css */
+.memory-game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.memory-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  margin-bottom: 2rem;
+}
+
+.memory-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.memory-stat {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  text-align: center;
+  min-width: 80px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.memory-stat--combo .stat-value {
+  color: #ff6b6b;
+}
+
+.memory-stat--score .stat-value {
+  color: #4ade80;
+  font-size: 1.8rem;
+}
+
+.memory-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.memory-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.memory-btn--new {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.memory-btn--back {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.memory-btn--submit {
+  background: #4ade80;
+  color: #1a1a2e;
+}
+
+.memory-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* Board */
+.memory-board-wrapper {
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.75rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Карта */
+.memory-card {
+  aspect-ratio: 1 / 1;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.memory-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s ease;
+  transform-style: preserve-3d;
+  border-radius: 15px;
+}
+
+.memory-card--flipped .memory-card__inner {
+  transform: rotateY(180deg);
+}
+
+.memory-card__front,
+.memory-card__back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memory-card__front {
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  transform: rotateY(180deg);
+}
+
+.memory-card__front .memory-card__emoji {
+  font-size: 2rem;
+}
+
+.memory-card__back {
+  background: linear-gradient(135deg, #2a2a4a, #1a1a2e);
+  border: 2px solid #ffd700;
+  transform: rotateY(0deg);
+}
+
+.memory-card__question {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.memory-card--matched {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Game Over */
+.memory-game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.memory-game-over__content {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid #ffd700;
+  border-radius: 30px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 400px;
+}
+
+.memory-game-over__content h2 {
+  color: #ffd700;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.memory-game-over__score {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin: 1rem 0;
+}
+
+.memory-game-over__formula {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.memory-game-over__buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Правила */
+.memory-rules {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+}
+
+.memory-rules details summary {
+  cursor: pointer;
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.memory-rules details p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+  .memory-board {
+    gap: 0.5rem;
+  }
+  
+  .memory-card__front .memory-card__emoji {
+    font-size: 1.2rem;
+  }
+  
+  .memory-card__question {
+    font-size: 1.2rem;
+  }
+  
+  .memory-stats {
+    gap: 0.75rem;
+  }
+  
+  .memory-stat {
+    min-width: 60px;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1rem;
+  }
+  
+  .memory-stat--score .stat-value {
+    font-size: 1.2rem;
+  }
+}
+
+/* Добавить в конец файла */
+.memory-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  z-index: 1100;
+  animation: slideIn 0.3s ease;
+}
+
+.memory-toast--success {
+  background: #4ade80;
+  color: #1a1a2e;
+}
+
+.memory-toast--error {
+  background: #ff6b6b;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

@@ -28,10 +28,10 @@ const games = [
   {
     id: 'memory',
     name: 'Мемония',
-    description: 'Найди пары карт',
+    description: 'Найди пары фруктов',
     icon: '🎴',
     path: '/game/memory',
-    available: false,
+    available: true,
   },
 ];
 
