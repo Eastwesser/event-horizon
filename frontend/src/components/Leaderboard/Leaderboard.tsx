@@ -1,3 +1,4 @@
+// frontend/src/components/Leaderboard/Leaderboard.tsx
 import { useEffect, useState, useRef } from 'react';
 
 interface LeaderboardEntry {
@@ -10,12 +11,12 @@ interface LeaderboardEntry {
 export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory'>('hexagon');
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Функция запроса топа через HTTP
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch('/api/leaderboard?game_id=hexagon&limit=10');
+      const response = await fetch(`/api/leaderboard?game_id=${selectedGame}&limit=10`);
       if (response.ok) {
         const data = await response.json();
         setEntries(data.entries || []);
@@ -25,7 +26,6 @@ export function Leaderboard() {
     }
   };
 
-  // WebSocket соединение (постоянное)
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
     wsRef.current = ws;
@@ -44,10 +44,8 @@ export function Leaderboard() {
         } else if (data.entries && Array.isArray(data.entries)) {
           setEntries(data.entries);
         } else if (data.user_id && data.score) {
-          console.log('📊 New score event, fetching full leaderboard...');
           fetchLeaderboard();
         } else {
-          console.log('⏳ Unknown data format, requesting leaderboard...');
           fetchLeaderboard();
         }
       } catch (e) {
@@ -68,12 +66,20 @@ export function Leaderboard() {
         wsRef.current.close();
       }
     };
-  }, []);
+  }, [selectedGame]);
 
-  // При открытии модального окна
   const handleOpen = () => {
     setIsOpen(true);
     fetchLeaderboard();
+  };
+
+  const getMedal = (rank: number) => {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return '';
+    }
   };
 
   return (
@@ -83,32 +89,60 @@ export function Leaderboard() {
       </button>
       
       {isOpen && (
-        <div className="leaderboard-overlay">
-          <div className="leaderboard-modal">
-            <h2>🏆 Лучшие блинопёки 🏆</h2>
+        <div className="leaderboard-overlay" onClick={() => setIsOpen(false)}>
+          <div className="leaderboard-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="leaderboard-modal-header">
+              <h2>🏆 Топ-10 игроков</h2>
+              <button className="leaderboard-close" onClick={() => setIsOpen(false)}>✕</button>
+            </div>
+            
+            <div className="leaderboard-game-selector">
+              <button
+                className={`game-tab ${selectedGame === 'hexagon' ? 'active' : ''}`}
+                onClick={() => setSelectedGame('hexagon')}
+              >
+                🥞 Блинопёк
+              </button>
+              <button
+                className={`game-tab ${selectedGame === 'memory' ? 'active' : ''}`}
+                onClick={() => setSelectedGame('memory')}
+              >
+                🎴 Мемония
+              </button>
+            </div>
+            
             {entries.length === 0 ? (
               <p style={{ textAlign: 'center', padding: '2rem' }}>Нет данных</p>
             ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Игрок</th>
-                    <th>Очки</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((entry, idx) => (
-                    <tr key={entry.userId || idx}>
-                      <td>{entry.rank || idx + 1}</td>
-                      <td>{entry.user_email?.split('@')[0] || entry.userId?.slice(0, 8) || 'Аноним'}</td>
-                      <td>{entry.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="leaderboard-modal-list">
+                {entries.map((entry, idx) => {
+                  const rank = idx + 1;
+                  const medal = getMedal(rank);
+                  
+                  return (
+                    <div key={entry.userId || idx} className="leaderboard-item">
+                      <div className="leaderboard-item-rank">
+                        {medal || <span className="rank-number">{rank}</span>}
+                      </div>
+                      <div className="leaderboard-item-player">
+                        <div className="player-avatar-small">
+                          {entry.user_email?.split('@')[0]?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <span className="player-name">
+                          {entry.user_email?.split('@')[0] || 'Аноним'}
+                        </span>
+                      </div>
+                      <div className="leaderboard-item-score">
+                        <span className="score-value">{entry.score.toLocaleString()}</span>
+                        <span className="score-unit">
+                          {selectedGame === 'hexagon' ? '🥞' : '🎴'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-            <button onClick={() => setIsOpen(false)}>Закрыть</button>
           </div>
         </div>
       )}

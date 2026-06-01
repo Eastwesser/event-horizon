@@ -1,32 +1,127 @@
+// frontend/src/components/Leaderboard/LeaderboardFull.tsx
 import { useEffect, useState } from 'react';
 
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  user_email: string;
+  score: number;
+  game_id?: string;
+}
+
 export function LeaderboardFull() {
-  const [entries, setEntries] = useState([]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory'>('hexagon');
 
   useEffect(() => {
-    fetch('/api/leaderboard?game_id=hexagon&limit=50')
+    setLoading(true);
+    fetch(`/api/leaderboard?game_id=${selectedGame}&limit=50`)
       .then(res => res.json())
-      .then(data => setEntries(data.entries || []))
-      .catch(console.error);
-  }, []);
+      .then(data => {
+        setEntries(data.entries || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch leaderboard:', err);
+        setLoading(false);
+      });
+  }, [selectedGame]);
+
+  const getMedal = (rank: number) => {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return '';
+    }
+  };
+
+  const getRankClass = (rank: number) => {
+    switch (rank) {
+      case 1: return 'leaderboard-rank--gold';
+      case 2: return 'leaderboard-rank--silver';
+      case 3: return 'leaderboard-rank--bronze';
+      default: return '';
+    }
+  };
 
   return (
     <div className="leaderboard-full">
-      <h2>🏆 Лучшие блинопёки 🏆</h2>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Игрок</th><th>Очки</th></tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, idx) => (
-            <tr key={entry.userId || `row-${idx}`}>
-              <td>{idx + 1}</td>
-              <td>{entry.user_email?.split('@')[0] || 'Аноним'}</td>
-              <td>{entry.score}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="leaderboard-header">
+        <h2>🏆 Лидерборд</h2>
+        <div className="leaderboard-game-selector">
+          <button
+            className={`game-tab ${selectedGame === 'hexagon' ? 'active' : ''}`}
+            onClick={() => setSelectedGame('hexagon')}
+          >
+            🥞 Блинопёк
+          </button>
+          <button
+            className={`game-tab ${selectedGame === 'memory' ? 'active' : ''}`}
+            onClick={() => setSelectedGame('memory')}
+          >
+            🎴 Мемония
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="leaderboard-loading">
+          <div className="spinner"></div>
+          <p>Загрузка рекордов...</p>
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="leaderboard-empty">
+          <p>😢 Пока нет рекордов в этой игре</p>
+          <p>Стань первым!</p>
+        </div>
+      ) : (
+        <div className="leaderboard-table-wrapper">
+          <table className="leaderboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Игрок</th>
+                <th>Очки</th>
+                <th>🏅</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry, idx) => {
+                const rank = idx + 1;
+                const medal = getMedal(rank);
+                const rankClass = getRankClass(rank);
+                
+                return (
+                  <tr key={entry.userId || `row-${idx}`} className={rankClass}>
+                    <td className="leaderboard-rank">
+                      {medal ? <span className="medal">{medal}</span> : rank}
+                    </td>
+                    <td className="leaderboard-player">
+                      <div className="player-avatar">
+                        {entry.user_email?.split('@')[0]?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <span className="player-name">
+                        {entry.user_email?.split('@')[0] || 'Аноним'}
+                      </span>
+                    </td>
+                    <td className="leaderboard-score">
+                      <span className="score-value">{entry.score.toLocaleString()}</span>
+                      <span className="score-unit">
+                        {selectedGame === 'hexagon' ? '🥞' : '🎴'}
+                      </span>
+                    </td>
+                    <td className="leaderboard-badge">
+                      {medal && <span className="badge-icon">{medal}</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
