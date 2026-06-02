@@ -178,6 +178,23 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     let finalScore = 0;
     if (gameOver) {
       finalScore = calculateScore(newMoves, totalPairs);
+      
+      // 💾 Сохраняем статистику в localStorage
+      const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+      const currentBest = savedScores.memory || 0;
+      
+      if (finalScore > currentBest) {
+        savedScores.memory = finalScore;
+        localStorage.setItem('gameScores', JSON.stringify(savedScores));
+      }
+      
+      const played = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');
+      localStorage.setItem('memoryGamesPlayed', String(played + 1));
+      
+      const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
+      localStorage.setItem('totalScore', String(totalScore + finalScore));
+      
+      console.log(`🎉 Game Over! Moves: ${newMoves}, Score: ${finalScore}`);
     }
     
     set({
@@ -190,12 +207,6 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
       gameOver,
       score: finalScore,
     });
-    
-    // Если игра окончена, можно потом вызвать submitScore
-    if (gameOver) {
-      console.log(`🎉 Game Over! Moves: ${newMoves}, Score: ${finalScore}`);
-      // отправка в лидерборд
-    }
   },
   
   resetGame: () => {

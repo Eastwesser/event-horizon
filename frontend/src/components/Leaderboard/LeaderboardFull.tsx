@@ -1,5 +1,6 @@
 // frontend/src/components/Leaderboard/LeaderboardFull.tsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface LeaderboardEntry {
   rank: number;
@@ -10,6 +11,7 @@ interface LeaderboardEntry {
 }
 
 export function LeaderboardFull() {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory'>('hexagon');
@@ -46,10 +48,19 @@ export function LeaderboardFull() {
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="leaderboard-full">
       <div className="leaderboard-header">
-        <h2>🏆 Лидерборд</h2>
+        <div className="leaderboard-title">
+          <button onClick={handleBack} className="back-btn-small" title="На главную">
+            ←
+          </button>
+          <h2>🏆 Лидерборд</h2>
+        </div>
         <div className="leaderboard-game-selector">
           <button
             className={`game-tab ${selectedGame === 'hexagon' ? 'active' : ''}`}

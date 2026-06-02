@@ -1,15 +1,17 @@
 // frontend/src/components/Profile/Profile.tsx
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
+  const navigate = useNavigate();
   const email = localStorage.getItem('userEmail') || 'unknown@example.com';
   const userId = localStorage.getItem('userId') || '';
   
   const [stats, setStats] = useState({
     nickname: localStorage.getItem('nickname') || email.split('@')[0],
     totalScore: 0,
-    bestScores: { hexagon: 0 },
-    gamesPlayed: { hexagon: 0 },
+    bestScores: { hexagon: 0, memory: 0 },  // 👈 добавлена поддержка memory
+    gamesPlayed: { hexagon: 0, memory: 0 },  // 👈 добавлена поддержка memory
     achievements: [] as string[]
   });
 
@@ -17,21 +19,24 @@ export function Profile() {
     // Загружаем статистику из localStorage
     const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
     const hexagonBest = savedScores.hexagon || 0;
+    const memoryBest = savedScores.memory || 0;  // 👈 рекорд Мемонии
     const hexagonPlayed = parseInt(localStorage.getItem('hexagonGamesPlayed') || '0');
+    const memoryPlayed = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');  // 👈 игры в Мемонию
     const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
     
     // Простые достижения
     const achievements: string[] = [];
     if (hexagonBest >= 100) achievements.push('🥞 100 блинов');
     if (hexagonBest >= 500) achievements.push('👑 Мастер-блинопёк');
+    if (memoryBest >= 500) achievements.push('🎴 Мастер памяти');  // 👈 новое достижение
     if (hexagonPlayed >= 10) achievements.push('🎮 Заядлый игрок');
-    if (hexagonPlayed >= 50) achievements.push('🔥 Одержимый');
+    if (hexagonPlayed + memoryPlayed >= 50) achievements.push('🔥 Одержимый');  // 👈 суммарные игры
     
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,
-      bestScores: { hexagon: hexagonBest },
-      gamesPlayed: { hexagon: hexagonPlayed },
+      bestScores: { hexagon: hexagonBest, memory: memoryBest },
+      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed },
       achievements
     }));
   }, []);
@@ -48,15 +53,23 @@ export function Profile() {
     if (confirm('Сбросить всю статистику? Это действие необратимо.')) {
       localStorage.removeItem('gameScores');
       localStorage.removeItem('hexagonGamesPlayed');
+      localStorage.removeItem('memoryGamesPlayed');  // 👈 очищаем статистику Мемонии
       localStorage.removeItem('totalScore');
       localStorage.removeItem('nickname');
       window.location.reload();
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="profile-container">
       <div className="profile-header">
+        <button onClick={handleBack} className="back-btn-small" title="На главную">
+          ←
+        </button>
         <div className="profile-avatar">
           {stats.achievements.length >= 2 ? '👑' : '🥞'}
         </div>
@@ -105,6 +118,10 @@ export function Profile() {
         <div className="best-row">
           <span>Никуся-Блинопёк</span>
           <span className="best-score">{stats.bestScores.hexagon} 🥞</span>
+        </div>
+        <div className="best-row">
+          <span>🎴 Мемония</span>
+          <span className="best-score">{stats.bestScores.memory} 🎴</span>
         </div>
       </div>
 
