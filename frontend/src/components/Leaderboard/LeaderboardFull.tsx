@@ -14,7 +14,7 @@ export function LeaderboardFull() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory'>('hexagon');
+  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory' | 'flappy'>('hexagon');
 
   useEffect(() => {
     setLoading(true);
@@ -67,6 +67,12 @@ export function LeaderboardFull() {
             onClick={() => setSelectedGame('hexagon')}
           >
             🥞 Блинопёк
+          </button>
+          <button
+              className={`game-tab ${selectedGame === 'flappy' ? 'active' : ''}`}
+              onClick={() => setSelectedGame('flappy')}
+          >
+              🐦 Flappy Bird
           </button>
           <button
             className={`game-tab ${selectedGame === 'memory' ? 'active' : ''}`}

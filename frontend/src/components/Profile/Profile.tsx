@@ -10,8 +10,8 @@ export function Profile() {
   const [stats, setStats] = useState({
     nickname: localStorage.getItem('nickname') || email.split('@')[0],
     totalScore: 0,
-    bestScores: { hexagon: 0, memory: 0 },  // 👈 добавлена поддержка memory
-    gamesPlayed: { hexagon: 0, memory: 0 },  // 👈 добавлена поддержка memory
+    bestScores: { hexagon: 0, memory: 0, flappy: 0 },
+    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0 },
     achievements: [] as string[]
   });
 
@@ -19,24 +19,27 @@ export function Profile() {
     // Загружаем статистику из localStorage
     const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
     const hexagonBest = savedScores.hexagon || 0;
-    const memoryBest = savedScores.memory || 0;  // 👈 рекорд Мемонии
+    const memoryBest = savedScores.memory || 0;
+    const flappyBest = savedScores.flappy || 0;
     const hexagonPlayed = parseInt(localStorage.getItem('hexagonGamesPlayed') || '0');
-    const memoryPlayed = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');  // 👈 игры в Мемонию
+    const memoryPlayed = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');
+    const flappyPlayed = parseInt(localStorage.getItem('flappyGamesPlayed') || '0');
     const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
     
     // Простые достижения
     const achievements: string[] = [];
     if (hexagonBest >= 100) achievements.push('🥞 100 блинов');
     if (hexagonBest >= 500) achievements.push('👑 Мастер-блинопёк');
-    if (memoryBest >= 500) achievements.push('🎴 Мастер памяти');  // 👈 новое достижение
-    if (hexagonPlayed >= 10) achievements.push('🎮 Заядлый игрок');
-    if (hexagonPlayed + memoryPlayed >= 50) achievements.push('🔥 Одержимый');  // 👈 суммарные игры
+    if (memoryBest >= 500) achievements.push('🎴 Мастер памяти');
+    if (flappyBest >= 100) achievements.push('🐦 Мастер полёта');
+    if (hexagonPlayed + memoryPlayed + flappyPlayed >= 10) achievements.push('🎮 Заядлый игрок');
+    if (hexagonPlayed + memoryPlayed + flappyPlayed >= 50) achievements.push('🔥 Одержимый');
     
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,
-      bestScores: { hexagon: hexagonBest, memory: memoryBest },
-      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed },
+      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest },
+      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed },
       achievements
     }));
   }, []);
@@ -53,7 +56,8 @@ export function Profile() {
     if (confirm('Сбросить всю статистику? Это действие необратимо.')) {
       localStorage.removeItem('gameScores');
       localStorage.removeItem('hexagonGamesPlayed');
-      localStorage.removeItem('memoryGamesPlayed');  // 👈 очищаем статистику Мемонии
+      localStorage.removeItem('memoryGamesPlayed');
+      localStorage.removeItem('flappyGamesPlayed');
       localStorage.removeItem('totalScore');
       localStorage.removeItem('nickname');
       window.location.reload();
@@ -89,16 +93,15 @@ export function Profile() {
         </div>
         <div className="stat-card">
           <div className="stat-value">{stats.bestScores.hexagon}</div>
-          <div className="stat-label">🥞 Лучший результат</div>
+          <div className="stat-label">🥞 Блинопёк</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{stats.gamesPlayed.hexagon}</div>
-          <div className="stat-label">🎮 Сыграно партий</div>
+          <div className="stat-value">{stats.bestScores.memory}</div>
+          <div className="stat-label">🎴 Мемония</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">🥞</div>
-          <div className="stat-label">Любимая игра</div>
-          <div className="stat-sub">Никуся-Блинопёк</div>
+          <div className="stat-value">{stats.bestScores.flappy}</div>
+          <div className="stat-label">🐦 Flappy Bird</div>
         </div>
       </div>
 
@@ -116,12 +119,16 @@ export function Profile() {
       <div className="profile-best">
         <h3>📊 Рекорды по играм</h3>
         <div className="best-row">
-          <span>Никуся-Блинопёк</span>
+          <span>🥞 Никуся-Блинопёк</span>
           <span className="best-score">{stats.bestScores.hexagon} 🥞</span>
         </div>
         <div className="best-row">
           <span>🎴 Мемония</span>
           <span className="best-score">{stats.bestScores.memory} 🎴</span>
+        </div>
+        <div className="best-row">
+          <span>🐦 Flappy Bird</span>
+          <span className="best-score">{stats.bestScores.flappy} 🐦</span>
         </div>
       </div>
 
