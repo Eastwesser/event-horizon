@@ -75,7 +75,6 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     // В зависимости от игры — своя логика наград
     switch req.GameID {
     case "hexagon":
-        // Для hexagon пока доверяем клиенту
         validatedScore = req.Score
         lampsEarned = 10
         ticketsEarned = 0
@@ -87,10 +86,7 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         }
 
     case "memory":
-        // Для memory используем специальную логику
         game := memory.NewMemoryGame(req.Seed)
-
-        // Конвертируем moves из hexagonValidator.Move в memory.Move
         var memoryMoves []memory.Move
         for _, m := range req.Moves {
             memoryMoves = append(memoryMoves, memory.Move{
@@ -117,6 +113,14 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
 
         validatedScore = valScore
         lampsEarned, ticketsEarned = game.CalculateRewards(validatedScore)
+
+    case "flappy":  // 👈 ДОБАВЛЯЕМ FLAPPY
+        validatedScore = req.Score
+        lampsEarned = 5
+        ticketsEarned = req.Score / 10
+        if ticketsEarned > 100 {
+            ticketsEarned = 100
+        }
 
     default:
         return &SubmitScoreResponse{
@@ -210,9 +214,9 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
             Name:        "Flappy Bird",
             Description: "Трубы, птичка, полёт",
             Levels: []LevelInfo{
-                {Level: 1, TargetScore: 10, RewardLamps: 10, RewardTickets: 0},
-                {Level: 2, TargetScore: 20, RewardLamps: 15, RewardTickets: 5},
-                {Level: 3, TargetScore: 35, RewardLamps: 20, RewardTickets: 10},
+                {Level: 1, TargetScore: 10, RewardLamps: 5, RewardTickets: 0},
+                {Level: 2, TargetScore: 20, RewardLamps: 10, RewardTickets: 5},
+                {Level: 3, TargetScore: 35, RewardLamps: 15, RewardTickets: 10},
             },
         }, nil
     default:
