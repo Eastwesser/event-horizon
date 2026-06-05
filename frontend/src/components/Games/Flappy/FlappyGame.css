@@ -1,0 +1,140 @@
+/* frontend/src/components/Games/Flappy/FlappyGame.css */
+.flappy-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.flappy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  margin-bottom: 2rem;
+}
+
+.flappy-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.flappy-stat {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  text-align: center;
+  min-width: 80px;
+}
+
+.flappy-stat .stat-label {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.flappy-stat .stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.flappy-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.flappy-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flappy-btn--new {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.flappy-btn--back {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.flappy-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.flappy-canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.flappy-canvas {
+  border-radius: 15px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  height: auto;
+  max-width: 800px;
+}
+
+.flappy-rules {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+}
+
+.flappy-rules details summary {
+  cursor: pointer;
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.flappy-rules details p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+  .flappy-container {
+    padding: 0.5rem;
+  }
+  
+  .flappy-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .flappy-stats {
+    justify-content: center;
+  }
+  
+  .flappy-buttons {
+    justify-content: center;
+  }
+  
+  .flappy-canvas-wrapper {
+    padding: 0.5rem;
+  }
+}

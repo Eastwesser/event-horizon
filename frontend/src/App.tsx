@@ -4,10 +4,12 @@ import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { Home } from './components/Home/Home';
 import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
+import { MemoryGame } from './components/Games/Memonia/MemoryGame';
+import { FlappyGame } from './components/Games/Flappy/FlappyGame';
+// import { TowerGame } from './components/Games/Towers/TowerGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { useEffect, useState } from 'react';
-import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('accessToken'));
@@ -42,7 +44,7 @@ function App() {
           />
           <Route 
             path="/game/flappy" 
-            element={isAuthenticated ? <div>Flappy Bird — скоро</div> : <Navigate to="/login" />} 
+            element={isAuthenticated ? <FlappyGame /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/game/memory" 

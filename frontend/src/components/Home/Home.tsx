@@ -15,7 +15,7 @@ const games = [
     description: 'Лети и не врезайся в трубы',
     icon: '🐦',
     path: '/game/flappy',
-    available: false,
+    available: true,
   },
   {
     id: 'towers',
