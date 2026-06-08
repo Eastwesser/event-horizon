@@ -6,7 +6,7 @@ import { Home } from './components/Home/Home';
 import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
 import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 import { FlappyGame } from './components/Games/Flappy/FlappyGame';
-// import { TowerGame } from './components/Games/Towers/TowerGame';
+import { TowerGame } from './components/Games/Towers/TowerGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { useEffect, useState } from 'react';
@@ -49,6 +49,10 @@ function App() {
           <Route 
             path="/game/memory" 
             element={isAuthenticated ? <MemoryGame /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/game/towers" 
+            element={isAuthenticated ? <TowerGame /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/leaderboard" 

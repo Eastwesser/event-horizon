@@ -114,14 +114,20 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         validatedScore = valScore
         lampsEarned, ticketsEarned = game.CalculateRewards(validatedScore)
 
-    case "flappy":  // 👈 ДОБАВЛЯЕМ FLAPPY
+    case "flappy":
         validatedScore = req.Score
         lampsEarned = 5
         ticketsEarned = req.Score / 10
         if ticketsEarned > 100 {
             ticketsEarned = 100
         }
-
+    case "towers":
+        validatedScore = req.Score
+        lampsEarned = 5
+        ticketsEarned = req.Score / 20
+        if ticketsEarned > 50 {
+            ticketsEarned = 50
+        }    
     default:
         return &SubmitScoreResponse{
             Success: false,
@@ -219,6 +225,17 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
                 {Level: 3, TargetScore: 35, RewardLamps: 15, RewardTickets: 10},
             },
         }, nil
+    case "towers":
+        return &GameInfo{
+            GameID:      "towers",
+            Name:        "Башенки",
+            Description: "Строй башню из падающих блоков",
+            Levels: []LevelInfo{
+                {Level: 1, TargetScore: 100, RewardLamps: 5, RewardTickets: 0},
+                {Level: 2, TargetScore: 200, RewardLamps: 10, RewardTickets: 5},
+                {Level: 3, TargetScore: 350, RewardLamps: 15, RewardTickets: 10},
+            },
+        }, nil    
     default:
         return nil, fmt.Errorf("game not found: %s", gameID)
     }

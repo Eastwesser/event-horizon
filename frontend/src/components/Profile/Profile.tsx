@@ -10,22 +10,27 @@ export function Profile() {
   const [stats, setStats] = useState({
     nickname: localStorage.getItem('nickname') || email.split('@')[0],
     totalScore: 0,
-    bestScores: { hexagon: 0, memory: 0, flappy: 0 },
-    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0 },
+    bestScores: { hexagon: 0, memory: 0, flappy: 0, towers: 0 },
+    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0, towers: 0 },
     achievements: [] as string[]
   });
 
   useEffect(() => {
     // Загружаем статистику из localStorage
     const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+    
     const hexagonBest = savedScores.hexagon || 0;
     const memoryBest = savedScores.memory || 0;
     const flappyBest = savedScores.flappy || 0;
+    const towersBest = savedScores.towers || 0;
+    
     const hexagonPlayed = parseInt(localStorage.getItem('hexagonGamesPlayed') || '0');
     const memoryPlayed = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');
     const flappyPlayed = parseInt(localStorage.getItem('flappyGamesPlayed') || '0');
-    const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
+    const towersPlayed = parseInt(localStorage.getItem('towersGamesPlayed') || '0');
     
+    const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
+
     // Простые достижения
     const achievements: string[] = [];
     if (hexagonBest >= 100) achievements.push('🥞 100 блинов');
@@ -34,12 +39,13 @@ export function Profile() {
     if (flappyBest >= 100) achievements.push('🐦 Мастер полёта');
     if (hexagonPlayed + memoryPlayed + flappyPlayed >= 10) achievements.push('🎮 Заядлый игрок');
     if (hexagonPlayed + memoryPlayed + flappyPlayed >= 50) achievements.push('🔥 Одержимый');
-    
+    if (towersBest >= 100) achievements.push('🗼 Мастер башен');
+
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,
-      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest },
-      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed },
+      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest, towers: towersBest },
+      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed, towers: towersPlayed },
       achievements
     }));
   }, []);
@@ -87,22 +93,32 @@ export function Profile() {
       </div>
 
       <div className="profile-stats-grid">
+
         <div className="stat-card">
           <div className="stat-value">{stats.totalScore}</div>
           <div className="stat-label">🏆 Всего очков</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-value">{stats.bestScores.hexagon}</div>
           <div className="stat-label">🥞 Блинопёк</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-value">{stats.bestScores.memory}</div>
           <div className="stat-label">🎴 Мемония</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-value">{stats.bestScores.flappy}</div>
           <div className="stat-label">🐦 Flappy Bird</div>
         </div>
+
+        <div className="stat-card">
+          <div className="stat-value">{stats.bestScores.towers}</div>
+          <div className="stat-label">🗼 Башенки</div>
+        </div>
+
       </div>
 
       {stats.achievements.length > 0 && (
@@ -129,6 +145,10 @@ export function Profile() {
         <div className="best-row">
           <span>🐦 Flappy Bird</span>
           <span className="best-score">{stats.bestScores.flappy} 🐦</span>
+        </div>
+        <div className="best-row">
+          <span>🗼 Башенки</span>
+          <span className="best-score">{stats.bestScores.towers} 🗼</span>
         </div>
       </div>
 
