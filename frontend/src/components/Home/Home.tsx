@@ -23,7 +23,7 @@ const games = [
     description: 'Строй башню из падающих блоков',
     icon: '🗼',
     path: '/game/towers',
-    available: false,
+    available: true,
   },
   {
     id: 'memory',

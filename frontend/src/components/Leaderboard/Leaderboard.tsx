@@ -11,7 +11,7 @@ interface LeaderboardEntry {
 export function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory'>('hexagon');
+  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory' | 'flappy' | 'towers'>('hexagon');
   const wsRef = useRef<WebSocket | null>(null);
 
   const fetchLeaderboard = async () => {
@@ -97,18 +97,35 @@ export function Leaderboard() {
             </div>
             
             <div className="leaderboard-game-selector">
+
               <button
                 className={`game-tab ${selectedGame === 'hexagon' ? 'active' : ''}`}
                 onClick={() => setSelectedGame('hexagon')}
               >
                 🥞 Блинопёк
               </button>
+
               <button
                 className={`game-tab ${selectedGame === 'memory' ? 'active' : ''}`}
                 onClick={() => setSelectedGame('memory')}
               >
                 🎴 Мемония
               </button>
+
+              <button
+                className={`game-tab ${selectedGame === 'flappy' ? 'active' : ''}`}
+                onClick={() => setSelectedGame('flappy')}
+              >
+                🐦 Flappy Bird
+              </button>
+
+              <button
+                className={`game-tab ${selectedGame === 'towers' ? 'active' : ''}`}
+                onClick={() => setSelectedGame('towers')}
+              >
+                🗼 Башенки
+              </button>
+              
             </div>
             
             {entries.length === 0 ? (
@@ -135,7 +152,9 @@ export function Leaderboard() {
                       <div className="leaderboard-item-score">
                         <span className="score-value">{entry.score.toLocaleString()}</span>
                         <span className="score-unit">
-                          {selectedGame === 'hexagon' ? '🥞' : '🎴'}
+                          {selectedGame === 'hexagon' ? '🥞' : 
+                          selectedGame === 'memory' ? '🎴' : 
+                          selectedGame === 'flappy' ? '🐦' : '🗼'}
                         </span>
                       </div>
                     </div>

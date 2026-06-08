@@ -1,0 +1,183 @@
+/* frontend/src/components/Games/Towers/TowerGame.css */
+.tower-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.tower-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  margin-bottom: 2rem;
+}
+
+.tower-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tower-stat {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  text-align: center;
+  min-width: 70px;
+}
+
+.tower-stat .stat-label {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.tower-stat .stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.tower-stat--combo .stat-value {
+  color: #ff6b6b;
+}
+
+.tower-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tower-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tower-btn--new {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.tower-btn--save {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid #4ade80;
+  color: #4ade80;
+}
+
+.tower-btn--back {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.tower-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.tower-canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tower-canvas {
+  border-radius: 15px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  height: auto;
+  max-width: 400px;
+}
+
+.tower-rules {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+}
+
+.tower-rules details summary {
+  cursor: pointer;
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.tower-rules details p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.tower-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  z-index: 1100;
+  animation: slideIn 0.3s ease;
+}
+
+.tower-toast--success {
+  background: #4ade80;
+  color: #1a1a2e;
+}
+
+.tower-toast--error {
+  background: #ff6b6b;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Адаптив */
+@media (max-width: 600px) {
+  .tower-container {
+    padding: 0.5rem;
+  }
+  
+  .tower-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .tower-stats {
+    justify-content: center;
+  }
+  
+  .tower-buttons {
+    justify-content: center;
+  }
+  
+  .tower-stat .stat-value {
+    font-size: 1rem;
+  }
+}

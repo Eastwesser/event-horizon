@@ -14,7 +14,7 @@ export function LeaderboardFull() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory' | 'flappy'>('hexagon');
+  const [selectedGame, setSelectedGame] = useState<'hexagon' | 'memory' | 'flappy' | 'towers'>('hexagon');
 
   useEffect(() => {
     setLoading(true);
@@ -80,6 +80,12 @@ export function LeaderboardFull() {
           >
             🎴 Мемония
           </button>
+          <button
+            className={`game-tab ${selectedGame === 'towers' ? 'active' : ''}`}
+            onClick={() => setSelectedGame('towers')}
+          >
+            🗼 Башенки
+          </button>
         </div>
       </div>
 
@@ -126,7 +132,9 @@ export function LeaderboardFull() {
                     <td className="leaderboard-score">
                       <span className="score-value">{entry.score.toLocaleString()}</span>
                       <span className="score-unit">
-                        {selectedGame === 'hexagon' ? '🥞' : '🎴'}
+                        {selectedGame === 'hexagon' ? '🥞' : 
+                        selectedGame === 'memory' ? '🎴' : 
+                        selectedGame === 'flappy' ? '🐦' : '🗼'}
                       </span>
                     </td>
                     <td className="leaderboard-badge">
