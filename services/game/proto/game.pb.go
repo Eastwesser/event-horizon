@@ -28,8 +28,9 @@ type SubmitScoreRequest struct {
 	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`                // уровень сложности (1-5)
 	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`                // добавить счет
 	UserEmail     string                 `protobuf:"bytes,5,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
-	Seed          string                 `protobuf:"bytes,6,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
-	Moves         []*Move                `protobuf:"bytes,7,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
+	Nickname      string                 `protobuf:"bytes,6,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Seed          string                 `protobuf:"bytes,7,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
+	Moves         []*Move                `protobuf:"bytes,8,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
 	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"` // для отладки (опционально)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -96,6 +97,13 @@ func (x *SubmitScoreRequest) GetScore() int32 {
 func (x *SubmitScoreRequest) GetUserEmail() string {
 	if x != nil {
 		return x.UserEmail
+	}
+	return ""
+}
+
+func (x *SubmitScoreRequest) GetNickname() string {
+	if x != nil {
+		return x.Nickname
 	}
 	return ""
 }
@@ -466,16 +474,17 @@ var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\"\xee\x01\n" +
+	"\x10proto/game.proto\x12\x04game\"\x8a\x02\n" +
 	"\x12SubmitScoreRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x14\n" +
 	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x05 \x01(\tR\tuserEmail\x12\x12\n" +
-	"\x04seed\x18\x06 \x01(\tR\x04seed\x12 \n" +
-	"\x05moves\x18\a \x03(\v2\n" +
+	"user_email\x18\x05 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x06 \x01(\tR\bnickname\x12\x12\n" +
+	"\x04seed\x18\a \x01(\tR\x04seed\x12 \n" +
+	"\x05moves\x18\b \x03(\v2\n" +
 	".game.MoveR\x05moves\x12%\n" +
 	"\x0eclient_version\x18\n" +
 	" \x01(\x05R\rclientVersion\"x\n" +

@@ -226,7 +226,8 @@ type UpdateScoreRequest struct {
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"` // для отображения в топе
-	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,6 +279,13 @@ func (x *UpdateScoreRequest) GetUserId() string {
 func (x *UpdateScoreRequest) GetUserEmail() string {
 	if x != nil {
 		return x.UserEmail
+	}
+	return ""
+}
+
+func (x *UpdateScoreRequest) GetNickname() string {
+	if x != nil {
+		return x.Nickname
 	}
 	return ""
 }
@@ -354,8 +362,9 @@ type ScoreEntry struct {
 	Rank          int32                  `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
-	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
-	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Unix timestamp
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
+	UpdatedAt     int64                  `protobuf:"varint,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Unix timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -411,6 +420,13 @@ func (x *ScoreEntry) GetUserEmail() string {
 	return ""
 }
 
+func (x *ScoreEntry) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
 func (x *ScoreEntry) GetScore() int32 {
 	if x != nil {
 		return x.Score
@@ -440,26 +456,28 @@ const file_proto_leaderboard_proto_rawDesc = "" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"A\n" +
 	"\x15GetPlayerRankResponse\x12\x12\n" +
 	"\x04rank\x18\x01 \x01(\x05R\x04rank\x12\x14\n" +
-	"\x05score\x18\x02 \x01(\x05R\x05score\"{\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\"\x97\x01\n" +
 	"\x12UpdateScoreRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x14\n" +
-	"\x05score\x18\x04 \x01(\x05R\x05score\"d\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x14\n" +
+	"\x05score\x18\x05 \x01(\x05R\x05score\"d\n" +
 	"\x13UpdateScoreResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x19\n" +
 	"\bnew_rank\x18\x02 \x01(\x05R\anewRank\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x8d\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xa9\x01\n" +
 	"\n" +
 	"ScoreEntry\x12\x12\n" +
 	"\x04rank\x18\x01 \x01(\x05R\x04rank\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x14\n" +
-	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x1d\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x14\n" +
+	"\x05score\x18\x05 \x01(\x05R\x05score\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\x03R\tupdatedAt2\x93\x02\n" +
+	"updated_at\x18\x06 \x01(\x03R\tupdatedAt2\x93\x02\n" +
 	"\x12LeaderboardService\x12S\n" +
 	"\fGetTopScores\x12 .leaderboard.GetTopScoresRequest\x1a!.leaderboard.GetTopScoresResponse\x12V\n" +
 	"\rGetPlayerRank\x12!.leaderboard.GetPlayerRankRequest\x1a\".leaderboard.GetPlayerRankResponse\x12P\n" +

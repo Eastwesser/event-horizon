@@ -38,7 +38,8 @@ message UpdateScoreRequest {
     string game_id = 1;
     string user_id = 2;
     string user_email = 3;    // для отображения в топе
-    int32 score = 4;
+    string nickname = 4;
+    int32 score = 5;
 }
 
 message UpdateScoreResponse {
@@ -51,6 +52,7 @@ message ScoreEntry {
     int32 rank = 1;
     string user_id = 2;
     string user_email = 3;
-    int32 score = 4;
-    int64 updated_at = 5;     // Unix timestamp
+    string nickname = 4;
+    int32 score = 5;
+    int64 updated_at = 6;     // Unix timestamp
 }
