@@ -105,7 +105,7 @@ export const useTowerStore = create<TowerState>((set, get) => ({
   },
   
   dropBlock: () => {
-    const { currentBlockX, blockWidth, towerBlocks, GAME_WIDTH, score, level, combo, gameOver } = get();
+    const { currentBlockX, blockWidth, towerBlocks, GAME_WIDTH, score, combo, gameOver } = get();
     
     if (gameOver) return;
     
@@ -194,8 +194,9 @@ export const useTowerStore = create<TowerState>((set, get) => ({
     const { score } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
+    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';  // 👈 ДОБАВИТЬ
     
-    console.log('💾 Сохранение рекорда:', { userId, userEmail, score });
+    console.log('💾 Сохранение рекорда:', { userId, userEmail, nickname, score });  // 👈 обновить лог
     
     if (!userId || !userEmail) {
       console.log('❌ Нет userId или userEmail');
@@ -212,6 +213,7 @@ export const useTowerStore = create<TowerState>((set, get) => ({
           level: 1,
           score: score,
           user_email: userEmail,
+          nickname: nickname,  // 👈 ДОБАВИТЬ
           seed: `towers_seed_${Date.now()}`,
           moves: [],
         }),

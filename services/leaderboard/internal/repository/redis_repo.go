@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "log"
+    "strings"
     "time"
 
     "github.com/redis/go-redis/v9"
@@ -13,15 +14,17 @@ type ScoreEntry struct {
 	Rank	  int
     UserID    string
     UserEmail string
+    Nickname  string
     Score     int
     UpdatedAt int64
 }
 
 type LeaderboardRepository interface {
-    UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error)
+    UpdateScore(ctx context.Context, gameID, userID, userEmail, nickname string, score int) (int, error)
     UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error
     GetTopScores(ctx context.Context, gameID string, limit int) ([]ScoreEntry, error)
     GetPlayerRank(ctx context.Context, gameID, userID string) (int, int, error)
+    SaveUserInfo(ctx context.Context, gameID, userID, userEmail, nickname string) error
 }
 
 type RedisLeaderboardRepo struct {
@@ -35,14 +38,23 @@ func NewRedisLeaderboardRepo(addr string, db int) *RedisLeaderboardRepo {
     })
     return &RedisLeaderboardRepo{client: client}
 }
-
-func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error) {
+func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, userEmail, nickname string, score int) (int, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
-    emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
+    infoKey := fmt.Sprintf("leaderboard:%s:info", gameID)
     
-    // Сохраняем email
+    // Сохраняем email и nickname отдельными полями
     if userEmail != "" {
-        r.client.HSet(ctx, emailKey, userID, userEmail)
+        r.client.HSet(ctx, infoKey, userID+"_email", userEmail)
+    }
+    if nickname != "" {
+        r.client.HSet(ctx, infoKey, userID+"_nickname", nickname)
+    } else if userEmail != "" {
+        // fallback на email
+        defaultNick := userEmail
+        if idx := strings.Index(defaultNick, "@"); idx > 0 {
+            defaultNick = defaultNick[:idx]
+        }
+        r.client.HSet(ctx, infoKey, userID+"_nickname", defaultNick)
     }
 
     // Получаем текущий счёт
@@ -56,7 +68,6 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
     newScore := int(currentScore) + score
     log.Printf("💰 Summing score for %s: %d + %d = %d", userID, int(currentScore), score, newScore)
     
-    // Обновляем счёт
     member := &redis.Z{
         Score:  float64(newScore),
         Member: userID,
@@ -106,9 +117,8 @@ func (r *RedisLeaderboardRepo) UpdateScoreOnly(ctx context.Context, gameID, user
 
 func (r *RedisLeaderboardRepo) GetTopScores(ctx context.Context, gameID string, limit int) ([]ScoreEntry, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
-    emailKey := fmt.Sprintf("leaderboard:%s:emails", gameID)
+    infoKey := fmt.Sprintf("leaderboard:%s:info", gameID)
     
-    // Получаем топ-N
     results, err := r.client.ZRevRangeWithScores(ctx, key, 0, int64(limit-1)).Result()
     if err != nil {
         return nil, err
@@ -119,13 +129,26 @@ func (r *RedisLeaderboardRepo) GetTopScores(ctx context.Context, gameID string, 
         userID := result.Member.(string)
         score := int(result.Score)
         
-        // Получаем email
-        email, _ := r.client.HGet(ctx, emailKey, userID).Result()
+        // Получаем email и nickname через HGet (а не HGetAll)
+        email, _ := r.client.HGet(ctx, infoKey, userID+"_email").Result()
+        nickname, _ := r.client.HGet(ctx, infoKey, userID+"_nickname").Result()
+        
+        if nickname == "" {
+            if email != "" {
+                nickname = email
+                if idx := strings.Index(nickname, "@"); idx > 0 {
+                    nickname = nickname[:idx]
+                }
+            } else {
+                nickname = userID[:8] // fallback на часть userID
+            }
+        }
         
         entries = append(entries, ScoreEntry{
             Rank:      i + 1,
             UserID:    userID,
             UserEmail: email,
+            Nickname:  nickname,
             Score:     score,
             UpdatedAt: time.Now().Unix(),
         })
@@ -152,4 +175,33 @@ func (r *RedisLeaderboardRepo) GetPlayerRank(ctx context.Context, gameID, userID
     }
     
     return int(rank) + 1, int(score), nil
+}
+
+// SaveUserInfo сохраняет email и nickname пользователя
+func (r *RedisLeaderboardRepo) SaveUserInfo(ctx context.Context, gameID, userID, userEmail, nickname string) error {
+    infoKey := fmt.Sprintf("leaderboard:%s:info", gameID)
+    
+    if userEmail != "" {
+        if err := r.client.HSet(ctx, infoKey, userID+"_email", userEmail).Err(); err != nil {
+            return err
+        }
+    }
+    
+    if nickname != "" {
+        if err := r.client.HSet(ctx, infoKey, userID+"_nickname", nickname).Err(); err != nil {
+            return err
+        }
+    } else if userEmail != "" {
+        // fallback на email
+        defaultNick := userEmail
+        if idx := strings.Index(defaultNick, "@"); idx > 0 {
+            defaultNick = defaultNick[:idx]
+        }
+        if err := r.client.HSet(ctx, infoKey, userID+"_nickname", defaultNick).Err(); err != nil {
+            return err
+        }
+    }
+    
+    log.Printf("💾 Saved user info: user=%s, email=%s, nickname=%s", userID, userEmail, nickname)
+    return nil
 }

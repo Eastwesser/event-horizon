@@ -10,8 +10,9 @@ import (
 type LeaderboardService interface {
     GetTopScores(ctx context.Context, gameID string, limit int) ([]repository.ScoreEntry, error)
     GetPlayerRank(ctx context.Context, gameID, userID string) (int, int, error)
-    UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error)
-    UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error
+    UpdateScore(ctx context.Context, gameID, userID, userEmail, nickname string, score int) (int, error)
+    UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error  // без nickname
+    SaveUserInfo(ctx context.Context, gameID, userID, userEmail, nickname string) error
 }
 
 type leaderboardService struct {
@@ -33,13 +34,17 @@ func (s *leaderboardService) GetPlayerRank(ctx context.Context, gameID, userID s
     return s.repo.GetPlayerRank(ctx, gameID, userID)
 }
 
-func (s *leaderboardService) UpdateScore(ctx context.Context, gameID, userID, userEmail string, score int) (int, error) {
+func (s *leaderboardService) UpdateScore(ctx context.Context, gameID, userID, userEmail, nickname string, score int) (int, error) {
     if gameID == "" || userID == "" {
         return 0, fmt.Errorf("game_id and user_id are required")
     }
-    return s.repo.UpdateScore(ctx, gameID, userID, userEmail, score)
+    return s.repo.UpdateScore(ctx, gameID, userID, userEmail, nickname, score)
 }
 
 func (s *leaderboardService) UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score int) error {
     return s.repo.UpdateScoreOnly(ctx, gameID, userID, userEmail, score)
+}
+
+func (s *leaderboardService) SaveUserInfo(ctx context.Context, gameID, userID, userEmail, nickname string) error {
+    return s.repo.SaveUserInfo(ctx, gameID, userID, userEmail, nickname)
 }

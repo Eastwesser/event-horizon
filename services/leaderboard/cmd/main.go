@@ -26,6 +26,7 @@ type ScoreEvent struct {
     UserID    string `json:"user_id"`
     GameID    string `json:"game_id"`
     UserEmail string `json:"user_email"`
+    Nickname  string `json:"nickname"`
     Score     int    `json:"score"`
 }
 
@@ -98,6 +99,11 @@ func main() {
         }
 
         log.Printf("📡 Received score: game=%s user=%s score=%d", event.GameID, event.UserID, event.Score)
+        
+        // Сохраняем информацию о пользователе
+        if err := leaderboardService.SaveUserInfo(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Nickname); err != nil {
+            log.Printf("Failed to save user info: %v", err)
+        }
 
         // Быстрое обновление без ранга
         if err := leaderboardService.UpdateScoreOnly(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Score); err != nil {
@@ -112,6 +118,8 @@ func main() {
     } else {
         log.Println("📡 Subscribed to NATS: score.updated")
     }
+
+
 
     // Создаём gRPC хендлер
     leaderboardHandler := handler.NewLeaderboardHandler(leaderboardService)
