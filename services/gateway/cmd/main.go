@@ -19,11 +19,14 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
     "github.com/nats-io/nats.go"
+    "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 
     "event_horizon/services/gateway/internal/cache"
     "event_horizon/services/gateway/internal/client"
+    "event_horizon/services/gateway/internal/middleware"
+    "event_horizon/services/gateway/internal/ratelimit"
     authPb "event_horizon/services/auth/proto"
     gamePb "event_horizon/services/game/proto"
     leaderboardPb "event_horizon/services/leaderboard/proto"
@@ -187,6 +190,22 @@ func main() {
     }
 
     r := gin.Default()
+
+    // 👇 ДОБАВИТЬ ЭТОТ БЛОК (перед всеми маршрутами)
+    // Подключаемся к Redis
+    rdb := redis.NewClient(&redis.Options{
+        Addr: "localhost:6379",
+    })
+
+    // Проверяем соединение с Redis
+    if err := rdb.Ping(context.Background()).Err(); err != nil {
+        log.Printf("⚠️ Redis connection failed: %v", err)
+    } else {
+        log.Println("✅ Redis connected for rate limiter")
+        limiter := ratelimit.NewRateLimiter(rdb)
+        // Rate limiter middleware должен быть ПЕРВЫМ
+        r.Use(middleware.RateLimitMiddleware(limiter))
+    }
 
     r.GET("/health", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -403,6 +422,7 @@ func main() {
             Level  int32  `json:"level"`
             Score  int32  `json:"score"`
             UserEmail string `json:"user_email"`
+            Nickname  string `json:"nickname"`
             Seed   string `json:"seed"`
             Moves  []struct {
                 FromX     int32 `json:"fromX"`
@@ -445,6 +465,7 @@ func main() {
             Level:  req.Level,
             Score:  req.Score,   // 👈 добавляем!
             UserEmail: req.UserEmail,
+            Nickname:  req.Nickname,  // 👈 ДОБАВИТЬ
             Seed:   req.Seed,
             Moves:  moves,
         })
