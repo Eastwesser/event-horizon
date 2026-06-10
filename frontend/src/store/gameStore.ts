@@ -349,6 +349,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
+    const userEmail = localStorage.getItem('userEmail') || '';  // 👈 ПЕРЕНЕСТИ СЮДА
+    const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0];  // 👈
+
       let movesToSend = get().gameMoves;
       if (movesToSend.length === 0) {
           console.log('⚠️ gameMoves is empty, creating test moves');
@@ -464,7 +467,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
           console.log('🎯 Current score from store:', currentScore);
 
-          const userEmail = localStorage.getItem('userEmail') || '';
+          // const userEmail = localStorage.getItem('userEmail') || '';
           console.log('📧 userEmail:', userEmail);
 
           console.log('🔍 FINAL REQUEST DATA:', {
@@ -483,6 +486,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             level: level,
             score: currentScore,
             user_email: userEmail,
+            nickname: nickname,  // 👈 ДОБАВИТЬ
             seed: 'game_seed_' + Date.now(),
             moves: [],  // 👈 временно пустой массив
             // moves: get().gameMoves,  // 👈 отправляем реальные ходы
