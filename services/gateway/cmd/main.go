@@ -19,19 +19,12 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
     "github.com/nats-io/nats.go"
-    // "github.com/prometheus/client_golang/prometheus"
-    // "github.com/prometheus/client_golang/prometheus/promauto"
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promauto"
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-    "go.opentelemetry.io/otel/sdk/resource"
-    "go.opentelemetry.io/otel/sdk/trace"
-    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-    "go.opentelemetry.io/otel/propagation"
 
     "event_horizon/services/gateway/internal/cache"
     "event_horizon/services/gateway/internal/client"
@@ -154,49 +147,11 @@ func getUserIDFromToken(tokenString string) (string, error) {
     return userID, nil
 }
 
-// Инициализация OpenTelemetry для Jaeger
-func initTracer(ctx context.Context) (func(context.Context) error, error) {
-    // Создаём экспортёр для OTLP gRPC (Jaeger)
-    exporter, err := otlptracegrpc.New(ctx,
-        otlptracegrpc.WithEndpoint("localhost:4317"),
-        otlptracegrpc.WithInsecure(),
-    )
-    if err != nil {
-        return nil, err
-    }
-
-    // Создаём TracerProvider
-    tp := trace.NewTracerProvider(
-        trace.WithBatcher(exporter),
-        trace.WithResource(resource.NewWithAttributes(
-            semconv.SchemaURL,
-            semconv.ServiceNameKey.String("gateway"),
-            attribute.String("environment", "development"),
-        )),
-    )
-    otel.SetTracerProvider(tp)
-    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-        propagation.TraceContext{},
-        propagation.Baggage{},
-    ))
-
-    return tp.Shutdown, nil
-}
-
 func main() {
-    ctx := context.Background()
-
-    // Инициализация Jaeger
-    shutdown, err := initTracer(ctx)
-    if err != nil {
-        log.Fatalf("Failed to initialize tracer: %v", err)
-    }
-    defer shutdown(ctx)
-
     hub := NewHub()
     go hub.Run()
 
-    // Запускаем HTTP сервер для метрик на порту 9091 (для Auth)
+    // Запускаем HTTP сервер для метрик
     go func() {
         http.Handle("/metrics", promhttp.Handler())
         log.Printf("📊 Metrics endpoint: http://localhost:9095/metrics")
@@ -248,43 +203,54 @@ func main() {
 
     r := gin.Default()
 
+    // ---------- КАСТОМНЫЕ МЕТРИКИ GATEWAY ----------
+    // Счётчик запросов
+    gatewayRequestsTotal := promauto.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "gateway_requests_total",
+            Help: "Total number of HTTP requests to Gateway",
+        },
+        []string{"method", "path", "status"},
+    )
+
+    // Гистограмма длительности запросов
+    gatewayRequestDuration := promauto.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "gateway_request_duration_seconds",
+            Help:    "Duration of HTTP requests in seconds",
+            Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
+        },
+        []string{"method", "path"},
+    )
+
+    // Middleware для сбора метрик
     r.Use(func(c *gin.Context) {
-        // Создаём span для каждого запроса
-        tracer := otel.Tracer("gateway")
-        ctx, span := tracer.Start(c.Request.Context(), c.Request.URL.Path)
-        defer span.End()
-
-        // Добавляем атрибуты
-        span.SetAttributes(
-            attribute.String("http.method", c.Request.Method),
-            attribute.String("http.url", c.Request.URL.String()),
-        )
-
-        c.Request = c.Request.WithContext(ctx)
+        start := time.Now()
         c.Next()
+        duration := time.Since(start).Seconds()
 
-        // Добавляем статус ответа
-        span.SetAttributes(
-            attribute.Int("http.status_code", c.Writer.Status()),
-        )
+        status := strconv.Itoa(c.Writer.Status())
+        path := c.Request.URL.Path
+        method := c.Request.Method
+
+        gatewayRequestsTotal.WithLabelValues(method, path, status).Inc()
+        gatewayRequestDuration.WithLabelValues(method, path).Observe(duration)
     })
 
-    // 👇 ДОБАВИТЬ ЭТОТ БЛОК (перед всеми маршрутами)
-    // Подключаемся к Redis
+    // ---------- RATE LIMITER ----------
     rdb := redis.NewClient(&redis.Options{
         Addr: "localhost:6379",
     })
 
-    // Проверяем соединение с Redis
     if err := rdb.Ping(context.Background()).Err(); err != nil {
         log.Printf("⚠️ Redis connection failed: %v", err)
     } else {
         log.Println("✅ Redis connected for rate limiter")
         limiter := ratelimit.NewRateLimiter(rdb)
-        // Rate limiter middleware должен быть ПЕРВЫМ
         r.Use(middleware.RateLimitMiddleware(limiter))
     }
 
+    // ---------- РОУТЫ ----------
     r.GET("/health", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
     })
@@ -340,10 +306,8 @@ func main() {
             return
         }
 
-        // Если UserId пустой — достаём из токена
         userId := resp.UserId
         if userId == "" {
-            // Парсим токен
             parts := strings.Split(resp.AccessToken, ".")
             if len(parts) == 3 {
                 payload, err := base64.RawURLEncoding.DecodeString(parts[1])
@@ -410,50 +374,10 @@ func main() {
         })
     })
 
-    // r.GET("/api/billing/balance/all1", func(c *gin.Context) {
-    //     token := c.GetHeader("Authorization")
-    //     if token == "" {
-    //         c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
-    //         return
-    //     }
-        
-    //     // Извлекаем user_id из токена (или из запроса)
-    //     // Временно: получаем user_id из контекста (нужно добавить authMiddleware)
-    //     userID := c.Query("user_id")
-    //     if userID == "" {
-    //         c.JSON(http.StatusBadRequest, gin.H{"error": "user_id required"})
-    //         return
-    //     }
-        
-    //     resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
-    //         UserId: userID,
-    //     })
-    //     if err != nil {
-    //         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-    //         return
-    //     }
-        
-    //     // Конвертируем ответ
-    //     var lamps, tickets int32
-    //     for _, b := range resp.Balances {
-    //         if b.Currency == billingPb.CurrencyType_LAMPS {
-    //             lamps = b.Balance
-    //         } else if b.Currency == billingPb.CurrencyType_TICKETS {
-    //             tickets = b.Balance
-    //         }
-    //     }
-        
-    //     c.JSON(http.StatusOK, gin.H{
-    //         "lamps":   lamps,
-    //         "tickets": tickets,
-    //     })
-    // })
-
     r.GET("/api/leaderboard", func(c *gin.Context) {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
         
-        // Вызываем leaderboard через gRPC
         conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -463,7 +387,6 @@ func main() {
         
         leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(conn)
         
-        // Преобразуем limit в int32
         var limitInt int32 = 10
         if limit != "" {
             if l, err := strconv.Atoi(limit); err == nil {
@@ -485,7 +408,6 @@ func main() {
 
     r.POST("/api/game/submit", func(c *gin.Context) {
         body, _ := c.GetRawData()
-        log.Printf("📥 Gateway received: %s", string(body))  // 👈 добавить
         c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
         cacheKey := string(body)
@@ -495,14 +417,14 @@ func main() {
         }
 
         var req struct {
-            UserID string `json:"user_id"`
-            GameID string `json:"game_id"`
-            Level  int32  `json:"level"`
-            Score  int32  `json:"score"`
+            UserID    string `json:"user_id"`
+            GameID    string `json:"game_id"`
+            Level     int32  `json:"level"`
+            Score     int32  `json:"score"`
             UserEmail string `json:"user_email"`
             Nickname  string `json:"nickname"`
-            Seed   string `json:"seed"`
-            Moves  []struct {
+            Seed      string `json:"seed"`
+            Moves     []struct {
                 FromX     int32 `json:"fromX"`
                 FromY     int32 `json:"fromY"`
                 ToX       int32 `json:"toX"`
@@ -527,25 +449,15 @@ func main() {
             }
         }
 
-        log.Printf("📤 SENDING to Game: %+v", &gamePb.SubmitScoreRequest{
-            UserId: req.UserID,
-            GameId: req.GameID,
-            Level:  req.Level,
-            Score:  req.Score,
-            UserEmail: req.UserEmail,
-            Seed:   req.Seed,
-            Moves:  moves,
-        })
-
         resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
-            UserId: req.UserID,
-            GameId: req.GameID,
-            Level:  req.Level,
-            Score:  req.Score,   // 👈 добавляем!
+            UserId:    req.UserID,
+            GameId:    req.GameID,
+            Level:     req.Level,
+            Score:     req.Score,
             UserEmail: req.UserEmail,
-            Nickname:  req.Nickname,  // 👈 ДОБАВИТЬ
-            Seed:   req.Seed,
-            Moves:  moves,
+            Nickname:  req.Nickname,
+            Seed:      req.Seed,
+            Moves:     moves,
         })
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
