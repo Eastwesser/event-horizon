@@ -5,14 +5,24 @@ import (
     "encoding/json"
     "log"
     "net"
+    "net/http"
     "os"
     "os/signal"
     "syscall"
     "time"
 
     "github.com/nats-io/nats.go"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
     "google.golang.org/grpc/reflection"
+    // "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
     "event_horizon/services/leaderboard/internal/config"
     "event_horizon/services/leaderboard/internal/handler"
@@ -30,8 +40,46 @@ type ScoreEvent struct {
     Score     int    `json:"score"`
 }
 
+// Инициализация OpenTelemetry для Jaeger
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    // Создаём экспортёр для OTLP gRPC (Jaeger)
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("localhost:4317"),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    // Создаём TracerProvider
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("leaderboard"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    return tp.Shutdown, nil
+}
+
 func main() {
     cfg := config.Load()
+
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("Failed to initialize tracer: %v", err)
+    }
+    defer shutdown(ctx)
 
     // Подключаемся к Redis
     redisRepo := repository.NewRedisLeaderboardRepo(cfg.RedisAddr, cfg.RedisDB)
@@ -99,7 +147,7 @@ func main() {
         }
 
         log.Printf("📡 Received score: game=%s user=%s score=%d", event.GameID, event.UserID, event.Score)
-        
+
         // Сохраняем информацию о пользователе
         if err := leaderboardService.SaveUserInfo(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Nickname); err != nil {
             log.Printf("Failed to save user info: %v", err)
@@ -119,15 +167,26 @@ func main() {
         log.Println("📡 Subscribed to NATS: score.updated")
     }
 
-
-
     // Создаём gRPC хендлер
     leaderboardHandler := handler.NewLeaderboardHandler(leaderboardService)
 
-    // Настраиваем gRPC сервер
+    // Настраиваем gRPC сервер с трейсингом
+    // grpcServer := grpc.NewServer(
+    //     grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+    //     grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+    // )
     grpcServer := grpc.NewServer()
     pb.RegisterLeaderboardServiceServer(grpcServer, leaderboardHandler)
     reflection.Register(grpcServer)
+
+    // Метрики
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        log.Printf("📊 Metrics endpoint: http://localhost:9094/metrics")
+        if err := http.ListenAndServe(":9094", nil); err != nil {
+            log.Printf("Leaderbord metrics server error: %v", err)
+        }
+    }()
 
     // Запускаем listener
     lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)

@@ -19,9 +19,19 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
     "github.com/nats-io/nats.go"
+    // "github.com/prometheus/client_golang/prometheus"
+    // "github.com/prometheus/client_golang/prometheus/promauto"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
     "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+    "go.opentelemetry.io/otel/propagation"
 
     "event_horizon/services/gateway/internal/cache"
     "event_horizon/services/gateway/internal/client"
@@ -144,9 +154,56 @@ func getUserIDFromToken(tokenString string) (string, error) {
     return userID, nil
 }
 
+// Инициализация OpenTelemetry для Jaeger
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    // Создаём экспортёр для OTLP gRPC (Jaeger)
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("localhost:4317"),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    // Создаём TracerProvider
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("gateway"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    return tp.Shutdown, nil
+}
+
 func main() {
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("Failed to initialize tracer: %v", err)
+    }
+    defer shutdown(ctx)
+
     hub := NewHub()
     go hub.Run()
+
+    // Запускаем HTTP сервер для метрик на порту 9091 (для Auth)
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        log.Printf("📊 Metrics endpoint: http://localhost:9095/metrics")
+        if err := http.ListenAndServe(":9095", nil); err != nil {
+            log.Printf("API Gateway metrics server error: %v", err)
+        }
+    }()
 
     authClient, err := client.NewAuthClient("localhost:50051")
     if err != nil {
@@ -190,6 +247,27 @@ func main() {
     }
 
     r := gin.Default()
+
+    r.Use(func(c *gin.Context) {
+        // Создаём span для каждого запроса
+        tracer := otel.Tracer("gateway")
+        ctx, span := tracer.Start(c.Request.Context(), c.Request.URL.Path)
+        defer span.End()
+
+        // Добавляем атрибуты
+        span.SetAttributes(
+            attribute.String("http.method", c.Request.Method),
+            attribute.String("http.url", c.Request.URL.String()),
+        )
+
+        c.Request = c.Request.WithContext(ctx)
+        c.Next()
+
+        // Добавляем статус ответа
+        span.SetAttributes(
+            attribute.Int("http.status_code", c.Writer.Status()),
+        )
+    })
 
     // 👇 ДОБАВИТЬ ЭТОТ БЛОК (перед всеми маршрутами)
     // Подключаемся к Redis

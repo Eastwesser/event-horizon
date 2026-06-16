@@ -1,16 +1,27 @@
 package main
 
 import (
+    "context"
     "log"
     "net"
+    "net/http"
     "os"
     "os/signal"
     "syscall"
     "time"
 
     "github.com/nats-io/nats.go"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
     "google.golang.org/grpc/reflection"
+    // "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
     "event_horizon/services/game/internal/config"
     "event_horizon/services/game/internal/handler"
@@ -19,8 +30,46 @@ import (
     pb "event_horizon/services/game/proto"
 )
 
+// Инициализация OpenTelemetry для Jaeger
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    // Создаём экспортёр для OTLP gRPC (Jaeger)
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("localhost:4317"),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    // Создаём TracerProvider
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("game"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    return tp.Shutdown, nil
+}
+
 func main() {
     cfg := config.Load()
+
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("Failed to initialize tracer: %v", err)
+    }
+    defer shutdown(ctx)
 
     // Подключаемся к NATS
     nc, err := nats.Connect(cfg.NATSUrl)
@@ -50,10 +99,23 @@ func main() {
     gameService := service.NewGameService(gameRepo, js)
     gameHandler := handler.NewGameHandler(gameService)
 
-    // gRPC сервер
+    // gRPC сервер с трейсингом
+    // grpcServer := grpc.NewServer(
+    //     grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+    //     grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+    // )
     grpcServer := grpc.NewServer()
     pb.RegisterGameServiceServer(grpcServer, gameHandler)
     reflection.Register(grpcServer)
+
+    // Метрики
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        log.Printf("📊 Metrics endpoint: http://localhost:9092/metrics")
+        if err := http.ListenAndServe(":9092", nil); err != nil {
+            log.Printf("Game metrics server error: %v", err)
+        }
+    }()
 
     // Listener
     lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
