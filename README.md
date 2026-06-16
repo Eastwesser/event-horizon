@@ -333,3 +333,53 @@ Goose миграции	    ✅ Auth, Game, Billing, Leaderboard
 - NATS кластер из 3 нод
 - Load balancer (nginx)
 - tech debt
+
+## 🖥️ Мониторинг (добавлено 16.06.2026)
+
+### Стек
+- **Prometheus** — сбор метрик (порт 9090)
+- **Grafana** — визуализация (порт 3000, admin/admin)
+- **Jaeger** — трейсинг (порт 16686, в разработке)
+- **Alertmanager** — уведомления в Telegram
+
+### Метрики
+Каждый сервис отдаёт метрики на своём порту:
+
+| Сервис | Метрики | Порт |
+|--------|---------|------|
+| Auth | `http://localhost:9091/metrics` | 9091 |
+| Game | `http://localhost:9092/metrics` | 9092 |
+| Billing | `http://localhost:9093/metrics` | 9093 |
+| Leaderboard | `http://localhost:9094/metrics` | 9094 |
+| Gateway | `http://localhost:9095/metrics` | 9095 |
+| NATS | `http://localhost:8222/metrics` | 8222 |
+
+### Дашборды Grafana
+| ID | Название |
+|----|----------|
+| 153 | Go Metrics |
+| 1860 | Node Exporter Full |
+| 13707 | NATS Server Dashboard |
+| - | **EventHorizon Business Metrics** (кастомный) |
+
+### Алерты
+Настроены 5 алертов в Telegram:
+- Gateway Down
+- Auth Down
+- Game Down
+- Billing Down
+- Leaderboard Down
+
+### Бизнес-метрики
+- `gateway_requests_total` — RPS по эндпоинтам
+- `gateway_request_duration_seconds` — Latency (P50/P95/P99)
+- `game_submits_total` — Количество игр по типам
+- `game_score_histogram` — Распределение очков
+
+### Проверка
+```bash
+# Проверить все метрики
+curl -s http://localhost:9095/metrics | grep gateway_
+
+# Проверить Prometheus
+curl -s http://localhost:9090/api/v1/query?query=up | jq '.data.result'
