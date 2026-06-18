@@ -1,6 +1,9 @@
 #!/bin/bash
 cd ~/event_horizon
 
+# Загружаем переменные из .env
+export $(grep -v '^#' .env | xargs)
+
 echo "Stopping old processes..."
 pkill -f "auth-service" || true
 pkill -f "leaderboard-service" || true
