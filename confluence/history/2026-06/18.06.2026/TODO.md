@@ -114,3 +114,7 @@ http://localhost:16686
 k6 run loadtest.js
 Создано: 17 июня 2026
 Фокус: трейсинг + нагрузка
+
+
+-- ANOTHER TODO --
+
