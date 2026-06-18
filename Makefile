@@ -31,10 +31,11 @@ stop-services:
 # Запустить все сервисы (каждая команда в своей подоболочке)
 start-services:
 	@echo "🚀 Starting all services..."
-	cd /home/denismatveev/event_horizon/services/auth && go build -o auth-service ./cmd/main.go && ./auth-service > /tmp/auth.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/leaderboard && go build -o leaderboard-service ./cmd/main.go && ./leaderboard-service > /tmp/leaderboard.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/game && go build -o game-service ./cmd/main.go && ./game-service > /tmp/game.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/billing && go build -o billing-service ./cmd/main.go && ./billing-service > /tmp/billing.log 2>&1 &
+	export $$(grep -v '^#' ../.env | xargs); \
+	cd /home/denismatveev/event_horizon/services/auth && go build -o auth-service ./cmd/main.go && ./auth-service > /tmp/auth.log 2>&1 & \
+	cd /home/denismatveev/event_horizon/services/leaderboard && go build -o leaderboard-service ./cmd/main.go && ./leaderboard-service > /tmp/leaderboard.log 2>&1 & \
+	cd /home/denismatveev/event_horizon/services/game && go build -o game-service ./cmd/main.go && ./game-service > /tmp/game.log 2>&1 & \
+	cd /home/denismatveev/event_horizon/services/billing && go build -o billing-service ./cmd/main.go && ./billing-service > /tmp/billing.log 2>&1 & \
 	cd /home/denismatveev/event_horizon/services/gateway && go build -o gateway ./cmd/main.go && ./gateway > /tmp/gateway.log 2>&1 &
 	sleep 2
 	@echo "✅ All services started"

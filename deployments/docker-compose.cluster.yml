@@ -139,9 +139,12 @@ services:
     ports:
       - "16686:16686"   # UI
       - "4318:4318"     # OTLP HTTP
+      - "4317:4317"     # OTLP gRPC
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - event-horizon-net
 

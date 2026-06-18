@@ -34,7 +34,19 @@ func RateLimitMiddleware(limiter *ratelimit.RateLimiter) gin.HandlerFunc {
         }
 
         var allowed bool
+        // RATE LIMITER (OFF)
+        // switch {
+        // case path == "/api/game/submit" && method == "POST":
+        //     // Временно отключаем для теста
+        //     allowed = true  // 👈 вместо limiter.AllowSubmit()
+        //     if userID != "" {
+        //         allowed = true  // 👈 вместо limiter.AllowSubmit()
+        //     }    
+        //     // } else {
+        //     //     allowed = limiter.AllowSubmit(c.ClientIP())
+        //     // }
 
+        // THE RATE LIMITER (ON)
         switch {
         case path == "/api/game/submit" && method == "POST":
             if userID != "" {

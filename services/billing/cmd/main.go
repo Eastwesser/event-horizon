@@ -47,11 +47,15 @@ type ScoreEvent struct {
 
 // Инициализация OpenTelemetry для Jaeger
 func initTracer(ctx context.Context) (func(context.Context) error, error) {
-    log.Println("🔄 Initializing Jaeger tracer...")
+    // Читаем эндпоинт из переменной окружения
+    endpoint := os.Getenv("JAEGER_ENDPOINT")
+    if endpoint == "" {
+        endpoint = "localhost:4317"
+    }
+    log.Printf("🔄 Initializing Jaeger tracer with endpoint: %s", endpoint)
 
-    // Создаём экспортёр для OTLP gRPC (Jaeger)
     exporter, err := otlptracegrpc.New(ctx,
-        otlptracegrpc.WithEndpoint("192.168.1.100:4317"),
+        otlptracegrpc.WithEndpoint(endpoint),
         otlptracegrpc.WithInsecure(),
     )
     if err != nil {
@@ -60,7 +64,6 @@ func initTracer(ctx context.Context) (func(context.Context) error, error) {
     }
     log.Println("✅ Jaeger exporter created")
 
-    // Создаём TracerProvider
     tp := trace.NewTracerProvider(
         trace.WithBatcher(exporter),
         trace.WithResource(resource.NewWithAttributes(
