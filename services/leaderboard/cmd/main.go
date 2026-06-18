@@ -15,7 +15,7 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
     "google.golang.org/grpc/reflection"
-    // "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+    "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -42,14 +42,18 @@ type ScoreEvent struct {
 
 // Инициализация OpenTelemetry для Jaeger
 func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    log.Println("🔄 Initializing Jaeger tracer...")
+
     // Создаём экспортёр для OTLP gRPC (Jaeger)
     exporter, err := otlptracegrpc.New(ctx,
-        otlptracegrpc.WithEndpoint("localhost:4317"),
+        otlptracegrpc.WithEndpoint("192.168.1.100:4317"),
         otlptracegrpc.WithInsecure(),
     )
     if err != nil {
+        log.Printf("❌ Failed to create exporter: %v", err)
         return nil, err
     }
+    log.Println("✅ Jaeger exporter created")
 
     // Создаём TracerProvider
     tp := trace.NewTracerProvider(
@@ -66,12 +70,12 @@ func initTracer(ctx context.Context) (func(context.Context) error, error) {
         propagation.Baggage{},
     ))
 
+    log.Println("✅ Jaeger tracer initialized")
     return tp.Shutdown, nil
 }
 
 func main() {
     cfg := config.Load()
-
     ctx := context.Background()
 
     // Инициализация Jaeger
@@ -170,12 +174,12 @@ func main() {
     // Создаём gRPC хендлер
     leaderboardHandler := handler.NewLeaderboardHandler(leaderboardService)
 
-    // Настраиваем gRPC сервер с трейсингом
-    // grpcServer := grpc.NewServer(
-    //     grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-    //     grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-    // )
-    grpcServer := grpc.NewServer()
+    // Настраиваем gRPC сервер с интерсепторами для трейсинга
+    grpcServer := grpc.NewServer(
+        grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+        grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+    )
+    
     pb.RegisterLeaderboardServiceServer(grpcServer, leaderboardHandler)
     reflection.Register(grpcServer)
 
@@ -184,7 +188,7 @@ func main() {
         http.Handle("/metrics", promhttp.Handler())
         log.Printf("📊 Metrics endpoint: http://localhost:9094/metrics")
         if err := http.ListenAndServe(":9094", nil); err != nil {
-            log.Printf("Leaderbord metrics server error: %v", err)
+            log.Printf("Leaderboard metrics server error: %v", err)
         }
     }()
 
