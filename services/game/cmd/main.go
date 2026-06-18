@@ -1,6 +1,7 @@
 package main
 
 import (
+    "context"
     "log"
     "net"
     "net/http"
@@ -13,6 +14,14 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
     "google.golang.org/grpc/reflection"
+    "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
     "event_horizon/services/game/internal/config"
     "event_horizon/services/game/internal/handler"
@@ -21,8 +30,50 @@ import (
     pb "event_horizon/services/game/proto"
 )
 
+// Инициализация OpenTelemetry для Jaeger
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    log.Println("🔄 Initializing Jaeger tracer...")
+
+    // Создаём экспортёр для OTLP gRPC (Jaeger)
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint("192.168.1.100:4317"),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        log.Printf("❌ Failed to create exporter: %v", err)
+        return nil, err
+    }
+    log.Println("✅ Jaeger exporter created")
+
+    // Создаём TracerProvider
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("game"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    log.Println("✅ Jaeger tracer initialized")
+    return tp.Shutdown, nil
+}
+
 func main() {
     cfg := config.Load()
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("Failed to initialize tracer: %v", err)
+    }
+    defer shutdown(ctx)
 
     // Подключаемся к NATS
     nc, err := nats.Connect(cfg.NATSUrl)
@@ -52,8 +103,11 @@ func main() {
     gameService := service.NewGameService(gameRepo, js)
     gameHandler := handler.NewGameHandler(gameService)
 
-    // gRPC сервер
-    grpcServer := grpc.NewServer()
+    // gRPC сервер с интерсепторами для трейсинга
+    grpcServer := grpc.NewServer(
+        grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+        grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+    )
     pb.RegisterGameServiceServer(grpcServer, gameHandler)
     reflection.Register(grpcServer)
 

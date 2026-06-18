@@ -25,6 +25,7 @@ import (
     "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
+    "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
     "event_horizon/services/gateway/internal/cache"
     "event_horizon/services/gateway/internal/client"
@@ -123,27 +124,27 @@ func getUserIDFromToken(tokenString string) (string, error) {
     if len(parts) == 2 && parts[0] == "Bearer" {
         tokenString = parts[1]
     }
-    
+
     parts = strings.Split(tokenString, ".")
     if len(parts) != 3 {
         return "", fmt.Errorf("invalid token format")
     }
-    
+
     payload, err := base64.RawURLEncoding.DecodeString(parts[1])
     if err != nil {
         return "", err
     }
-    
+
     var claims map[string]interface{}
     if err := json.Unmarshal(payload, &claims); err != nil {
         return "", err
     }
-    
+
     userID, ok := claims["user_id"].(string)
     if !ok {
         return "", fmt.Errorf("user_id not found in token")
     }
-    
+
     return userID, nil
 }
 
@@ -151,7 +152,6 @@ func main() {
     hub := NewHub()
     go hub.Run()
 
-    // Запускаем HTTP сервер для метрик
     go func() {
         http.Handle("/metrics", promhttp.Handler())
         log.Printf("📊 Metrics endpoint: http://localhost:9095/metrics")
@@ -203,8 +203,10 @@ func main() {
 
     r := gin.Default()
 
+    // ---------- TRACING (ОТЕЛЬ) ----------
+    r.Use(otelgin.Middleware("gateway"))
+
     // ---------- КАСТОМНЫЕ МЕТРИКИ GATEWAY ----------
-    // Счётчик запросов
     gatewayRequestsTotal := promauto.NewCounterVec(
         prometheus.CounterOpts{
             Name: "gateway_requests_total",
@@ -213,7 +215,6 @@ func main() {
         []string{"method", "path", "status"},
     )
 
-    // Гистограмма длительности запросов
     gatewayRequestDuration := promauto.NewHistogramVec(
         prometheus.HistogramOpts{
             Name:    "gateway_request_duration_seconds",
@@ -223,7 +224,6 @@ func main() {
         []string{"method", "path"},
     )
 
-    // Middleware для сбора метрик
     r.Use(func(c *gin.Context) {
         start := time.Now()
         c.Next()
@@ -344,13 +344,13 @@ func main() {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
             return
         }
-        
+
         userID, err := getUserIDFromToken(token)
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
             return
         }
-        
+
         resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
             UserId: userID,
         })
@@ -358,7 +358,7 @@ func main() {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
-        
+
         var lamps, tickets int32
         for _, b := range resp.Balances {
             if b.Currency == billingPb.CurrencyType_LAMPS {
@@ -367,7 +367,7 @@ func main() {
                 tickets = b.Balance
             }
         }
-        
+
         c.JSON(http.StatusOK, gin.H{
             "lamps":   lamps,
             "tickets": tickets,
@@ -377,23 +377,23 @@ func main() {
     r.GET("/api/leaderboard", func(c *gin.Context) {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
-        
+
         conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
         defer conn.Close()
-        
+
         leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(conn)
-        
+
         var limitInt int32 = 10
         if limit != "" {
             if l, err := strconv.Atoi(limit); err == nil {
                 limitInt = int32(l)
             }
         }
-        
+
         resp, err := leaderboardClient.GetTopScores(c.Request.Context(), &leaderboardPb.GetTopScoresRequest{
             GameId: gameID,
             Limit:  limitInt,
@@ -402,7 +402,7 @@ func main() {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
-        
+
         c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
     })
 
