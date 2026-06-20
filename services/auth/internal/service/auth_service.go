@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"event_horizon/services/auth/internal/repository"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/repository"
 )
 
 type authService struct {

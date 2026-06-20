@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	
-	pb "event_horizon/services/auth/proto"
-	"event_horizon/services/auth/internal/service"
+	pb "github.com/Eastwesser/event-horizon/services/auth/proto"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/service"
 )
 
 type AuthHandler struct {

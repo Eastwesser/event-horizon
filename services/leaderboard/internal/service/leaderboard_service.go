@@ -4,7 +4,7 @@ import (
     "context"
     "fmt"
     
-    "event_horizon/services/leaderboard/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/repository"
 )
 
 type LeaderboardService interface {

@@ -23,11 +23,11 @@ import (
     "go.opentelemetry.io/otel/sdk/trace"
     semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/auth/internal/config"
-    "event_horizon/services/auth/internal/handler"
-    "event_horizon/services/auth/internal/repository"
-    "event_horizon/services/auth/internal/service"
-    pb "event_horizon/services/auth/proto"
+    "github.com/Eastwesser/event-horizon/services/auth/internal/config"
+    "github.com/Eastwesser/event-horizon/services/auth/internal/handler"
+    "github.com/Eastwesser/event-horizon/services/auth/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/auth/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/auth/proto"
 )
 
 // Инициализация OpenTelemetry для Jaeger
@@ -108,6 +108,7 @@ func main() {
         }
     }()
 
+    
     // Запускаем
     lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
     if err != nil {

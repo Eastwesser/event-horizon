@@ -8,8 +8,8 @@ import (
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
-    pb "event_horizon/services/leaderboard/proto"
-    "event_horizon/services/leaderboard/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/service"
 )
 
 type LeaderboardHandler struct {

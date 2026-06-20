@@ -26,11 +26,11 @@ import (
     "go.opentelemetry.io/otel/sdk/trace"
     semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/billing/internal/config"
-    "event_horizon/services/billing/internal/handler"
-    "event_horizon/services/billing/internal/repository"
-    "event_horizon/services/billing/internal/service"
-    pb "event_horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/config"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/handler"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/billing/proto"
 )
 
 // ScoreEvent структура для парсинга NATS сообщений

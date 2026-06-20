@@ -528,7 +528,7 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x12H\n" +
 	"\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x126\n" +
-	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponseB(Z&event_horizon/services/auth/proto;authb\x06proto3"
+	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponseB(Z&github.com/Eastwesser/event-horizon/services/auth/proto;authb\x06proto3"
 
 var (
 	file_proto_auth_proto_rawDescOnce sync.Once

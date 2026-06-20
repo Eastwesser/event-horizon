@@ -27,14 +27,14 @@ import (
     "google.golang.org/grpc/credentials/insecure"
     "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
-    "event_horizon/services/gateway/internal/cache"
-    "event_horizon/services/gateway/internal/client"
-    "event_horizon/services/gateway/internal/middleware"
-    "event_horizon/services/gateway/internal/ratelimit"
-    authPb "event_horizon/services/auth/proto"
-    gamePb "event_horizon/services/game/proto"
-    leaderboardPb "event_horizon/services/leaderboard/proto"
-    billingPb "event_horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/cache"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/client"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
+    authPb "github.com/Eastwesser/event-horizon/services/auth/proto"
+    gamePb "github.com/Eastwesser/event-horizon/services/game/proto"
+    leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+    billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -160,20 +160,23 @@ func main() {
         }
     }()
 
-    authClient, err := client.NewAuthClient("localhost:50051")
+    // authClient, err := client.NewAuthClient("localhost:50051")
+    authClient, err := client.NewAuthClient("auth:50051")
     if err != nil {
         log.Fatalf("Failed to connect to auth: %v", err)
     }
     defer authClient.Close()
 
-    gameConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    // gameConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    gameConn, err := grpc.NewClient("game:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to game: %v", err)
     }
     defer gameConn.Close()
     gameClient := gamePb.NewGameServiceClient(gameConn)
 
-    nc, err := nats.Connect("nats://localhost:4222")
+    // nc, err := nats.Connect("nats://localhost:4222")
+    nc, err := nats.Connect("nats://event-horizon-nats:4222")
     if err != nil {
         log.Fatalf("Failed to connect to NATS: %v", err)
     }
@@ -239,7 +242,7 @@ func main() {
 
     // ---------- RATE LIMITER ----------
     rdb := redis.NewClient(&redis.Options{
-        Addr: "localhost:6379",
+        Addr: "redis:6379",
     })
 
     if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -331,7 +334,8 @@ func main() {
 
     scoreCache := cache.NewScoreCache(2 * time.Second)
 
-    billingConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    // billingConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    billingConn, err := grpc.NewClient("billing:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to billing: %v", err)
     }
@@ -378,7 +382,8 @@ func main() {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
 
-        conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+        // conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+        conn, err := grpc.Dial("leaderboard:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
@@ -469,8 +474,13 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
     srv := &http.Server{
-        Addr:    ":8080",
+        Addr:    "127.0.0.1:" + port,  // 👈 явно IPv4
         Handler: r,
     }
 

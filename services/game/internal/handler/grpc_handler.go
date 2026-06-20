@@ -9,9 +9,9 @@ import (
     "github.com/prometheus/client_golang/prometheus"
     "github.com/prometheus/client_golang/prometheus/promauto"
 
-    pb "event_horizon/services/game/proto"
-    "event_horizon/services/game/internal/service"
-    hexagonValidator "event_horizon/services/game/games/hexagons"
+    pb "github.com/Eastwesser/event-horizon/services/game/proto"
+    "github.com/Eastwesser/event-horizon/services/game/internal/service"
+    hexagonValidator "github.com/Eastwesser/event-horizon/services/game/games/hexagons"
 )
 
 var (
