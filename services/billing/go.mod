@@ -55,4 +55,4 @@ require (
 
 replace github.com/Eastwesser/event-horizon/services/billing/proto => ./proto
 
-require github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
+require github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-00010101000000-000000000000

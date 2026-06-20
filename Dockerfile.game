@@ -1,0 +1,10 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+COPY services services/
+RUN cd services/game && go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o game-service ./cmd/main.go
+
+FROM scratch
+COPY --from=builder /app/services/game/game-service /game-service
+EXPOSE 50052
+CMD ["/game-service"]
