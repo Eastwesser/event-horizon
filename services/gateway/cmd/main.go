@@ -178,13 +178,13 @@ func main() {
     // nc, err := nats.Connect("nats://localhost:4222")
     nc, err := nats.Connect("nats://event-horizon-nats:4222")
     if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
+        log.Printf("⚠️ Failed to connect to NATS: %v (WebSocket будет недоступен)", err)
     }
     defer nc.Drain()
 
     js, err := nc.JetStream()
     if err != nil {
-        log.Fatalf("Failed to create JetStream context: %v", err)
+        log.Printf("⚠️ Failed to create JetStream context: %v", err)
     }
 
     _, err = js.AddStream(&nats.StreamConfig{
@@ -242,7 +242,7 @@ func main() {
 
     // ---------- RATE LIMITER ----------
     rdb := redis.NewClient(&redis.Options{
-        Addr: "redis:6379",
+        Addr: "event-horizon-redis:6379",
     })
 
     if err := rdb.Ping(context.Background()).Err(); err != nil {

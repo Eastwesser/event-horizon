@@ -1,0 +1,4 @@
+FROM scratch
+COPY auth-service /auth-service
+EXPOSE 50051
+CMD ["/auth-service"]

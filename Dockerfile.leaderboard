@@ -1,0 +1,10 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+COPY services services/
+RUN cd services/leaderboard && go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o leaderboard-service ./cmd/main.go
+
+FROM scratch
+COPY --from=builder /app/services/leaderboard/leaderboard-service /leaderboard-service
+EXPOSE 50054
+CMD ["/leaderboard-service"]

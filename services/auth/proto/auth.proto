@@ -2,19 +2,12 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "event_horizon/services/auth/proto;auth";
+option go_package = "github.com/Eastwesser/event-horizon/services/auth/proto;auth";
 
 service AuthService {
-    // Регистрация нового пользователя
     rpc Register(RegisterRequest) returns (RegisterResponse);
-    
-    // Логин (получение JWT)
     rpc Login(LoginRequest) returns (LoginResponse);
-    
-    // Проверка валидности JWT (для gateway)
     rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
-    
-    // Получение информации о пользователе
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
 }
 
