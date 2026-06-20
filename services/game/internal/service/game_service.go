@@ -9,9 +9,9 @@ import (
 
     "github.com/nats-io/nats.go"
 
-    "event_horizon/services/game/internal/repository"
-    hexagonValidator "event_horizon/services/game/games/hexagons"
-    "event_horizon/services/game/games/memory"
+    "github.com/Eastwesser/event-horizon/services/game/internal/repository"
+    hexagonValidator "github.com/Eastwesser/event-horizon/services/game/games/hexagons"
+    "github.com/Eastwesser/event-horizon/services/game/games/memory"
 )
 
 type SubmitScoreRequest struct {

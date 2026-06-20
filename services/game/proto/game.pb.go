@@ -516,7 +516,7 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x0ereward_tickets\x18\x04 \x01(\x05R\rrewardTickets2\x95\x01\n" +
 	"\vGameService\x12B\n" +
 	"\vSubmitScore\x12\x18.game.SubmitScoreRequest\x1a\x19.game.SubmitScoreResponse\x12B\n" +
-	"\vGetGameInfo\x12\x18.game.GetGameInfoRequest\x1a\x19.game.GetGameInfoResponseB(Z&event_horizon/services/game/proto;gameb\x06proto3"
+	"\vGetGameInfo\x12\x18.game.GetGameInfoRequest\x1a\x19.game.GetGameInfoResponseB(Z&github.com/Eastwesser/event-horizon/services/game/proto;gameb\x06proto3"
 
 var (
 	file_proto_game_proto_rawDescOnce sync.Once

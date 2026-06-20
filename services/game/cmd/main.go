@@ -23,11 +23,11 @@ import (
     "go.opentelemetry.io/otel/sdk/trace"
     semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/game/internal/config"
-    "event_horizon/services/game/internal/handler"
-    "event_horizon/services/game/internal/repository"
-    "event_horizon/services/game/internal/service"
-    pb "event_horizon/services/game/proto"
+    "github.com/Eastwesser/event-horizon/services/game/internal/config"
+    "github.com/Eastwesser/event-horizon/services/game/internal/handler"
+    "github.com/Eastwesser/event-horizon/services/game/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/game/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/game/proto"
 )
 
 // Инициализация OpenTelemetry для Jaeger

@@ -10,7 +10,7 @@ import (
 
     "github.com/gin-gonic/gin"
 
-    "event_horizon/services/gateway/internal/ratelimit"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
 )
 
 func RateLimitMiddleware(limiter *ratelimit.RateLimiter) gin.HandlerFunc {
@@ -34,37 +34,41 @@ func RateLimitMiddleware(limiter *ratelimit.RateLimiter) gin.HandlerFunc {
         }
 
         var allowed bool
-        // RATE LIMITER (OFF)
-        // switch {
-        // case path == "/api/game/submit" && method == "POST":
-        //     // Временно отключаем для теста
-        //     allowed = true  // 👈 вместо limiter.AllowSubmit()
-        //     if userID != "" {
-        //         allowed = true  // 👈 вместо limiter.AllowSubmit()
-        //     }    
-        //     // } else {
-        //     //     allowed = limiter.AllowSubmit(c.ClientIP())
-        //     // }
 
-        // THE RATE LIMITER (ON)
+        // RATE LIMITER (OFF)
         switch {
         case path == "/api/game/submit" && method == "POST":
+            // Временно отключаем для теста
+            allowed = true  // 👈 вместо limiter.AllowSubmit()
             if userID != "" {
-                allowed = limiter.AllowSubmit(userID)
-            } else {
-                allowed = limiter.AllowSubmit(c.ClientIP())
-            }
+                allowed = true  // 👈 вместо limiter.AllowSubmit()
+            }    
+            // } else {
+            //     allowed = limiter.AllowSubmit(c.ClientIP())
+            // }
+        } 
+            
+        // THE RATE LIMITER (ON)
+        // switch {
+        // case path == "/api/game/submit" && method == "POST":
+        //     if userID != "" {
+        //         allowed = limiter.AllowSubmit(userID)
+        //     } else {
+        //         allowed = limiter.AllowSubmit(c.ClientIP())
+        //     }
 
-        case path == "/api/auth/login" && method == "POST":
-            allowed = limiter.AllowLogin(c.ClientIP())
+        // case path == "/api/auth/login" && method == "POST":
+        //     allowed = limiter.AllowLogin(c.ClientIP())
 
-        case path == "/ws/leaderboard":
-            allowed = limiter.AllowWebSocket(c.ClientIP())
+        // case path == "/ws/leaderboard":
+        //     allowed = limiter.AllowWebSocket(c.ClientIP())
 
-        default:
-            allowed = true
-        }
+        // default:
+        //     allowed = true
+        // }
 
+        // --
+        
         if !allowed {
             c.JSON(http.StatusTooManyRequests, gin.H{
                 "error":       "Too many requests. Please try again later.",

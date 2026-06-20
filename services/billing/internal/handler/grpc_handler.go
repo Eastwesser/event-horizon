@@ -7,9 +7,9 @@ import (
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
-    pb "event_horizon/services/billing/proto"
-    "event_horizon/services/billing/internal/repository"
-    "event_horizon/services/billing/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/service"
 )
 
 type BillingHandler struct {

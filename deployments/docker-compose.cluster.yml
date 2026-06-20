@@ -148,6 +148,89 @@ services:
     networks:
       - event-horizon-net
 
+  auth:
+    image: eastwesser/auth:latest
+    ports:
+      - "50051:50051"
+    environment:
+      - METRICS_PORT=9091
+    networks:
+      - event-horizon-net
+
+  billing:
+    image: eastwesser/billing:latest
+    ports:
+      - "50053:50053"
+    environment:
+      - METRICS_PORT=9093
+    networks:
+      - event-horizon-net
+
+  game:
+    image: eastwesser/game:latest
+    ports:
+      - "50052:50052"
+    environment:
+      - METRICS_PORT=9092
+    networks:
+      - event-horizon-net
+
+  leaderboard:
+    image: eastwesser/leaderboard:latest
+    ports:
+      - "50054:50054"
+    environment:
+      - METRICS_PORT=9094
+    networks:
+      - event-horizon-net
+
+  gateway:
+    image: eastwesser/gateway:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9095
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  gateway-2:
+    image: eastwesser/gateway:latest
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9096
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  gateway-3:
+    image: eastwesser/gateway:latest
+    ports:
+      - "8083:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9097
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  balancer:
+    image: eastwesser/balancer:latest
+    ports:
+      - "8079:8079"
+    depends_on:
+      - gateway
+      - gateway-2
+      - gateway-3
+    networks:
+      - event-horizon-net
+
 volumes:
   postgres_data:
   redis_data:

@@ -24,11 +24,11 @@ import (
     "go.opentelemetry.io/otel/sdk/trace"
     semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/leaderboard/internal/config"
-    "event_horizon/services/leaderboard/internal/handler"
-    "event_horizon/services/leaderboard/internal/repository"
-    "event_horizon/services/leaderboard/internal/service"
-    pb "event_horizon/services/leaderboard/proto"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/config"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/handler"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
 )
 
 // ScoreEvent структура для входящих сообщений из NATS
