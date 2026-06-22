@@ -28,6 +28,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - event-horizon-net
 
   postgres-game:
       image: postgres:16-alpine
@@ -101,6 +103,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks:
+      - event-horizon-net  
 
   prometheus:
     image: prom/prometheus:latest

@@ -42,3 +42,39 @@ docker network inspect event-horizon-net | grep -E "event-horizon-nats|event-hor
 Проверить регистрацию и логин через API.
 Настроить Grafana (подключить Prometheus).
 Закоммитить все изменения.
+
+---
+
+Шаг 2: Чиним DNS для NATS и Redis
+
+Проблема: gateway не видит event-horizon-nats и event-horizon-redis по имени.
+
+Решение: Добавить networks: - event-horizon-net для nats и redis в docker-compose.cluster.yml:
+
+bash
+cd /home/denismatveev/event_horizon
+
+# Проверяем, есть ли у nats и redis networks
+grep -A10 "^  nats:" deployments/docker-compose.cluster.yml | grep networks
+grep -A10 "^  redis:" deployments/docker-compose.cluster.yml | grep networks
+Если нет — добавляем вручную или через sed:
+
+bash
+# Добавляем сеть для nats
+sed -i '/^  nats:/,/^[^ ]/ s|healthcheck:|\n    networks:\n      - event-horizon-net\n    healthcheck:|' deployments/docker-compose.cluster.yml
+
+# Добавляем сеть для redis
+sed -i '/^  redis:/,/^[^ ]/ s|healthcheck:|\n    networks:\n      - event-horizon-net\n    healthcheck:|' deployments/docker-compose.cluster.yml
+Или проще — отредактируй вручную:
+
+yaml
+  nats:
+    # ... остальные настройки
+    networks:
+      - event-horizon-net
+
+  redis:
+    # ... остальные настройки
+    networks:
+      - event-horizon-net
+
