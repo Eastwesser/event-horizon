@@ -31,4 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-.git.backup/
+.git.backup/services/*/*-service
+services/*/*-service-*
