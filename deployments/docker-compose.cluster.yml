@@ -10,11 +10,13 @@ services:
       - "5460:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net     
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 5 
 
   redis:
     image: redis:7-alpine
@@ -23,13 +25,13 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - event-horizon-net  
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - event-horizon-net
 
   postgres-game:
       image: postgres:16-alpine
@@ -41,15 +43,19 @@ services:
       ports:
         - "5461:5432"
       volumes:
-        - postgres_game_data:/var/lib/postgresql/data
+        - postgres_game_data:/var/lib/postgresql/data  
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-game:
       image: redis:7-alpine
       container_name: event-horizon-redis-game
       ports:
-        - "6380:6379"
-      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }    
+        - "6380:6379" 
+      networks:
+        - event-horizon-net
+      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }   
 
   postgres-billing:
       image: postgres:16-alpine
@@ -62,6 +68,8 @@ services:
         - "5462:5432"
       volumes:
         - postgres_billing_data:/var/lib/postgresql/data
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-billing:
@@ -69,6 +77,8 @@ services:
       container_name: event-horizon-redis-billing
       ports:
         - "6381:6379"
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
 
   postgres-leaderboard:
@@ -82,6 +92,8 @@ services:
         - "5463:5432"
       volumes:
         - postgres_leaderboard_data:/var/lib/postgresql/data
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-leaderboard:
@@ -89,6 +101,8 @@ services:
       container_name: event-horizon-redis-leaderboard
       ports:
         - "6382:6379"
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
 
   nats:
@@ -98,13 +112,13 @@ services:
       - "4222:4222"
       - "8222:8222"
     command: ["-js"]
+    networks:
+      - event-horizon-net
     healthcheck:
       test: ["CMD", "nats-server", "--help"]
       interval: 10s
       timeout: 5s
-      retries: 3
-    networks:
-      - event-horizon-net  
+      retries: 3 
 
   prometheus:
     image: prom/prometheus:latest
