@@ -918,7 +918,7 @@ const file_billing_proto_rawDesc = "" +
 	"\x0eGetAllBalances\x12\x1e.billing.GetAllBalancesRequest\x1a\x1f.billing.GetAllBalancesResponse\x12H\n" +
 	"\vAddCurrency\x12\x1b.billing.AddCurrencyRequest\x1a\x1c.billing.AddCurrencyResponse\x12N\n" +
 	"\rSpendCurrency\x12\x1d.billing.SpendCurrencyRequest\x1a\x1e.billing.SpendCurrencyResponse\x12f\n" +
-	"\x15GetTransactionHistory\x12%.billing.GetTransactionHistoryRequest\x1a&.billing.GetTransactionHistoryResponseB.Z,github.com/Eastwesser/event-horizon/services/billing/proto;billingb\x06proto3"
+	"\x15GetTransactionHistory\x12%.billing.GetTransactionHistoryRequest\x1a&.billing.GetTransactionHistoryResponseB.Z,event_horizon/services/billing/proto;billingb\x06proto3"
 
 var (
 	file_billing_proto_rawDescOnce sync.Once

@@ -481,7 +481,7 @@ const file_leaderboard_proto_rawDesc = "" +
 	"\x12LeaderboardService\x12S\n" +
 	"\fGetTopScores\x12 .leaderboard.GetTopScoresRequest\x1a!.leaderboard.GetTopScoresResponse\x12V\n" +
 	"\rGetPlayerRank\x12!.leaderboard.GetPlayerRankRequest\x1a\".leaderboard.GetPlayerRankResponse\x12P\n" +
-	"\vUpdateScore\x12\x1f.leaderboard.UpdateScoreRequest\x1a .leaderboard.UpdateScoreResponseB6Z4github.com/Eastwesser/event-horizon/services/leaderboard/proto;leaderboardb\x06proto3"
+	"\vUpdateScore\x12\x1f.leaderboard.UpdateScoreRequest\x1a .leaderboard.UpdateScoreResponseB6Z4event_horizon/services/leaderboard/proto;leaderboardb\x06proto3"
 
 var (
 	file_leaderboard_proto_rawDescOnce sync.Once

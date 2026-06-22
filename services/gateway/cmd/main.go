@@ -29,8 +29,9 @@ import (
 
     "github.com/Eastwesser/event-horizon/services/gateway/internal/cache"
     "github.com/Eastwesser/event-horizon/services/gateway/internal/client"
-    "github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
-    "github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/config"
+    // "github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
+    // "github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
     authPb "github.com/Eastwesser/event-horizon/services/auth/proto"
     gamePb "github.com/Eastwesser/event-horizon/services/game/proto"
     leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
@@ -149,67 +150,77 @@ func getUserIDFromToken(tokenString string) (string, error) {
 }
 
 func main() {
+    cfg := config.Load()
+
+    log.Printf("🚀 Starting Gateway with config:")
+    log.Printf("   Port: %s", cfg.Port)
+    log.Printf("   Metrics: %s", cfg.MetricsPort)
+    log.Printf("   NATS: %s", cfg.NATSUrl)
+    log.Printf("   Redis: %s", cfg.RedisAddr)
+    log.Printf("   Auth: %s", cfg.AuthAddr)
+    log.Printf("   Game: %s", cfg.GameAddr)
+    log.Printf("   Billing: %s", cfg.BillingAddr)
+    log.Printf("   Leaderboard: %s", cfg.LeaderboardAddr)
+
     hub := NewHub()
     go hub.Run()
 
     go func() {
         http.Handle("/metrics", promhttp.Handler())
-        log.Printf("📊 Metrics endpoint: http://localhost:9095/metrics")
-        if err := http.ListenAndServe(":9095", nil); err != nil {
+        log.Printf("📊 Metrics endpoint: http://0.0.0.0:%s/metrics", cfg.MetricsPort)
+        if err := http.ListenAndServe(":"+cfg.MetricsPort, nil); err != nil {
             log.Printf("API Gateway metrics server error: %v", err)
         }
     }()
 
-    // authClient, err := client.NewAuthClient("localhost:50051")
-    authClient, err := client.NewAuthClient("auth:50051")
+    authClient, err := client.NewAuthClient(cfg.AuthAddr)
     if err != nil {
         log.Fatalf("Failed to connect to auth: %v", err)
     }
     defer authClient.Close()
 
-    // gameConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
-    gameConn, err := grpc.NewClient("game:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    gameConn, err := grpc.NewClient(cfg.GameAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to game: %v", err)
     }
     defer gameConn.Close()
     gameClient := gamePb.NewGameServiceClient(gameConn)
 
-    // nc, err := nats.Connect("nats://localhost:4222")
-    nc, err := nats.Connect("nats://event-horizon-nats:4222")
+    // NATS SECTION
+    var js nats.JetStreamContext
+    nc, err := nats.Connect(cfg.NATSUrl)
     if err != nil {
         log.Printf("⚠️ Failed to connect to NATS: %v (WebSocket будет недоступен)", err)
-    }
-    defer nc.Drain()
+    } else {
+        defer nc.Drain()
+        js, err = nc.JetStream()
+        if err != nil {
+            log.Printf("⚠️ Failed to create JetStream context: %v", err)
+        } else {
+            _, err = js.AddStream(&nats.StreamConfig{
+                Name:     "EVENTS",
+                Subjects: []string{"event.>", "score.updated"},
+                Storage:  nats.FileStorage,
+            })
+            if err != nil {
+                log.Printf("Stream might already exist: %v", err)
+            }
 
-    js, err := nc.JetStream()
-    if err != nil {
-        log.Printf("⚠️ Failed to create JetStream context: %v", err)
+            _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
+                hub.Broadcast(msg.Data)
+                log.Printf("📡 Broadcasted score update to WebSocket clients")
+            }, nats.Durable("gateway-websocket"))
+            if err != nil {
+                log.Printf("Failed to subscribe to score.updated: %v", err)
+            }
+        }
     }
 
-    _, err = js.AddStream(&nats.StreamConfig{
-        Name:     "EVENTS",
-        Subjects: []string{"event.>", "score.updated"},
-        Storage:  nats.FileStorage,
-    })
-    if err != nil {
-        log.Printf("Stream might already exist: %v", err)
-    }
-
-    _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
-        hub.Broadcast(msg.Data)
-        log.Printf("📡 Broadcasted score update to WebSocket clients")
-    }, nats.Durable("gateway-websocket"))
-    if err != nil {
-        log.Printf("Failed to subscribe to score.updated: %v", err)
-    }
-
+    // GIN ROUTER SECTION
     r := gin.Default()
 
-    // ---------- TRACING (ОТЕЛЬ) ----------
     r.Use(otelgin.Middleware("gateway"))
 
-    // ---------- КАСТОМНЫЕ МЕТРИКИ GATEWAY ----------
     gatewayRequestsTotal := promauto.NewCounterVec(
         prometheus.CounterOpts{
             Name: "gateway_requests_total",
@@ -240,20 +251,18 @@ func main() {
         gatewayRequestDuration.WithLabelValues(method, path).Observe(duration)
     })
 
-    // ---------- RATE LIMITER ----------
     rdb := redis.NewClient(&redis.Options{
-        Addr: "event-horizon-redis:6379",
+        Addr: cfg.RedisAddr,
     })
 
     if err := rdb.Ping(context.Background()).Err(); err != nil {
         log.Printf("⚠️ Redis connection failed: %v", err)
     } else {
         log.Println("✅ Redis connected for rate limiter")
-        limiter := ratelimit.NewRateLimiter(rdb)
-        r.Use(middleware.RateLimitMiddleware(limiter))
+        // limiter := ratelimit.NewRateLimiter(rdb)
+        // r.Use(middleware.RateLimitMiddleware(limiter))
     }
 
-    // ---------- РОУТЫ ----------
     r.GET("/health", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
     })
@@ -291,8 +300,12 @@ func main() {
             "email":   resp.Email,
         }
         eventJSON, _ := json.Marshal(eventData)
-        js.Publish("event.user.registered", eventJSON)
-        log.Printf("📡 Published event: user.registered for %s", resp.Email)
+        if js != nil {
+            js.Publish("event.user.registered", eventJSON)
+            log.Printf("📡 Published event: user.registered for %s", resp.Email)
+        } else {
+            log.Printf("⚠️ NATS not available, event not published")
+        }
         c.JSON(http.StatusOK, resp)
     })
 
@@ -334,8 +347,7 @@ func main() {
 
     scoreCache := cache.NewScoreCache(2 * time.Second)
 
-    // billingConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
-    billingConn, err := grpc.NewClient("billing:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    billingConn, err := grpc.NewClient(cfg.BillingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to billing: %v", err)
     }
@@ -382,8 +394,7 @@ func main() {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
 
-        // conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
-        conn, err := grpc.Dial("leaderboard:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+        conn, err := grpc.Dial(cfg.LeaderboardAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
@@ -474,13 +485,8 @@ func main() {
         c.JSON(http.StatusOK, resp)
     })
 
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = "8080"
-    }
-
     srv := &http.Server{
-        Addr:    "127.0.0.1:" + port,  // 👈 явно IPv4
+        Addr:    "0.0.0.0:" + cfg.Port,
         Handler: r,
     }
 
@@ -490,8 +496,8 @@ func main() {
         }
     }()
 
-    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream & WebSocket)")
-    log.Println("   WebSocket endpoint: ws://localhost:8080/ws/leaderboard")
+    log.Printf("🚀 Gateway listening on :%s", cfg.Port)
+    log.Printf("   WebSocket endpoint: ws://localhost:%s/ws/leaderboard", cfg.Port)
 
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -508,7 +514,10 @@ func main() {
 
     authClient.Close()
     gameConn.Close()
-    nc.Drain()
+    billingConn.Close()
+    if nc != nil {
+        nc.Drain()
+    }
 
     log.Println("Gateway stopped gracefully")
 }
