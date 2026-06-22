@@ -11,11 +11,11 @@ import (
 )
 
 func main() {
-    // Gateway (3 backend instances) - используем 127.0.0.1 вместо localhost
+    // Gateway (3 backend instances) - используем имена сервисов в Docker-сети
     backends := []string{
-        "http://127.0.0.1:8081",
-        "http://127.0.0.1:8082",
-        "http://127.0.0.1:8083",
+        "http://gateway:8080",
+        "http://gateway-2:8080",
+        "http://gateway-3:8080",
     }
 
     lb := balancer.NewLeastConnBalancer(backends)

@@ -152,8 +152,15 @@ services:
     image: eastwesser/auth:latest
     ports:
       - "50051:50051"
+      - "9091:9091"   # metrics
     environment:
       - METRICS_PORT=9091
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon
     networks:
       - event-horizon-net
 
@@ -161,8 +168,15 @@ services:
     image: eastwesser/billing:latest
     ports:
       - "50053:50053"
+      - "9093:9093"   # metrics
     environment:
       - METRICS_PORT=9093
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-billing
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_billing
     networks:
       - event-horizon-net
 
@@ -170,8 +184,15 @@ services:
     image: eastwesser/game:latest
     ports:
       - "50052:50052"
+      - "9092:9092"   # metrics
     environment:
       - METRICS_PORT=9092
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-game
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_game
     networks:
       - event-horizon-net
 
@@ -179,18 +200,32 @@ services:
     image: eastwesser/leaderboard:latest
     ports:
       - "50054:50054"
+      - "9094:9094"   # metrics
     environment:
       - METRICS_PORT=9094
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-leaderboard
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_leaderboard
     networks:
       - event-horizon-net
 
   gateway:
     image: eastwesser/gateway:latest
+    command: ["/gateway"]
     ports:
       - "8081:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9095
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
     depends_on:
       - nats
     networks:
@@ -198,11 +233,18 @@ services:
 
   gateway-2:
     image: eastwesser/gateway:latest
+    command: ["/gateway"]
     ports:
       - "8082:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9096
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
     depends_on:
       - nats
     networks:
@@ -210,11 +252,18 @@ services:
 
   gateway-3:
     image: eastwesser/gateway:latest
+    command: ["/gateway"]
     ports:
       - "8083:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9097
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
     depends_on:
       - nats
     networks:
