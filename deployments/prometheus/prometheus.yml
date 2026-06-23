@@ -6,22 +6,22 @@ scrape_configs:
   - job_name: 'auth'
     static_configs:
       - targets: ['auth:9091']
-    metrics_path: '/varz'
+    metrics_path: '/metrics'
 
   - job_name: 'billing'
     static_configs:
       - targets: ['billing:9093']
-    metrics_path: '/varz'
+    metrics_path: '/metrics'
 
   - job_name: 'game'
     static_configs:
       - targets: ['game:9092']
-    metrics_path: '/varz'
+    metrics_path: '/metrics'
 
   - job_name: 'leaderboard'
     static_configs:
       - targets: ['leaderboard:9094']
-    metrics_path: '/varz'
+    metrics_path: '/metrics'
 
   - job_name: 'gateway'
     static_configs:
@@ -29,12 +29,14 @@ scrape_configs:
           - 'gateway:9095'
           - 'gateway-2:9096'
           - 'gateway-3:9097'
+    metrics_path: '/metrics'
 
   - job_name: 'balancer'
     static_configs:
       - targets: ['balancer:9098']
-    metrics_path: '/varz'
+    metrics_path: '/metrics'
 
+  # NATS отдаёт JSON, не Prometheus-формат — забиваем
   # - job_name: 'nats'
   #   static_configs:
   #     - targets: ['nats:8222']
