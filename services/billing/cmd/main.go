@@ -105,11 +105,20 @@ func main() {
     redisRepo := repository.NewRedisBillingRepo(cfg.RedisAddr, cfg.RedisDB)
 
     // Подключение к NATS
-    nc, err := nats.Connect(cfg.NATSUrl)
-    if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
+    var nc *nats.Conn
+    var lastErr error
+
+    for i := 0; i < 10; i++ {
+        nc, lastErr = nats.Connect(cfg.NATSUrl)
+        if lastErr == nil {
+            break
+        }
+        log.Printf("⚠️ NATS connection attempt %d failed: %v. Retrying in 2s...", i+1, lastErr)
+        time.Sleep(2 * time.Second)
     }
-    defer nc.Drain()
+    if lastErr != nil {
+        log.Fatalf("Failed to connect to NATS after 10 attempts: %v", lastErr)
+    }
 
     js, err := nc.JetStream()
     if err != nil {

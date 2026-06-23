@@ -5,37 +5,37 @@ global:
 scrape_configs:
   - job_name: 'auth'
     static_configs:
-      - targets: ['auth:50051']
-    metrics_path: '/metrics'
+      - targets: ['auth:9091']
+    metrics_path: '/varz'
 
   - job_name: 'billing'
     static_configs:
-      - targets: ['billing:50053']
-    metrics_path: '/metrics'
+      - targets: ['billing:9093']
+    metrics_path: '/varz'
 
   - job_name: 'game'
     static_configs:
-      - targets: ['game:50052']
-    metrics_path: '/metrics'
+      - targets: ['game:9092']
+    metrics_path: '/varz'
 
   - job_name: 'leaderboard'
     static_configs:
-      - targets: ['leaderboard:50054']
-    metrics_path: '/metrics'
+      - targets: ['leaderboard:9094']
+    metrics_path: '/varz'
 
   - job_name: 'gateway'
     static_configs:
       - targets: 
-          - 'host.docker.internal:9095'
-          - 'host.docker.internal:9096'
-          - 'host.docker.internal:9097'
+          - 'gateway:9095'
+          - 'gateway-2:9096'
+          - 'gateway-3:9097'
 
   - job_name: 'balancer'
     static_configs:
-      - targets: ['balancer:8079']
-    metrics_path: '/metrics'
+      - targets: ['balancer:9098']
+    metrics_path: '/varz'
 
-  - job_name: 'nats'
-    static_configs:
-      - targets: ['nats:8222']
-    metrics_path: '/metrics'
+  # - job_name: 'nats'
+  #   static_configs:
+  #     - targets: ['nats:8222']
+  #   metrics_path: '/varz'

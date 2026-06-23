@@ -111,7 +111,7 @@ services:
     ports:
       - "4222:4222"
       - "8222:8222"
-    command: ["-js"]
+    command: ["-js", "-m", "8222"]
     networks:
       - event-horizon-net
     healthcheck:
@@ -195,6 +195,7 @@ services:
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
       - DB_NAME=eventhorizon_billing
+    restart: on-failure  
     networks:
       - event-horizon-net
 
@@ -291,6 +292,7 @@ services:
     image: eastwesser/balancer:latest
     ports:
       - "8079:8079"
+      - "9098:9098"
     depends_on:
       - gateway
       - gateway-2
