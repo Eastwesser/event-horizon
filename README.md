@@ -383,3 +383,136 @@ curl -s http://localhost:9095/metrics | grep gateway_
 
 # Проверить Prometheus
 curl -s http://localhost:9090/api/v1/query?query=up | jq '.data.result'
+
+# ---------------------------------------------------------------
+
+📅 Релиз v1.0 — 23.06.2026
+
+✅ Что сделано за спринт
+1. Полноценный запуск в Docker
+
+Все 5 микросервисов (auth, billing, game, leaderboard, gateway) работают в контейнерах
+
+3 инстанса gateway + балансировщик (round-robin)
+
+Вся инфраструктура в Docker Compose (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
+
+2. Решены проблемы с protobuf
+
+Переход на статическую сборку бинарников (CGO_ENABLED=0, -extldflags=-static)
+
+Образы собираются из готовых бинарников (FROM scratch) — генерация protobuf вынесена из Docker-сборки
+
+Фикс nil pointer dereference в NATS, добавлены retry-механизмы
+
+3. Сети и DNS
+
+Все сервисы в единой Docker-сети event-horizon-net
+
+gRPC-клиенты обращаются по именам контейнеров (auth:50051, billing:50053 и т.д.)
+
+4. Метрики и мониторинг
+
+Prometheus собирает метрики со всех сервисов (8 targets UP)
+
+Добавлены метрики для balancer (порт 9098)
+
+NATS мониторится через /varz (JSON)
+
+5. Миграции
+
+Накачены миграции для auth, billing, game, leaderboard через goose
+
+6. Docker Hub
+
+Все образы опубликованы: eastwesser/*:latest
+
+Автоматический деплой через docker-compose pull && up -d
+
+📊 Текущий статус (23.06.2026)
+Компонент	Статус	Порт
+Auth	✅	50051 (gRPC), 9091 (metrics)
+Billing	✅	50053 (gRPC), 9093 (metrics)
+Game	✅	50052 (gRPC), 9092 (metrics)
+Leaderboard	✅	50054 (gRPC), 9094 (metrics)
+Gateway-1	✅	8081 (HTTP), 9095 (metrics)
+Gateway-2	✅	8082 (HTTP), 9096 (metrics)
+Gateway-3	✅	8083 (HTTP), 9097 (metrics)
+Balancer	✅	8079 (HTTP), 9098 (metrics)
+PostgreSQL (4 шт)	✅	5460-5463
+Redis (4 шт)	✅	6379-6382
+NATS	✅	4222, 8222
+Jaeger	✅	16686
+Prometheus	✅	9090
+Grafana	✅	3000
+
+🚀 Как поднять сейчас
+bash
+# 1. Клонировать
+git clone https://github.com/Eastwesser/event-horizon.git
+cd event-horizon
+
+# 2. Запустить всё
+docker-compose -f deployments/docker-compose.cluster.yml up -d
+
+# 3. Проверить health
+curl http://localhost:8079/health
+
+# 4. Накатить миграции (если БД пустые)
+cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
+cd services/billing && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5462/eventhorizon_billing?sslmode=disable" up
+cd services/game && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5461/eventhorizon_game?sslmode=disable" up
+cd services/leaderboard && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5463/eventhorizon_leaderboard?sslmode=disable" up
+
+🐛 Известные проблемы и решения
+Проблема	Решение
+Gateway падает с slice bounds out of range	Пересобрать статический бинарник, скопировать в FROM scratch
+NATS nil pointer	Проверить nc != nil перед вызовом методов
+Сервисы не видят друг друга по DNS	Добавить networks: - event-horizon-net для всех сервисов
+Billing не подключается к NATS	Добавить retry-цикл при старте
+NATS не отдаёт метрики в Prometheus-формате	Использовать /varz для мониторинга (JSON)
+
+📚 Полезные команды
+bash
+# Статус всех контейнеров
+docker-compose -f deployments/docker-compose.cluster.yml ps
+
+# Логи конкретного сервиса
+docker-compose -f deployments/docker-compose.cluster.yml logs gateway --tail=30
+
+# Проверить метрики в Prometheus
+curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+
+# Пересобрать один сервис
+docker build -f Dockerfile.gateway.bin -t eastwesser/gateway:latest .
+docker push eastwesser/gateway:latest
+docker-compose -f deployments/docker-compose.cluster.yml up -d gateway
+
+# Остановить всё
+docker-compose -f deployments/docker-compose.cluster.yml down
+
+🔮 Планы на следующий спринт
+Настроить автообновление дашбордов в Grafana
+
+Добавить бизнес-метрики (RPS, latency, ошибки)
+
+Настроить алерты в Telegram
+
+CI/CD через GitHub Actions (сборка и пуш в докерхаб)
+
+Написать e2e-тесты для API
+
+Добавить логирование в Elasticsearch
+
+Настроить горизонтальное масштабирование gateway
+
+💪 Команда
+Backend: Денис Матвеев (Golang, gRPC, NATS, Docker)
+
+Архитектура: Микросервисная, событийно-ориентированная
+
+Деплой: Docker Compose (пока), планы на k3s
+
+Версия: 1.0.0
+Дата релиза: 23.06.2026
+Следующий релиз: TBD
