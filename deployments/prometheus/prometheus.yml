@@ -36,6 +36,10 @@ scrape_configs:
       - targets: ['balancer:9098']
     metrics_path: '/metrics'
 
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['event-horizon-nats-exporter:7777']
+
   # NATS отдаёт JSON, не Prometheus-формат — забиваем
   # - job_name: 'nats'
   #   static_configs:

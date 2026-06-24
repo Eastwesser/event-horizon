@@ -7,6 +7,7 @@ import (
     "net/http"
     "os"
     "os/signal"
+    "strings"
     "syscall"
     "time"
 
@@ -79,11 +80,19 @@ func main() {
     defer shutdown(ctx)
 
     // Подключаемся к NATS
-    nc, err := nats.Connect(cfg.NATSUrl)
-    if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
+    var nc *nats.Conn
+    var lastErr error
+    for i := 0; i < 30; i++ {
+        nc, lastErr = nats.Connect(cfg.NATSUrl)
+        if lastErr == nil {
+            break
+        }
+        log.Printf("Failed to connect to NATS (attempt %d/30): %v", i+1, lastErr)
+        time.Sleep(1 * time.Second)
     }
-    defer nc.Drain()
+    if lastErr != nil {
+        log.Fatalf("Failed to connect to NATS after 30 attempts: %v", lastErr)
+    }
 
     js, err := nc.JetStream()
     if err != nil {
@@ -98,7 +107,11 @@ func main() {
         MaxAge:   24 * time.Hour,
     })
     if err != nil {
-        log.Printf("Stream might already exist: %v", err)
+        if strings.Contains(err.Error(), "stream name already in use") {
+            log.Println("✅ Stream already exists")
+        } else {
+            log.Fatalf("Failed to create stream: %v", err)
+        }
     }
 
     // Репозиторий и сервис

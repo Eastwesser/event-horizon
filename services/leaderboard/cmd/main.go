@@ -8,6 +8,7 @@ import (
     "net/http"
     "os"
     "os/signal"
+    "strings"
     "syscall"
     "time"
 
@@ -95,11 +96,19 @@ func main() {
     leaderboardService := service.NewLeaderboardService(redisRepo)
 
     // Подключаемся к NATS
-    nc, err := nats.Connect(cfg.NATSUrl)
-    if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
+    var nc *nats.Conn
+    var lastErr error
+    for i := 0; i < 30; i++ {
+        nc, lastErr = nats.Connect(cfg.NATSUrl)
+        if lastErr == nil {
+            break
+        }
+        log.Printf("Failed to connect to NATS (attempt %d/30): %v", i+1, lastErr)
+        time.Sleep(1 * time.Second)
     }
-    defer nc.Close()
+    if lastErr != nil {
+        log.Fatalf("Failed to connect to NATS after 30 attempts: %v", lastErr)
+    }
 
     // Создаём JetStream контекст
     js, err := nc.JetStream()
@@ -115,7 +124,11 @@ func main() {
         MaxAge:   24 * time.Hour,
     })
     if err != nil {
-        log.Printf("Stream might already exist: %v", err)
+        if strings.Contains(err.Error(), "stream name already in use") {
+            log.Println("✅ Stream already exists")
+        } else {
+            log.Fatalf("Failed to create stream: %v", err)
+        }
     }
 
     // Batch ack channel (Канал для batch ack)
@@ -155,13 +168,22 @@ func main() {
 
         log.Printf("📡 Received score: game=%s user=%s score=%d", event.GameID, event.UserID, event.Score)
 
+        // Создаём контекст с таймаутом 5 секунд
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        /*
+            Что это даёт: 
+            Если Redis или PostgreSQL зависнут, запрос не будет висеть вечно — через 5 секунд он прервётся.
+        */
+
         // Сохраняем информацию о пользователе
-        if err := leaderboardService.SaveUserInfo(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Nickname); err != nil {
+        if err := leaderboardService.SaveUserInfo(ctx, event.GameID, event.UserID, event.UserEmail, event.Nickname); err != nil {
             log.Printf("Failed to save user info: %v", err)
         }
 
         // Быстрое обновление без ранга
-        if err := leaderboardService.UpdateScoreOnly(context.Background(), event.GameID, event.UserID, event.UserEmail, event.Score); err != nil {
+        if err := leaderboardService.UpdateScoreOnly(ctx, event.GameID, event.UserID, event.UserEmail, event.Score); err != nil {
             log.Printf("Failed to update score: %v", err)
         }
 
@@ -169,7 +191,7 @@ func main() {
     }, nats.Durable("leaderboard-durable"), nats.ManualAck())
 
     if err != nil {
-        log.Printf("Warning: failed to subscribe: %v", err)
+        log.Fatalf("Failed to subscribe: %v", err)
     } else {
         log.Println("📡 Subscribed to NATS: score.updated")
     }
