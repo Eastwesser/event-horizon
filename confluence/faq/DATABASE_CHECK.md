@@ -14,4 +14,3 @@ docker exec -it event-horizon-postgres-leaderboard psql -U eventhorizon -d event
 
 # Auth — список пользователей
 docker exec -it event-horizon-postgres psql -U eventhorizon -d eventhorizon -c "SELECT id, email, created_at FROM users;"
-
