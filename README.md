@@ -115,26 +115,33 @@ ws.onmessage = (e) => console.log('📩', JSON.parse(e.data));
 
 ---
 
-## 🐳 Docker-команды
+## 🐳 Makefile & Docker-команды
 
 ```bash
 # Запустить всё
 make deploy
 
-# Перезапустить
-make restart
+docker-compose -f deployments/docker-compose.cluster.yml up -d
 
 # Посмотреть логи
 make logs
 
+docker-compose -f deployments/docker-compose.cluster.yml logs -f
+
 # Статус контейнеров
 make ps
+
+docker-compose -f deployments/docker-compose.cluster.yml ps
 
 # Остановить всё
 make down
 
+docker-compose -f deployments/docker-compose.cluster.yml down
+
 # Полная очистка (удалить volumes)
 make clean
+
+docker-compose -f deployments/docker-compose.cluster.yml down -v
 ```
 
 ---
