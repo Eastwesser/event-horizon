@@ -257,7 +257,7 @@ k6 run e2e-test.js
 
 ⭐ Поставь звезду на GitHub  
 🐛 Создай Issue  
-📬 Напиши мне: [denismatveev@example.com](mailto:denismatveev@example.com)
+📬 Напиши мне: [eastwesser@gmail.com](mailto:eastwesser@gmail.com)
 
 ---
 
