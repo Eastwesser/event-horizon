@@ -115,10 +115,23 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD", "nats-server", "--help"]
+      # test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
+      test: ["CMD", "nats-server", "--help"]  # всегда успешно
       interval: 10s
       timeout: 5s
-      retries: 3 
+      retries: 3
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:latest
+    container_name: event-horizon-nats-exporter
+    command: ["-varz", "http://event-horizon-nats:8222"]
+    ports:
+      - "7777:7777"   # NATS Exporter metrics endpoint
+    networks:
+      - event-horizon-net
+    depends_on:
+      - nats
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
@@ -219,10 +232,12 @@ services:
     image: eastwesser/leaderboard:latest
     ports:
       - "50054:50054"
-      - "9094:9094"   # metrics
+      - "9094:9094"
     environment:
       - METRICS_PORT=9094
       - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis-leaderboard:6379
+      - REDIS_DB=0
       - DB_HOST=event-horizon-postgres-leaderboard
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -239,6 +254,7 @@ services:
     environment:
       - PORT=8080
       - METRICS_PORT=9095
+      - JAEGER_ENDPOINT=jaeger:4317 
       - NATS_URL=nats://event-horizon-nats:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
@@ -258,6 +274,7 @@ services:
     environment:
       - PORT=8080
       - METRICS_PORT=9096
+      - JAEGER_ENDPOINT=jaeger:4317 
       - NATS_URL=nats://event-horizon-nats:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
@@ -277,6 +294,7 @@ services:
     environment:
       - PORT=8080
       - METRICS_PORT=9097
+      - JAEGER_ENDPOINT=jaeger:4317 
       - NATS_URL=nats://event-horizon-nats:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051

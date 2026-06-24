@@ -4,13 +4,13 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY . .
+COPY services/gateway .
 
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
-    -o gateway ./services/gateway/cmd/main.go
+    -o gateway ./cmd/main.go
 
 FROM scratch
 

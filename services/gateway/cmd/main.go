@@ -26,6 +26,13 @@ import (
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
     "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
     "github.com/Eastwesser/event-horizon/services/gateway/internal/cache"
     "github.com/Eastwesser/event-horizon/services/gateway/internal/client"
@@ -149,8 +156,51 @@ func getUserIDFromToken(tokenString string) (string, error) {
     return userID, nil
 }
 
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    endpoint := os.Getenv("JAEGER_ENDPOINT")
+    if endpoint == "" {
+        endpoint = "jaeger:4317"  // ← для Docker используем имя контейнера
+    }
+    log.Printf("🔄 Initializing Jaeger tracer with endpoint: %s", endpoint)
+
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint(endpoint),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("gateway"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    log.Println("✅ Jaeger tracer initialized for Gateway")
+    return tp.Shutdown, nil
+}
+
 func main() {
     cfg := config.Load()
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Printf("⚠️ Failed to initialize Jaeger tracer: %v", err)
+    } else {
+        defer shutdown(ctx)
+        log.Println("✅ Jaeger tracer initialized for Gateway")
+    }
 
     log.Printf("🚀 Starting Gateway with config:")
     log.Printf("   Port: %s", cfg.Port)
