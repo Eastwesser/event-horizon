@@ -30,11 +30,3 @@
 2. slow queries (<200ms)
 3. deadlocks
 4. replication lag
-
-
-
-
-
-
-
-
