@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-29T21:29:50+03:00",
+  "metrics": {
+    "game": {
+      "submits_total": 106,
+      "goroutines": 28,
+      "heap_alloc_bytes": 4901888,
+      "score_count": 105
+    },
+    "nats": {
+      "connections": 6,
+      "in_msgs_total": 3052,
+      "out_msgs_total": 439
+    },
+    "gateway": {
+      "instance_1_requests": 316,
+      "instance_2_requests": 287,
+      "instance_3_requests": 233
+    },
+    "balancer": {
+        "active_connections": null
+    },
+    "storage": {
+        "redis_memory_bytes": 1235504,
+        "redis_connections": 1,
+        "postgres_connections": 6
+    },
+}
