@@ -7,6 +7,8 @@ import (
     "net/url"
     "sync"
     "sync/atomic"
+
+    "github.com/Eastwesser/event-horizon/services/balancer/internal/metrics"
 )
 
 type Backend struct {
@@ -72,7 +74,20 @@ func (lb *LeastConnBalancer) getLeastConnBackend() *Backend {
     return selected
 }
 
+func (lb *LeastConnBalancer) getTotalActiveConns() int32 {
+    lb.mu.RLock()
+    defer lb.mu.RUnlock()
+    
+    var total int32
+    for _, b := range lb.backends {
+        total += atomic.LoadInt32(&b.ActiveConns)
+    }
+    return total
+}
+
 func (lb *LeastConnBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    metrics.RequestsTotal.Inc()
+    metrics.ActiveConnections.Set(float64(lb.getTotalActiveConns()))
     backend := lb.getLeastConnBackend()
 
     if backend == nil {

@@ -1,4 +1,14 @@
 services:
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: event-horizon-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://eventhorizon:eventhorizon@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - event-horizon-net
+
   postgres:
     image: postgres:16-alpine
     container_name: event-horizon-postgres
@@ -17,6 +27,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5 
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: event-horizon-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://event-horizon-redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - event-horizon-net
 
   redis:
     image: redis:7-alpine
@@ -158,6 +178,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
     restart: unless-stopped
     networks:
       - event-horizon-net

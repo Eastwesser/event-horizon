@@ -1,0 +1,129 @@
+{
+  "title": "Event Horizon",
+  "uid": "event-horizon",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "RPS Gateway",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(rate(gateway_requests_total[1m])) by (instance)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latency P99",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Go Goroutines (Game)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "go_goroutines{job=\"game\"}",
+          "legendFormat": "Goroutines",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Heap Memory (Game)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "targets": [
+        {
+          "expr": "go_memstats_heap_alloc_bytes{job=\"game\"}",
+          "legendFormat": "Heap Alloc",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "NATS Connections",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "targets": [
+        {
+          "expr": "gnatsd_varz_connections",
+          "legendFormat": "Connections",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Game Submits",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "sum(game_submits_total) by (game_id)",
+          "legendFormat": "{{game_id}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Balancer Active Connections",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "targets": [
+        {
+          "expr": "balancer_active_connections",
+          "legendFormat": "Connections",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Redis Memory",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes",
+          "legendFormat": "Memory Used",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "PostgreSQL Connections",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=\"eventhorizon\"}",
+          "legendFormat": "Connections",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 16,
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "templating": {"list": []},
+  "annotations": {"list": []}
+}

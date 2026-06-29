@@ -45,3 +45,11 @@ scrape_configs:
   #   static_configs:
   #     - targets: ['nats:8222']
   #   metrics_path: '/varz'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['event-horizon-redis-exporter:9121']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['event-horizon-postgres-exporter:9187']
