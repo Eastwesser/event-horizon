@@ -50,8 +50,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   started: false,
   
   // Константы физики
-  GRAVITY: 0.5,
-  JUMP_FORCE: -8,
+  GRAVITY: 0.3,
+  JUMP_FORCE: -6.5,
   PIPE_WIDTH: 60,
   PIPE_GAP: 150,
   PIPE_SPACING: 300,
