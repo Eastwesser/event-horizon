@@ -50,8 +50,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   started: false,
   
   // Константы физики
-  GRAVITY: 0.5,
-  JUMP_FORCE: -8,
+  GRAVITY: 0.3,
+  JUMP_FORCE: -6.5,
   PIPE_WIDTH: 60,
   PIPE_GAP: 150,
   PIPE_SPACING: 300,
@@ -193,7 +193,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
     const { score } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    
+    const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0];
+
     if (!userId || !userEmail) return;
     
     try {
@@ -206,6 +207,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
                 level: 1,
                 score: score,
                 user_email: userEmail,
+                nickname: nickname,
                 seed: `flappy_seed_${Date.now()}`,
                 moves: [],
             }),

@@ -1,18 +1,21 @@
 FROM golang:1.25-alpine AS builder
 
+RUN apk add --no-cache git
+
 WORKDIR /app
-COPY go.mod go.sum ./
+
+COPY services/auth .
+
 RUN go mod download
 
-COPY . .
-RUN go build -o auth-service ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w" \
+    -o auth-service ./cmd/main.go
 
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
+FROM scratch
 
-COPY --from=builder /app/auth-service .
+COPY --from=builder /app/auth-service /auth-service
 
 EXPOSE 50051
 
-CMD ["./auth-service"]
+CMD ["/auth-service"]

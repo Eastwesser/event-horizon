@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/leaderboard/leaderboard-service /leaderboard-service
+EXPOSE 50054
+CMD ["/leaderboard-service"]

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: proto/game.proto
+// source: game.proto
 
 package game
 
@@ -28,8 +28,9 @@ type SubmitScoreRequest struct {
 	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`                // уровень сложности (1-5)
 	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`                // добавить счет
 	UserEmail     string                 `protobuf:"bytes,5,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
-	Seed          string                 `protobuf:"bytes,6,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
-	Moves         []*Move                `protobuf:"bytes,7,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
+	Nickname      string                 `protobuf:"bytes,6,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Seed          string                 `protobuf:"bytes,7,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
+	Moves         []*Move                `protobuf:"bytes,8,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
 	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"` // для отладки (опционально)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -37,7 +38,7 @@ type SubmitScoreRequest struct {
 
 func (x *SubmitScoreRequest) Reset() {
 	*x = SubmitScoreRequest{}
-	mi := &file_proto_game_proto_msgTypes[0]
+	mi := &file_game_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -49,7 +50,7 @@ func (x *SubmitScoreRequest) String() string {
 func (*SubmitScoreRequest) ProtoMessage() {}
 
 func (x *SubmitScoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[0]
+	mi := &file_game_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -62,7 +63,7 @@ func (x *SubmitScoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitScoreRequest.ProtoReflect.Descriptor instead.
 func (*SubmitScoreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{0}
+	return file_game_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SubmitScoreRequest) GetUserId() string {
@@ -96,6 +97,13 @@ func (x *SubmitScoreRequest) GetScore() int32 {
 func (x *SubmitScoreRequest) GetUserEmail() string {
 	if x != nil {
 		return x.UserEmail
+	}
+	return ""
+}
+
+func (x *SubmitScoreRequest) GetNickname() string {
+	if x != nil {
+		return x.Nickname
 	}
 	return ""
 }
@@ -134,7 +142,7 @@ type Move struct {
 
 func (x *Move) Reset() {
 	*x = Move{}
-	mi := &file_proto_game_proto_msgTypes[1]
+	mi := &file_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +154,7 @@ func (x *Move) String() string {
 func (*Move) ProtoMessage() {}
 
 func (x *Move) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[1]
+	mi := &file_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +167,7 @@ func (x *Move) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Move.ProtoReflect.Descriptor instead.
 func (*Move) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{1}
+	return file_game_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Move) GetFromX() int32 {
@@ -212,7 +220,7 @@ type SubmitScoreResponse struct {
 
 func (x *SubmitScoreResponse) Reset() {
 	*x = SubmitScoreResponse{}
-	mi := &file_proto_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -224,7 +232,7 @@ func (x *SubmitScoreResponse) String() string {
 func (*SubmitScoreResponse) ProtoMessage() {}
 
 func (x *SubmitScoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -237,7 +245,7 @@ func (x *SubmitScoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitScoreResponse.ProtoReflect.Descriptor instead.
 func (*SubmitScoreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{2}
+	return file_game_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SubmitScoreResponse) GetSuccess() bool {
@@ -291,7 +299,7 @@ type GetGameInfoRequest struct {
 
 func (x *GetGameInfoRequest) Reset() {
 	*x = GetGameInfoRequest{}
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -303,7 +311,7 @@ func (x *GetGameInfoRequest) String() string {
 func (*GetGameInfoRequest) ProtoMessage() {}
 
 func (x *GetGameInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -316,7 +324,7 @@ func (x *GetGameInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGameInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetGameInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{3}
+	return file_game_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetGameInfoRequest) GetGameId() string {
@@ -338,7 +346,7 @@ type GetGameInfoResponse struct {
 
 func (x *GetGameInfoResponse) Reset() {
 	*x = GetGameInfoResponse{}
-	mi := &file_proto_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +358,7 @@ func (x *GetGameInfoResponse) String() string {
 func (*GetGameInfoResponse) ProtoMessage() {}
 
 func (x *GetGameInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +371,7 @@ func (x *GetGameInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGameInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetGameInfoResponse) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{4}
+	return file_game_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetGameInfoResponse) GetGameId() string {
@@ -406,7 +414,7 @@ type LevelInfo struct {
 
 func (x *LevelInfo) Reset() {
 	*x = LevelInfo{}
-	mi := &file_proto_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +426,7 @@ func (x *LevelInfo) String() string {
 func (*LevelInfo) ProtoMessage() {}
 
 func (x *LevelInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,7 +439,7 @@ func (x *LevelInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LevelInfo.ProtoReflect.Descriptor instead.
 func (*LevelInfo) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{5}
+	return file_game_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LevelInfo) GetLevel() int32 {
@@ -462,20 +470,22 @@ func (x *LevelInfo) GetRewardTickets() int32 {
 	return 0
 }
 
-var File_proto_game_proto protoreflect.FileDescriptor
+var File_game_proto protoreflect.FileDescriptor
 
-const file_proto_game_proto_rawDesc = "" +
+const file_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\"\xee\x01\n" +
+	"\n" +
+	"game.proto\x12\x04game\"\x8a\x02\n" +
 	"\x12SubmitScoreRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x14\n" +
 	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x05 \x01(\tR\tuserEmail\x12\x12\n" +
-	"\x04seed\x18\x06 \x01(\tR\x04seed\x12 \n" +
-	"\x05moves\x18\a \x03(\v2\n" +
+	"user_email\x18\x05 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x06 \x01(\tR\bnickname\x12\x12\n" +
+	"\x04seed\x18\a \x01(\tR\x04seed\x12 \n" +
+	"\x05moves\x18\b \x03(\v2\n" +
 	".game.MoveR\x05moves\x12%\n" +
 	"\x0eclient_version\x18\n" +
 	" \x01(\x05R\rclientVersion\"x\n" +
@@ -510,19 +520,19 @@ const file_proto_game_proto_rawDesc = "" +
 	"\vGetGameInfo\x12\x18.game.GetGameInfoRequest\x1a\x19.game.GetGameInfoResponseB(Z&event_horizon/services/game/proto;gameb\x06proto3"
 
 var (
-	file_proto_game_proto_rawDescOnce sync.Once
-	file_proto_game_proto_rawDescData []byte
+	file_game_proto_rawDescOnce sync.Once
+	file_game_proto_rawDescData []byte
 )
 
-func file_proto_game_proto_rawDescGZIP() []byte {
-	file_proto_game_proto_rawDescOnce.Do(func() {
-		file_proto_game_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)))
+func file_game_proto_rawDescGZIP() []byte {
+	file_game_proto_rawDescOnce.Do(func() {
+		file_game_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_game_proto_rawDesc), len(file_game_proto_rawDesc)))
 	})
-	return file_proto_game_proto_rawDescData
+	return file_game_proto_rawDescData
 }
 
-var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_game_proto_goTypes = []any{
+var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_game_proto_goTypes = []any{
 	(*SubmitScoreRequest)(nil),  // 0: game.SubmitScoreRequest
 	(*Move)(nil),                // 1: game.Move
 	(*SubmitScoreResponse)(nil), // 2: game.SubmitScoreResponse
@@ -530,7 +540,7 @@ var file_proto_game_proto_goTypes = []any{
 	(*GetGameInfoResponse)(nil), // 4: game.GetGameInfoResponse
 	(*LevelInfo)(nil),           // 5: game.LevelInfo
 }
-var file_proto_game_proto_depIdxs = []int32{
+var file_game_proto_depIdxs = []int32{
 	1, // 0: game.SubmitScoreRequest.moves:type_name -> game.Move
 	5, // 1: game.GetGameInfoResponse.levels:type_name -> game.LevelInfo
 	0, // 2: game.GameService.SubmitScore:input_type -> game.SubmitScoreRequest
@@ -544,26 +554,26 @@ var file_proto_game_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_proto_game_proto_init() }
-func file_proto_game_proto_init() {
-	if File_proto_game_proto != nil {
+func init() { file_game_proto_init() }
+func file_game_proto_init() {
+	if File_game_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_proto_rawDesc), len(file_game_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_game_proto_goTypes,
-		DependencyIndexes: file_proto_game_proto_depIdxs,
-		MessageInfos:      file_proto_game_proto_msgTypes,
+		GoTypes:           file_game_proto_goTypes,
+		DependencyIndexes: file_game_proto_depIdxs,
+		MessageInfos:      file_game_proto_msgTypes,
 	}.Build()
-	File_proto_game_proto = out.File
-	file_proto_game_proto_goTypes = nil
-	file_proto_game_proto_depIdxs = nil
+	File_game_proto = out.File
+	file_game_proto_goTypes = nil
+	file_game_proto_depIdxs = nil
 }

@@ -2,13 +2,12 @@ package handler
 
 import (
 	"context"
-	"time"
 	
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	
-	pb "event_horizon/services/auth/proto"
-	"event_horizon/services/auth/internal/service"
+	pb "github.com/Eastwesser/event-horizon/services/auth/proto"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/service"
 )
 
 type AuthHandler struct {
@@ -91,6 +90,6 @@ func (h *AuthHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	return &pb.GetUserResponse{
 		UserId:    user.ID,
 		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+//		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	}, nil
 }

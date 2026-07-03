@@ -3,12 +3,13 @@ package handler
 import (
     "context"
     "log"
+    "strings"
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
-    pb "event_horizon/services/leaderboard/proto"
-    "event_horizon/services/leaderboard/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+    "github.com/Eastwesser/event-horizon/services/leaderboard/internal/service"
 )
 
 type LeaderboardHandler struct {
@@ -74,7 +75,16 @@ func (h *LeaderboardHandler) UpdateScore(ctx context.Context, req *pb.UpdateScor
         return nil, status.Error(codes.InvalidArgument, "game_id and user_id are required")
     }
 
-    newRank, err := h.leaderboardService.UpdateScore(ctx, req.GameId, req.UserId, req.UserEmail, int(req.Score))
+    // Добавляем nickname в вызов (пустую строку, если нет)
+    nickname := req.Nickname
+    if nickname == "" {
+        nickname = req.UserEmail
+        if idx := strings.Index(nickname, "@"); idx > 0 {
+            nickname = nickname[:idx]
+        }
+    }
+
+    newRank, err := h.leaderboardService.UpdateScore(ctx, req.GameId, req.UserId, req.UserEmail, nickname, int(req.Score))
     if err != nil {
         log.Printf("Failed to update score: %v", err)
         return &pb.UpdateScoreResponse{

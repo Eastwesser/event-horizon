@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: proto/leaderboard.proto
+// source: leaderboard.proto
 
 package leaderboard
 
@@ -31,7 +31,7 @@ type GetTopScoresRequest struct {
 
 func (x *GetTopScoresRequest) Reset() {
 	*x = GetTopScoresRequest{}
-	mi := &file_proto_leaderboard_proto_msgTypes[0]
+	mi := &file_leaderboard_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *GetTopScoresRequest) String() string {
 func (*GetTopScoresRequest) ProtoMessage() {}
 
 func (x *GetTopScoresRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[0]
+	mi := &file_leaderboard_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *GetTopScoresRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTopScoresRequest.ProtoReflect.Descriptor instead.
 func (*GetTopScoresRequest) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{0}
+	return file_leaderboard_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetTopScoresRequest) GetGameId() string {
@@ -82,7 +82,7 @@ type GetTopScoresResponse struct {
 
 func (x *GetTopScoresResponse) Reset() {
 	*x = GetTopScoresResponse{}
-	mi := &file_proto_leaderboard_proto_msgTypes[1]
+	mi := &file_leaderboard_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +94,7 @@ func (x *GetTopScoresResponse) String() string {
 func (*GetTopScoresResponse) ProtoMessage() {}
 
 func (x *GetTopScoresResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[1]
+	mi := &file_leaderboard_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +107,7 @@ func (x *GetTopScoresResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTopScoresResponse.ProtoReflect.Descriptor instead.
 func (*GetTopScoresResponse) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{1}
+	return file_leaderboard_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetTopScoresResponse) GetEntries() []*ScoreEntry {
@@ -127,7 +127,7 @@ type GetPlayerRankRequest struct {
 
 func (x *GetPlayerRankRequest) Reset() {
 	*x = GetPlayerRankRequest{}
-	mi := &file_proto_leaderboard_proto_msgTypes[2]
+	mi := &file_leaderboard_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +139,7 @@ func (x *GetPlayerRankRequest) String() string {
 func (*GetPlayerRankRequest) ProtoMessage() {}
 
 func (x *GetPlayerRankRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[2]
+	mi := &file_leaderboard_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +152,7 @@ func (x *GetPlayerRankRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerRankRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerRankRequest) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{2}
+	return file_leaderboard_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetPlayerRankRequest) GetGameId() string {
@@ -179,7 +179,7 @@ type GetPlayerRankResponse struct {
 
 func (x *GetPlayerRankResponse) Reset() {
 	*x = GetPlayerRankResponse{}
-	mi := &file_proto_leaderboard_proto_msgTypes[3]
+	mi := &file_leaderboard_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *GetPlayerRankResponse) String() string {
 func (*GetPlayerRankResponse) ProtoMessage() {}
 
 func (x *GetPlayerRankResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[3]
+	mi := &file_leaderboard_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *GetPlayerRankResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerRankResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerRankResponse) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{3}
+	return file_leaderboard_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetPlayerRankResponse) GetRank() int32 {
@@ -226,14 +226,15 @@ type UpdateScoreRequest struct {
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"` // для отображения в топе
-	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateScoreRequest) Reset() {
 	*x = UpdateScoreRequest{}
-	mi := &file_proto_leaderboard_proto_msgTypes[4]
+	mi := &file_leaderboard_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +246,7 @@ func (x *UpdateScoreRequest) String() string {
 func (*UpdateScoreRequest) ProtoMessage() {}
 
 func (x *UpdateScoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[4]
+	mi := &file_leaderboard_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +259,7 @@ func (x *UpdateScoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateScoreRequest.ProtoReflect.Descriptor instead.
 func (*UpdateScoreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{4}
+	return file_leaderboard_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpdateScoreRequest) GetGameId() string {
@@ -282,6 +283,13 @@ func (x *UpdateScoreRequest) GetUserEmail() string {
 	return ""
 }
 
+func (x *UpdateScoreRequest) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
 func (x *UpdateScoreRequest) GetScore() int32 {
 	if x != nil {
 		return x.Score
@@ -300,7 +308,7 @@ type UpdateScoreResponse struct {
 
 func (x *UpdateScoreResponse) Reset() {
 	*x = UpdateScoreResponse{}
-	mi := &file_proto_leaderboard_proto_msgTypes[5]
+	mi := &file_leaderboard_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +320,7 @@ func (x *UpdateScoreResponse) String() string {
 func (*UpdateScoreResponse) ProtoMessage() {}
 
 func (x *UpdateScoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[5]
+	mi := &file_leaderboard_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +333,7 @@ func (x *UpdateScoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateScoreResponse.ProtoReflect.Descriptor instead.
 func (*UpdateScoreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{5}
+	return file_leaderboard_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateScoreResponse) GetSuccess() bool {
@@ -354,15 +362,16 @@ type ScoreEntry struct {
 	Rank          int32                  `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
-	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
-	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Unix timestamp
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
+	UpdatedAt     int64                  `protobuf:"varint,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Unix timestamp
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScoreEntry) Reset() {
 	*x = ScoreEntry{}
-	mi := &file_proto_leaderboard_proto_msgTypes[6]
+	mi := &file_leaderboard_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -374,7 +383,7 @@ func (x *ScoreEntry) String() string {
 func (*ScoreEntry) ProtoMessage() {}
 
 func (x *ScoreEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_leaderboard_proto_msgTypes[6]
+	mi := &file_leaderboard_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -387,7 +396,7 @@ func (x *ScoreEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScoreEntry.ProtoReflect.Descriptor instead.
 func (*ScoreEntry) Descriptor() ([]byte, []int) {
-	return file_proto_leaderboard_proto_rawDescGZIP(), []int{6}
+	return file_leaderboard_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ScoreEntry) GetRank() int32 {
@@ -411,6 +420,13 @@ func (x *ScoreEntry) GetUserEmail() string {
 	return ""
 }
 
+func (x *ScoreEntry) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
 func (x *ScoreEntry) GetScore() int32 {
 	if x != nil {
 		return x.Score
@@ -425,11 +441,11 @@ func (x *ScoreEntry) GetUpdatedAt() int64 {
 	return 0
 }
 
-var File_proto_leaderboard_proto protoreflect.FileDescriptor
+var File_leaderboard_proto protoreflect.FileDescriptor
 
-const file_proto_leaderboard_proto_rawDesc = "" +
+const file_leaderboard_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/leaderboard.proto\x12\vleaderboard\"D\n" +
+	"\x11leaderboard.proto\x12\vleaderboard\"D\n" +
 	"\x13GetTopScoresRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"I\n" +
@@ -440,45 +456,47 @@ const file_proto_leaderboard_proto_rawDesc = "" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"A\n" +
 	"\x15GetPlayerRankResponse\x12\x12\n" +
 	"\x04rank\x18\x01 \x01(\x05R\x04rank\x12\x14\n" +
-	"\x05score\x18\x02 \x01(\x05R\x05score\"{\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\"\x97\x01\n" +
 	"\x12UpdateScoreRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x14\n" +
-	"\x05score\x18\x04 \x01(\x05R\x05score\"d\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x14\n" +
+	"\x05score\x18\x05 \x01(\x05R\x05score\"d\n" +
 	"\x13UpdateScoreResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x19\n" +
 	"\bnew_rank\x18\x02 \x01(\x05R\anewRank\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x8d\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xa9\x01\n" +
 	"\n" +
 	"ScoreEntry\x12\x12\n" +
 	"\x04rank\x18\x01 \x01(\x05R\x04rank\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x14\n" +
-	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x1d\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x14\n" +
+	"\x05score\x18\x05 \x01(\x05R\x05score\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\x03R\tupdatedAt2\x93\x02\n" +
+	"updated_at\x18\x06 \x01(\x03R\tupdatedAt2\x93\x02\n" +
 	"\x12LeaderboardService\x12S\n" +
 	"\fGetTopScores\x12 .leaderboard.GetTopScoresRequest\x1a!.leaderboard.GetTopScoresResponse\x12V\n" +
 	"\rGetPlayerRank\x12!.leaderboard.GetPlayerRankRequest\x1a\".leaderboard.GetPlayerRankResponse\x12P\n" +
 	"\vUpdateScore\x12\x1f.leaderboard.UpdateScoreRequest\x1a .leaderboard.UpdateScoreResponseB6Z4event_horizon/services/leaderboard/proto;leaderboardb\x06proto3"
 
 var (
-	file_proto_leaderboard_proto_rawDescOnce sync.Once
-	file_proto_leaderboard_proto_rawDescData []byte
+	file_leaderboard_proto_rawDescOnce sync.Once
+	file_leaderboard_proto_rawDescData []byte
 )
 
-func file_proto_leaderboard_proto_rawDescGZIP() []byte {
-	file_proto_leaderboard_proto_rawDescOnce.Do(func() {
-		file_proto_leaderboard_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_leaderboard_proto_rawDesc), len(file_proto_leaderboard_proto_rawDesc)))
+func file_leaderboard_proto_rawDescGZIP() []byte {
+	file_leaderboard_proto_rawDescOnce.Do(func() {
+		file_leaderboard_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_leaderboard_proto_rawDesc), len(file_leaderboard_proto_rawDesc)))
 	})
-	return file_proto_leaderboard_proto_rawDescData
+	return file_leaderboard_proto_rawDescData
 }
 
-var file_proto_leaderboard_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_proto_leaderboard_proto_goTypes = []any{
+var file_leaderboard_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_leaderboard_proto_goTypes = []any{
 	(*GetTopScoresRequest)(nil),   // 0: leaderboard.GetTopScoresRequest
 	(*GetTopScoresResponse)(nil),  // 1: leaderboard.GetTopScoresResponse
 	(*GetPlayerRankRequest)(nil),  // 2: leaderboard.GetPlayerRankRequest
@@ -487,7 +505,7 @@ var file_proto_leaderboard_proto_goTypes = []any{
 	(*UpdateScoreResponse)(nil),   // 5: leaderboard.UpdateScoreResponse
 	(*ScoreEntry)(nil),            // 6: leaderboard.ScoreEntry
 }
-var file_proto_leaderboard_proto_depIdxs = []int32{
+var file_leaderboard_proto_depIdxs = []int32{
 	6, // 0: leaderboard.GetTopScoresResponse.entries:type_name -> leaderboard.ScoreEntry
 	0, // 1: leaderboard.LeaderboardService.GetTopScores:input_type -> leaderboard.GetTopScoresRequest
 	2, // 2: leaderboard.LeaderboardService.GetPlayerRank:input_type -> leaderboard.GetPlayerRankRequest
@@ -502,26 +520,26 @@ var file_proto_leaderboard_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_leaderboard_proto_init() }
-func file_proto_leaderboard_proto_init() {
-	if File_proto_leaderboard_proto != nil {
+func init() { file_leaderboard_proto_init() }
+func file_leaderboard_proto_init() {
+	if File_leaderboard_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_leaderboard_proto_rawDesc), len(file_proto_leaderboard_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_leaderboard_proto_rawDesc), len(file_leaderboard_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_leaderboard_proto_goTypes,
-		DependencyIndexes: file_proto_leaderboard_proto_depIdxs,
-		MessageInfos:      file_proto_leaderboard_proto_msgTypes,
+		GoTypes:           file_leaderboard_proto_goTypes,
+		DependencyIndexes: file_leaderboard_proto_depIdxs,
+		MessageInfos:      file_leaderboard_proto_msgTypes,
 	}.Build()
-	File_proto_leaderboard_proto = out.File
-	file_proto_leaderboard_proto_goTypes = nil
-	file_proto_leaderboard_proto_depIdxs = nil
+	File_leaderboard_proto = out.File
+	file_leaderboard_proto_goTypes = nil
+	file_leaderboard_proto_depIdxs = nil
 }

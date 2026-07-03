@@ -1,5 +1,6 @@
-.PHONY: up down logs ps clean proto all start-services stop-services restart status
+.PHONY: up down logs ps clean migrate-all restart status deploy
 
+# ===== DOCKER =====
 up:
 	docker-compose -f deployments/docker-compose.cluster.yml up -d
 
@@ -15,80 +16,38 @@ ps:
 clean:
 	docker-compose -f deployments/docker-compose.cluster.yml down -v
 
-proto:
-	@echo "Generating protobuf..."
-
-# Остановить все сервисы
-stop-services:
-	@echo "🛑 Stopping all services..."
-	-pkill -f "auth-service"
-	-pkill -f "leaderboard-service"
-	-pkill -f "game-service"
-	-pkill -f "billing-service"
-	-pkill -f "gateway"
-	@echo "✅ All services stopped"
-
-# Запустить все сервисы (каждая команда в своей подоболочке)
-start-services:
-	@echo "🚀 Starting all services..."
-	cd /home/denismatveev/event_horizon/services/auth && go build -o auth-service ./cmd/main.go && ./auth-service > /tmp/auth.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/leaderboard && go build -o leaderboard-service ./cmd/main.go && ./leaderboard-service > /tmp/leaderboard.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/game && go build -o game-service ./cmd/main.go && ./game-service > /tmp/game.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/billing && go build -o billing-service ./cmd/main.go && ./billing-service > /tmp/billing.log 2>&1 &
-	cd /home/denismatveev/event_horizon/services/gateway && go build -o gateway ./cmd/main.go && ./gateway > /tmp/gateway.log 2>&1 &
-	sleep 2
-	@echo "✅ All services started"
-
-# Перезапустить всё
-restart: stop-services start-services
-	@echo "🔄 Restart completed"
-
-# Запустить всё
-all: start-services
-	@echo "🎮 EventHorizon is running!"
-
-# Быстрая проверка статуса
-status:
-	@echo "🔍 Checking services..."
-	@pgrep -f "auth-service" && echo "✅ Auth running" || echo "❌ Auth not running"
-	@pgrep -f "leaderboard-service" && echo "✅ Leaderboard running" || echo "❌ Leaderboard not running"
-	@pgrep -f "game-service" && echo "✅ Game running" || echo "❌ Game not running"
-	@pgrep -f "billing-service" && echo "✅ Billing running" || echo "❌ Billing not running"
-	@pgrep -f "gateway" && echo "✅ Gateway running" || echo "❌ Gateway not running"
-	@echo ""
-	@echo "🐳 Docker containers:"
-	@docker-compose -f deployments/docker-compose.cluster.yml ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || echo "Docker not running"
-
-# Миграции Auth
-migrate-auth-up:
-	@echo "📦 Running auth migrations up..."
-	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
-
-migrate-auth-reset:
-	@echo "🔄 Resetting auth migrations..."
-	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" reset
-
-# Полный рестарт с миграциями
-fresh-start: stop-services down
-	@echo "🧹 Fresh start with migrations..."
-	docker-compose -f deployments/docker-compose.cluster.yml up -d
-	sleep 3
-	$(MAKE) migrate-auth-up
-	$(MAKE) start-services
-	@echo "✅ Fresh start completed"	
-
-# Миграции
+# ===== MIGRATIONS =====
 migrate-auth:
-	cd services/auth && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
+	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
 
 migrate-billing:
-	cd services/billing && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5462/eventhorizon_billing?sslmode=disable" up
+	cd services/billing && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5462/eventhorizon_billing?sslmode=disable" up
 
 migrate-game:
-	cd services/game && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5461/eventhorizon_game?sslmode=disable" up
+	cd services/game && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5461/eventhorizon_game?sslmode=disable" up
 
 migrate-leaderboard:
-	cd services/leaderboard && goose postgres "postgres://eventhorizon:eventhorizon@localhost:5463/eventhorizon_leaderboard?sslmode=disable" up
+	cd services/leaderboard && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5463/eventhorizon_leaderboard?sslmode=disable" up
 
 migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard
-	@echo "✅ All migrations applied"	
+	@echo "✅ All migrations applied"
+
+# ===== DEPLOY =====
+deploy:
+	@echo "🚀 Starting infrastructure..."
+	docker-compose -f deployments/docker-compose.cluster.yml up -d
+	@sleep 5
+	@echo "📦 Running migrations..."
+	$(MAKE) migrate-all
+	@echo "✅ Everything is ready!"
+	@echo "   🎯 Gateway: http://localhost:8079"
+	@echo "   📊 Grafana: http://localhost:3000 (admin/admin)"
+	@echo "   🔍 Jaeger: http://localhost:16686"
+
+# ===== RESTART =====
+restart: down deploy
+
+# ===== STATUS =====
+status:
+	@echo "🔍 Checking services..."
+	docker-compose -f deployments/docker-compose.cluster.yml ps

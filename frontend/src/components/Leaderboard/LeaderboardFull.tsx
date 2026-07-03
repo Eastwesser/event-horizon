@@ -6,6 +6,7 @@ interface LeaderboardEntry {
   rank: number;
   userId: string;
   user_email: string;
+  nickname: string;
   score: number;
   game_id?: string;
 }
@@ -123,10 +124,10 @@ export function LeaderboardFull() {
                     </td>
                     <td className="leaderboard-player">
                       <div className="player-avatar">
-                        {entry.user_email?.split('@')[0]?.charAt(0).toUpperCase() || '?'}
+                        {entry.nickname?.charAt(0).toUpperCase() || entry.user_email?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <span className="player-name">
-                        {entry.user_email?.split('@')[0] || 'Аноним'}
+                        {entry.nickname || entry.user_email?.split('@')[0] || 'Аноним'}
                       </span>
                     </td>
                     <td className="leaderboard-score">

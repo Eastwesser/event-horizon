@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/billing/billing-service /billing-service
+EXPOSE 50053
+CMD ["/billing-service"]

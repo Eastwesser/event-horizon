@@ -23,6 +23,10 @@ go build -o game-service ./cmd/main.go
 cd ../auth
 go build -o auth-service ./cmd/main.go
 
+# balancer
+cd ../balancer
+go build -o balancer-service ./cmd/main.go
+
 # Запускаем всё
 cd ~/event_horizon
 

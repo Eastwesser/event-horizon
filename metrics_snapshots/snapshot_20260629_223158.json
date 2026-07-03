@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-06-29T22:32:32+03:00",
+  "test_config": {
+    "duration_seconds": 30,
+    "vus": 10
+  },
+  "metrics": {
+    "rps": {
+      "total": null,
+      "read": null,
+      "write": null,
+      "error_rate_percent": null
+    },
+    "latency": {
+      "p99_seconds": null
+    },
+    "go_runtime": {
+      "goroutines": 19,
+      "gc_cycles_per_second": null,
+      "heap_alloc_bytes": 5154056,
+      "mutex_wait_seconds_per_second": null
+    },
+    "nats": {
+      "connections": 3,
+      "in_msgs_per_second": 0.19999999999999998,
+      "out_msgs_per_second": 0.19999999999999998
+    },
+    "business": {
+      "balancer_active_connections": 0,
+      "game_submits_per_second": 0
+    },
+    "storage": {
+      "redis_memory_bytes": 1235704,
+      "redis_connections": 1,
+      "postgres_connections": 2,
+      "postgres_deadlocks": 0
+    }
+  }
+}

@@ -9,7 +9,7 @@ import (
 
     "github.com/redis/go-redis/v9"
 
-    "event_horizon/services/billing/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/repository"
 )
 
 type BillingService interface {

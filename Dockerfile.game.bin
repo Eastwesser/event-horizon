@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/game/game-service /game-service
+EXPOSE 50052
+CMD ["/game-service"]

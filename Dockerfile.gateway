@@ -1,0 +1,10 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+COPY services services/
+RUN cd services/gateway && go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gateway-service ./cmd/main.go
+
+FROM scratch
+COPY --from=builder /app/services/gateway/gateway-service /gateway-service
+EXPOSE 8080
+CMD ["/gateway-service"]

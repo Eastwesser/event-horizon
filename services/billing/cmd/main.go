@@ -6,6 +6,8 @@ import (
     "fmt"
     "log"
     "net"
+    "net/http"
+    _ "net/http/pprof"
     "os"
     "os/signal"
     "syscall"
@@ -13,14 +15,23 @@ import (
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/nats-io/nats.go"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
     "google.golang.org/grpc/reflection"
+    "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/billing/internal/config"
-    "event_horizon/services/billing/internal/handler"
-    "event_horizon/services/billing/internal/repository"
-    "event_horizon/services/billing/internal/service"
-    pb "event_horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/config"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/handler"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/repository"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/billing/proto"
 )
 
 // ScoreEvent структура для парсинга NATS сообщений
@@ -35,8 +46,53 @@ type ScoreEvent struct {
     Timestamp     int64  `json:"timestamp"`
 }
 
+// Инициализация OpenTelemetry для Jaeger
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    // Читаем эндпоинт из переменной окружения
+    endpoint := os.Getenv("JAEGER_ENDPOINT")
+    if endpoint == "" {
+        endpoint = "localhost:4317"
+    }
+    log.Printf("🔄 Initializing Jaeger tracer with endpoint: %s", endpoint)
+
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint(endpoint),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        log.Printf("❌ Failed to create exporter: %v", err)
+        return nil, err
+    }
+    log.Println("✅ Jaeger exporter created")
+
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("billing"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    log.Println("✅ Jaeger tracer initialized")
+    return tp.Shutdown, nil
+}
+
 func main() {
     cfg := config.Load()
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("Failed to initialize tracer: %v", err)
+    }
+    defer shutdown(ctx)
 
     // Подключение к PostgreSQL
     dbURL := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
@@ -50,11 +106,20 @@ func main() {
     redisRepo := repository.NewRedisBillingRepo(cfg.RedisAddr, cfg.RedisDB)
 
     // Подключение к NATS
-    nc, err := nats.Connect(cfg.NATSUrl)
-    if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
+    var nc *nats.Conn
+    var lastErr error
+
+    for i := 0; i < 10; i++ {
+        nc, lastErr = nats.Connect(cfg.NATSUrl)
+        if lastErr == nil {
+            break
+        }
+        log.Printf("⚠️ NATS connection attempt %d failed: %v. Retrying in 2s...", i+1, lastErr)
+        time.Sleep(2 * time.Second)
     }
-    defer nc.Drain()
+    if lastErr != nil {
+        log.Fatalf("Failed to connect to NATS after 10 attempts: %v", lastErr)
+    }
 
     js, err := nc.JetStream()
     if err != nil {
@@ -66,14 +131,26 @@ func main() {
     billingService := service.NewBillingService(pgRepo, redisRepo)
     billingHandler := handler.NewBillingHandler(billingService)
 
-    // gRPC сервер
-    grpcServer := grpc.NewServer()
+    // gRPC сервер с интерсепторами для трейсинга
+    grpcServer := grpc.NewServer(
+        grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+        grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+    )
     pb.RegisterBillingServiceServer(grpcServer, billingHandler)
     reflection.Register(grpcServer)
 
+    // Метрики
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        log.Printf("📊 Metrics endpoint: http://localhost:9093/metrics")
+        if err := http.ListenAndServe(":9093", nil); err != nil {
+            log.Printf("Billing metrics server error: %v", err)
+        }
+    }()
+
     // Подписка на NATS (начисление валюты за рекорды)
     _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
-        
+
         var event ScoreEvent
         if err := json.Unmarshal(msg.Data, &event); err != nil {
             log.Printf("Failed to unmarshal score event: %v", err)
@@ -82,22 +159,22 @@ func main() {
         log.Printf("📦 1 Full event: %+v", event)
         log.Printf("📡 Received score event for user %s, lamps=%d, tickets=%d",
             event.UserID, event.LampsEarned, event.TicketsEarned)
-        
+
         referenceID := msg.Header.Get("Nats-Msg-Id")
         if referenceID == "" {
             referenceID = fmt.Sprintf("%s-%d", event.UserID, time.Now().UnixNano())
-        }  
-        
+        }
+
         /*
             Проблема: один referenceID для двух валют
-            
-            Ты используешь один и тот же referenceID и для лампочек, и для тикетов. 
-            Если лампочки уже записали транзакцию с этим ID, то тикеты не могут записать ту же самую.    
+
+            Ты используешь один и тот же referenceID и для лампочек, и для тикетов.
+            Если лампочки уже записали транзакцию с этим ID, то тикеты не могут записать ту же самую.
         */
 
         // Уникальный ID для лампочек
         lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, time.Now().UnixNano())
-        
+
         // Уникальный ID для тикетов
         ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, time.Now().UnixNano())
 

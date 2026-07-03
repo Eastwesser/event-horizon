@@ -18,8 +18,9 @@ message SubmitScoreRequest {
     int32 level = 3;               // уровень сложности (1-5)
     int32 score = 4;               // добавить счет
     string user_email = 5;
-    string seed = 6;               // начальное состояние (для валидации)
-    repeated Move moves = 7;       // все ходы игрока
+    string nickname = 6;
+    string seed = 7;               // начальное состояние (для валидации)
+    repeated Move moves = 8;       // все ходы игрока
     int32 client_version = 10;     // для отладки (опционально)
     
     // Поле score УДАЛЕНО — сервер сам вычислит!

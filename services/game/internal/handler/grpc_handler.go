@@ -6,10 +6,31 @@ import (
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promauto"
 
-    pb "event_horizon/services/game/proto"
-    "event_horizon/services/game/internal/service"
-    hexagonValidator "event_horizon/services/game/games/hexagons"
+    pb "github.com/Eastwesser/event-horizon/services/game/proto"
+    "github.com/Eastwesser/event-horizon/services/game/internal/service"
+    hexagonValidator "github.com/Eastwesser/event-horizon/services/game/games/hexagons"
+)
+
+var (
+    gameSubmitsTotal = promauto.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "game_submits_total",
+            Help: "Total number of score submissions",
+        },
+        []string{"game_id", "status"},
+    )
+
+    gameScoreHistogram = promauto.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "game_score_histogram",
+            Help:    "Distribution of scores by game",
+            Buckets: []float64{10, 50, 100, 200, 500, 1000, 2000, 5000},
+        },
+        []string{"game_id"},
+    )
 )
 
 type GameHandler struct {
@@ -33,17 +54,6 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
     log.Printf("📥 HANDLER: user=%s, game=%s, level=%d, score=%d, moves=%d, email=%s", 
         req.UserId, req.GameId, req.Level, req.Score, len(req.Moves), req.UserEmail)
 
-    log.Printf(
-        "📥 Received SubmitScore: user_id=%s, game_id=%s, level=%d, score=%d", 
-        req.UserId, 
-        req.GameId, 
-        req.Level, 
-        req.Score,
-    )
-    if req.UserId == "" || req.GameId == "" {
-        return nil, status.Error(codes.InvalidArgument, "user_id and game_id are required")
-    }
-
     // Конвертируем moves из protobuf в hexagonValidator.Move
     moves := make([]hexagonValidator.Move, len(req.Moves))
     for i, m := range req.Moves {
@@ -56,24 +66,12 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
         }
     }
 
-    // moves := make([]service.Move, len(req.Moves))
-    // for i, m := range req.Moves {
-    //     moves[i] = service.Move{
-    //         FromX:     int(m.FromX),
-    //         FromY:     int(m.FromY),
-    //         ToX:       int(m.ToX),
-    //         ToY:       int(m.ToY),
-    //         Timestamp: m.Timestamp,
-    //     }
-    // }
-
-    // score больше не передаём — сервер сам вычислит
     resp, err := h.gameService.SubmitScore(ctx, &service.SubmitScoreRequest{
         UserID:    req.UserId,
         GameID:    req.GameId,
         Level:     int(req.Level),
-        Score:     int(req.Score),  // 👈 добавляем!
-        UserEmail: req.UserEmail,  // 👈 добавляем
+        Score:     int(req.Score),
+        UserEmail: req.UserEmail,
         Seed:      req.Seed,
         Moves:     moves,
     })
@@ -83,6 +81,14 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
             Success: false,
             Message: err.Error(),
         }, nil
+    }
+
+    // Метрики после успешного ответа
+    if resp.Success {
+        gameSubmitsTotal.WithLabelValues(req.GameId, "success").Inc()
+        gameScoreHistogram.WithLabelValues(req.GameId).Observe(float64(resp.NewHighscore))
+    } else {
+        gameSubmitsTotal.WithLabelValues(req.GameId, "error").Inc()
     }
 
     return &pb.SubmitScoreResponse{

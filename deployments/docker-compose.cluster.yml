@@ -1,4 +1,14 @@
 services:
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: event-horizon-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://eventhorizon:eventhorizon@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - event-horizon-net
+
   postgres:
     image: postgres:16-alpine
     container_name: event-horizon-postgres
@@ -10,11 +20,23 @@ services:
       - "5460:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net     
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 5 
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: event-horizon-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://event-horizon-redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - event-horizon-net
 
   redis:
     image: redis:7-alpine
@@ -23,6 +45,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - event-horizon-net  
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -39,15 +63,19 @@ services:
       ports:
         - "5461:5432"
       volumes:
-        - postgres_game_data:/var/lib/postgresql/data
+        - postgres_game_data:/var/lib/postgresql/data  
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-game:
       image: redis:7-alpine
       container_name: event-horizon-redis-game
       ports:
-        - "6380:6379"
-      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }    
+        - "6380:6379" 
+      networks:
+        - event-horizon-net
+      healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }   
 
   postgres-billing:
       image: postgres:16-alpine
@@ -60,6 +88,8 @@ services:
         - "5462:5432"
       volumes:
         - postgres_billing_data:/var/lib/postgresql/data
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-billing:
@@ -67,6 +97,8 @@ services:
       container_name: event-horizon-redis-billing
       ports:
         - "6381:6379"
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
 
   postgres-leaderboard:
@@ -80,6 +112,8 @@ services:
         - "5463:5432"
       volumes:
         - postgres_leaderboard_data:/var/lib/postgresql/data
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD-SHELL", "pg_isready -U eventhorizon"], interval: 5s, timeout: 5s, retries: 5 }
 
   redis-leaderboard:
@@ -87,6 +121,8 @@ services:
       container_name: event-horizon-redis-leaderboard
       ports:
         - "6382:6379"
+      networks:
+        - event-horizon-net
       healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
 
   nats:
@@ -95,12 +131,214 @@ services:
     ports:
       - "4222:4222"
       - "8222:8222"
-    command: ["-js"]
+    command: ["-js", "-m", "8222"]
+    networks:
+      - event-horizon-net
     healthcheck:
-      test: ["CMD", "nats-server", "--help"]
+      # test: ["CMD", "curl", "-f", "http://localhost:8222/varz"]
+      test: ["CMD", "nats-server", "--help"]  # всегда успешно
       interval: 10s
       timeout: 5s
       retries: 3
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:latest
+    container_name: event-horizon-nats-exporter
+    command: ["-varz", "http://event-horizon-nats:8222"]
+    ports:
+      - "7777:7777"   # NATS Exporter metrics endpoint
+    networks:
+      - event-horizon-net
+    depends_on:
+      - nats
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: event-horizon-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - event-horizon-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: event-horizon-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    restart: unless-stopped
+    networks:
+      - event-horizon-net
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: event-horizon-jaeger
+    ports:
+      - "16686:16686"   # UI
+      - "4318:4318"     # OTLP HTTP
+      - "4317:4317"     # OTLP gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - event-horizon-net
+
+  auth:
+    image: eastwesser/auth:latest
+    ports:
+      - "50051:50051"
+      - "9091:9091"   # metrics
+    environment:
+      - METRICS_PORT=9091
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon
+    networks:
+      - event-horizon-net
+
+  billing:
+    image: eastwesser/billing:latest
+    ports:
+      - "50053:50053"
+      - "9093:9093"   # metrics
+    environment:
+      - METRICS_PORT=9093
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-billing
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_billing
+    restart: on-failure  
+    networks:
+      - event-horizon-net
+
+  game:
+    image: eastwesser/game:latest
+    ports:
+      - "50052:50052"
+      - "9092:9092"   # metrics
+    environment:
+      - METRICS_PORT=9092
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-game
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_game
+    networks:
+      - event-horizon-net
+
+  leaderboard:
+    image: eastwesser/leaderboard:latest
+    ports:
+      - "50054:50054"
+      - "9094:9094"
+    environment:
+      - METRICS_PORT=9094
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis-leaderboard:6379
+      - REDIS_DB=0
+      - DB_HOST=event-horizon-postgres-leaderboard
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_leaderboard
+    networks:
+      - event-horizon-net
+
+  gateway:
+    image: eastwesser/gateway:latest
+    command: ["/gateway"]
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9095
+      - JAEGER_ENDPOINT=jaeger:4317 
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  gateway-2:
+    image: eastwesser/gateway:latest
+    command: ["/gateway"]
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9096
+      - JAEGER_ENDPOINT=jaeger:4317 
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  gateway-3:
+    image: eastwesser/gateway:latest
+    command: ["/gateway"]
+    ports:
+      - "8083:8080"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9097
+      - JAEGER_ENDPOINT=jaeger:4317 
+      - NATS_URL=nats://event-horizon-nats:4222
+      - REDIS_ADDR=event-horizon-redis:6379
+      - AUTH_ADDR=auth:50051
+      - GAME_ADDR=game:50052
+      - BILLING_ADDR=billing:50053
+      - LEADERBOARD_ADDR=leaderboard:50054
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+
+  balancer:
+    image: eastwesser/balancer:latest
+    ports:
+      - "8079:8079"
+      - "9098:9098"
+    depends_on:
+      - gateway
+      - gateway-2
+      - gateway-3
+    networks:
+      - event-horizon-net
 
 volumes:
   postgres_data:
@@ -108,3 +346,9 @@ volumes:
   postgres_game_data:
   postgres_billing_data:
   postgres_leaderboard_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  event-horizon-net:
+    driver: bridge
