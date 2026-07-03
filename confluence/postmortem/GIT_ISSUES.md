@@ -110,3 +110,41 @@ git push origin main
 bash
 # Добавить в ~/.bashrc
 alias git-safe='cp -r .git .git.backup_$(date +%Y%m%d_%H%M%S) && git'
+
+## 🧠 **Полезные команды для будущего (чтобы не паниковать)**
+
+### Как смотреть историю коммитов без `less`
+```bash
+# Вариант 1 (рекомендую): отключить пагинатор для одной команды
+git --no-pager log --oneline -10
+
+# Вариант 2: изменить пагинатор на cat (тоже работает)
+git -c core.pager=cat log --oneline -10
+
+# Вариант 3: установить less насовсем
+# sudo pacman -S less   # Arch
+# sudo apt install less # Ubuntu
+```
+
+### Как проверить, что репозиторий жив
+
+```bash
+# 1. Убедиться, что HEAD существует
+git rev-parse HEAD
+
+# 2. Узнать текущую ветку
+git branch --show-current
+
+# 3. Проверить статус (синхронизация с удалённым)
+git fetch origin
+git status
+```
+
+### Как восстановить, если git log не работает
+
+```bash
+# 1. Проверить, что не повреждены объекты
+git fsck --full --no-dangling
+
+# 2. Если объекты целые — просто смотреть лог через `git --no-pager log`
+```
