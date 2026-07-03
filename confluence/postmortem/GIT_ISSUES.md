@@ -41,3 +41,65 @@ cp event_horizon_save/confluence/* event_horizon_new/confluence/ -r
 ## 4. Удаляем старый и переключаемся на новый
 rm -rf event_horizon
 mv event_horizon_new event_horizon
+
+#  План C =====
+
+## 📅 Дата
+2026-07-03
+
+## 🐛 Проблема
+Git-репозиторий повреждён: объект `44715dc4c8ef22e4883aaeb96c501bb48417d2dd` (HEAD) стал пустым.
+- `git status` выдавал `fatal: bad object HEAD`
+- `git fsck` показывал `invalid sha1 pointer`
+- `git gc` падал с `fatal: bad tree object`
+
+## 🔍 Причина
+Скорее всего, сбой при записи объекта в `.git/objects/` (аварийное завершение, проблемы с диском, прерванный `git push`).
+
+---
+
+## 🛠️ Решение (ПЛАН Б — Полный перезаезд)
+
+### 1. Удаление пустых объектов и индекса
+
+```bash
+find .git/objects/ -type f -empty -delete
+rm -f .git/index
+echo "ref: refs/heads/main" > .git/HEAD
+git symbolic-ref HEAD refs/heads/main
+git reset
+```
+
+2. Создание нового коммита со всеми изменениями
+
+```bash
+git add .
+git commit -m "🔥 v1.0.2: Полный мониторинг и метрики (восстановление)"
+```
+
+3. Разрешение конфликтов при пуше
+
+```bash
+git pull --no-ff --no-commit origin main
+```
+
+Возникли конфликты в: auth, balancer, billing, game, leaderboard, store/README.md
+
+Решение: оставить локальные версии (т.к. они свежее):
+
+```bash
+git checkout --ours services/auth/cmd/main.go
+git checkout --ours services/balancer/cmd/main.go
+git checkout --ours services/billing/cmd/main.go
+git checkout --ours services/game/cmd/main.go
+git checkout --ours services/leaderboard/cmd/main.go
+git checkout --ours services/store/README.md
+git add .
+git commit -m "Merge: resolve conflicts (keep local versions)"
+```
+
+4. Финальный пуш
+
+```bash
+git push origin main
+```
