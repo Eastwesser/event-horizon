@@ -569,3 +569,13 @@ NATS JetStream — событийная шина
 cd ~/event_horizon/services/gateway
 go mod tidy
 go build -o gateway ./cmd/main.go
+
+
+## UPD INFO 3rd of July, 2026:
+```bash
+cd ~/event_horizon/services/gateway
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o gateway-service ./cmd/main.go
+cd ~/event_horizon
+docker build -f Dockerfile.gateway.bin -t eastwesser/gateway:latest .
+docker-compose -f deployments/docker-compose.cluster.yml up -d gateway gateway-2 gateway-3
+```

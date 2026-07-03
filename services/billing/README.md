@@ -102,3 +102,14 @@ tickets_earned → билетики
 gRPC	50053
 PostgreSQL	5462
 Redis	6381
+```
+
+## UPD INFO 3rd of July, 2026:
+
+```bash
+cd ~/event_horizon/services/billing
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o billing-service ./cmd/main.go
+cd ~/event_horizon
+docker build -f Dockerfile.billing.bin -t eastwesser/billing:latest .
+docker-compose -f deployments/docker-compose.cluster.yml up -d billing
+```
