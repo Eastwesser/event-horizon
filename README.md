@@ -1,335 +1,271 @@
-# EventHorizon 🎮
+# 🎮 Event Horizon
 
-Игровая платформа с микросервисной архитектурой, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
+**Игровая платформа** с микросервисной архитектурой на Go, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
 
-## Архитектура (актуальная на 11.05.2026)
+[![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
+[![Docker](https://img.shields.io/badge/Docker-✓-blue.svg)](https://docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
+
+## 📦 Архитектура (актуально v1.0.1, 24.06.2026)
 
 ```text
-┌─────────┐    HTTP     ┌─────────┐    gRPC    ┌─────────┐
-│  curl   │ ──────────► │ Gateway │ ──────────►│  Game   │
-└─────────┘             └─────────┘            └─────────┘
-                             │                      │
-                             │ WebSocket            │ NATS publish
-                             ▼                      ▼
-                        ┌─────────┐            ┌─────────┐
-                        │  React  │            │  NATS   │
-                        │ Client  │            │JetStream│
-                        └─────────┘            └────┬────┘
-                                                     │
-                                    ┌────────────────┼────────────────┐
-                                    │                │                │
-                                    ▼                ▼                ▼
-                              ┌───────────┐      ┌─────────┐      ┌─────────┐
-                              │Leaderboard│      │ Billing │      │  Auth   │
-                              │ :50054    │      │ :50053  │      │ :50051  │
-                              └────┬──────┘      └────┬────┘      └────┬────┘
-                                   │                  │                │
-                                   ▼                  ▼                ▼
-                              ┌─────────┐      ┌──────────┐      ┌───────────┐
-                              │  Redis  │      │PostgreSQL│      │PostgreSQL │
-                              │ :6382   │      │ :5462    │      │ :5460     │
-                              └─────────┘      └──────────┘      └───────────┘
+[React Client :5173]
+    │ HTTP (JSON)
+    ▼
+[Balancer :8079] — самописный, Least Connections
+    │ HTTP
+    ▼
+[Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
+    │ gRPC
+    ▼
+┌──────────────┼──────────────┐
+│              │              │
+▼              ▼              ▼
+Auth :5051     Game :5052     Billing :5053     Leaderboard :5054
+│              │              │                  │
+▼              ▼              ▼                  ▼
+PG :5460       PG :5461       PG :5462          PG :5463 + Redis :6382
+(users)        (scores)       (balances)        (leaderboard)
+│              │              │                  │
+└──────────────┼──────────────┴──────────────────┘
+               │
+               ▼
+          [NATS :4222] — событийная шина (score.updated, user.registered)
+               │
+               ▼
+    Leaderboard подписан → обновляет Redis → WebSocket → клиент
 ```
 
-## Сервисы (актуально 11.05.2026)
+---
 
-Сервис	    Порт(gRPC)	  PostgreSQL	Redis	  Статус
-Auth	      50051	        5460	      6379	  ✅
-Game	      50052	        5461	      6380	  ✅
-Billing	    50053	        5462	      6381	  ✅
-Leaderboard	50054	        5463	      6382	  ✅
-Gateway	    8080(HTTP)	  -	          -	      ✅
-
-## Быстрый старт
-
-1. Запустить всё одной командой
+## 🚀 Быстрый старт
 
 ```bash
-cd ~/event_horizon
-make all
+# 1. Клонировать
+git clone https://github.com/Eastwesser/event-horizon.git
+cd event-horizon
+
+# 2. Запустить всё одной командой
+make deploy
+
+# 3. Проверить
+make status
 ```
 
-2. Проверить, что всё работает
+**Готово!** Всё поднимется автоматически:
+- Docker-контейнеры (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
+- Миграции баз данных
+- Все микросервисы
 
-```bash
-# Статус Docker контейнеров
-make ps
+---
 
-# Проверить порты
-ss -tlnp | grep -E "50051|50052|50053|50054|8080"
-```
+## 📍 Эндпоинты (доступны через балансировщик :8079)
 
-3. Тестирование API
+| Метод | Путь | Описание |
+|-------|------|----------|
+| `POST` | `/api/auth/register` | Регистрация |
+| `POST` | `/api/auth/login` | Логин (JWT) |
+| `GET` | `/api/billing/balance/all` | Баланс (лампочки/билетики) |
+| `POST` | `/api/game/submit` | Отправить рекорд |
+| `GET` | `/api/leaderboard` | Топ-10 (публичный) |
+| `WS` | `/ws/leaderboard` | WebSocket обновления |
+
+---
+
+## 🔧 Примеры запросов
 
 ```bash
 # Регистрация
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8079/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"secret123"}'
+  -d '{"email":"test@example.com","password":"secret123","nickname":"Test"}'
 
-# Логин
-curl -X POST http://localhost:8080/api/auth/login \
+# Логин (получить токен)
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"secret123"}'
+  -d '{"email":"test@example.com","password":"secret123"}' \
+  | jq -r '.access_token')
 
 # Отправить рекорд
-curl -X POST http://localhost:8080/api/game/submit \
+curl -X POST http://localhost:8079/api/game/submit \
   -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "<UUID>",
-    "game_id": "hexagon",
-    "level": 3,
-    "seed": "test_seed",
-    "moves": []
-  }'
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"user_id":"test-user","game_id":"hexagon","level":1,"score":150,"seed":"test_seed","moves":[]}'
+
+# Посмотреть лидерборд
+curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.'
 ```
 
-## Команды Make
+---
+
+## 🔌 WebSocket
+
+Подключиться к real-time обновлениям лидерборда:
 
 ```bash
-make all           # Запустить всё (Docker + сервисы)
-make stop          # Остановить все сервисы
-make restart       # Перезапустить всё
-make up            # Поднять только Docker контейнеры
-make down          # Остановить Docker контейнеры
-make ps            # Статус контейнеров
-make logs          # Логи контейнеров
-make clean         # Остановить и удалить volumes
+# Через терминал
+wscat -c ws://localhost:8079/ws/leaderboard
 
-# Логи сервисов
-tail -f /tmp/auth.log
-tail -f /tmp/game.log
-tail -f /tmp/billing.log
-tail -f /tmp/leaderboard.log
-tail -f /tmp/gateway.log
-
-# Порты (host)
-
-Сервис	                Порт	    Назначение
-PostgreSQL(auth)	      5460	    Основная БД
-PostgreSQL(game)	      5461	    Игровая БД
-PostgreSQL(billing)	    5462	    Платёжная (внутриигровая) БД
-PostgreSQL(leaderboard)	5463	    БД для топа
-Redis	                  6379-6382	Кеши/сессии
-NATS	                  4222	    Событийная шина
-NATS monitoring	        8222	    Метрики
-Gateway	                8080	    HTTP API + WebSocket
+# В браузере
+const ws = new WebSocket('ws://localhost:5173/ws/leaderboard');
+ws.onmessage = (e) => console.log('📩', JSON.parse(e.data));
 ```
 
-## Статус (11.05.2026)
+---
 
-Сервис	          Статус
-Auth	            ✅ JWT, регистрация, логин
-Gateway	          ✅ HTTP → gRPC, WebSocket, NATS
-Game	            ✅ Честная валидация, подсчёт очков
-Billing	          ✅ Лампочки, билетики, транзакции
-Leaderboard	      ✅ Redis Sorted Set, NATS
-WebSocket	        ✅ Real-time broadcast
-NATS JetStream	  ✅ Событийная шина
-Graceful shutdown	✅ Все сервисы
-
-## Документация
-
-- История и планы       [event_horizon/confluence/history]
-- Технический долг      [event_horizon/confluence/tech_debt]
-- FAQ                   [event_horizon/confluence/faq]
-- OpenAPI спецификация  [event_horizon/docs/openapi.yaml] 
-
-## Будущие заметки:
-
-- Graceful shutdown для всех сервисов
-- NATS кластер из 3 нод
-- Prometheus + Grafana мониторинг
-- CQRS для leaderboard (улучшение)
-- Envoy как API gateway (опционально)
-
-## Техдолг (основное):
-
-- NATS кластер из 3 нод
-- Prometheus + Grafana + Jaeger мониторинг
-- Load balancer (nginx + самописный)
-- Envoy как API gateway
-- CQRS для leaderboard (улучшение)
-
-## Статус на 30.05.2026 (Что теперь работает)
-
-```text
-  ✅ Авторизация (JWT)
-  ✅ Игра (drag-n-drop, слияние стопок)
-  ✅ Leaderboard (суммирование очков, email)
-  ✅ Billing (лампочки, билетики)
-  ✅ WebSocket (real-time обновления)
-  ✅ Все миграции
-  ✅ Баланс на фронтенде
-```
-
-# EventHorizon 🎮
-
-Игровая платформа с микросервисной архитектурой, 
-real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
-
-## Архитектура (актуальная на 30.05.2026)
-
-```text
-┌─────────┐    HTTP     ┌─────────┐    gRPC    ┌─────────┐
-│  React  │ ──────────► │ Gateway │ ──────────►│  Game   │
-└─────────┘             └─────────┘            └─────────┘
-                             │                      │
-                             │ WebSocket            │ NATS publish
-                             ▼                      ▼
-                        ┌─────────┐            ┌─────────┐
-                        │ Client  │            │  NATS   │
-                        │ (wscat) │            │JetStream│
-                        └─────────┘            └────┬────┘
-                                                     │
-                                    ┌────────────────┼────────────────┐
-                                    │                │                │
-                                    ▼                ▼                ▼
-                              ┌───────────┐      ┌─────────┐      ┌─────────┐
-                              │Leaderboard│      │ Billing │      │  Auth   │
-                              │ :50054    │      │ :50053  │      │ :50051  │
-                              └────┬──────┘      └────┬────┘      └────┬────┘
-                                   │                  │                │
-                                   ▼                  ▼                ▼
-                              ┌─────────┐      ┌──────────┐      ┌───────────┐
-                              │  Redis  │      │PostgreSQL│      │PostgreSQL │
-                              │ :6382   │      │ :5462    │      │ :5460     │
-                              └─────────┘      └──────────┘      └───────────┘
-```
-
-## Сервисы (актуально 30.05.2026)
-
-```text
-Сервис	        Порт (gRPC)	        PostgreSQL	    Redis	    Статус
-
-Auth	          50051	              5460	          6379	    ✅
-Game	          50052	              5461	          6380	    ✅
-Billing	        50053	              5462	          6381	    ✅
-Leaderboard	    50054	              5463	          6382	    ✅
-Gateway	        8080 (HTTP)	        -	              -	        ✅
-```
-
-## Быстрый старт
-
-1. Запустить всё одной командой
+## 🐳 Makefile & Docker-команды
 
 ```bash
-cd ~/event_horizon
-make all
-```
+# Запустить всё
+make deploy
 
-2. Проверить, что всё работает
+docker-compose -f deployments/docker-compose.cluster.yml up -d
 
-```bash
-# Статус Docker контейнеров
+# Посмотреть логи
+make logs
+
+docker-compose -f deployments/docker-compose.cluster.yml logs -f
+
+# Статус контейнеров
 make ps
 
-# Проверить порты
-ss -tlnp | grep -E "50051|50052|50053|50054|8080"
+docker-compose -f deployments/docker-compose.cluster.yml ps
+
+# Остановить всё
+make down
+
+docker-compose -f deployments/docker-compose.cluster.yml down
+
+# Полная очистка (удалить volumes)
+make clean
+
+docker-compose -f deployments/docker-compose.cluster.yml down -v
 ```
 
-3. Тестирование API
+---
+
+## 🖥️ Мониторинг
+
+| Сервис | Порт | Доступ |
+|--------|------|--------|
+| **Prometheus** | `9090` | [http://localhost:9090](http://localhost:9090) |
+| **Grafana** | `3000` | [http://localhost:3000](http://localhost:3000) (admin/admin) |
+| **Jaeger** | `16686` | [http://localhost:16686](http://localhost:16686) |
+| **NATS Exporter** | `7777` | [http://localhost:7777/metrics](http://localhost:7777/metrics) |
+
+---
+
+## 🧩 Компоненты и порты
+
+### Микросервисы
+
+| Сервис | gRPC | Metrics | БД | Redis |
+|--------|------|---------|-----|-------|
+| **Auth** | `5051` | `9091` | PG `5460` | `6379` |
+| **Game** | `5052` | `9092` | PG `5461` | `6380` |
+| **Billing** | `5053` | `9093` | PG `5462` | `6381` |
+| **Leaderboard** | `5054` | `9094` | PG `5463` | `6382` |
+| **Gateway** | HTTP `8081-8083` | `9095-9097` | — | — |
+| **Balancer** | HTTP `8079` | `9098` | — | — |
+
+### Инфраструктура
+
+| Сервис | Порт | Назначение |
+|--------|------|------------|
+| NATS | `4222` | Событийная шина |
+| NATS мониторинг | `8222` | JSON-метрики |
+| Jaeger UI | `16686` | Трассировка |
+| Prometheus | `9090` | Метрики |
+| Grafana | `3000` | Дашборды |
+
+---
+
+## 📚 Документация
+
+- [Архитектура и схемы](./confluence/architecture/)
+- [История релизов](./confluence/history/)
+- [Технический долг](./confluence/tech_debt/)
+- [FAQ](./confluence/faq/)
+- [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+## 🧪 Тестирование
+
+Запустить E2E-тесты (k6):
 
 ```bash
-# Регистрация
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"secret123"}'
-
-# Логин
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"secret123"}'
-
-# Получить баланс
-curl -X GET "http://localhost:8080/api/billing/balance/all" \
-  -H "Authorization: Bearer <токен>"
-
-# Отправить рекорд
-curl -X POST http://localhost:8080/api/game/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "<UUID>",
-    "game_id": "hexagon",
-    "level": 3,
-    "score": 100,
-    "seed": "test_seed",
-    "moves": []
-  }'
+cd deployments/k6
+k6 run e2e-test.js
 ```
 
-# Команды Make
+---
 
-```bash
-make all           # Запустить всё (Docker + сервисы)
-make stop          # Остановить все сервисы
-make restart       # Перезапустить всё
-make up            # Поднять только Docker контейнеры
-make down          # Остановить Docker контейнеры
-make ps            # Статус контейнеров
-make logs          # Логи контейнеров
-make clean         # Остановить и удалить volumes
+## 🔮 Планы на следующие спринты
 
-# Миграции баз данных
-make migrate-all   # Применить все миграции
+### 🔥 Ближайшие задачи (1–2 недели)
 
-# Логи сервисов
-tail -f /tmp/auth.log
-tail -f /tmp/game.log
-tail -f /tmp/billing.log
-tail -f /tmp/leaderboard.log
-tail -f /tmp/gateway.log
-```
+- [ ] **Нагрузочное тестирование (k6)** — прогнать все сценарии, замерить RPS, latency
+- [ ] **Рефакторинг кода** — убрать хардкод, добавить структурные логи, комментарии
+- [ ] **Rate Limiter** — раскомментировать, настроить лимиты (10/сек на пользователя)
+- [ ] **Документация API** — OpenAPI/Swagger, README для каждого сервиса
+- [ ] **Тесты** — юнит-тесты (≥70% покрытия), интеграционные тесты (testcontainers)
 
-# Порты (host)
+### ⚙️ DevOps (1–2 недели)
 
-```text
-Сервис	                  Порт	    Назначение
+- [ ] **CI/CD** — GitHub Actions: сборка, пуш в Docker Hub, деплой через SSH
+- [ ] **Ansible** — автоматизация установки Docker, копирования бинарников
+- [ ] **k3s (Kubernetes)** — Helm-чарты, Ingress (Traefik), горизонтальное масштабирование
+- [ ] **Service Discovery** — Consul для регистрации сервисов
 
-PostgreSQL (auth)	        5460	    Основная БД
-PostgreSQL (game)	        5461	    Игровая БД
-PostgreSQL (billing)	    5462	    Платёжная (внутриигровая) БД
-PostgreSQL (leaderboard)	5463	    БД для топа
-Redis	                    6379-6382	Кеши/сессии
-NATS	                    4222	    Событийная шина
-NATS monitoring	          8222	    Метрики
-Gateway	                  8080	    HTTP API + WebSocket
-```
+### 🧩 Новые сервисы (1–2 месяца)
 
-# Статус (30.05.2026)
+| Сервис | Назначение | Порт (gRPC) |
+|--------|------------|-------------|
+| **Shop** | Магазин за билетики | `5055` |
+| **Notification** | Push, Email, Telegram | `5056` |
+| **Analytics** | DAU, MAU, Retention (ClickHouse) | `5057` |
+| **Payment** | Реальные платежи (Boosty/Stripe) | `5058` |
 
-```text
-Компонент	          Статус
+### 🎮 Игровой контент
 
-Auth	              ✅ JWT, регистрация, логин
-Gateway	            ✅ HTTP → gRPC, WebSocket, NATS
-Game	              ✅ Честная валидация, подсчёт очков
-Billing	            ✅ Лампочки, билетики, транзакции
-Leaderboard	        ✅ Redis Sorted Set, NATS, суммирование очков
-WebSocket	          ✅ Real-time broadcast
-NATS JetStream	    ✅ Событийная шина
-Graceful shutdown	  ✅ Все сервисы
-Goose миграции	    ✅ Auth, Game, Billing, Leaderboard
-Баланс на фронтенде	✅ Отображается
-```
+- [ ] Добавить игры: `flappy`, `towers`, `memory`
+- [ ] Уровни сложности (1–20)
+- [ ] Достижения (achievements)
+- [ ] Блинопекарня (магазин за лампочки)
 
-# Что работает (30.05.2026)
+### 🧠 Устойчивость
 
-```text
-✅ Авторизация (JWT)
-✅ Игра (drag-n-drop, слияние стопок)
-✅ Leaderboard (суммирование очков, email)
-✅ Billing (лампочки, билетики)
-✅ WebSocket (real-time обновления)
-✅ Все миграции
-✅ Баланс на фронтенде
-```
-# Планы на следующий спринт
+- [ ] Circuit Breaker + Bulkhead
+- [ ] Retry с джиттером
+- [ ] Graceful shutdown
+- [ ] Алерты в Telegram (Alertmanager)
 
-- Выбор уровня сложности (1-20, множитель очков)
-- Анимация пуф-эффекта при очистке стопки
-- Prometheus + Grafana + Jaeger мониторинг
-- Блинопекарня (магазин за лампочки)
-- NATS кластер из 3 нод
-- Load balancer (nginx)
-- tech debt
+---
+
+## 🧑‍💻 Команда
+
+- **Backend & DevOps:** Денис Матвеев ([Eastwesser](https://github.com/Eastwesser))
+- **Архитектура:** Микросервисная, событийно-ориентированная
+- **Деплой:** Docker Compose (сейчас) → k3s (в планах)
+
+---
+
+## 📦 Версия
+
+**Текущая:** `v1.0.1` (24.06.2026)  
+**Следующий релиз:** `v1.1.0` (план — 30.06.2026)
+
+---
+
+## ⭐ Если проект полезен
+
+⭐ Поставь звезду на GitHub  
+🐛 Создай Issue  
+📬 Напиши мне: [eastwesser@gmail.com](mailto:eastwesser@gmail.com)
+
+---
+
+**Event Horizon — играй, соревнуйся, побеждай!** 🚀

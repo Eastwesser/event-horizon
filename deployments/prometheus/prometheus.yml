@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'auth'
+    static_configs:
+      - targets: ['auth:9091']
+    metrics_path: '/metrics'
+
+  - job_name: 'billing'
+    static_configs:
+      - targets: ['billing:9093']
+    metrics_path: '/metrics'
+
+  - job_name: 'game'
+    static_configs:
+      - targets: ['game:9092']
+    metrics_path: '/metrics'
+
+  - job_name: 'leaderboard'
+    static_configs:
+      - targets: ['leaderboard:9094']
+    metrics_path: '/metrics'
+
+  - job_name: 'gateway'
+    static_configs:
+      - targets: 
+          - 'gateway:9095'
+          - 'gateway-2:9096'
+          - 'gateway-3:9097'
+    metrics_path: '/metrics'
+
+  - job_name: 'balancer'
+    static_configs:
+      - targets: ['balancer:9098']
+    metrics_path: '/metrics'
+
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['event-horizon-nats-exporter:7777']
+
+  # NATS отдаёт JSON, не Prometheus-формат — забиваем
+  # - job_name: 'nats'
+  #   static_configs:
+  #     - targets: ['nats:8222']
+  #   metrics_path: '/varz'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['event-horizon-redis-exporter:9121']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['event-horizon-postgres-exporter:9187']

@@ -7,7 +7,7 @@ import (
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 
-    pb "event_horizon/services/auth/proto"  // внимательнее с путём
+    pb "github.com/Eastwesser/event-horizon/services/auth/proto"  // внимательнее с путём
 )
 
 type AuthClient struct {

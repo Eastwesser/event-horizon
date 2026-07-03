@@ -9,9 +9,9 @@ import (
 
     "github.com/nats-io/nats.go"
 
-    "event_horizon/services/game/internal/repository"
-    hexagonValidator "event_horizon/services/game/games/hexagons"
-    "event_horizon/services/game/games/memory"
+    "github.com/Eastwesser/event-horizon/services/game/internal/repository"
+    hexagonValidator "github.com/Eastwesser/event-horizon/services/game/games/hexagons"
+    "github.com/Eastwesser/event-horizon/services/game/games/memory"
 )
 
 type SubmitScoreRequest struct {
@@ -20,6 +20,7 @@ type SubmitScoreRequest struct {
     Level     int
     Score     int
     UserEmail string
+    Nickname  string
     Seed      string
     Moves     []hexagonValidator.Move
 }
@@ -161,6 +162,7 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         "user_id":         req.UserID,
         "game_id":         req.GameID,
         "user_email":      req.UserEmail,
+        "nickname":        req.Nickname,
         "score":           validatedScore,
         "is_record":       isNewRecord,
         "level":           req.Level,

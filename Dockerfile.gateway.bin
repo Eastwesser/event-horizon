@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/gateway/gateway-service /gateway
+EXPOSE 8080
+CMD ["/gateway"]

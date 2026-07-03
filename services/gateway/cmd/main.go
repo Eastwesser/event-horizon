@@ -9,6 +9,7 @@ import (
     "io"
     "log"
     "net/http"
+    _ "net/http/pprof"
     "os"
     "os/signal"
     "strconv"
@@ -19,15 +20,30 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
     "github.com/nats-io/nats.go"
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promauto"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
+    "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
+    "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-    "event_horizon/services/gateway/internal/cache"
-    "event_horizon/services/gateway/internal/client"
-    authPb "event_horizon/services/auth/proto"
-    gamePb "event_horizon/services/game/proto"
-    leaderboardPb "event_horizon/services/leaderboard/proto"
-    billingPb "event_horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/cache"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/client"
+    "github.com/Eastwesser/event-horizon/services/gateway/internal/config"
+    // "github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
+    // "github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
+    authPb "github.com/Eastwesser/event-horizon/services/auth/proto"
+    gamePb "github.com/Eastwesser/event-horizon/services/game/proto"
+    leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+    billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -117,76 +133,186 @@ func getUserIDFromToken(tokenString string) (string, error) {
     if len(parts) == 2 && parts[0] == "Bearer" {
         tokenString = parts[1]
     }
-    
+
     parts = strings.Split(tokenString, ".")
     if len(parts) != 3 {
         return "", fmt.Errorf("invalid token format")
     }
-    
+
     payload, err := base64.RawURLEncoding.DecodeString(parts[1])
     if err != nil {
         return "", err
     }
-    
+
     var claims map[string]interface{}
     if err := json.Unmarshal(payload, &claims); err != nil {
         return "", err
     }
-    
+
     userID, ok := claims["user_id"].(string)
     if !ok {
         return "", fmt.Errorf("user_id not found in token")
     }
-    
+
     return userID, nil
 }
 
+func initTracer(ctx context.Context) (func(context.Context) error, error) {
+    endpoint := os.Getenv("JAEGER_ENDPOINT")
+    if endpoint == "" {
+        endpoint = "jaeger:4317"  // ← для Docker используем имя контейнера
+    }
+    log.Printf("🔄 Initializing Jaeger tracer with endpoint: %s", endpoint)
+
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint(endpoint),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    tp := trace.NewTracerProvider(
+        trace.WithBatcher(exporter),
+        trace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String("gateway"),
+            attribute.String("environment", "development"),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    log.Println("✅ Jaeger tracer initialized for Gateway")
+    return tp.Shutdown, nil
+}
+
 func main() {
+    cfg := config.Load()
+    ctx := context.Background()
+
+    // Инициализация Jaeger
+    shutdown, err := initTracer(ctx)
+    if err != nil {
+        log.Printf("⚠️ Failed to initialize Jaeger tracer: %v", err)
+    } else {
+        defer shutdown(ctx)
+        log.Println("✅ Jaeger tracer initialized for Gateway")
+    }
+
+    log.Printf("🚀 Starting Gateway with config:")
+    log.Printf("   Port: %s", cfg.Port)
+    log.Printf("   Metrics: %s", cfg.MetricsPort)
+    log.Printf("   NATS: %s", cfg.NATSUrl)
+    log.Printf("   Redis: %s", cfg.RedisAddr)
+    log.Printf("   Auth: %s", cfg.AuthAddr)
+    log.Printf("   Game: %s", cfg.GameAddr)
+    log.Printf("   Billing: %s", cfg.BillingAddr)
+    log.Printf("   Leaderboard: %s", cfg.LeaderboardAddr)
+
     hub := NewHub()
     go hub.Run()
 
-    authClient, err := client.NewAuthClient("localhost:50051")
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        log.Printf("📊 Metrics endpoint: http://0.0.0.0:%s/metrics", cfg.MetricsPort)
+        if err := http.ListenAndServe(":"+cfg.MetricsPort, nil); err != nil {
+            log.Printf("API Gateway metrics server error: %v", err)
+        }
+    }()
+
+    authClient, err := client.NewAuthClient(cfg.AuthAddr)
     if err != nil {
         log.Fatalf("Failed to connect to auth: %v", err)
     }
     defer authClient.Close()
 
-    gameConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    gameConn, err := grpc.NewClient(cfg.GameAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to game: %v", err)
     }
     defer gameConn.Close()
     gameClient := gamePb.NewGameServiceClient(gameConn)
 
-    nc, err := nats.Connect("nats://localhost:4222")
+    // NATS SECTION
+    var js nats.JetStreamContext
+    nc, err := nats.Connect(cfg.NATSUrl)
     if err != nil {
-        log.Fatalf("Failed to connect to NATS: %v", err)
-    }
-    defer nc.Drain()
+        log.Printf("⚠️ Failed to connect to NATS: %v (WebSocket будет недоступен)", err)
+    } else {
+        defer nc.Drain()
+        js, err = nc.JetStream()
+        if err != nil {
+            log.Printf("⚠️ Failed to create JetStream context: %v", err)
+        } else {
+            _, err = js.AddStream(&nats.StreamConfig{
+                Name:     "EVENTS",
+                Subjects: []string{"event.>", "score.updated"},
+                Storage:  nats.FileStorage,
+            })
+            if err != nil {
+                log.Printf("Stream might already exist: %v", err)
+            }
 
-    js, err := nc.JetStream()
-    if err != nil {
-        log.Fatalf("Failed to create JetStream context: %v", err)
+            _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
+                hub.Broadcast(msg.Data)
+                log.Printf("📡 Broadcasted score update to WebSocket clients")
+            }, nats.Durable("gateway-websocket"))
+            if err != nil {
+                log.Printf("Failed to subscribe to score.updated: %v", err)
+            }
+        }
     }
 
-    _, err = js.AddStream(&nats.StreamConfig{
-        Name:     "EVENTS",
-        Subjects: []string{"event.>", "score.updated"},
-        Storage:  nats.FileStorage,
-    })
-    if err != nil {
-        log.Printf("Stream might already exist: %v", err)
-    }
-
-    _, err = js.Subscribe("score.updated", func(msg *nats.Msg) {
-        hub.Broadcast(msg.Data)
-        log.Printf("📡 Broadcasted score update to WebSocket clients")
-    }, nats.Durable("gateway-websocket"))
-    if err != nil {
-        log.Printf("Failed to subscribe to score.updated: %v", err)
-    }
-
+    // GIN ROUTER SECTION
     r := gin.Default()
+
+    r.Use(otelgin.Middleware("gateway"))
+
+    gatewayRequestsTotal := promauto.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "gateway_requests_total",
+            Help: "Total number of HTTP requests to Gateway",
+        },
+        []string{"method", "path", "status"},
+    )
+
+    gatewayRequestDuration := promauto.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name:    "gateway_request_duration_seconds",
+            Help:    "Duration of HTTP requests in seconds",
+            Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
+        },
+        []string{"method", "path"},
+    )
+
+    r.Use(func(c *gin.Context) {
+        start := time.Now()
+        c.Next()
+        duration := time.Since(start).Seconds()
+
+        status := strconv.Itoa(c.Writer.Status())
+        path := c.Request.URL.Path
+        method := c.Request.Method
+
+        gatewayRequestsTotal.WithLabelValues(method, path, status).Inc()
+        gatewayRequestDuration.WithLabelValues(method, path).Observe(duration)
+    })
+
+    rdb := redis.NewClient(&redis.Options{
+        Addr: cfg.RedisAddr,
+    })
+
+    if err := rdb.Ping(context.Background()).Err(); err != nil {
+        log.Printf("⚠️ Redis connection failed: %v", err)
+    } else {
+        log.Println("✅ Redis connected for rate limiter")
+        // limiter := ratelimit.NewRateLimiter(rdb)
+        // r.Use(middleware.RateLimitMiddleware(limiter))
+    }
 
     r.GET("/health", func(c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -225,8 +351,12 @@ func main() {
             "email":   resp.Email,
         }
         eventJSON, _ := json.Marshal(eventData)
-        js.Publish("event.user.registered", eventJSON)
-        log.Printf("📡 Published event: user.registered for %s", resp.Email)
+        if js != nil {
+            js.Publish("event.user.registered", eventJSON)
+            log.Printf("📡 Published event: user.registered for %s", resp.Email)
+        } else {
+            log.Printf("⚠️ NATS not available, event not published")
+        }
         c.JSON(http.StatusOK, resp)
     })
 
@@ -243,10 +373,8 @@ func main() {
             return
         }
 
-        // Если UserId пустой — достаём из токена
         userId := resp.UserId
         if userId == "" {
-            // Парсим токен
             parts := strings.Split(resp.AccessToken, ".")
             if len(parts) == 3 {
                 payload, err := base64.RawURLEncoding.DecodeString(parts[1])
@@ -270,7 +398,7 @@ func main() {
 
     scoreCache := cache.NewScoreCache(2 * time.Second)
 
-    billingConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    billingConn, err := grpc.NewClient(cfg.BillingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to billing: %v", err)
     }
@@ -283,13 +411,13 @@ func main() {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
             return
         }
-        
+
         userID, err := getUserIDFromToken(token)
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
             return
         }
-        
+
         resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
             UserId: userID,
         })
@@ -297,7 +425,7 @@ func main() {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
-        
+
         var lamps, tickets int32
         for _, b := range resp.Balances {
             if b.Currency == billingPb.CurrencyType_LAMPS {
@@ -306,74 +434,33 @@ func main() {
                 tickets = b.Balance
             }
         }
-        
+
         c.JSON(http.StatusOK, gin.H{
             "lamps":   lamps,
             "tickets": tickets,
         })
     })
 
-    // r.GET("/api/billing/balance/all1", func(c *gin.Context) {
-    //     token := c.GetHeader("Authorization")
-    //     if token == "" {
-    //         c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
-    //         return
-    //     }
-        
-    //     // Извлекаем user_id из токена (или из запроса)
-    //     // Временно: получаем user_id из контекста (нужно добавить authMiddleware)
-    //     userID := c.Query("user_id")
-    //     if userID == "" {
-    //         c.JSON(http.StatusBadRequest, gin.H{"error": "user_id required"})
-    //         return
-    //     }
-        
-    //     resp, err := billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
-    //         UserId: userID,
-    //     })
-    //     if err != nil {
-    //         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-    //         return
-    //     }
-        
-    //     // Конвертируем ответ
-    //     var lamps, tickets int32
-    //     for _, b := range resp.Balances {
-    //         if b.Currency == billingPb.CurrencyType_LAMPS {
-    //             lamps = b.Balance
-    //         } else if b.Currency == billingPb.CurrencyType_TICKETS {
-    //             tickets = b.Balance
-    //         }
-    //     }
-        
-    //     c.JSON(http.StatusOK, gin.H{
-    //         "lamps":   lamps,
-    //         "tickets": tickets,
-    //     })
-    // })
-
     r.GET("/api/leaderboard", func(c *gin.Context) {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
-        
-        // Вызываем leaderboard через gRPC
-        conn, err := grpc.Dial("localhost:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+        conn, err := grpc.Dial(cfg.LeaderboardAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
         defer conn.Close()
-        
+
         leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(conn)
-        
-        // Преобразуем limit в int32
+
         var limitInt int32 = 10
         if limit != "" {
             if l, err := strconv.Atoi(limit); err == nil {
                 limitInt = int32(l)
             }
         }
-        
+
         resp, err := leaderboardClient.GetTopScores(c.Request.Context(), &leaderboardPb.GetTopScoresRequest{
             GameId: gameID,
             Limit:  limitInt,
@@ -382,13 +469,12 @@ func main() {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
-        
+
         c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
     })
 
     r.POST("/api/game/submit", func(c *gin.Context) {
         body, _ := c.GetRawData()
-        log.Printf("📥 Gateway received: %s", string(body))  // 👈 добавить
         c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
         cacheKey := string(body)
@@ -398,13 +484,14 @@ func main() {
         }
 
         var req struct {
-            UserID string `json:"user_id"`
-            GameID string `json:"game_id"`
-            Level  int32  `json:"level"`
-            Score  int32  `json:"score"`
+            UserID    string `json:"user_id"`
+            GameID    string `json:"game_id"`
+            Level     int32  `json:"level"`
+            Score     int32  `json:"score"`
             UserEmail string `json:"user_email"`
-            Seed   string `json:"seed"`
-            Moves  []struct {
+            Nickname  string `json:"nickname"`
+            Seed      string `json:"seed"`
+            Moves     []struct {
                 FromX     int32 `json:"fromX"`
                 FromY     int32 `json:"fromY"`
                 ToX       int32 `json:"toX"`
@@ -429,24 +516,15 @@ func main() {
             }
         }
 
-        log.Printf("📤 SENDING to Game: %+v", &gamePb.SubmitScoreRequest{
-            UserId: req.UserID,
-            GameId: req.GameID,
-            Level:  req.Level,
-            Score:  req.Score,
-            UserEmail: req.UserEmail,
-            Seed:   req.Seed,
-            Moves:  moves,
-        })
-
         resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
-            UserId: req.UserID,
-            GameId: req.GameID,
-            Level:  req.Level,
-            Score:  req.Score,   // 👈 добавляем!
+            UserId:    req.UserID,
+            GameId:    req.GameID,
+            Level:     req.Level,
+            Score:     req.Score,
             UserEmail: req.UserEmail,
-            Seed:   req.Seed,
-            Moves:  moves,
+            Nickname:  req.Nickname,
+            Seed:      req.Seed,
+            Moves:     moves,
         })
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -459,7 +537,7 @@ func main() {
     })
 
     srv := &http.Server{
-        Addr:    ":8080",
+        Addr:    "0.0.0.0:" + cfg.Port,
         Handler: r,
     }
 
@@ -469,8 +547,8 @@ func main() {
         }
     }()
 
-    log.Println("🚀 Gateway listening on :8080 (with NATS JetStream & WebSocket)")
-    log.Println("   WebSocket endpoint: ws://localhost:8080/ws/leaderboard")
+    log.Printf("🚀 Gateway listening on :%s", cfg.Port)
+    log.Printf("   WebSocket endpoint: ws://localhost:%s/ws/leaderboard", cfg.Port)
 
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -487,7 +565,10 @@ func main() {
 
     authClient.Close()
     gameConn.Close()
-    nc.Drain()
+    billingConn.Close()
+    if nc != nil {
+        nc.Drain()
+    }
 
     log.Println("Gateway stopped gracefully")
 }

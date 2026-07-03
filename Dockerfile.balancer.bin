@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/balancer/balancer-service /balancer
+EXPOSE 8079
+CMD ["/balancer"]

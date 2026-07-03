@@ -1,4 +1,3 @@
-
 // frontend/src/store/memoryStore.ts
 import { create } from 'zustand';
 
@@ -24,6 +23,7 @@ interface MemoryState {
   checkMatch: () => void;
   resetGame: () => void;
   calculateFinalScore: () => number;
+  submitScore: () => Promise<void>;
 }
 
 const FRUIT_EMOJIS = [
@@ -216,5 +216,51 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
   calculateFinalScore: () => {
     const { moves } = get();
     return calculateScore(moves, FRUIT_EMOJIS.length);
+  },
+  
+  submitScore: async () => {
+    const { score } = get();
+    const userId = localStorage.getItem('userId');
+    const userEmail = localStorage.getItem('userEmail') || '';
+    const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0] || 'Игрок';
+
+    if (!userId || !userEmail) return;
+
+    try {
+      const response = await fetch('/api/game/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          game_id: 'memory',
+          level: 1,
+          score: score,
+          user_email: userEmail,
+          nickname: nickname,
+          seed: `memory_seed_${Date.now()}`,
+          moves: [],
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Memory score submitted: ${score}`);
+        
+        const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+        const currentBest = savedScores.memory || 0;
+        
+        if (score > currentBest) {
+          savedScores.memory = score;
+          localStorage.setItem('gameScores', JSON.stringify(savedScores));
+        }
+        
+        const played = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');
+        localStorage.setItem('memoryGamesPlayed', String(played + 1));
+        
+        const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
+        localStorage.setItem('totalScore', String(totalScore + score));
+      }
+    } catch (err) {
+      console.error('Failed to submit memory score:', err);
+    }
   },
 }));
