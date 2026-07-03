@@ -103,3 +103,10 @@ git commit -m "Merge: resolve conflicts (keep local versions)"
 ```bash
 git push origin main
 ```
+
+---
+
+🛡️ Предотвращение в будущем
+bash
+# Добавить в ~/.bashrc
+alias git-safe='cp -r .git .git.backup_$(date +%Y%m%d_%H%M%S) && git'
