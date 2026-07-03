@@ -74,3 +74,12 @@ JWT генерация	          ✅ HS256
 User repository	        ✅ CRUD операции
 Reflection API	        ✅ включил
 ```
+
+## UPD INFO 3rd of July, 2026:
+```bash
+cd ~/event_horizon/services/auth
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o auth-service ./cmd/main.go
+cd ~/event_horizon
+docker build -f Dockerfile.auth.bin -t eastwesser/auth:latest .
+docker-compose -f deployments/docker-compose.cluster.yml up -d auth
+```
