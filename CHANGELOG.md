@@ -810,6 +810,7 @@ Gateway обращается к NATS?	Нет, только к сервисам �
 Как реплицируется NATS?	Через кластеризацию (-cluster, -routes).
 
 24.06.2026
+```
 
 Обновлены мэйкфайлы:
 
@@ -831,3 +832,365 @@ make up
 # Всё стереть
 make clean
 
+Все заметные изменения в проекте Event Horizon.
+
+## [v1.0.0] — 2026-06-23
+
+### Добавлено
+- Первый релиз
+- Основные сервисы: Auth, Game, Billing, Leaderboard, Gateway, Balancer
+- NATS JetStream
+- WebSocket real-time обновления
+- Docker Compose
+- Prometheus + Grafana
+- Миграции через goose
+- Статическая сборка бинарников
+
+---
+
+# 🎮 Event Horizon
+
+**Игровая платформа** с микросервисной архитектурой на Go, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
+
+[![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
+[![Docker](https://img.shields.io/badge/Docker-✓-blue.svg)](https://docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
+
+## 📦 Архитектура (актуально v1.0.1, 24.06.2026)
+
+```text
+[React Client :5173]
+    │ HTTP (JSON)
+    ▼
+[Balancer :8079] — самописный, Least Connections
+    │ HTTP
+    ▼
+[Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
+    │ gRPC
+    ▼
+┌──────────────┼──────────────┐
+│              │              │
+▼              ▼              ▼
+Auth :5051     Game :5052     Billing :5053     Leaderboard :5054
+│              │              │                  │
+▼              ▼              ▼                  ▼
+PG :5460       PG :5461       PG :5462          PG :5463 + Redis :6382
+(users)        (scores)       (balances)        (leaderboard)
+│              │              │                  │
+└──────────────┼──────────────┴──────────────────┘
+               │
+               ▼
+          [NATS :4222] — событийная шина (score.updated, user.registered)
+               │
+               ▼
+    Leaderboard подписан → обновляет Redis → WebSocket → клиент
+```
+
+---
+
+## 🚀 Быстрый старт
+
+```bash
+# 1. Клонировать
+git clone https://github.com/Eastwesser/event-horizon.git
+cd event-horizon
+
+# 2. Запустить всё одной командой
+make deploy
+
+# 3. Проверить
+make status
+```
+
+**Готово!** Всё поднимется автоматически:
+- Docker-контейнеры (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
+- Миграции баз данных
+- Все микросервисы
+
+---
+
+## 📍 Эндпоинты (доступны через балансировщик :8079)
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| `POST` | `/api/auth/register` | Регистрация |
+| `POST` | `/api/auth/login` | Логин (JWT) |
+| `GET` | `/api/billing/balance/all` | Баланс (лампочки/билетики) |
+| `POST` | `/api/game/submit` | Отправить рекорд |
+| `GET` | `/api/leaderboard` | Топ-10 (публичный) |
+| `WS` | `/ws/leaderboard` | WebSocket обновления |
+
+---
+
+## 🔧 Примеры запросов
+
+```bash
+# Регистрация
+curl -X POST http://localhost:8079/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret123","nickname":"Test"}'
+
+# Логин (получить токен)
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret123"}' \
+  | jq -r '.access_token')
+
+# Отправить рекорд
+curl -X POST http://localhost:8079/api/game/submit \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"user_id":"test-user","game_id":"hexagon","level":1,"score":150,"seed":"test_seed","moves":[]}'
+
+# Посмотреть лидерборд
+curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.'
+```
+
+---
+
+## 🔌 WebSocket
+
+Подключиться к real-time обновлениям лидерборда:
+
+```bash
+# Через терминал
+wscat -c ws://localhost:8079/ws/leaderboard
+
+# В браузере
+const ws = new WebSocket('ws://localhost:5173/ws/leaderboard');
+ws.onmessage = (e) => console.log('📩', JSON.parse(e.data));
+```
+
+---
+
+## 🐳 Makefile & Docker-команды
+
+```bash
+# Запустить всё
+make deploy
+
+docker-compose -f deployments/docker-compose.cluster.yml up -d
+
+# Посмотреть логи
+make logs
+
+docker-compose -f deployments/docker-compose.cluster.yml logs -f
+
+# Статус контейнеров
+make ps
+
+docker-compose -f deployments/docker-compose.cluster.yml ps
+
+# Остановить всё
+make down
+
+docker-compose -f deployments/docker-compose.cluster.yml down
+
+# Полная очистка (удалить volumes)
+make clean
+
+docker-compose -f deployments/docker-compose.cluster.yml down -v
+```
+
+---
+
+## 🖥️ Мониторинг
+
+| Сервис | Порт | Доступ |
+|--------|------|--------|
+| **Prometheus** | `9090` | [http://localhost:9090](http://localhost:9090) |
+| **Grafana** | `3000` | [http://localhost:3000](http://localhost:3000) (admin/admin) |
+| **Jaeger** | `16686` | [http://localhost:16686](http://localhost:16686) |
+| **NATS Exporter** | `7777` | [http://localhost:7777/metrics](http://localhost:7777/metrics) |
+
+---
+
+## 🧩 Компоненты и порты
+
+### Микросервисы
+
+| Сервис | gRPC | Metrics | БД | Redis |
+|--------|------|---------|-----|-------|
+| **Auth** | `5051` | `9091` | PG `5460` | `6379` |
+| **Game** | `5052` | `9092` | PG `5461` | `6380` |
+| **Billing** | `5053` | `9093` | PG `5462` | `6381` |
+| **Leaderboard** | `5054` | `9094` | PG `5463` | `6382` |
+| **Gateway** | HTTP `8081-8083` | `9095-9097` | — | — |
+| **Balancer** | HTTP `8079` | `9098` | — | — |
+
+### Инфраструктура
+
+| Сервис | Порт | Назначение |
+|--------|------|------------|
+| NATS | `4222` | Событийная шина |
+| NATS мониторинг | `8222` | JSON-метрики |
+| Jaeger UI | `16686` | Трассировка |
+| Prometheus | `9090` | Метрики |
+| Grafana | `3000` | Дашборды |
+
+---
+
+## 📚 Документация
+
+- [Архитектура и схемы](./confluence/architecture/)
+- [История релизов](./confluence/history/)
+- [Технический долг](./confluence/tech_debt/)
+- [FAQ](./confluence/faq/)
+- [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+## 🧪 Тестирование
+
+Запустить E2E-тесты (k6):
+
+```bash
+cd deployments/k6
+k6 run e2e-test.js
+```
+
+---
+
+## 🔮 Планы на следующие спринты
+
+### 🔥 Ближайшие задачи (1–2 недели)
+
+- [ ] **Нагрузочное тестирование (k6)** — прогнать все сценарии, замерить RPS, latency
+- [ ] **Рефакторинг кода** — убрать хардкод, добавить структурные логи, комментарии
+- [ ] **Rate Limiter** — раскомментировать, настроить лимиты (10/сек на пользователя)
+- [ ] **Документация API** — OpenAPI/Swagger, README для каждого сервиса
+- [ ] **Тесты** — юнит-тесты (≥70% покрытия), интеграционные тесты (testcontainers)
+
+### ⚙️ DevOps (1–2 недели)
+
+- [ ] **CI/CD** — GitHub Actions: сборка, пуш в Docker Hub, деплой через SSH
+- [ ] **Ansible** — автоматизация установки Docker, копирования бинарников
+- [ ] **k3s (Kubernetes)** — Helm-чарты, Ingress (Traefik), горизонтальное масштабирование
+- [ ] **Service Discovery** — Consul для регистрации сервисов
+
+### 🧩 Новые сервисы (1–2 месяца)
+
+| Сервис | Назначение | Порт (gRPC) |
+|--------|------------|-------------|
+| **Shop** | Магазин за билетики | `5055` |
+| **Notification** | Push, Email, Telegram | `5056` |
+| **Analytics** | DAU, MAU, Retention (ClickHouse) | `5057` |
+| **Payment** | Реальные платежи (Boosty/Stripe) | `5058` |
+
+### 🎮 Игровой контент
+
+- [ ] Добавить игры: `flappy`, `towers`, `memory`
+- [ ] Уровни сложности (1–20)
+- [ ] Достижения (achievements)
+- [ ] Блинопекарня (магазин за лампочки)
+
+### 🧠 Устойчивость
+
+- [ ] Circuit Breaker + Bulkhead
+- [ ] Retry с джиттером
+- [ ] Graceful shutdown
+- [ ] Алерты в Telegram (Alertmanager)
+
+---
+
+## 🧑‍💻 Команда
+
+- **Backend & DevOps:** Денис Матвеев ([Eastwesser](https://github.com/Eastwesser))
+- **Архитектура:** Микросервисная, событийно-ориентированная
+- **Деплой:** Docker Compose (сейчас) → k3s (в планах)
+
+---
+
+## 📦 Версия
+
+**Текущая:** `v1.0.1` (24.06.2026)  
+**Следующий релиз:** `v1.1.0` (план — 30.06.2026)
+
+---
+
+## ⭐ Если проект полезен
+
+⭐ Поставь звезду на GitHub  
+🐛 Создай Issue  
+📬 Напиши мне: [eastwesser@gmail.com](mailto:eastwesser@gmail.com)
+
+---
+
+**Event Horizon — играй, соревнуйся, побеждай!** 🚀
+
+## [v1.0.1] — 2026-06-24
+
+### Добавлено
+- Jaeger для Gateway
+- NATS Exporter для Prometheus
+- Автоматические миграции через `make deploy`
+
+### Исправлено
+- WebSocket через балансировщик
+- Healthcheck NATS
+
+---
+
+## [v1.0.2] — 2026-06-29
+
+### Добавлено
+- **Мониторинг (полный стек)**:
+  - Gateway метрики: `gateway_requests_total`, `gateway_request_duration_seconds`
+  - Balancer метрики: `balancer_active_connections`, `balancer_requests_total`
+  - Redis Exporter (`9121`)
+  - PostgreSQL Exporter (`9187`)
+  - Скрипты сбора метрик: `metrics_collector.sh`, `metrics_snapshot.sh`, `metrics_snapshot_dif.sh`
+- **Grafana**: дашборд Event Horizon с панелями (RPS, Latency, Go, NATS, Redis, PG)
+
+### Исправлено
+- Jaeger для Gateway (добавлен `initTracer`)
+- WebSocket прокси (`vite.config.ts`)
+- Healthcheck NATS
+- Автоматизация миграций (`make deploy`)
+
+---
+
+## [v1.0.3] — 2026-07-05
+
+### Добавлено
+- **Profile Service** — агрегация данных пользователя (CQRS + Read Model)
+  - Собирает данные из Auth (через NATS `user.registered`)
+  - Собирает данные из Game (через NATS `score.updated`)
+  - Хранит профиль в отдельной БД
+  - Отдаёт единый профиль через gRPC
+- **NATS Hub** — централизованное управление Stream'ами
+  - Создаёт Stream `EVENTS` при старте
+  - Добавлены subject'ы: `event.>`, `score.updated`, `user.registered`, `shop.purchased`, `payment.completed`
+- **Jaeger** — добавлен `JAEGER_ENDPOINT=jaeger:4317` во все сервисы
+- **pprof** — добавлен во все сервисы (импорт `net/http/pprof`)
+- **Redis Exporter** — настроен на порту `9121`
+- **PostgreSQL Exporter** — настроен на порту `9187`
+- **Makefile** — добавлены команды:
+  - `migrate-profile` — миграции для Profile Service
+  - `build-nats-hub` — сборка nats-hub
+
+### Изменено
+- **Gateway**:
+  - Добавлен эндпоинт `/api/profile` (агрегированный профиль)
+  - Добавлен `PROFILE_ADDR=profile:50060`
+  - Добавлен импорт `profilePb`
+- **Game**:
+  - Убрано создание Stream `SCORES` (теперь использует `EVENTS`)
+- **Leaderboard**:
+  - Убрано создание Stream `SCORES`
+  - Добавлен `depends_on` для NATS и nats-hub
+- **Profile**:
+  - Убрано создание Stream (использует `EVENTS`)
+- **Docker Compose**:
+  - Добавлен `postgres-profile` (порт `5464`)
+  - Добавлен `nats-hub`
+  - Добавлен `profile` (порт `50060`, метрики `9099`)
+  - Добавлены `depends_on` для корректного порядка запуска
+
+### Исправлено
+- Никнейм теперь привязан к `userId` (обновляется через бэкенд)
+- Статистика привязана к `userId` в `localStorage`
+- WebSocket исправлен (прокси на `8079` вместо `8080`)
+- Решена проблема с дублированием Stream'ов в NATS
