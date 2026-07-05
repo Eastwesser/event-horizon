@@ -2,16 +2,17 @@ package main
 
 import (
     "context"
+    "database/sql"
     "log"
     "net"
     "net/http"
     _ "net/http/pprof"
     "os"
     "os/signal"
-    // "strings"
     "syscall"
     "time"
 
+    _ "github.com/lib/pq"
     "github.com/nats-io/nats.go"
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
@@ -34,7 +35,6 @@ import (
 
 // Инициализация OpenTelemetry для Jaeger
 func initTracer(ctx context.Context) (func(context.Context) error, error) {
-    // Читаем эндпоинт из переменной окружения
     endpoint := os.Getenv("JAEGER_ENDPOINT")
     if endpoint == "" {
         endpoint = "localhost:4317"
@@ -73,14 +73,23 @@ func main() {
     cfg := config.Load()
     ctx := context.Background()
 
-    // Инициализация Jaeger
+    // 1. Инициализация Jaeger
     shutdown, err := initTracer(ctx)
     if err != nil {
         log.Fatalf("Failed to initialize tracer: %v", err)
     }
     defer shutdown(ctx)
 
-    // Подключаемся к NATS
+    // 2. Подключение к PostgreSQL
+    dbURL := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName + "?sslmode=disable"
+
+    db, err := sql.Open("postgres", dbURL)
+    if err != nil {
+        log.Fatalf("Unable to connect to database: %v", err)
+    }
+    defer db.Close()
+
+    // 3. Подключение к NATS
     var nc *nats.Conn
     var lastErr error
     for i := 0; i < 30; i++ {
@@ -100,27 +109,12 @@ func main() {
         log.Fatalf("Failed to create JetStream context: %v", err)
     }
 
-    // Создаём stream для score.updated
-    // _, err = js.AddStream(&nats.StreamConfig{
-    //     Name:     "SCORES",
-    //     Subjects: []string{"score.updated"},
-    //     Storage:  nats.FileStorage,
-    //     MaxAge:   24 * time.Hour,
-    // })
-    // if err != nil {
-    //     if strings.Contains(err.Error(), "stream name already in use") {
-    //         log.Println("✅ Stream already exists")
-    //     } else {
-    //         log.Fatalf("Failed to create stream: %v", err)
-    //     }
-    // }
-
-    // Репозиторий и сервис
-    gameRepo := repository.NewPostgresGameRepo()
+    // 4. Репозиторий и сервис
+    gameRepo := repository.NewPostgresGameRepo(db)
     gameService := service.NewGameService(gameRepo, js)
     gameHandler := handler.NewGameHandler(gameService)
 
-    // gRPC сервер с интерсепторами для трейсинга
+    // 5. gRPC сервер
     grpcServer := grpc.NewServer(
         grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
         grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
@@ -128,7 +122,7 @@ func main() {
     pb.RegisterGameServiceServer(grpcServer, gameHandler)
     reflection.Register(grpcServer)
 
-    // Метрики
+    // 6. Метрики
     go func() {
         http.Handle("/metrics", promhttp.Handler())
         log.Printf("📊 Metrics endpoint: http://localhost:9092/metrics")
@@ -137,13 +131,12 @@ func main() {
         }
     }()
 
-    // Listener
+    // 7. Listener
     lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
     if err != nil {
         log.Fatalf("Failed to listen: %v", err)
     }
 
-    // Запуск gRPC сервера в горутине
     go func() {
         log.Printf("🎮 Game service listening on :%s", cfg.GRPCPort)
         log.Printf("   NATS: %s", cfg.NATSUrl)
@@ -152,7 +145,7 @@ func main() {
         }
     }()
 
-    // Graceful shutdown
+    // 8. Graceful shutdown
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit

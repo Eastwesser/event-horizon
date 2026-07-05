@@ -7,6 +7,7 @@ import (
     "strings"
     "time"
 
+    "github.com/jackc/pgx/v5/pgxpool"
     "github.com/redis/go-redis/v9"
 )
 
@@ -27,17 +28,34 @@ type LeaderboardRepository interface {
     SaveUserInfo(ctx context.Context, gameID, userID, userEmail, nickname string) error
 }
 
+// type RedisLeaderboardRepo struct {
+//     client *redis.Client
+// }
+
+// func NewRedisLeaderboardRepo(addr string, db int) *RedisLeaderboardRepo {
+//     client := redis.NewClient(&redis.Options{
+//         Addr: addr,
+//         DB:   db,
+//     })
+//     return &RedisLeaderboardRepo{client: client}
+// }
+
 type RedisLeaderboardRepo struct {
     client *redis.Client
+    db     *pgxpool.Pool
 }
 
-func NewRedisLeaderboardRepo(addr string, db int) *RedisLeaderboardRepo {
+func NewRedisLeaderboardRepo(addr string, db int, dbPool *pgxpool.Pool) *RedisLeaderboardRepo {
     client := redis.NewClient(&redis.Options{
         Addr: addr,
         DB:   db,
     })
-    return &RedisLeaderboardRepo{client: client}
+    return &RedisLeaderboardRepo{
+        client: client,
+        db:     dbPool,
+    }
 }
+
 func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, userEmail, nickname string, score int) (int, error) {
     key := fmt.Sprintf("leaderboard:%s", gameID)
     infoKey := fmt.Sprintf("leaderboard:%s:info", gameID)
@@ -204,4 +222,35 @@ func (r *RedisLeaderboardRepo) SaveUserInfo(ctx context.Context, gameID, userID,
     
     log.Printf("💾 Saved user info: user=%s, email=%s, nickname=%s", userID, userEmail, nickname)
     return nil
+}
+
+// RestoreFromPostgres загружает все рекорды из PostgreSQL в Redis
+func (r *RedisLeaderboardRepo) RestoreFromPostgres(ctx context.Context, gameID string) error {
+    // Запрос к PostgreSQL (через gRPC или прямой доступ к БД)
+    rows, err := r.db.Query(ctx, `
+        SELECT user_id, MAX(score) as best_score
+        FROM scores
+        WHERE game_id = $1
+        GROUP BY user_id
+        ORDER BY best_score DESC
+    `, gameID)
+    if err != nil {
+        return err
+    }
+    defer rows.Close()
+
+    pipe := r.client.Pipeline()
+    for rows.Next() {
+        var userID string
+        var score int64
+        if err := rows.Scan(&userID, &score); err != nil {
+            continue
+        }
+        pipe.ZAdd(ctx, "leaderboard:"+gameID, redis.Z{
+            Score:  float64(score),
+            Member: userID,
+        })
+    }
+    _, err = pipe.Exec(ctx)
+    return err
 }

@@ -316,11 +316,12 @@ services:
       - NATS_URL=nats://event-horizon-nats:4222
       - REDIS_ADDR=event-horizon-redis-leaderboard:6379
       - REDIS_DB=0
-      - DB_HOST=event-horizon-postgres-leaderboard
+      # - DB_HOST=event-horizon-postgres-leaderboard
+      - DB_HOST=event-horizon-postgres-game
       - DB_PORT=5432
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
-      - DB_NAME=eventhorizon_leaderboard
+      # - DB_NAME=eventhorizon_leaderboard
     networks:
       - event-horizon-net
     depends_on:

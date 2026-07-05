@@ -168,3 +168,11 @@ cd ~/event_horizon
 docker build -f Dockerfile.leaderboard.bin -t eastwesser/leaderboard:latest .
 docker-compose -f deployments/docker-compose.cluster.yml up -d leaderboard
 ```
+
+cd ~/event_horizon/services/leaderboard
+go mod tidy
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o leaderboard-service ./cmd/main.go
+cd ~/event_horizon
+docker build -f Dockerfile.leaderboard.bin -t eastwesser/leaderboard:latest .
+docker-compose -f deployments/docker-compose.cluster.yml up -d leaderboard
+docker logs deployments-leaderboard-1 --tail=30

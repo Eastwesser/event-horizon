@@ -13,6 +13,7 @@ import (
     "syscall"
     "time"
 
+    "github.com/jackc/pgx/v5/pgxpool"
     "github.com/nats-io/nats.go"
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "google.golang.org/grpc"
@@ -90,8 +91,27 @@ func main() {
     }
     defer shutdown(ctx)
 
-    // Подключаемся к Redis
-    redisRepo := repository.NewRedisLeaderboardRepo(cfg.RedisAddr, cfg.RedisDB)
+    // 1. Подключаемся к PostgreSQL
+    dbURL := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
+    dbpool, err := pgxpool.New(context.Background(), dbURL)
+    if err != nil {
+        log.Fatalf("Unable to connect to database: %v", err)
+    }
+    defer dbpool.Close()
+
+    // 2. Подключаемся к Redis (передаём dbpool для восстановления)
+    redisRepo := repository.NewRedisLeaderboardRepo(cfg.RedisAddr, cfg.RedisDB, dbpool)
+
+    // Восстановление лидерборда из PostgreSQL
+    games := []string{"hexagon", "flappy", "memory", "towers"}
+    for _, gameID := range games {
+        log.Printf("🔄 Restoring leaderboard for %s...", gameID)
+        if err := redisRepo.RestoreFromPostgres(ctx, gameID); err != nil {
+            log.Printf("⚠️ Failed to restore %s: %v", gameID, err)
+        } else {
+            log.Printf("✅ Restored leaderboard for %s", gameID)
+        }
+    }
 
     // Создаём сервис
     leaderboardService := service.NewLeaderboardService(redisRepo)
@@ -197,7 +217,7 @@ func main() {
         log.Println("📡 Subscribed to NATS: score.updated")
     }
 
-    // Создаём gRPC хендлер
+    // Создаем gRPC хендлер
     leaderboardHandler := handler.NewLeaderboardHandler(leaderboardService)
 
     // Настраиваем gRPC сервер с интерсепторами для трейсинга
