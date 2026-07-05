@@ -14,3 +14,9 @@ docker exec -it event-horizon-postgres-leaderboard psql -U eventhorizon -d event
 
 # Auth — список пользователей
 docker exec -it event-horizon-postgres psql -U eventhorizon -d eventhorizon -c "SELECT id, email, created_at FROM users;"
+
+# Auth — список пользователей с никами
+docker exec -it event-horizon-postgres psql -U eventhorizon -d eventhorizon -c "SELECT id, email, nickname, created_at FROM users;"
+
+# Profile — агрегированный профиль
+docker exec -it event-horizon-postgres-profile psql -U eventhorizon -d eventhorizon_profile -c "SELECT user_id, email, nickname, total_score, lamps, tickets FROM user_profiles;"
