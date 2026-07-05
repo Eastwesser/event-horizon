@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/nats-hub/nats-hub /nats-hub
+EXPOSE 4222
+CMD ["/nats-hub"]

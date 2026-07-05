@@ -3,21 +3,21 @@ module github.com/Eastwesser/event-horizon/services/gateway
 go 1.25.7
 
 require (
+	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/nats-io/nats.go v1.52.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/redis/go-redis/v9 v9.19.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.51.0
-	google.golang.org/grpc v1.81.1
-	google.golang.org/protobuf v1.36.11 // indirect
-)
-
-replace (
-	github.com/Eastwesser/event-horizon/services/auth/proto => ../auth/proto
-	github.com/Eastwesser/event-horizon/services/billing/proto => ../billing/proto
-	github.com/Eastwesser/event-horizon/services/game/proto => ../game/proto
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto => ../leaderboard/proto
+	go.opentelemetry.io/otel v1.44.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
+	go.opentelemetry.io/otel/sdk v1.44.0
+	google.golang.org/grpc v1.82.0
 )
 
 require (
@@ -66,17 +66,14 @@ require (
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require (
-	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-00010101000000-000000000000
-	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-00010101000000-000000000000
-	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-00010101000000-000000000000
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-00010101000000-000000000000
-	go.opentelemetry.io/otel v1.44.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
-	go.opentelemetry.io/otel/sdk v1.44.0
+replace (
+	github.com/Eastwesser/event-horizon/services/auth/proto => ../auth/proto
+	github.com/Eastwesser/event-horizon/services/billing/proto => ../billing/proto
+	github.com/Eastwesser/event-horizon/services/game/proto => ../game/proto
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto => ../leaderboard/proto
+	github.com/Eastwesser/event-horizon/services/profile/proto => ../profile/proto
 )
-
-replace event_horizon/services/auth/proto => ../auth/proto

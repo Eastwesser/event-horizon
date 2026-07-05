@@ -8,7 +8,7 @@ import (
     _ "net/http/pprof"
     "os"
     "os/signal"
-    "strings"
+    // "strings"
     "syscall"
     "time"
 
@@ -101,19 +101,19 @@ func main() {
     }
 
     // Создаём stream для score.updated
-    _, err = js.AddStream(&nats.StreamConfig{
-        Name:     "SCORES",
-        Subjects: []string{"score.updated"},
-        Storage:  nats.FileStorage,
-        MaxAge:   24 * time.Hour,
-    })
-    if err != nil {
-        if strings.Contains(err.Error(), "stream name already in use") {
-            log.Println("✅ Stream already exists")
-        } else {
-            log.Fatalf("Failed to create stream: %v", err)
-        }
-    }
+    // _, err = js.AddStream(&nats.StreamConfig{
+    //     Name:     "SCORES",
+    //     Subjects: []string{"score.updated"},
+    //     Storage:  nats.FileStorage,
+    //     MaxAge:   24 * time.Hour,
+    // })
+    // if err != nil {
+    //     if strings.Contains(err.Error(), "stream name already in use") {
+    //         log.Println("✅ Stream already exists")
+    //     } else {
+    //         log.Fatalf("Failed to create stream: %v", err)
+    //     }
+    // }
 
     // Репозиторий и сервис
     gameRepo := repository.NewPostgresGameRepo()

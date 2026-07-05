@@ -125,6 +125,25 @@ services:
         - event-horizon-net
       healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 5 }
 
+  postgres-profile:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-profile
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_profile
+    ports:
+      - "5464:5432"
+    volumes:
+      - postgres_profile_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   nats:
     image: nats:2.10-alpine
     container_name: event-horizon-nats
@@ -140,7 +159,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
+  
   nats-exporter:
     image: natsio/prometheus-nats-exporter:latest
     container_name: event-horizon-nats-exporter
@@ -152,6 +171,16 @@ services:
     depends_on:
       - nats
     restart: unless-stopped
+
+  nats-hub:
+    image: eastwesser/nats-hub:latest
+    environment:
+      - NATS_URL=nats://event-horizon-nats:4222
+    depends_on:
+      - nats
+    networks:
+      - event-horizon-net
+    restart: on-failure
 
   prometheus:
     image: prom/prometheus:latest
@@ -208,12 +237,36 @@ services:
       - "9091:9091"   # metrics
     environment:
       - METRICS_PORT=9091
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://event-horizon-nats:4222
       - DB_HOST=event-horizon-postgres
       - DB_PORT=5432
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
       - DB_NAME=eventhorizon
+    networks:
+      - event-horizon-net
+
+  profile:
+    image: eastwesser/profile:latest
+    ports:
+      - "50060:50060"
+      - "9099:9099"
+    environment:
+      - GRPC_PORT=50060
+      - METRICS_PORT=9099
+      - JAEGER_ENDPOINT=jaeger:4317
+      - NATS_URL=nats://event-horizon-nats:4222
+      - DB_HOST=event-horizon-postgres-profile
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_profile
+    depends_on:
+      nats:
+        condition: service_started
+      postgres-profile:
+        condition: service_healthy
     networks:
       - event-horizon-net
 
@@ -224,6 +277,7 @@ services:
       - "9093:9093"   # metrics
     environment:
       - METRICS_PORT=9093
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://event-horizon-nats:4222
       - DB_HOST=event-horizon-postgres-billing
       - DB_PORT=5432
@@ -241,6 +295,7 @@ services:
       - "9092:9092"   # metrics
     environment:
       - METRICS_PORT=9092
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://event-horizon-nats:4222
       - DB_HOST=event-horizon-postgres-game
       - DB_PORT=5432
@@ -257,6 +312,7 @@ services:
       - "9094:9094"
     environment:
       - METRICS_PORT=9094
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://event-horizon-nats:4222
       - REDIS_ADDR=event-horizon-redis-leaderboard:6379
       - REDIS_DB=0
@@ -267,6 +323,11 @@ services:
       - DB_NAME=eventhorizon_leaderboard
     networks:
       - event-horizon-net
+    depends_on:
+      nats:
+        condition: service_started
+      nats-hub:
+        condition: service_started
 
   gateway:
     image: eastwesser/gateway:latest
@@ -283,6 +344,7 @@ services:
       - GAME_ADDR=game:50052
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
+      - PROFILE_ADDR=profile:50060
     depends_on:
       - nats
     networks:
@@ -303,6 +365,7 @@ services:
       - GAME_ADDR=game:50052
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
+      - PROFILE_ADDR=profile:50060
     depends_on:
       - nats
     networks:
@@ -323,6 +386,7 @@ services:
       - GAME_ADDR=game:50052
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
+      - PROFILE_ADDR=profile:50060
     depends_on:
       - nats
     networks:
@@ -348,6 +412,7 @@ volumes:
   postgres_leaderboard_data:
   prometheus_data:
   grafana_data:
+  postgres_profile_data:
 
 networks:
   event-horizon-net:

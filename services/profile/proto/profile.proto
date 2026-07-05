@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package profile;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/profile/proto;profile";
+
+service ProfileService {
+    rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+    rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+}
+
+message GetProfileRequest {
+    string user_id = 1;
+}
+
+message GetProfileResponse {
+    string user_id = 1;
+    string email = 2;
+    string nickname = 3;
+    int32 total_score = 4;
+    map<string, int32> best_scores = 5;
+    int32 lamps = 6;
+    int32 tickets = 7;
+}
+
+message UpdateProfileRequest {
+    string user_id = 1;
+    string nickname = 2;
+    optional int32 total_score = 3;
+    map<string, int32> best_scores = 4;
+}
+
+message UpdateProfileResponse {
+    bool success = 1;
+    string message = 2;
+}

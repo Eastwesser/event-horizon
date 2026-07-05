@@ -12,6 +12,7 @@ type Config struct {
     GameAddr        string
     BillingAddr     string
     LeaderboardAddr string
+    ProfileAddr string
 
     // Infrastructure
     NATSUrl   string
@@ -26,6 +27,7 @@ func Load() *Config {
         GameAddr:        getEnv("GAME_ADDR", "localhost:50052"),
         BillingAddr:     getEnv("BILLING_ADDR", "localhost:50053"),
         LeaderboardAddr: getEnv("LEADERBOARD_ADDR", "localhost:50054"),
+        ProfileAddr:     getEnv("PROFILE_ADDR", "profile:50060"),
         NATSUrl:         getEnv("NATS_URL", "nats://localhost:4222"),
         RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
     }

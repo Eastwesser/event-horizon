@@ -44,6 +44,7 @@ import (
     gamePb "github.com/Eastwesser/event-horizon/services/game/proto"
     leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
     billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
+    profilePb "github.com/Eastwesser/event-horizon/services/profile/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -397,6 +398,63 @@ func main() {
     })
 
     scoreCache := cache.NewScoreCache(2 * time.Second)
+
+    r.GET("/api/auth/user", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+            return
+        }
+
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            return
+        }
+
+        resp, err := authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{
+            UserId: userID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, gin.H{
+            "user_id":     resp.UserId,
+            "email":       resp.Email,
+            "nickname":    resp.Nickname,
+            "best_scores": resp.BestScores,
+            "total_score": resp.TotalScore,
+        })
+    })
+
+    r.GET("/api/profile", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        conn, err := grpc.Dial(cfg.ProfileAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        defer conn.Close()
+
+        client := profilePb.NewProfileServiceClient(conn)
+        resp, err := client.GetProfile(c.Request.Context(), &profilePb.GetProfileRequest{
+            UserId: userID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
 
     billingConn, err := grpc.NewClient(cfg.BillingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
