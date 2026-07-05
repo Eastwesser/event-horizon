@@ -1,14 +1,15 @@
-services:
-  postgres-exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:latest
-    container_name: event-horizon-postgres-exporter
-    environment:
-      DATA_SOURCE_NAME: "postgresql://eventhorizon:eventhorizon@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
-    ports:
-      - "9187:9187"
-    networks:
-      - event-horizon-net
+# ============================================================
+# Event Horizon — Docker Compose (кластерная версия)
+# Все сервисы объединены в одну сеть event-horizon-net
+# Версия: v1.0.3
+# ============================================================
 
+services:
+  # ============================================================
+  # 1. БАЗЫ ДАННЫХ И КЕШИ
+  # ============================================================
+
+  # --- PostgreSQL для Auth (пользователи) ---
   postgres:
     image: postgres:16-alpine
     container_name: event-horizon-postgres
@@ -21,23 +22,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - event-horizon-net     
+      - event-horizon-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
       interval: 5s
       timeout: 5s
-      retries: 5 
+      retries: 5
 
-  redis-exporter:
-    image: oliver006/redis_exporter:latest
-    container_name: event-horizon-redis-exporter
-    environment:
-      REDIS_ADDR: "redis://event-horizon-redis:6379"
-    ports:
-      - "9121:9121"
-    networks:
-      - event-horizon-net
-
+  # --- Redis для Auth (кеш сессий, JWT) ---
   redis:
     image: redis:7-alpine
     container_name: event-horizon-redis
@@ -46,13 +38,14 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - event-horizon-net  
+      - event-horizon-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # --- PostgreSQL для Game (рекорды) ---
   postgres-game:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-game
@@ -63,20 +56,21 @@ services:
     ports:
       - "5461:5432"
     volumes:
-      - postgres_game_data:/var/lib/postgresql/data  
+      - postgres_game_data:/var/lib/postgresql/data
     networks:
       - event-horizon-net
-    healthcheck: 
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # --- Redis для Game (кеш) ---
   redis-game:
     image: redis:7-alpine
     container_name: event-horizon-redis-game
     ports:
-      - "6380:6379" 
+      - "6380:6379"
     networks:
       - event-horizon-net
     healthcheck:
@@ -85,6 +79,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- PostgreSQL для Billing (балансы, транзакции) ---
   postgres-billing:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-billing
@@ -104,6 +99,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Redis для Billing (кеш балансов) ---
   redis-billing:
     image: redis:7-alpine
     container_name: event-horizon-redis-billing
@@ -117,6 +113,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- PostgreSQL для Leaderboard (история топа) ---
   postgres-leaderboard:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-leaderboard
@@ -136,6 +133,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Redis для Leaderboard (Sorted Set для топа) ---
   redis-leaderboard:
     image: redis:7-alpine
     container_name: event-horizon-redis-leaderboard
@@ -149,6 +147,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- PostgreSQL для Profile (агрегированный профиль) ---
   postgres-profile:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-profile
@@ -168,6 +167,37 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================================
+  # 2. ЭКСПОРТЕРЫ ДЛЯ МОНИТОРИНГА
+  # ============================================================
+
+  # --- PostgreSQL Exporter (метрики БД для Prometheus) ---
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: event-horizon-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://eventhorizon:eventhorizon@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - event-horizon-net
+
+  # --- Redis Exporter (метрики Redis для Prometheus) ---
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: event-horizon-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://event-horizon-redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - event-horizon-net
+
+  # ============================================================
+  # 3. NATS КЛАСТЕР (3 ноды)
+  # ============================================================
+
+  # --- NATS-1 (лидер кластера) ---
   nats-1:
     image: nats:2.10-alpine
     container_name: event-horizon-nats-1
@@ -175,7 +205,14 @@ services:
       - "4222:4222"
       - "8222:8222"
       - "6222:6222"
-    command: ["-js", "-m", "8222", "-cluster", "nats://0.0.0.0:6222", "-routes", "nats://nats-2:6222,nats://nats-3:6222"]
+    command: [
+      "-js",
+      "--server_name", "nats-1",
+      "--cluster_name", "event-horizon",
+      "-m", "8222",
+      "-cluster", "nats://0.0.0.0:6222",
+      "-routes", "nats://nats-2:6222,nats://nats-3:6222"
+    ]
     networks:
       - event-horizon-net
     healthcheck:
@@ -184,6 +221,7 @@ services:
       timeout: 5s
       retries: 3
 
+  # --- NATS-2 (реплика) ---
   nats-2:
     image: nats:2.10-alpine
     container_name: event-horizon-nats-2
@@ -191,7 +229,14 @@ services:
       - "4223:4222"
       - "8223:8222"
       - "6223:6222"
-    command: ["-js", "-m", "8222", "-cluster", "nats://0.0.0.0:6222", "-routes", "nats://nats-1:6222,nats://nats-3:6222"]
+    command: [
+      "-js",
+      "--server_name", "nats-2",
+      "--cluster_name", "event-horizon",
+      "-m", "8222",
+      "-cluster", "nats://0.0.0.0:6222",
+      "-routes", "nats://nats-1:6222,nats://nats-3:6222"
+    ]
     networks:
       - event-horizon-net
     healthcheck:
@@ -200,6 +245,7 @@ services:
       timeout: 5s
       retries: 3
 
+  # --- NATS-3 (реплика) ---
   nats-3:
     image: nats:2.10-alpine
     container_name: event-horizon-nats-3
@@ -207,7 +253,14 @@ services:
       - "4224:4222"
       - "8224:8222"
       - "6224:6222"
-    command: ["-js", "-m", "8222", "-cluster", "nats://0.0.0.0:6222", "-routes", "nats://nats-1:6222,nats://nats-2:6222"]
+    command: [
+      "-js",
+      "--server_name", "nats-3",
+      "--cluster_name", "event-horizon",
+      "-m", "8222",
+      "-cluster", "nats://0.0.0.0:6222",
+      "-routes", "nats://nats-1:6222,nats://nats-2:6222"
+    ]
     networks:
       - event-horizon-net
     healthcheck:
@@ -216,10 +269,15 @@ services:
       timeout: 5s
       retries: 3
 
+  # --- NATS Exporter (собирает метрики со всех 3 нод) ---
   nats-exporter:
     image: natsio/prometheus-nats-exporter:latest
     container_name: event-horizon-nats-exporter
-    command: ["-varz", "http://nats-1:8222", "-varz", "http://nats-2:8222", "-varz", "http://nats-3:8222"]
+    command: [
+      "-varz", "http://nats-1:8222",
+      "-varz", "http://nats-2:8222",
+      "-varz", "http://nats-3:8222"
+    ]
     ports:
       - "7777:7777"
     networks:
@@ -230,8 +288,10 @@ services:
       - nats-3
     restart: unless-stopped
 
+  # --- NATS Hub (создаёт Stream'ы при старте) ---
   nats-hub:
     image: eastwesser/nats-hub:latest
+    container_name: event-horizon-nats-hub
     environment:
       - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
     depends_on:
@@ -241,6 +301,10 @@ services:
     networks:
       - event-horizon-net
     restart: on-failure
+
+  # ============================================================
+  # 4. МОНИТОРИНГ (Prometheus + Grafana + Jaeger)
+  # ============================================================
 
   prometheus:
     image: prom/prometheus:latest
@@ -279,9 +343,9 @@ services:
     image: jaegertracing/all-in-one:latest
     container_name: event-horizon-jaeger
     ports:
-      - "16686:16686"
-      - "4318:4318"
-      - "4317:4317"
+      - "16686:16686"   # UI
+      - "4318:4318"     # OTLP HTTP
+      - "4317:4317"     # OTLP gRPC
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     restart: unless-stopped
@@ -290,11 +354,17 @@ services:
     networks:
       - event-horizon-net
 
+  # ============================================================
+  # 5. МИКРОСЕРВИСЫ
+  # ============================================================
+
+  # --- Auth (аутентификация) ---
   auth:
     image: eastwesser/auth:latest
+    container_name: deployments-auth-1
     ports:
-      - "50051:50051"
-      - "9091:9091"
+      - "50051:50051"   # gRPC
+      - "9091:9091"     # метрики
     environment:
       - METRICS_PORT=9091
       - JAEGER_ENDPOINT=jaeger:4317
@@ -307,8 +377,78 @@ services:
     networks:
       - event-horizon-net
 
+  # --- Billing (внутриигровая валюта) ---
+  billing:
+    image: eastwesser/billing:latest
+    container_name: deployments-billing-1
+    ports:
+      - "50053:50053"
+      - "9093:9093"
+    environment:
+      - METRICS_PORT=9093
+      - JAEGER_ENDPOINT=jaeger:4317
+      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - DB_HOST=event-horizon-postgres-billing
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_billing
+    restart: on-failure
+    networks:
+      - event-horizon-net
+
+  # --- Game (игровая логика) ---
+  game:
+    image: eastwesser/game:latest
+    container_name: deployments-game-1
+    ports:
+      - "50052:50052"
+      - "9092:9092"
+    environment:
+      - METRICS_PORT=9092
+      - JAEGER_ENDPOINT=jaeger:4317
+      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - DB_HOST=event-horizon-postgres-game
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_game
+    networks:
+      - event-horizon-net
+
+  # --- Leaderboard (топ игроков) ---
+  leaderboard:
+    image: eastwesser/leaderboard:latest
+    container_name: deployments-leaderboard-1
+    ports:
+      - "50054:50054"
+      - "9094:9094"
+    environment:
+      - METRICS_PORT=9094
+      - JAEGER_ENDPOINT=jaeger:4317
+      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - REDIS_ADDR=event-horizon-redis-leaderboard:6379
+      - REDIS_DB=0
+      - DB_HOST=event-horizon-postgres-game   # восстановление из Game БД
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+    networks:
+      - event-horizon-net
+    depends_on:
+      nats-1:
+        condition: service_started
+      nats-2:
+        condition: service_started
+      nats-3:
+        condition: service_started
+      nats-hub:
+        condition: service_started
+
+  # --- Profile (агрегатор пользовательских данных) ---
   profile:
     image: eastwesser/profile:latest
+    container_name: deployments-profile-1
     ports:
       - "50060:50060"
       - "9099:9099"
@@ -334,77 +474,17 @@ services:
     networks:
       - event-horizon-net
 
-  billing:
-    image: eastwesser/billing:latest
-    ports:
-      - "50053:50053"
-      - "9093:9093"
-    environment:
-      - METRICS_PORT=9093
-      - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
-      - DB_HOST=event-horizon-postgres-billing
-      - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
-      - DB_NAME=eventhorizon_billing
-    restart: on-failure  
-    networks:
-      - event-horizon-net
-
-  game:
-    image: eastwesser/game:latest
-    ports:
-      - "50052:50052"
-      - "9092:9092"
-    environment:
-      - METRICS_PORT=9092
-      - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
-      - DB_HOST=event-horizon-postgres-game
-      - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
-      - DB_NAME=eventhorizon_game
-    networks:
-      - event-horizon-net
-
-  leaderboard:
-    image: eastwesser/leaderboard:latest
-    ports:
-      - "50054:50054"
-      - "9094:9094"
-    environment:
-      - METRICS_PORT=9094
-      - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
-      - REDIS_ADDR=event-horizon-redis-leaderboard:6379
-      - REDIS_DB=0
-      - DB_HOST=event-horizon-postgres-game
-      - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
-    networks:
-      - event-horizon-net
-    depends_on:
-      nats-1:
-        condition: service_started
-      nats-2:
-        condition: service_started
-      nats-3:
-        condition: service_started
-      nats-hub:
-        condition: service_started
-
+  # --- Gateway (API Gateway, 3 инстанса) ---
   gateway:
     image: eastwesser/gateway:latest
+    container_name: deployments-gateway-1
     command: ["/gateway"]
     ports:
       - "8081:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9095
-      - JAEGER_ENDPOINT=jaeger:4317 
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
@@ -421,13 +501,14 @@ services:
 
   gateway-2:
     image: eastwesser/gateway:latest
+    container_name: deployments-gateway-2-1
     command: ["/gateway"]
     ports:
       - "8082:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9096
-      - JAEGER_ENDPOINT=jaeger:4317 
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
@@ -444,13 +525,14 @@ services:
 
   gateway-3:
     image: eastwesser/gateway:latest
+    container_name: deployments-gateway-3-1
     command: ["/gateway"]
     ports:
       - "8083:8080"
     environment:
       - PORT=8080
       - METRICS_PORT=9097
-      - JAEGER_ENDPOINT=jaeger:4317 
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
@@ -465,17 +547,23 @@ services:
     networks:
       - event-horizon-net
 
+  # --- Balancer (Least Connections) ---
   balancer:
     image: eastwesser/balancer:latest
+    container_name: deployments-balancer-1
     ports:
-      - "8079:8079"
-      - "9098:9098"
+      - "8079:8079"   # HTTP
+      - "9098:9098"   # метрики
     depends_on:
       - gateway
       - gateway-2
       - gateway-3
     networks:
       - event-horizon-net
+
+# ============================================================
+# 6. PERSISTENT VOLUMES
+# ============================================================
 
 volumes:
   postgres_data:
@@ -486,6 +574,10 @@ volumes:
   prometheus_data:
   grafana_data:
   postgres_profile_data:
+
+# ============================================================
+# 7. СЕТЬ
+# ============================================================
 
 networks:
   event-horizon-net:
