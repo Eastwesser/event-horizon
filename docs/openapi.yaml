@@ -2,12 +2,19 @@ openapi: 3.0.0
 info:
   title: EventHorizon Gateway API
   description: API для фронтенда (React/Angular)
-  version: 1.0.0
+  version: 1.0.3
 servers:
-  - url: http://localhost:8080
-    description: Local development
+  - url: http://localhost:8079
+    description: Local development (через балансировщик)
+  - url: http://localhost:8081
+    description: Gateway-1 (напрямую)
+  - url: http://localhost:8082
+    description: Gateway-2 (напрямую)
+  - url: http://localhost:8083
+    description: Gateway-3 (напрямую)
 
 paths:
+  # ===== HEALTH =====
   /health:
     get:
       summary: Health check
@@ -23,6 +30,7 @@ paths:
                     type: string
                     example: ok
 
+  # ===== AUTH =====
   /api/auth/register:
     post:
       summary: Register new user
@@ -44,6 +52,9 @@ paths:
                   type: string
                   minLength: 6
                   example: secret123
+                nickname:
+                  type: string
+                  description: Опционально. Если не указан, генерируется из email
       responses:
         '200':
           description: Success
@@ -52,7 +63,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  userId:
+                  user_id:
                     type: string
                   email:
                     type: string
@@ -63,7 +74,7 @@ paths:
 
   /api/auth/login:
     post:
-      summary: Login user
+      summary: Login user (получить JWT токен)
       requestBody:
         required: true
         content:
@@ -76,7 +87,73 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
                 password:
+                  type: string
+                  example: secret123
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                  description: JWT токен (Bearer)
+                token_type:
+                  type: string
+                  example: Bearer
+                expires_in:
+                  type: integer
+                  example: 86400
+                user_id:
+                  type: string
+
+  /api/auth/user:
+    get:
+      summary: Get user data (email, nickname)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  best_scores:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  total_score:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /api/auth/update-nickname:
+    post:
+      summary: Update user nickname
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nickname
+              properties:
+                nickname:
                   type: string
       responses:
         '200':
@@ -86,16 +163,40 @@ paths:
               schema:
                 type: object
                 properties:
-                  accessToken:
+                  success:
+                    type: boolean
+                  message:
                     type: string
-                  tokenType:
-                    type: string
-                  expiresIn:
-                    type: integer
+        '401':
+          description: Unauthorized
 
+  # ===== BILLING =====
+  /api/billing/balance/all:
+    get:
+      summary: Get all balances (lamps + tickets)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lamps:
+                    type: integer
+                  tickets:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  # ===== GAME =====
   /api/game/submit:
     post:
       summary: Submit game score (server-side validation)
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -105,22 +206,27 @@ paths:
               required:
                 - user_id
                 - game_id
-                - level
+                - score
                 - seed
-                - moves
               properties:
                 user_id:
                   type: string
                 game_id:
                   type: string
-                  enum: [hexagon, flappy]
+                  enum: [hexagon, flappy, memory, towers]
                 level:
                   type: integer
-                  minimum: 1
-                  maximum: 5
+                  default: 1
+                score:
+                  type: integer
+                  description: Количество очков (начисленных игрой)
+                user_email:
+                  type: string
+                nickname:
+                  type: string
                 seed:
                   type: string
-                  description: Deterministic seed for board generation
+                  description: Deterministic seed для валидации
                 moves:
                   type: array
                   items:
@@ -146,114 +252,124 @@ paths:
                 properties:
                   success:
                     type: boolean
-                  newHighscore:
+                  new_highscore:
                     type: integer
                   message:
                     type: string
-                  lampsEarned:
+                  lamps_earned:
                     type: integer
-                  ticketsEarned:
+                  tickets_earned:
                     type: integer
+        '401':
+          description: Unauthorized
 
+  # ===== LEADERBOARD =====
+  /api/leaderboard:
+    get:
+      summary: Get top 10 players
+      parameters:
+        - name: game_id
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hexagon, flappy, memory, towers]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                        user_id:
+                          type: string
+                        user_email:
+                          type: string
+                        score:
+                          type: integer
+                        updated_at:
+                          type: integer
+                          description: Unix timestamp
+
+  # ===== PROFILE =====
+  /api/profile:
+    get:
+      summary: Get aggregated user profile (CQRS read model)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  total_score:
+                    type: integer
+                  best_scores:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  lamps:
+                    type: integer
+                  tickets:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '404':
+          description: Profile not found
+
+
+        
+  # ===== WEBSOCKET =====
   /ws/leaderboard:
     get:
-      summary: WebSocket connection for real-time leaderboard
+      summary: WebSocket connection for real-time leaderboard updates
       description: |
         Подключитесь к этому эндпоинту через WebSocket.
-        При каждом обновлении топа (кто-то побил рекорд) вы будете получать сообщение:
-        
+        При каждом обновлении топа (кто-то побил рекорд) вы будете получать сообщение.
+
+        **Пример сообщения:**
         ```json
         {
-          "game_id": "hexagon",
           "user_id": "user-123",
+          "game_id": "hexagon",
           "score": 1500,
           "is_record": true,
           "level": 3,
+          "lamps_earned": 10,
+          "tickets_earned": 1,
           "timestamp": 1234567890
         }
         ```
       responses:
         '101':
-        description: WebSocket upgrade successful 
-        
-  /api/billing/balance:
-    get:
-      summary: Get user balance
-      parameters:
-        - name: user_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: currency
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [lamps, tickets]
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user_id:
-                    type: string
-                  currency:
-                    type: string
-                  balance:
-                    type: integer
+          description: WebSocket upgrade successful
 
-  /api/billing/balance/all:
-    get:
-      summary: Get all user balances
-      parameters:
-        - name: user_id
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user_id:
-                    type: string
-                  balances:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        currency:
-                          type: string
-                        balance:
-                          type: integer
-
-  /api/billing/history:
-    get:
-      summary: Get transaction history
-      parameters:
-        - name: user_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: currency
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        '200':
-          description: Success      
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
