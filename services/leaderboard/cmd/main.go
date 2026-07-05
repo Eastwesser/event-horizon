@@ -9,7 +9,7 @@ import (
     _ "net/http/pprof"
     "os"
     "os/signal"
-    "strings"
+    // "strings"
     "syscall"
     "time"
 
@@ -118,19 +118,19 @@ func main() {
     }
 
     // Создаём поток для score событий (если не существует)
-    _, err = js.AddStream(&nats.StreamConfig{
-        Name:     "SCORES",
-        Subjects: []string{"score.updated"},
-        Storage:  nats.FileStorage,
-        MaxAge:   24 * time.Hour,
-    })
-    if err != nil {
-        if strings.Contains(err.Error(), "stream name already in use") {
-            log.Println("✅ Stream already exists")
-        } else {
-            log.Fatalf("Failed to create stream: %v", err)
-        }
-    }
+    // _, err = js.AddStream(&nats.StreamConfig{
+    //     Name:     "SCORES",
+    //     Subjects: []string{"score.updated"},
+    //     Storage:  nats.FileStorage,
+    //     MaxAge:   24 * time.Hour,
+    // })
+    // if err != nil {
+    //     if strings.Contains(err.Error(), "stream name already in use") {
+    //         log.Println("✅ Stream already exists")
+    //     } else {
+    //         log.Fatalf("Failed to create stream: %v", err)
+    //     }
+    // }
 
     // Batch ack channel (Канал для batch ack)
     ackChan := make(chan *nats.Msg, 1000)

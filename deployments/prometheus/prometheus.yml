@@ -8,6 +8,11 @@ scrape_configs:
       - targets: ['auth:9091']
     metrics_path: '/metrics'
 
+  - job_name: 'profile'
+    static_configs:
+      - targets: ['profile:9099']
+    metrics_path: '/metrics'
+
   - job_name: 'billing'
     static_configs:
       - targets: ['billing:9093']
@@ -53,3 +58,4 @@ scrape_configs:
   - job_name: 'postgres'
     static_configs:
       - targets: ['event-horizon-postgres-exporter:9187']
+      

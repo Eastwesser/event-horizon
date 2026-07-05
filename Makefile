@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all restart status deploy
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy
 
 # ===== DOCKER =====
 up:
@@ -29,11 +29,22 @@ migrate-game:
 migrate-leaderboard:
 	cd services/leaderboard && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5463/eventhorizon_leaderboard?sslmode=disable" up
 
-migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard
+migrate-profile:
+	cd services/profile && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5464/eventhorizon_profile?sslmode=disable" up
+
+migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard migrate-profile
 	@echo "✅ All migrations applied"
+
+# ===== NATS HUB =====
+build-nats-hub:
+	@echo "🔨 Building nats-hub..."
+	cd services/nats-hub && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nats-hub ./main.go
+	docker build -f Dockerfile.nats-hub.bin -t eastwesser/nats-hub:latest .
 
 # ===== DEPLOY =====
 deploy:
+	@echo "🚀 Building nats-hub..."
+	$(MAKE) build-nats-hub
 	@echo "🚀 Starting infrastructure..."
 	docker-compose -f deployments/docker-compose.cluster.yml up -d
 	@sleep 5

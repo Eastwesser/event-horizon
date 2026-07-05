@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/profile/profile-service /profile-service
+EXPOSE 50060
+CMD ["/profile-service"]

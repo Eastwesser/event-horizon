@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+    "strings"
 	"time"
 	
 	"github.com/jackc/pgx/v5"
@@ -33,15 +34,26 @@ func NewPostgresUserRepo(db *pgxpool.Pool) *PostgresUserRepo {
 	return &PostgresUserRepo{db: db}
 }
 
-func (r *PostgresUserRepo) Create(ctx context.Context, email, passwordHash string) (string, error) {
-	var userID string
-	query := `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id`
+// func (r *PostgresUserRepo) Create(ctx context.Context, email, passwordHash string) (string, error) {
+// 	var userID string
+// 	query := `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id`
 	
-	err := r.db.QueryRow(ctx, query, email, passwordHash).Scan(&userID)
-	if err != nil {
-		return "", err
-	}
-	return userID, nil
+// 	err := r.db.QueryRow(ctx, query, email, passwordHash).Scan(&userID)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return userID, nil
+// }
+
+func (r *PostgresUserRepo) Create(ctx context.Context, email, passwordHash string) (string, error) {
+    var userID string
+    nickname := strings.Split(email, "@")[0] // ник = часть до @
+    query := `INSERT INTO users (email, password_hash, nickname) VALUES ($1, $2, $3) RETURNING id`
+    err := r.db.QueryRow(ctx, query, email, passwordHash, nickname).Scan(&userID)
+    if err != nil {
+        return "", err
+    }
+    return userID, nil
 }
 
 func (r *PostgresUserRepo) GetByEmail(ctx context.Context, email string) (*User, error) {
@@ -51,6 +63,7 @@ func (r *PostgresUserRepo) GetByEmail(ctx context.Context, email string) (*User,
         &user.ID, 
         &user.Email, 
         &user.PasswordHash, 
+        &user.Nickname,   // ← ДОБАВИТЬ!
         &user.CreatedAt,  // теперь time.Time
     )
 	if err != nil {
@@ -63,21 +76,22 @@ func (r *PostgresUserRepo) GetByEmail(ctx context.Context, email string) (*User,
 }
 
 func (r *PostgresUserRepo) GetByID(ctx context.Context, id string) (*User, error) {
-	user := &User{}
-	query := `SELECT id, email, password_hash, nickname, created_at FROM users WHERE email = $1`
-	err := r.db.QueryRow(ctx, query, id).Scan(
-        &user.ID, 
-        &user.Email, 
-        &user.PasswordHash, 
-        &user.CreatedAt,  // теперь time.Time
+    user := &User{}
+    query := `SELECT id, email, password_hash, nickname, created_at FROM users WHERE id = $1`
+    err := r.db.QueryRow(ctx, query, id).Scan(
+        &user.ID,
+        &user.Email,
+        &user.PasswordHash,
+        &user.Nickname,
+        &user.CreatedAt,
     )
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return user, nil
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            return nil, nil
+        }
+        return nil, err
+    }
+    return user, nil
 }
 
 // UpdateNickname обновляет никнейм пользователя
