@@ -194,54 +194,56 @@ export const useTowerStore = create<TowerState>((set, get) => ({
     const { score } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';  // 👈 ДОБАВИТЬ
+    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
     
-    console.log('💾 Сохранение рекорда:', { userId, userEmail, nickname, score });  // 👈 обновить лог
+    console.log('💾 Сохранение рекорда:', { userId, userEmail, nickname, score });
     
     if (!userId || !userEmail) {
-      console.log('❌ Нет userId или userEmail');
-      return;
+        console.log('❌ Нет userId или userEmail');
+        return;
     }
     
     try {
-      const response = await fetch('/api/game/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          game_id: 'towers',
-          level: 1,
-          score: score,
-          user_email: userEmail,
-          nickname: nickname,  // 👈 ДОБАВИТЬ
-          seed: `towers_seed_${Date.now()}`,
-          moves: [],
-        }),
-      });
-      
-      if (response.ok) {
-        console.log(`✅ Towers score submitted: ${score}`);
+        const response = await fetch('/api/game/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                game_id: 'towers',
+                level: 1,
+                score: score,
+                user_email: userEmail,
+                nickname: nickname,
+                seed: `towers_seed_${Date.now()}`,
+                moves: [],
+            }),
+        });
         
-        // Сохраняем статистику в localStorage
-        const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
-        const currentBest = savedScores.towers || 0;
-        
-        if (score > currentBest) {
-          savedScores.towers = score;
-          localStorage.setItem('gameScores', JSON.stringify(savedScores));
-          console.log(`🏆 Новый рекорд! ${score} > ${currentBest}`);
+        if (response.ok) {
+            console.log(`✅ Towers score submitted: ${score}`);
+            
+            // 💾 Сохраняем статистику с привязкой к userId
+            // Используем существующий userId
+            const storageKey = `gameScores_${userId}`;
+            const totalScoreKey = `totalScore_${userId}`;
+            const playedKey = `towersGamesPlayed_${userId}`;
+            
+            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            const currentBest = savedScores.towers || 0;
+            
+            if (score > currentBest) {
+                savedScores.towers = score;
+                localStorage.setItem(storageKey, JSON.stringify(savedScores));
+            }
+            
+            const played = parseInt(localStorage.getItem(playedKey) || '0');
+            localStorage.setItem(playedKey, String(played + 1));
+            
+            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+            localStorage.setItem(totalScoreKey, String(totalScore + score));
         }
-        
-        const played = parseInt(localStorage.getItem('towersGamesPlayed') || '0');
-        localStorage.setItem('towersGamesPlayed', String(played + 1));
-        
-        const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
-        localStorage.setItem('totalScore', String(totalScore + score));
-      } else {
-        console.error('❌ Ошибка при сохранении:', response.status);
-      }
     } catch (err) {
-      console.error('❌ Failed to submit towers score:', err);
+        console.error('Failed to submit towers score:', err);
     }
   },
 }));

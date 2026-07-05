@@ -227,40 +227,46 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     if (!userId || !userEmail) return;
 
     try {
-      const response = await fetch('/api/game/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          game_id: 'memory',
-          level: 1,
-          score: score,
-          user_email: userEmail,
-          nickname: nickname,
-          seed: `memory_seed_${Date.now()}`,
-          moves: [],
-        }),
-      });
+        const response = await fetch('/api/game/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                game_id: 'memory',
+                level: 1,
+                score: score,
+                user_email: userEmail,
+                nickname: nickname,
+                seed: `memory_seed_${Date.now()}`,
+                moves: [],
+            }),
+        });
 
-      if (response.ok) {
-        console.log(`✅ Memory score submitted: ${score}`);
-        
-        const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
-        const currentBest = savedScores.memory || 0;
-        
-        if (score > currentBest) {
-          savedScores.memory = score;
-          localStorage.setItem('gameScores', JSON.stringify(savedScores));
+        if (response.ok) {
+            console.log(`✅ Memory score submitted: ${score}`);
+            
+            // 💾 Сохраняем статистику с привязкой к userId
+            // Используем существующий userId
+            const storageKey = `gameScores_${userId}`;
+            const totalScoreKey = `totalScore_${userId}`;
+            const playedKey = `memoryGamesPlayed_${userId}`;
+            
+            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            const currentBest = savedScores.memory || 0;
+            
+            if (score > currentBest) {
+                savedScores.memory = score;
+                localStorage.setItem(storageKey, JSON.stringify(savedScores));
+            }
+            
+            const played = parseInt(localStorage.getItem(playedKey) || '0');
+            localStorage.setItem(playedKey, String(played + 1));
+            
+            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+            localStorage.setItem(totalScoreKey, String(totalScore + score));
         }
-        
-        const played = parseInt(localStorage.getItem('memoryGamesPlayed') || '0');
-        localStorage.setItem('memoryGamesPlayed', String(played + 1));
-        
-        const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
-        localStorage.setItem('totalScore', String(totalScore + score));
-      }
     } catch (err) {
-      console.error('Failed to submit memory score:', err);
+        console.error('Failed to submit memory score:', err);
     }
   },
 }));

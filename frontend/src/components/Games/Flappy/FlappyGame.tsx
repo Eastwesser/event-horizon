@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlappyStore } from '../../../store/flappyStore';
 import './FlappyGame.css';
+import api from '../../../services/api';
 
 export function FlappyGame() {
   const navigate = useNavigate();
@@ -46,49 +47,52 @@ export function FlappyGame() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const handleManualSave = async () => {
-        const { score } = useFlappyStore.getState();
-        const userId = localStorage.getItem('userId');
-        const userEmail = localStorage.getItem('userEmail');
+    const { score } = useFlappyStore.getState();
+    const userId = localStorage.getItem('userId');
+    const userEmail = localStorage.getItem('userEmail');
+    const token = localStorage.getItem('accessToken');
+    
+    try {
+        const response = await api.post('/game/submit', {
+            user_id: userId,
+            game_id: 'flappy',
+            level: 1,
+            score: score,
+            user_email: userEmail,
+            seed: `flappy_manual_${Date.now()}`,
+            moves: [],
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         
-        try {
-            const response = await fetch('/api/game/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: userId,
-                    game_id: 'flappy',
-                    level: 1,
-                    score: score,
-                    user_email: userEmail,
-                    seed: `flappy_manual_${Date.now()}`,
-                    moves: [],
-                }),
-            });
+        if (response.status === 200) {
+            // 🔥 СОХРАНЯЕМ СТАТИСТИКУ ЗДЕСЬ
+            const userId = localStorage.getItem('userId');
+            const storageKey = `gameScores_${userId}`;
+            const totalScoreKey = `totalScore_${userId}`;
             
-            if (response.ok) {
-                setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
-                setTimeout(() => setSaveMessage(null), 3000);
+            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            const currentBest = savedScores.flappy || 0;
+            
+            if (score > currentBest) {
+                savedScores.flappy = score;
+                localStorage.setItem(storageKey, JSON.stringify(savedScores));
             }
-        } catch (err) {
-            setSaveMessage({ type: 'error', text: '❌ Ошибка' });
+            
+            const played = parseInt(localStorage.getItem(`flappyGamesPlayed_${userId}`) || '0');
+            localStorage.setItem(`flappyGamesPlayed_${userId}`, String(played + 1));
+            
+            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+            localStorage.setItem(totalScoreKey, String(totalScore + score));
+            
+            setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
             setTimeout(() => setSaveMessage(null), 3000);
         }
-    };
-
-    // // В submitScore, после успешного ответа от API, добавить:
-    // const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
-    // const currentBest = savedScores.flappy || 0;
-
-    // if (score > currentBest) {
-    //     savedScores.flappy = score;
-    //     localStorage.setItem('gameScores', JSON.stringify(savedScores));
-    // }
-
-    // const played = parseInt(localStorage.getItem('flappyGamesPlayed') || '0');
-    // localStorage.setItem('flappyGamesPlayed', String(played + 1));
-
-    // const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
-    // localStorage.setItem('totalScore', String(totalScore + score));
+      } catch (err) {
+          setSaveMessage({ type: 'error', text: '❌ Ошибка' });
+          setTimeout(() => setSaveMessage(null), 3000);
+      }
+  };
 
   // Отрисовка игры
   useEffect(() => {
@@ -228,6 +232,11 @@ export function FlappyGame() {
   
   return (
     <div className="flappy-container">
+      {saveMessage && (
+        <div className={`flappy-toast flappy-toast--${saveMessage.type}`}>
+          {saveMessage.text}
+        </div>
+      )}
       <div className="flappy-header">
         <div className="flappy-stats">
           <div className="flappy-stat">
@@ -248,7 +257,7 @@ export function FlappyGame() {
           </button>
         </div>
       </div>
-      
+
       <div className="flappy-canvas-wrapper">
         <canvas
           ref={canvasRef}

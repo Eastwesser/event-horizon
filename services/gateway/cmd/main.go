@@ -473,6 +473,34 @@ func main() {
         c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
     })
 
+    r.POST("/api/auth/update-nickname", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+        
+        var req struct {
+            Nickname string `json:"nickname"`
+        }
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+        
+        _, err = authClient.GetClient().UpdateNickname(c.Request.Context(), &authPb.UpdateNicknameRequest{
+            UserId:   userID,
+            Nickname: req.Nickname,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        
+        c.JSON(http.StatusOK, gin.H{"success": true, "message": "nickname updated"})
+    })
+
     r.POST("/api/game/submit", func(c *gin.Context) {
         body, _ := c.GetRawData()
         c.Request.Body = io.NopCloser(bytes.NewBuffer(body))

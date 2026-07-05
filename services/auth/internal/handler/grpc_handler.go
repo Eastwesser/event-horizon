@@ -78,18 +78,37 @@ func (h *AuthHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 }
 
 func (h *AuthHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id required")
-	}
-	
-	user, err := h.authService.GetUser(ctx, req.UserId)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
-	}
-	
-	return &pb.GetUserResponse{
-		UserId:    user.ID,
-		Email:     user.Email,
-//		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-	}, nil
+    if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id required")
+    }
+
+    user, err := h.authService.GetUser(ctx, req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, err.Error())
+    }
+
+    // Получаем рекорды
+    bestScores, totalScore, err := h.authService.GetUserScores(ctx, req.UserId)
+    if err != nil {
+        // Если ошибка — просто логируем, но не прерываем запрос
+        // Можно вернуть пустые рекорды
+        bestScores = make(map[string]int32)
+        totalScore = 0
+    }
+
+    return &pb.GetUserResponse{
+        UserId:      user.ID,
+        Email:       user.Email,
+        Nickname:    user.Nickname,
+        BestScores:  bestScores,
+        TotalScore:  totalScore,
+    }, nil
+}
+
+func (h *AuthHandler) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameRequest) (*pb.UpdateNicknameResponse, error) {
+    err := h.authService.UpdateNickname(ctx, req.UserId, req.Nickname)
+    if err != nil {
+        return &pb.UpdateNicknameResponse{Success: false, Message: err.Error()}, nil
+    }
+    return &pb.UpdateNicknameResponse{Success: true, Message: "nickname updated"}, nil
 }

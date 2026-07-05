@@ -31,7 +31,7 @@ interface FlappyState {
   jump: () => void;
   updateGame: () => void;
   resetGame: () => void;
-  generatePipe: () => Pipe;  // 👈 меняем void на Pipe
+  generatePipe: () => Pipe;
   checkCollisions: () => boolean;
   submitScore: () => Promise<void>;
 }
@@ -193,7 +193,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
     const { score } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0];
+    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
 
     if (!userId || !userEmail) return;
     
@@ -216,20 +216,25 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
         if (response.ok) {
             console.log(`✅ Flappy score submitted: ${score}`);
             
-            // 💾 Сохраняем статистику в localStorage
-            const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+            // 💾 Сохраняем статистику с привязкой к userId
+            // Используем существующий userId
+            const storageKey = `gameScores_${userId}`;
+            const totalScoreKey = `totalScore_${userId}`;
+            const playedKey = `flappyGamesPlayed_${userId}`;
+            
+            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
             const currentBest = savedScores.flappy || 0;
             
             if (score > currentBest) {
                 savedScores.flappy = score;
-                localStorage.setItem('gameScores', JSON.stringify(savedScores));
+                localStorage.setItem(storageKey, JSON.stringify(savedScores));
             }
             
-            const played = parseInt(localStorage.getItem('flappyGamesPlayed') || '0');
-            localStorage.setItem('flappyGamesPlayed', String(played + 1));
+            const played = parseInt(localStorage.getItem(playedKey) || '0');
+            localStorage.setItem(playedKey, String(played + 1));
             
-            const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
-            localStorage.setItem('totalScore', String(totalScore + score));
+            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+            localStorage.setItem(totalScoreKey, String(totalScore + score));
         }
     } catch (err) {
         console.error('Failed to submit flappy score:', err);
