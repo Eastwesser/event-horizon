@@ -8,18 +8,18 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.0.1, 24.06.2026)
+## 📦 Архитектура (актуально v1.0.3, 05.07.2026)
 
 ```text
-[React Client :5173]
-    │ HTTP (JSON)
-    ▼
-[Balancer :8079] — самописный, Least Connections
-    │ HTTP
-    ▼
-[Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
-    │ gRPC
-    ▼
+          [React Client :5173]
+               │ HTTP (JSON)
+               ▼
+           [Balancer :8079] — самописный, Least Connections
+               │ HTTP
+               ▼
+           [Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
+               │ gRPC
+               ▼
 ┌──────────────┼──────────────┐
 │              │              │
 ▼              ▼              ▼
@@ -32,7 +32,18 @@ PG :5460       PG :5461       PG :5462          PG :5463 + Redis :6382
 └──────────────┼──────────────┴──────────────────┘
                │
                ▼
-          [NATS :4222] — событийная шина (score.updated, user.registered)
+    ┌─────────────────────────────────────┐
+    │        NATS Hub (инфраструктура)    │
+    │   ── создаёт Stream `EVENTS` ──►    │
+    │      Subjects: score.updated,       │
+    │      user.registered, shop.*        │
+    └──────────────────┬──────────────────┘
+               │
+               ▼
+          [NATS :4222] — событийная шина
+               │
+               ▼
+    Profile Service подписан на score.updated, user.registered
                │
                ▼
     Leaderboard подписан → обновляет Redis → WebSocket → клиент
@@ -57,7 +68,7 @@ make status
 **Готово!** Всё поднимется автоматически:
 - Docker-контейнеры (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
 - Миграции баз данных
-- Все микросервисы
+- Все микросервисы, включая Profile Service и NATS Hub
 
 ---
 
@@ -70,6 +81,7 @@ make status
 | `GET` | `/api/billing/balance/all` | Баланс (лампочки/билетики) |
 | `POST` | `/api/game/submit` | Отправить рекорд |
 | `GET` | `/api/leaderboard` | Топ-10 (публичный) |
+| `GET` | `/api/profile` | Полный профиль пользователя (агрегированный) |
 | `WS` | `/ws/leaderboard` | WebSocket обновления |
 
 ---
@@ -96,6 +108,10 @@ curl -X POST http://localhost:8079/api/game/submit \
 
 # Посмотреть лидерборд
 curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.'
+
+# Получить профиль (агрегированный)
+curl -X GET http://localhost:8079/api/profile \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
 ```
 
 ---
@@ -167,6 +183,7 @@ docker-compose -f deployments/docker-compose.cluster.yml down -v
 | **Game** | `5052` | `9092` | PG `5461` | `6380` |
 | **Billing** | `5053` | `9093` | PG `5462` | `6381` |
 | **Leaderboard** | `5054` | `9094` | PG `5463` | `6382` |
+| **Profile** | `50060` | `9099` | PG `5464` | — |
 | **Gateway** | HTTP `8081-8083` | `9095-9097` | — | — |
 | **Balancer** | HTTP `8079` | `9098` | — | — |
 
@@ -174,11 +191,12 @@ docker-compose -f deployments/docker-compose.cluster.yml down -v
 
 | Сервис | Порт | Назначение |
 |--------|------|------------|
-| NATS | `4222` | Событийная шина |
-| NATS мониторинг | `8222` | JSON-метрики |
-| Jaeger UI | `16686` | Трассировка |
-| Prometheus | `9090` | Метрики |
-| Grafana | `3000` | Дашборды |
+| **NATS** | `4222` | Событийная шина |
+| **NATS Hub** | — | Создаёт Stream EVENTS (инфраструктурный) |
+| **NATS мониторинг** | `8222` | JSON-метрики |
+| **Jaeger UI** | `16686` | Трассировка |
+| **Prometheus** | `9090` | Метрики |
+| **Grafana** | `3000` | Дашборды |
 
 ---
 
@@ -255,8 +273,7 @@ k6 run e2e-test.js
 
 ## 📦 Версия
 
-**Текущая:** `v1.0.1` (24.06.2026)  
-**Следующий релиз:** `v1.1.0` (план — 30.06.2026)
+**Текущая:** `v1.0.3` (05.07.2026)  
 
 ---
 
