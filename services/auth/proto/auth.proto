@@ -9,6 +9,7 @@ service AuthService {
     rpc Login(LoginRequest) returns (LoginResponse);
     rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc UpdateNickname(UpdateNicknameRequest) returns (UpdateNicknameResponse);
 }
 
 message RegisterRequest {
@@ -55,4 +56,17 @@ message GetUserResponse {
     string user_id = 1;
     string email = 2;
     string created_at = 3;
+    string nickname = 4;
+    map<string, int32> best_scores = 5;  // game_id -> best_score
+    int32 total_score = 6;
+}
+
+message UpdateNicknameRequest {
+    string user_id = 1;
+    string nickname = 2;
+}
+
+message UpdateNicknameResponse {
+    bool success = 1;
+    string message = 2;
 }

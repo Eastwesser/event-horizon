@@ -438,88 +438,84 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
       
       try {
-          console.log('📤 REQUEST DATA:', {
-              user_id: userId,
-              game_id: 'hexagon',
-              level: level,
-              seed: 'game_seed_' + Date.now(),
-              // moves: get().gameMoves,  // 👈 отправляем реальные ходы
-              moves: [], // пока пустой массив
-          });
+        console.log('📤 REQUEST DATA:', {
+            user_id: userId,
+            game_id: 'hexagon',
+            level: level,
+            seed: 'game_seed_' + Date.now(),
+            moves: [],
+        });
 
-          // const currentScore = get().score;
-          const currentScore = get().finalScore || get().score;
-          console.log('🎯 Sending score:', currentScore);
-          console.log('📤 Full request:', {
-              user_id: userId,
-              game_id: 'hexagon',
-              level: level,
-              score: currentScore,
-              seed: 'game_seed_' + Date.now(),
-              // moves: get().gameMoves,  // 👈 отправляем реальные ходы
-              moves: [], // пока пустой массив
-          });
-          console.log('🎯 Score to send:', currentScore);
-          console.log('🔍 DEBUG - currentScore from store:', currentScore);
-          console.log('🔍 DEBUG - finalScore from store:', get().finalScore);
-          console.log('🎯 FINAL SCORE BEFORE SEND:', currentScore);
-          console.log('🎯 Current score before submit:', currentScore);
+        const currentScore = get().finalScore || get().score;
+        console.log('🎯 Sending score:', currentScore);
+        console.log('📤 Full request:', {
+            user_id: userId,
+            game_id: 'hexagon',
+            level: level,
+            score: currentScore,
+            seed: 'game_seed_' + Date.now(),
+            moves: [],
+        });
+        console.log('🎯 Score to send:', currentScore);
+        console.log('🔍 DEBUG - currentScore from store:', currentScore);
+        console.log('🔍 DEBUG - finalScore from store:', get().finalScore);
+        console.log('🎯 FINAL SCORE BEFORE SEND:', currentScore);
+        console.log('🎯 Current score before submit:', currentScore);
 
-          console.log('🎯 Current score from store:', currentScore);
+        console.log('🎯 Current score from store:', currentScore);
 
-          // const userEmail = localStorage.getItem('userEmail') || '';
-          console.log('📧 userEmail:', userEmail);
+        console.log('📧 userEmail:', userEmail);
 
-          console.log('🔍 FINAL REQUEST DATA:', {
-              user_id: userId,
-              game_id: 'hexagon',
-              level: level,
-              score: currentScore,
-              user_email: userEmail,
-              seed: 'game_seed_' + Date.now(),
-              moves: get().gameMoves,
-          });
-
-          const response = await api.post('/game/submit', {
+        console.log('🔍 FINAL REQUEST DATA:', {
             user_id: userId,
             game_id: 'hexagon',
             level: level,
             score: currentScore,
             user_email: userEmail,
-            nickname: nickname,  // 👈 ДОБАВИТЬ
             seed: 'game_seed_' + Date.now(),
-            moves: [],  // 👈 временно пустой массив
-            // moves: get().gameMoves,  // 👈 отправляем реальные ходы
-          });  
-          
-          // В конце игры, когда сохраняется рекорд
-          // В submitScore
-          // После успешного ответа от API
-          if (response.status === 200 || response.data) {
-            // Сохраняем статистику в localStorage
-            const savedScores = JSON.parse(localStorage.getItem('gameScores') || '{}');
+            moves: get().gameMoves,
+        });
+
+        const response = await api.post('/game/submit', {
+            user_id: userId,
+            game_id: 'hexagon',
+            level: level,
+            score: currentScore,
+            user_email: userEmail,
+            nickname: nickname,
+            seed: 'game_seed_' + Date.now(),
+            moves: [],
+        });
+
+        if (response.status === 200 || response.data) {
+            // 💾 Сохраняем статистику в localStorage с привязкой к userId
+            // Используем существующий userId, НЕ объявляем новый!
+            const storageKey = `gameScores_${userId}`;
+            const totalScoreKey = `totalScore_${userId}`;
+            const playedKey = `hexagonGamesPlayed_${userId}`;
+
+            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
             const currentBest = savedScores.hexagon || 0;
 
             if (currentScore > currentBest) {
-              savedScores.hexagon = currentScore;
-              localStorage.setItem('gameScores', JSON.stringify(savedScores));
+                savedScores.hexagon = currentScore;
+                localStorage.setItem(storageKey, JSON.stringify(savedScores));
             }
-            
-            const played = parseInt(localStorage.getItem('hexagonGamesPlayed') || '0');
-            localStorage.setItem('hexagonGamesPlayed', String(played + 1));
-            
-            // Сохраняем общий счёт (суммируем все игры)
-            const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
-            localStorage.setItem('totalScore', String(totalScore + currentScore));
-          }
 
-          alert('✅ Score submitted: ' + JSON.stringify(response.data));
-          console.log('✅ Score submitted:', response.data);
-          set({ gameMoves: [] });
-      } catch (err: any) {
-          alert('❌ Failed: ' + (err.message || JSON.stringify(err)));
-          console.error('❌ Failed to submit score:', err);
-      }
+            const played = parseInt(localStorage.getItem(playedKey) || '0');
+            localStorage.setItem(playedKey, String(played + 1));
+
+            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+            localStorage.setItem(totalScoreKey, String(totalScore + currentScore));
+        }
+
+        alert('✅ Score submitted: ' + JSON.stringify(response.data));
+        console.log('✅ Score submitted:', response.data);
+        set({ gameMoves: [] });
+    } catch (err: any) {
+        alert('❌ Failed: ' + (err.message || JSON.stringify(err)));
+        console.error('❌ Failed to submit score:', err);
+    }   
   },
 
 }));

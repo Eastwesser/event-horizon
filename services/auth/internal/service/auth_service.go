@@ -23,6 +23,8 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (string, error)
 	ValidateToken(ctx context.Context, token string) (string, string, error)
 	GetUser(ctx context.Context, userID string) (*repository.User, error)
+	UpdateNickname(ctx context.Context, userID, nickname string) error
+	GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error)
 }
 
 func NewAuthService(repo repository.UserRepository, jwtSecret string, expHours int) AuthService {
@@ -112,4 +114,12 @@ func (s *authService) ValidateToken(ctx context.Context, tokenString string) (st
 
 func (s *authService) GetUser(ctx context.Context, userID string) (*repository.User, error) {
 	return s.repo.GetByID(ctx, userID)
+}
+
+func (s *authService) UpdateNickname(ctx context.Context, userID, nickname string) error {
+    return s.repo.UpdateNickname(ctx, userID, nickname)
+}
+
+func (s *authService) GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error) {
+    return s.repo.GetUserScores(ctx, userID)
 }
