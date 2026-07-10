@@ -340,7 +340,124 @@ paths:
         '404':
           description: Profile not found
 
+  # ===== SHOP =====
+  /api/shop/items:
+    get:
+      summary: Get shop items (with filters)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [all, game_skin, merch, profile_theme]
+          description: Filter by category
+        - name: game_id
+          in: query
+          schema:
+            type: string
+            enum: [hexagon, flappy, memory, towers]
+          description: Filter by game (for skins)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: integer
+                    category:
+                      type: string
+                    game_id:
+                      type: string
+                    image_url:
+                      type: string
+                    available:
+                      type: boolean
+                    owned:
+                      type: boolean
+        '401':
+          description: Unauthorized
 
+  /api/shop/purchase:
+    post:
+      summary: Purchase an item
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - item_id
+              properties:
+                item_id:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  new_balance:
+                    type: integer
+        '400':
+          description: Bad request (not enough tickets, already owned, etc.)
+        '401':
+          description: Unauthorized
+
+  /api/shop/inventory:
+    get:
+      summary: Get user inventory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: integer
+                    category:
+                      type: string
+                    game_id:
+                      type: string
+                    image_url:
+                      type: string
+                    available:
+                      type: boolean
+        '401':
+          description: Unauthorized
         
   # ===== WEBSOCKET =====
   /ws/leaderboard:

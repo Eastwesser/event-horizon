@@ -45,6 +45,7 @@ import (
     leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
     billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
     profilePb "github.com/Eastwesser/event-horizon/services/profile/proto"
+    shopPb "github.com/Eastwesser/event-horizon/services/shop/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -497,6 +498,85 @@ func main() {
             "lamps":   lamps,
             "tickets": tickets,
         })
+    })
+
+    shopConn, err := grpc.NewClient(cfg.ShopAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to shop: %v", err)
+    }
+    defer shopConn.Close()
+    shopClient := shopPb.NewShopServiceClient(shopConn)
+
+    // Добавь эндпоинты:
+    r.GET("/api/shop/items", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        category := c.Query("category")
+        gameID := c.Query("game_id")
+
+        resp, err := shopClient.GetItems(c.Request.Context(), &shopPb.GetItemsRequest{
+            UserId:   userID,
+            Category: category,
+            GameId:   gameID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp.Items)
+    })
+
+    r.POST("/api/shop/purchase", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        var req struct {
+            ItemID string `json:"item_id"`
+        }
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
+        resp, err := shopClient.PurchaseItem(c.Request.Context(), &shopPb.PurchaseItemRequest{
+            UserId: userID,
+            ItemId: req.ItemID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
+
+    r.GET("/api/shop/inventory", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        resp, err := shopClient.GetInventory(c.Request.Context(), &shopPb.GetInventoryRequest{
+            UserId: userID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp.Items)
     })
 
     r.GET("/api/leaderboard", func(c *gin.Context) {

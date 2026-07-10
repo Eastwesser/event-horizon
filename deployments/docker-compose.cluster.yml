@@ -167,6 +167,41 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- PostgreSQL для Shop ---
+  postgres-shop:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-shop
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_shop
+    ports:
+      - "5465:5432"
+    volumes:
+      - postgres_shop_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Redis для Leaderboard (Sorted Set для топа) ---
+  redis-shop:
+    image: redis:7-alpine
+    container_name: event-horizon-redis-shop
+    ports:
+      - "6383:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
   # ============================================================
   # 2. ЭКСПОРТЕРЫ ДЛЯ МОНИТОРИНГА
   # ============================================================
@@ -474,6 +509,33 @@ services:
     networks:
       - event-horizon-net
 
+  # --- Shop service ---
+  shop:
+    image: eastwesser/shop:latest
+    container_name: deployments-shop-1
+    ports:
+      - "50055:50055"
+      - "9095:9095"
+    environment:
+      - GRPC_PORT=50055
+      - METRICS_PORT=9095
+      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - DB_HOST=event-horizon-postgres-shop
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_shop
+      - REDIS_ADDR=event-horizon-redis-shop:6379
+      - REDIS_DB=0
+      - BILLING_ADDR=billing:50053
+    depends_on:
+      - postgres-shop
+      - nats-1
+      - nats-2
+      - nats-3
+    networks:
+      - event-horizon-net
+
   # --- Gateway (API Gateway, 3 инстанса) ---
   gateway:
     image: eastwesser/gateway:latest
@@ -492,6 +554,7 @@ services:
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
+      - SHOP_ADDR=shop:50055
     depends_on:
       - nats-1
       - nats-2
@@ -516,6 +579,7 @@ services:
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
+      - SHOP_ADDR=shop:50055
     depends_on:
       - nats-1
       - nats-2
@@ -540,6 +604,7 @@ services:
       - BILLING_ADDR=billing:50053
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
+      - SHOP_ADDR=shop:50055
     depends_on:
       - nats-1
       - nats-2
@@ -574,6 +639,7 @@ volumes:
   prometheus_data:
   grafana_data:
   postgres_profile_data:
+  postgres_shop_data:
 
 # ============================================================
 # 7. СЕТЬ
