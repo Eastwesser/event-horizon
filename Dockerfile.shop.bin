@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/shop/shop-service /shop-service
+EXPOSE 50061
+CMD ["/shop-service"]
