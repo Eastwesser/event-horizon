@@ -115,12 +115,18 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
     }
 
     // 4. Списываем билетики через Billing
-    _, err = s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
-        UserId:     userID,
-        Currency:   billingPb.CurrencyType_TICKETS,
-        Amount:     -int32(item.Price),
-        Reason:     "shop_purchase",
-        ReferenceId: fmt.Sprintf("%s-%s-%d", userID, itemID, time.Now().UnixNano()),
+    // _, err = s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
+    //     UserId:     userID,
+    //     Currency:   billingPb.CurrencyType_TICKETS,
+    //     Amount:     -int32(item.Price),
+    //     Reason:     "shop_purchase",
+    //     ReferenceId: fmt.Sprintf("%s-%s-%d", userID, itemID, time.Now().UnixNano()),
+    // })
+    _, err = s.billing.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
+        UserId:   userID,
+        Currency: billingPb.CurrencyType_TICKETS,
+        Amount:   int32(item.Price),
+        Reason:   "shop_purchase",
     })
     if err != nil {
         return 0, fmt.Errorf("failed to deduct tickets: %w", err)

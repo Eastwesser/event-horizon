@@ -4,12 +4,12 @@ go 1.25.7
 
 require (
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-20260705204628-4da8765922fb
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.12.3
 	github.com/nats-io/nats.go v1.52.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.21.0
 	google.golang.org/grpc v1.82.0
-	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -30,6 +30,9 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )
 
 replace github.com/Eastwesser/event-horizon/services/billing/proto => ../billing/proto
+
+replace github.com/Eastwesser/event-horizon/services/shop/proto => ./proto

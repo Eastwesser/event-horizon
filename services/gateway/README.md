@@ -579,3 +579,9 @@ cd ~/event_horizon
 docker build -f Dockerfile.gateway.bin -t eastwesser/gateway:latest .
 docker-compose -f deployments/docker-compose.cluster.yml up -d gateway gateway-2 gateway-3
 ```
+
+## upd info 11th of July, 2026:
+
+	replace github.com/Eastwesser/event-horizon/services/analytics/proto => ../shop/proto
+	replace github.com/Eastwesser/event-horizon/services/payment/proto => ../payment/proto
+	replace github.com/Eastwesser/event-horizon/services/notification/proto => ../notification/proto

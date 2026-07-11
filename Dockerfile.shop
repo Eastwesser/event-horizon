@@ -6,5 +6,5 @@ RUN cd services/shop && go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
 FROM scratch
 COPY --from=builder /app/services/shop/shop-service /shop-service
-EXPOSE 50061
+EXPOSE 50055
 CMD ["/shop-service"]

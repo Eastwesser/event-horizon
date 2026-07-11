@@ -428,6 +428,7 @@ services:
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
       - DB_NAME=eventhorizon_billing
+      - REDIS_ADDR=event-horizon-redis-billing:6379
     restart: on-failure
     networks:
       - event-horizon-net
