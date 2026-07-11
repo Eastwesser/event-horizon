@@ -8,6 +8,7 @@ require (
 	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-00010101000000-000000000000
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-00010101000000-000000000000
 	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/nats-io/nats.go v1.52.0
@@ -76,4 +77,5 @@ replace (
 	github.com/Eastwesser/event-horizon/services/game/proto => ../game/proto
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto => ../leaderboard/proto
 	github.com/Eastwesser/event-horizon/services/profile/proto => ../profile/proto
+	github.com/Eastwesser/event-horizon/services/shop/proto => ../shop/proto
 )
