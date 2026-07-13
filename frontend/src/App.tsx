@@ -9,6 +9,7 @@ import { FlappyGame } from './components/Games/Flappy/FlappyGame';
 import { TowerGame } from './components/Games/Towers/TowerGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
+import { Shop } from './components/Shop/Shop'; // НОВОЕ
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -61,6 +62,10 @@ function App() {
           <Route 
             path="/profile" 
             element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} 
+          />        
+          <Route 
+            path="/shop" 
+            element={isAuthenticated ? <Shop /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>

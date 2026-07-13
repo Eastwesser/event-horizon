@@ -1,3 +1,4 @@
+// frontend/src/components/Home/Home.tsx
 import { useNavigate } from 'react-router-dom';
 
 const games = [
@@ -56,8 +57,9 @@ export function Home() {
         
         <nav className="main-nav">
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Главная</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>Лидерборд</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>Профиль</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>🛒 Магазин</a> {/* НОВОЕ */}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>🏆 Лидерборд</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>👤 Профиль</a>
           <a href="#" onClick={(e) => { e.preventDefault(); window.open('https://boosty.to/eastwesser', '_blank'); }}>Поддержать</a>
         </nav>
 

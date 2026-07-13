@@ -1,0 +1,67 @@
+// src/components/common/Notification.scss
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  max-width: 400px;
+  min-width: 300px;
+  transition: all 0.3s ease;
+
+  &.show {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  &.hide {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  .notification-content {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    .notification-icon {
+      font-size: 1.5rem;
+    }
+
+    .notification-message {
+      flex: 1;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0 0.25rem;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+
+  &.success .notification-content {
+    border-color: var(--success-color);
+  }
+
+  &.error .notification-content {
+    border-color: var(--error-color);
+  }
+
+  &.info .notification-content {
+    border-color: var(--info-color);
+  }
+}

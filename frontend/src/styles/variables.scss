@@ -1,0 +1,30 @@
+// src/styles/variables.scss
+:root {
+  // Основные цвета
+  --bg-primary: #0a0e17;
+  --bg-secondary: #141b2b;
+  --bg-hover: #1c2640;
+  --bg-disabled: #2a3450;
+  
+  // Текст
+  --text-primary: #e8eaf0;
+  --text-secondary: #8a94a8;
+  --text-disabled: #4a5470;
+  
+  // Акценты
+  --gold-primary: #ffd700;
+  --gold-secondary: #f0c000;
+  
+  // Статусы
+  --success-color: #4caf50;
+  --error-color: #f44336;
+  --info-color: #2196f3;
+  --warning-color: #ff9800;
+  
+  // Размеры
+  --header-height: 64px;
+  --footer-height: 60px;
+  
+  // Шрифты
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

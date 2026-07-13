@@ -240,10 +240,10 @@ k6 run e2e-test.js
 
 | Сервис | Назначение | Порт (gRPC) |
 |--------|------------|-------------|
-| **Shop** | Магазин за билетики | `5055` |
-| **Notification** | Push, Email, Telegram | `5056` |
-| **Analytics** | DAU, MAU, Retention (ClickHouse) | `5057` |
-| **Payment** | Реальные платежи (Boosty/Stripe) | `5058` |
+| **Shop** | Магазин за билетики | `50055` |
+| **Notification** | Push, Email, Telegram | `50056` |
+| **Analytics** | DAU, MAU, Retention (ClickHouse) | `50057` |
+| **Payment** | Реальные платежи (Boosty/Stripe) | `50058` |
 
 ### 🎮 Игровой контент
 
