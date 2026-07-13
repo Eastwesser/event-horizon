@@ -1,12 +1,12 @@
 // frontend/src/components/Shop/Shop.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useShopStore } from '../../store/shopStore';
 import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
 import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import './Shop.css';
+import { useShopStore, type ShopItem } from '../../store/shopStore';
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
@@ -101,8 +101,20 @@ export const Shop: React.FC = () => {
     );
   }
 
-  // Фильтруем товары
-  const filteredItems = items.filter(item => 
+  // Группируем товары по имени и объединяем статус owned
+  const uniqueItems = items.reduce((acc, item) => {
+    const existing = acc.find(i => i.name === item.name);
+    if (existing) {
+      // Если хотя бы один экземпляр owned - помечаем весь товар как owned
+      existing.owned = existing.owned || item.owned;
+      return acc;
+    }
+    acc.push({ ...item });
+    return acc;
+  }, [] as ShopItem[]);
+
+  // Фильтруем по категории
+  const filteredItems = uniqueItems.filter(item => 
     filterType === 'all' || item.category === filterType
   );
 

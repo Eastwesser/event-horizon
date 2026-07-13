@@ -462,6 +462,27 @@ body {
   border-radius: 20px;
 }
 
+.skin-toggle-btn {
+  padding: 0.4rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.skin-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.skin-toggle-btn.active {
+  border-color: #6C5CE7;
+  background: rgba(108, 92, 231, 0.3);
+  color: #A29BFE;
+}
+
 /* ========== LEADERBOARD MODAL ========== */
 .leaderboard-overlay {
   position: fixed;

@@ -1,5 +1,5 @@
 // frontend/src/components/Games/Hexagon/HexagonGame.tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -14,6 +14,7 @@ export function HexagonGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const { skins, loading: skinsLoading } = useSkins();
+  const [useSpacePancakes, setUseSpacePancakes] = useState(false);
   
   const { 
     score, 
@@ -26,6 +27,19 @@ export function HexagonGame() {
     finalScore,
     setGameOver
   } = useGameStore();
+
+  // Загружаем настройки скинов из localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('hexagon_space_pancakes');
+    if (saved !== null) setUseSpacePancakes(saved === 'true');
+  }, []);
+
+  // Сохраняем настройки скинов
+  const toggleSpacePancakes = () => {
+    const newVal = !useSpacePancakes;
+    setUseSpacePancakes(newVal);
+    localStorage.setItem('hexagon_space_pancakes', String(newVal));
+  };
 
   useEffect(() => {
     if (!token) {
@@ -65,20 +79,19 @@ export function HexagonGame() {
       <div className="game-container">
         <div className="game-header">
           <div className="score">
-            {skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} Счёт: {score}
+            {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} Счёт: {score}
           </div>
           <div className="level">🍴 Уровень: {level}</div>
           
+          {/* Кнопка переключения скина */}
           {skins.hexagon.hasSpacePancakes && (
-            <div className="skin-badge" style={{ 
-              background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
-              padding: '0.25rem 1rem',
-              borderRadius: '20px',
-              fontSize: '0.8rem',
-              fontWeight: 'bold'
-            }}>
-              🌌 Космические блины
-            </div>
+            <button 
+              className={`skin-toggle-btn ${useSpacePancakes ? 'active' : ''}`}
+              onClick={toggleSpacePancakes}
+              title="Космические блины"
+            >
+              {useSpacePancakes ? '🌌' : '🥞'} Космические блины
+            </button>
           )}
           
           <div className="header-buttons">
@@ -97,7 +110,7 @@ export function HexagonGame() {
         <HexGrid 
           tiles={tiles} 
           onDrop={handleDrop}
-          skinMode={skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
+          skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
         />
         <Tray stacks={tray} />
       </div>
@@ -106,9 +119,9 @@ export function HexagonGame() {
         <div className="game-over-overlay">
           <div className="game-over-modal">
             <h2>
-              {skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} 
+              {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} 
               Игра окончена! 
-              {skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'}
+              {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'}
             </h2>
             <p>Вы испекли {finalScore} блинов!</p>
             <p>Никуся-Блинопёк счастлива! 🎉</p>

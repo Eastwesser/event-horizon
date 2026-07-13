@@ -11,6 +11,7 @@ export function TowerGame() {
   const token = localStorage.getItem('accessToken');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { skins, loading: skinsLoading } = useSkins();
+  const [useRainbowBlocks, setUseRainbowBlocks] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   const {
@@ -27,6 +28,19 @@ export function TowerGame() {
     dropBlock,
     submitScore,
   } = useTowerStore();
+
+  // Загружаем настройки скинов из localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('towers_rainbow_blocks');
+    if (saved !== null) setUseRainbowBlocks(saved === 'true');
+  }, []);
+
+  // Сохраняем настройки скинов
+  const toggleRainbowBlocks = () => {
+    const newVal = !useRainbowBlocks;
+    setUseRainbowBlocks(newVal);
+    localStorage.setItem('towers_rainbow_blocks', String(newVal));
+  };
   
   // Проверка авторизации
   useEffect(() => {
@@ -86,7 +100,7 @@ export function TowerGame() {
   
   // Получение цвета блока с учетом скина
   const getBlockColor = (blockLevel: number) => {
-    if (skins.towers.hasRainbowBlocks) {
+    if (useRainbowBlocks && skins.towers.hasRainbowBlocks) {
       const rainbowColors = [
         '#FF6B6B', // Красный
         '#FF9F43', // Оранжевый
@@ -197,7 +211,7 @@ export function TowerGame() {
       ctx.fillStyle = '#ffffff';
       ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2 - 80, GAME_HEIGHT / 2 + 70);
     }
-  }, [towerBlocks, currentBlockX, blockWidth, score, gameOver, GAME_WIDTH, GAME_HEIGHT, skins]);
+  }, [towerBlocks, currentBlockX, blockWidth, score, gameOver, GAME_WIDTH, GAME_HEIGHT, skins, useRainbowBlocks]);
   
   // Получение множителя для отображения
   const getMultiplierDisplay = () => {
@@ -232,11 +246,15 @@ export function TowerGame() {
       <div className="tower-header">
         <Balance />
         <div className="tower-stats">
+          {/* Кнопка переключения скина */}
           {skins.towers.hasRainbowBlocks && (
-            <div className="tower-stat" style={{ borderColor: '#FF6B6B' }}>
-              <span className="stat-label">🌈 Скин</span>
-              <span className="stat-value" style={{ color: '#FF6B6B' }}>Радужные блоки</span>
-            </div>
+            <button 
+              className={`tower-skin-btn ${useRainbowBlocks ? 'active' : ''}`}
+              onClick={toggleRainbowBlocks}
+              title="Радужные блоки"
+            >
+              {useRainbowBlocks ? '🌈' : '🧱'} Радужные блоки
+            </button>
           )}
           <div className="tower-stat">
             <span className="stat-label">🏆 Счёт</span>

@@ -115,13 +115,6 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
     }
 
     // 4. Списываем билетики через Billing
-    // _, err = s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
-    //     UserId:     userID,
-    //     Currency:   billingPb.CurrencyType_TICKETS,
-    //     Amount:     -int32(item.Price),
-    //     Reason:     "shop_purchase",
-    //     ReferenceId: fmt.Sprintf("%s-%s-%d", userID, itemID, time.Now().UnixNano()),
-    // })
     _, err = s.billing.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
         UserId:   userID,
         Currency: billingPb.CurrencyType_TICKETS,
@@ -130,12 +123,6 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
     })
     if err != nil {
         return 0, fmt.Errorf("failed to deduct tickets: %w", err)
-    }
-
-    // Очищаем кеш баланса в Redis
-    cacheKey := fmt.Sprintf("balance:%s:tickets", userID)
-    if err := s.redisRepo.Delete(ctx, cacheKey); err != nil {
-        log.Printf("⚠️ Failed to delete balance cache: %v", err)
     }
 
     // 5. Записываем покупку в БД
@@ -158,10 +145,18 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
         log.Printf("⚠️ Failed to publish shop.purchased: %v", err)
     }
 
-    // 7. Очищаем кеш товаров
-	_ = s.redisRepo.Delete(ctx, fmt.Sprintf("shop:items:%s:%s", item.Category, item.GameID))
-	
-    // 8. Возвращаем новый баланс
+    // 7. Очищаем кеш товаров (все кеши, а не только по категории)
+    _ = s.redisRepo.Delete(ctx, fmt.Sprintf("shop:items:%s:%s", item.Category, item.GameID))
+    _ = s.redisRepo.Delete(ctx, fmt.Sprintf("shop:items:%s:", item.Category))
+    _ = s.redisRepo.Delete(ctx, "shop:items:all:")
+
+    // 8. Очищаем кеш баланса
+    cacheKey := fmt.Sprintf("balance:%s:tickets", userID)
+    if err := s.redisRepo.Delete(ctx, cacheKey); err != nil {
+        log.Printf("⚠️ Failed to delete balance cache: %v", err)
+    }
+
+    // 9. Возвращаем новый баланс
     newBalance := ticketsBalance - int32(item.Price)
     return newBalance, nil
 }
