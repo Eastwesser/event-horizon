@@ -1,0 +1,228 @@
+// frontend/src/components/Shop/Shop.scss
+.shop-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg-primary, #0a0e17);
+
+  .shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .shop-title {
+      h1 {
+        font-size: 2.5rem;
+        color: var(--gold-primary, #ffd700);
+        margin: 0;
+        font-weight: 700;
+      }
+
+      .shop-subtitle {
+        color: var(--text-secondary, #8a94a8);
+        margin: 0.5rem 0 0 0;
+        font-size: 1rem;
+      }
+    }
+
+    .shop-balance {
+      background: var(--bg-secondary, #141b2b);
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      border: 2px solid var(--gold-primary, #ffd700);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .balance-icon {
+        font-size: 1.5rem;
+      }
+
+      .balance-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gold-primary, #ffd700);
+      }
+
+      .balance-label {
+        color: var(--text-secondary, #8a94a8);
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .shop-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--bg-secondary);
+    padding-bottom: 1rem;
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 12px;
+
+      &:hover {
+        color: var(--text-primary);
+        background: var(--bg-hover);
+      }
+
+      &.active {
+        color: var(--gold-primary);
+        background: var(--bg-secondary);
+      }
+    }
+  }
+
+  .shop-filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+
+    .filter-btn {
+      padding: 0.5rem 1.25rem;
+      background: var(--bg-secondary);
+      border: 2px solid transparent;
+      border-radius: 25px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+
+      &.active {
+        border-color: var(--gold-primary);
+        color: var(--gold-primary);
+        background: var(--bg-hover);
+      }
+    }
+  }
+
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .shop-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary, #8a94a8);
+
+    p {
+      font-size: 1.2rem;
+    }
+  }
+
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .inventory-item {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--bg-hover);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold-primary);
+    }
+
+    .item-icon {
+      text-align: center;
+      margin-bottom: 1rem;
+
+      img {
+        max-width: 60px;
+        max-height: 60px;
+      }
+
+      .item-emoji {
+        font-size: 3rem;
+      }
+    }
+
+    .item-info {
+      h4 {
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+      }
+
+      p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin: 0 0 1rem 0;
+      }
+
+      .purchased-date {
+        color: var(--text-disabled);
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .shop-container {
+    padding: 1rem;
+
+    .shop-header {
+      flex-direction: column;
+      align-items: stretch;
+
+      .shop-title h1 {
+        font-size: 2rem;
+      }
+
+      .shop-balance {
+        justify-content: center;
+        padding: 0.5rem 1rem;
+      }
+    }
+
+    .shop-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .inventory-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .shop-container {
+    .shop-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .inventory-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
