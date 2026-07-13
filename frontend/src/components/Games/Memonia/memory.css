@@ -269,7 +269,34 @@
   }
 }
 
-/* Добавить в конец файла */
+.memory-skin-btn {
+  padding: 0.4rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.memory-skin-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.memory-skin-btn.active {
+  border-color: #4ADE80;
+  background: rgba(74, 222, 128, 0.3);
+  color: #4ADE80;
+}
+
+.memory-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .memory-toast {
   position: fixed;
   top: 20px;

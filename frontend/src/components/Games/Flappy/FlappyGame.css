@@ -139,6 +139,33 @@
   }
 }
 
+.flappy-skin-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.flappy-skin-btn {
+  padding: 0.4rem 0.8rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.flappy-skin-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.flappy-skin-btn.active {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+
 .flappy-toast {
   position: fixed;
   top: 20px;

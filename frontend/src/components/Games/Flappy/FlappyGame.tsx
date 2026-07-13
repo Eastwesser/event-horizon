@@ -12,6 +12,10 @@ export function FlappyGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { skins, loading: skinsLoading } = useSkins();
   
+  // Состояния для переключения скинов
+  const [useRainbowPipes, setUseRainbowPipes] = useState(false);
+  const [useGoldenBird, setUseGoldenBird] = useState(false);
+  
   const {
     birdY,
     pipes,
@@ -25,6 +29,27 @@ export function FlappyGame() {
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 500;
   const BIRD_SIZE = 30;
+
+  // Загружаем настройки скинов из localStorage
+  useEffect(() => {
+    const savedPipes = localStorage.getItem('flappy_rainbow_pipes');
+    const savedBird = localStorage.getItem('flappy_golden_bird');
+    if (savedPipes !== null) setUseRainbowPipes(savedPipes === 'true');
+    if (savedBird !== null) setUseGoldenBird(savedBird === 'true');
+  }, []);
+
+  // Сохраняем настройки скинов
+  const toggleRainbowPipes = () => {
+    const newVal = !useRainbowPipes;
+    setUseRainbowPipes(newVal);
+    localStorage.setItem('flappy_rainbow_pipes', String(newVal));
+  };
+
+  const toggleGoldenBird = () => {
+    const newVal = !useGoldenBird;
+    setUseGoldenBird(newVal);
+    localStorage.setItem('flappy_golden_bird', String(newVal));
+  };
   
   // Проверка авторизации
   useEffect(() => {
@@ -97,14 +122,14 @@ export function FlappyGame() {
 
   // Определяем цвета для скинов
   const getBirdColor = () => {
-    if (skins.flappy.hasGoldenBird) {
+    if (useGoldenBird && skins.flappy.hasGoldenBird) {
       return '#FFD700'; // Золотой
     }
-    return '#FFD700'; // Стандартный (тоже золотой, можно поменять)
+    return '#FFD700'; // Стандартный
   };
 
   const getPipeColor = () => {
-    if (skins.flappy.hasRainbowPipes) {
+    if (useRainbowPipes && skins.flappy.hasRainbowPipes) {
       return 'rainbow';
     }
     return '#228B22'; // Стандартный зеленый
@@ -207,7 +232,7 @@ export function FlappyGame() {
     ctx.fill();
     
     // Если золотая птичка - добавляем блеск
-    if (skins.flappy.hasGoldenBird) {
+    if (useGoldenBird && skins.flappy.hasGoldenBird) {
       ctx.shadowBlur = 20;
       ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -236,7 +261,7 @@ export function FlappyGame() {
     ctx.fill();
     
     // Крыло
-    ctx.fillStyle = skins.flappy.hasGoldenBird ? '#FFC000' : '#FFA500';
+    ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FFA500';
     ctx.beginPath();
     ctx.ellipse(90, birdY + BIRD_SIZE/2, 12, 8, -Math.PI / 4, 0, Math.PI * 2);
     ctx.fill();
@@ -276,7 +301,7 @@ export function FlappyGame() {
       ctx.fillStyle = '#FFD700';
       ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 80);
     }
-  }, [birdY, pipes, score, gameOver, started, GAME_WIDTH, GAME_HEIGHT, BIRD_SIZE, skins]);
+  }, [birdY, pipes, score, gameOver, started, GAME_WIDTH, GAME_HEIGHT, BIRD_SIZE, skins, useRainbowPipes, useGoldenBird]);
   
   const handleCanvasClick = () => {
     jump();
@@ -313,17 +338,27 @@ export function FlappyGame() {
             <span className="stat-label">🐦 Счёт</span>
             <span className="stat-value">{score}</span>
           </div>
+        </div>
+        
+        {/* Кнопки переключения скинов */}
+        <div className="flappy-skin-controls">
           {skins.flappy.hasGoldenBird && (
-            <div className="flappy-stat" style={{ borderColor: '#FFD700' }}>
-              <span className="stat-label">⭐ Скин</span>
-              <span className="stat-value" style={{ color: '#FFD700' }}>Золотая птичка</span>
-            </div>
+            <button 
+              className={`flappy-skin-btn ${useGoldenBird ? 'active' : ''}`}
+              onClick={toggleGoldenBird}
+              title="Золотая птичка"
+            >
+              {useGoldenBird ? '⭐' : '🐦'} Птичка
+            </button>
           )}
           {skins.flappy.hasRainbowPipes && (
-            <div className="flappy-stat" style={{ borderColor: '#FF6B6B' }}>
-              <span className="stat-label">🌈 Скин</span>
-              <span className="stat-value" style={{ color: '#FF6B6B' }}>Радужные трубы</span>
-            </div>
+            <button 
+              className={`flappy-skin-btn ${useRainbowPipes ? 'active' : ''}`}
+              onClick={toggleRainbowPipes}
+              title="Радужные трубы"
+            >
+              {useRainbowPipes ? '🌈' : '🟩'} Трубы
+            </button>
           )}
         </div>
         

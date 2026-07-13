@@ -11,6 +11,7 @@ export function MemoryGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const { skins, loading: skinsLoading } = useSkins();
+  const [useAnimalCards, setUseAnimalCards] = useState(false);
   
   const {
     moves,
@@ -25,6 +26,21 @@ export function MemoryGame() {
   
   const totalPairs = 15;
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Загружаем настройки скинов из localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('memory_animal_cards');
+    if (saved !== null) setUseAnimalCards(saved === 'true');
+  }, []);
+
+  // Сохраняем настройки скинов
+  const toggleAnimalCards = () => {
+    const newVal = !useAnimalCards;
+    setUseAnimalCards(newVal);
+    localStorage.setItem('memory_animal_cards', String(newVal));
+    // Перезапускаем игру с новым скином
+    resetGame();
+  };
   
   useEffect(() => {
     if (!token) {
@@ -109,13 +125,16 @@ export function MemoryGame() {
             <span className="stat-label">🏆 Очки</span>
             <span className="stat-value">{score}</span>
           </div>
+          
+          {/* Кнопка переключения скина */}
           {skins.memory.hasAnimalCards && (
-            <div className="memory-stat" style={{ borderColor: '#4ADE80' }}>
-              <span className="stat-label">🐾 Скин</span>
-              <span className="stat-value" style={{ color: '#4ADE80', fontSize: '1rem' }}>
-                Карточки со зверями
-              </span>
-            </div>
+            <button 
+              className={`memory-skin-btn ${useAnimalCards ? 'active' : ''}`}
+              onClick={toggleAnimalCards}
+              title="Карточки со зверями"
+            >
+              {useAnimalCards ? '🐾' : '🍎'} Карточки со зверями
+            </button>
           )}
         </div>
         
@@ -130,7 +149,7 @@ export function MemoryGame() {
       </div>
       
       <div className="memory-board-wrapper">
-        <MemoryBoard skin={skins.memory.hasAnimalCards ? 'animals' : 'default'} />
+        <MemoryBoard skin={useAnimalCards && skins.memory.hasAnimalCards ? 'animals' : 'default'} />
       </div>
       
       {gameOver && (

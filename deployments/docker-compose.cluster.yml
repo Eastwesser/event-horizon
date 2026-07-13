@@ -1,7 +1,7 @@
 # ============================================================
 # Event Horizon — Docker Compose (кластерная версия)
 # Все сервисы объединены в одну сеть event-horizon-net
-# Версия: v1.0.3
+# Версия: v1.0.5
 # ============================================================
 
 services:
@@ -187,7 +187,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # --- Redis для Leaderboard (Sorted Set для топа) ---
+  # --- Redis для Shop ---
   redis-shop:
     image: redis:7-alpine
     container_name: event-horizon-redis-shop
@@ -229,7 +229,7 @@ services:
       - event-horizon-net
 
   # ============================================================
-  # 3. NATS КЛАСТЕР (3 ноды)
+  # 3. NATS КЛАСТЕР (3 ноды) С АЛИАСАМИ
   # ============================================================
 
   # --- NATS-1 (лидер кластера) ---
@@ -305,30 +305,82 @@ services:
       retries: 3
 
   # --- NATS Exporter (собирает метрики со всех 3 нод) ---
+  # nats-exporter:
+  #   image: natsio/prometheus-nats-exporter:latest
+  #   container_name: event-horizon-nats-exporter
+  #   command: [
+  #     "-varz", "http://nats-1:8222",
+  #     "-varz", "http://nats-2:8222",
+  #     "-varz", "http://nats-3:8222"
+  #   ]
+  #   ports:
+  #     - "7777:7777"
+  #   networks:
+  #     - event-horizon-net
+  #   depends_on:
+  #     - nats-1
+  #     - nats-2
+  #     - nats-3
+  #   restart: unless-stopped
+
+  # # --- NATS Exporter для nats-1 ---
+  # nats-exporter-1:
+  #   image: natsio/prometheus-nats-exporter:latest
+  #   container_name: nats-exporter-1
+  #   command: ["-listen", ":7777", "-varz", "http://nats-1:8222"]
+  #   ports:
+  #     - "7777:7777"
+  #   networks:
+  #     - event-horizon-net
+  #   depends_on:
+  #     - nats-1
+  #   restart: unless-stopped
+
+  # # --- NATS Exporter для nats-2 ---
+  # nats-exporter-2:
+  #   image: natsio/prometheus-nats-exporter:latest
+  #   container_name: nats-exporter-2
+  #   command: ["-listen", ":7778", "-varz", "http://nats-2:8222"]
+  #   ports:
+  #     - "7778:7778"
+  #   networks:
+  #     - event-horizon-net
+  #   depends_on:
+  #     - nats-2
+  #   restart: unless-stopped
+
+  # # --- NATS Exporter для nats-3 ---
+  # nats-exporter-3:
+  #   image: natsio/prometheus-nats-exporter:latest
+  #   container_name: nats-exporter-3
+  #   command: ["-listen", ":7779", "-varz", "http://nats-3:8222"]
+  #   ports:
+  #     - "7779:7779"
+  #   networks:
+  #     - event-horizon-net
+  #   depends_on:
+  #     - nats-3
+  #   restart: unless-stopped
+
+  # --- NATS Exporter ---
   nats-exporter:
     image: natsio/prometheus-nats-exporter:latest
-    container_name: event-horizon-nats-exporter
-    command: [
-      "-varz", "http://nats-1:8222",
-      "-varz", "http://nats-2:8222",
-      "-varz", "http://nats-3:8222"
-    ]
+    container_name: nats-exporter
+    command: ["-varz", "http://nats-1:8222"]
     ports:
       - "7777:7777"
     networks:
       - event-horizon-net
     depends_on:
       - nats-1
-      - nats-2
-      - nats-3
-    restart: unless-stopped
+    restart: unless-stopped 
 
   # --- NATS Hub (создаёт Stream'ы при старте) ---
   nats-hub:
     image: eastwesser/nats-hub:latest
     container_name: event-horizon-nats-hub
     environment:
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
     depends_on:
       - nats-1
       - nats-2
@@ -336,6 +388,7 @@ services:
     networks:
       - event-horizon-net
     restart: on-failure
+
 
   # ============================================================
   # 4. МОНИТОРИНГ (Prometheus + Grafana + Jaeger)
@@ -388,6 +441,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - event-horizon-net
+
 
   # ============================================================
   # 5. МИКРОСЕРВИСЫ
@@ -465,7 +519,7 @@ services:
       - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       - REDIS_ADDR=event-horizon-redis-leaderboard:6379
       - REDIS_DB=0
-      - DB_HOST=event-horizon-postgres-game   # восстановление из Game БД
+      - DB_HOST=event-horizon-postgres-game
       - DB_PORT=5432
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
@@ -517,6 +571,11 @@ services:
     ports:
       - "50055:50055"
       - "9095:9095"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9095/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     environment:
       - GRPC_PORT=50055
       - METRICS_PORT=9095
@@ -627,6 +686,7 @@ services:
     networks:
       - event-horizon-net
 
+
 # ============================================================
 # 6. PERSISTENT VOLUMES
 # ============================================================
@@ -641,6 +701,7 @@ volumes:
   grafana_data:
   postgres_profile_data:
   postgres_shop_data:
+
 
 # ============================================================
 # 7. СЕТЬ
