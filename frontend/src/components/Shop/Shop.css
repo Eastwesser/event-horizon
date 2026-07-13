@@ -16,6 +16,28 @@
   gap: 1rem;
 }
 
+.shop-container .back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--bg-secondary, #141b2b);
+  border: 2px solid var(--bg-hover, #1c2640);
+  border-radius: 12px;
+  color: var(--text-primary, #e8eaf0);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.shop-container .back-btn:hover {
+  background: var(--bg-hover, #1c2640);
+  border-color: var(--gold-primary, #ffd700);
+  transform: translateX(-2px);
+}
+
 .shop-title h1 {
   font-size: 2.5rem;
   color: var(--gold-primary, #ffd700);

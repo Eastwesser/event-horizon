@@ -61,7 +61,7 @@ export const getShopItems = () =>
   api.get('/shop/items');
 
 export const buyShopItem = (itemId: string) =>
-  api.post('/shop/buy', { item_id: itemId });
+  api.post('/shop/purchase', { item_id: itemId });
 
 export const getInventory = () =>
   api.get('/shop/inventory');

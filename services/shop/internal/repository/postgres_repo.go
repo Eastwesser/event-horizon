@@ -12,7 +12,7 @@ type Item struct {
     Description string
     Price       int
     Category    string
-    GameID      string
+    GameID      *string
     ImageURL    string
     Available   bool
     Owned       bool
@@ -54,10 +54,22 @@ func (r *PostgresShopRepo) GetItems(ctx context.Context, category, gameID string
     var items []Item
     for rows.Next() {
         var item Item
-        err := rows.Scan(&item.ID, &item.Name, &item.Description, &item.Price,
-            &item.Category, &item.GameID, &item.ImageURL, &item.Available)
+        var gameID sql.NullString
+        err := rows.Scan(
+            &item.ID, 
+            &item.Name, 
+            &item.Description, 
+            &item.Price,
+            &item.Category, 
+            &gameID,
+            &item.ImageURL, 
+            &item.Available,
+        )
         if err != nil {
             return nil, err
+        }
+        if gameID.Valid {
+            item.GameID = &gameID.String
         }
         items = append(items, item)
     }

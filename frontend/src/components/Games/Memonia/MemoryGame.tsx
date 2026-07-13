@@ -2,13 +2,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMemoryStore } from '../../../store/memoryStore';
+import { useSkins } from '../../../hooks/useSkins';
 import { MemoryBoard } from './MemoryBoard';
 import api from '../../../services/api';
-import './memory.css';  // 👈 исправлено!
+import './memory.css';
 
 export function MemoryGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
+  const { skins, loading: skinsLoading } = useSkins();
   
   const {
     moves,
@@ -65,6 +67,20 @@ export function MemoryGame() {
     }
   };
   
+  if (skinsLoading) {
+    return (
+      <div className="memory-game-container">
+        <div className="memory-game-header">
+          <div className="memory-stats">
+            <div className="memory-stat">
+              <span className="stat-label">🎴 Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="memory-game-container">
       {saveMessage && (
@@ -93,6 +109,14 @@ export function MemoryGame() {
             <span className="stat-label">🏆 Очки</span>
             <span className="stat-value">{score}</span>
           </div>
+          {skins.memory.hasAnimalCards && (
+            <div className="memory-stat" style={{ borderColor: '#4ADE80' }}>
+              <span className="stat-label">🐾 Скин</span>
+              <span className="stat-value" style={{ color: '#4ADE80', fontSize: '1rem' }}>
+                Карточки со зверями
+              </span>
+            </div>
+          )}
         </div>
         
         <div className="memory-buttons">
@@ -106,7 +130,7 @@ export function MemoryGame() {
       </div>
       
       <div className="memory-board-wrapper">
-        <MemoryBoard />
+        <MemoryBoard skin={skins.memory.hasAnimalCards ? 'animals' : 'default'} />
       </div>
       
       {gameOver && (
