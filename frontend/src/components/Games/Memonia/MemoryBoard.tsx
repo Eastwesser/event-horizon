@@ -2,8 +2,27 @@
 import { useMemoryStore } from '../../../store/memoryStore';
 import { MemoryCard } from './MemoryCard';
 
-export function MemoryBoard() {
+interface MemoryBoardProps {
+  skin?: 'default' | 'animals';
+}
+
+// Эмодзи для разных скинов
+const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐'];
+const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];
+
+export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
   const { cards, flipCard, gameOver } = useMemoryStore();
+  
+  // Подменяем эмодзи на скиновые, если они есть
+  const getCardEmoji = (originalEmoji: string) => {
+    if (skin === 'animals') {
+      const index = defaultEmojis.indexOf(originalEmoji);
+      if (index !== -1 && index < animalEmojis.length) {
+        return animalEmojis[index];
+      }
+    }
+    return originalEmoji;
+  };
   
   if (!cards.length) {
     return <div className="memory-board__empty">Загрузка...</div>;
@@ -14,11 +33,12 @@ export function MemoryBoard() {
       {cards.map((card, index) => (
         <MemoryCard
           key={card.id}
-          emoji={card.emoji}
+          emoji={getCardEmoji(card.emoji)}
           flipped={card.flipped}
           matched={card.matched}
           onClick={() => flipCard(index)}
           disabled={gameOver}
+          skin={skin}
         />
       ))}
     </div>

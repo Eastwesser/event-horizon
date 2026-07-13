@@ -132,6 +132,12 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
         return 0, fmt.Errorf("failed to deduct tickets: %w", err)
     }
 
+    // Очищаем кеш баланса в Redis
+    cacheKey := fmt.Sprintf("balance:%s:tickets", userID)
+    if err := s.redisRepo.Delete(ctx, cacheKey); err != nil {
+        log.Printf("⚠️ Failed to delete balance cache: %v", err)
+    }
+
     // 5. Записываем покупку в БД
     if err := s.pgRepo.PurchaseItem(ctx, userID, itemID, item.Price); err != nil {
         return 0, fmt.Errorf("failed to record purchase: %w", err)

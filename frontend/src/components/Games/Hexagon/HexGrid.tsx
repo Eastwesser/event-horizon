@@ -1,3 +1,4 @@
+// frontend/src/components/Games/Hexagon/HexGrid.tsx
 import { useDrop } from 'react-dnd';
 import { useRef } from 'react';
 import { 
@@ -20,9 +21,10 @@ interface HexTile {
 interface HexGridProps {
   tiles: HexTile[];
   onDrop: (item: any, coord: HexCoord) => void;
+  skinMode?: 'default' | 'space';
 }
 
-export function HexGrid({ tiles, onDrop }: HexGridProps) {
+export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -39,7 +41,6 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
   const offsetY = -minY;
 
   const getHexAtPixel = (x: number, y: number): HexCoord | null => {
-    // Координаты уже относительно SVG viewBox
     for (const coord of HEX_GRID) {
       const { x: hexX, y: hexY } = hexToPixel(coord.q, coord.r);
       const dx = x - (hexX + offsetX);
@@ -62,7 +63,6 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
       const svgX = clientOffset.x - rect.left;
       const svgY = clientOffset.y - rect.top;
       
-      // Получаем размеры SVG и viewBox
       const svgRect = svgRef.current.viewBox?.baseVal;
       if (svgRect) {
         const scaleX = svgRect.width / rect.width;
@@ -81,13 +81,42 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
     }),
   }));
 
+  // Получение эмодзи с учетом скина
+  const getPancakeEmoji = (type: string) => {
+    if (skinMode === 'space') {
+      const spaceEmojis: Record<string, string> = {
+        plain: '🌌',
+        chocolate: '🌙',
+        strawberry: '⭐',
+        blueberry: '🪐',
+        banana: '☄️',
+      };
+      return spaceEmojis[type] || '🌌';
+    }
+    return pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞';
+  };
+
+  // Получение цвета с учетом скина
+  const getPancakeColorFn = (type: string) => {
+    if (skinMode === 'space') {
+      const spaceColors: Record<string, string> = {
+        plain: '#6C5CE7',
+        chocolate: '#4A2C6B',
+        strawberry: '#A29BFE',
+        blueberry: '#0984E3',
+        banana: '#FDCB6E',
+      };
+      return spaceColors[type] || '#6C5CE7';
+    }
+    return pancakeColor[type as keyof typeof pancakeColor] || '#DEB887';
+  };
+
   return (
     <div ref={dropRef as any} className="hex-grid-container">
       <svg 
         ref={svgRef}
         className="hex-grid-svg"
         width="100%" 
-        // height="auto" 
         height="100%"
         viewBox={`${-50} ${-50} ${width + 100} ${height + 100}`}
         style={{ maxWidth: '900px', margin: '0 auto', cursor: isOver ? 'copy' : 'default' }}
@@ -97,7 +126,7 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
           const { x, y } = hexToPixel(coord.q, coord.r);
           const type = tile?.type || 'empty';
           const count = tile?.count || 0;
-          const fillColor = type === 'empty' ? EMPTY_COLOR : (pancakeColor[type as keyof typeof pancakeColor] || '#DEB887');
+          const fillColor = type === 'empty' ? EMPTY_COLOR : getPancakeColorFn(type);
           
           return (
             <g key={`${coord.q},${coord.r}`} transform={`translate(${x + offsetX}, ${y + offsetY})`}>
@@ -111,7 +140,7 @@ export function HexGrid({ tiles, onDrop }: HexGridProps) {
               {type !== 'empty' && (
                 <>
                   <text x="0" y="-6" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
-                    {pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞'}
+                    {getPancakeEmoji(type)}
                   </text>
                   <text x="0" y="18" textAnchor="middle" fill="#ffd700" fontSize="12" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
                     x{count}

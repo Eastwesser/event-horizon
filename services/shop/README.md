@@ -12,22 +12,38 @@
     ├── PostgreSQL (товары, инвентарь, история покупок)
     ├── Redis (кеш товаров, TTL 5 минут)
     └── NATS (публикация shop.purchased)
+
+┌─────────────────────────────────────────────────────────────┐
+│                     SHOP ECOSYSTEM                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │   Shop API   │    │   Catalog    │    │  Inventory   │  │
+│  │   Gateway    │◄───│   Service    │    │   Service    │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│         │                   │                   │           │
+│         ▼                   ▼                   ▼           │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │   Purchase   │    │   Supplier   │    │  Analytics   │  │
+│  │   Service    │    │   Service    │    │   Service    │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔗 Интеграции
+🔗 Интеграции
 Сервис	Протокол	Назначение
 Gateway	gRPC	Приём запросов от фронтенда
 Billing	gRPC	Проверка баланса и списание билетиков
 NATS	Async	Публикация события shop.purchased
-
-## 📚 gRPC методы
+📚 gRPC методы
 Метод	Описание
 GetItems	Список товаров (с фильтром по категории/игре)
 PurchaseItem	Покупка товара (списание билетиков)
 GetInventory	Инвентарь пользователя
-
-## 🗄️ База данных
-```sql
+🗄️ База данных
+Таблицы
+sql
 -- Товары
 CREATE TABLE items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,80 +74,317 @@ CREATE TABLE purchases (
     currency_type TEXT DEFAULT 'tickets',
     purchased_at TIMESTAMP DEFAULT NOW()
 );
-```
+Начальные товары
+sql
+INSERT INTO items (name, description, price, category, game_id, image_url) VALUES
+('Космические блины', 'Блины в стиле космос!', 100, 'game_skin', 'hexagon', '/images/space_pancakes.png'),
+('Радужные блоки', 'Разноцветные блоки для башни', 100, 'game_skin', 'towers', '/images/rainbow_blocks.png'),
+('Карточки со зверями', 'Животные вместо фруктов в Меморине', 150, 'game_skin', 'memory', '/images/animal_cards.png'),
+('Радужные трубы', 'Сделайте трубы в Flappy радужными!', 100, 'game_skin', 'flappy', '/images/rainbow_pipes.png'),
+('Золотая птичка', 'Птичка становится золотой!', 200, 'game_skin', 'flappy', '/images/golden_bird.png'),
+('Блинный мерч', 'Футболка с блином', 50, 'merch', NULL, '/images/pancake_tshirt.png');
+🧪 Тестирование
+1. Настройка тестового пользователя
+bash
+# Получаем ID пользователя
+docker exec -it event-horizon-postgres psql -U eventhorizon -d eventhorizon -c "SELECT id, email FROM users WHERE email = 'tuzer@example.com';"
 
-## 🧪 Тестирование
-Получить список товаров
-```bash
+# Добавляем баланс (10000 билетиков и 10000 лампочек)
+docker exec -it event-horizon-postgres-billing psql -U eventhorizon -d eventhorizon_billing -c "
+INSERT INTO user_currencies (user_id, currency_type, balance) 
+VALUES ('7fc8a659-1bb2-4d7c-b60e-c140239d5c62', 'tickets', 10000)
+ON CONFLICT (user_id, currency_type) 
+DO UPDATE SET balance = 10000;
+
+INSERT INTO user_currencies (user_id, currency_type, balance) 
+VALUES ('7fc8a659-1bb2-4d7c-b60e-c140239d5c62', 'lamps', 10000)
+ON CONFLICT (user_id, currency_type) 
+DO UPDATE SET balance = 10000;
+"
+
+# Очищаем кеш Redis
+docker exec -it event-horizon-redis-billing redis-cli FLUSHALL
+2. Проверка API
+bash
+# Получаем токен
 TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"secret123"}' \
+  -d '{"email":"tuzer@example.com","password":"tuzer1"}' \
   | jq -r '.access_token')
 
-curl -X GET "http://localhost:8079/api/shop/items?category=all" \
-  -H "Authorization: Bearer $TOKEN" | jq '.'
-```
+echo "Token: $TOKEN"
 
-Купить товар
-```bash
+# Проверяем баланс (должно быть 10000)
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Получаем список товаров
+curl -s -X GET http://localhost:8079/api/shop/items \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Покупаем товар (Радужные трубы за 100 билетиков)
 ITEM_ID="6a1de8dd-9457-4aa4-99a7-78267aee731d"
-curl -X POST http://localhost:8079/api/shop/purchase \
+curl -s -X POST http://localhost:8079/api/shop/purchase \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d "{\"item_id\": \"$ITEM_ID\"}" | jq '.'
-```
+  -d "{\"item_id\":\"$ITEM_ID\"}" | jq '.'
 
-Проверить инвентарь
-```bash
-curl -X GET "http://localhost:8079/api/shop/inventory" \
+# Проверяем инвентарь
+curl -s -X GET http://localhost:8079/api/shop/inventory \
   -H "Authorization: Bearer $TOKEN" | jq '.'
-```
 
-🔥 Товары (актуальные)
+# Проверяем баланс после покупки (должно быть 9900)
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+3. Полный цикл тестирования
+bash
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login -H "Content-Type: application/json" -d '{"email":"tuzer@example.com","password":"tuzer1"}' | jq -r '.access_token') && \
+echo "=== 1. Баланс ДО покупки ===" && \
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" -H "Authorization: Bearer $TOKEN" | jq '.' && \
+echo "=== 2. Список товаров ===" && \
+curl -s -X GET http://localhost:8079/api/shop/items -H "Authorization: Bearer $TOKEN" | jq '.[] | {id, name, price}' && \
+echo "=== 3. Покупка ===" && \
+curl -s -X POST http://localhost:8079/api/shop/purchase -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"item_id":"6a1de8dd-9457-4aa4-99a7-78267aee731d"}' | jq '.' && \
+echo "=== 4. Баланс ПОСЛЕ покупки ===" && \
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" -H "Authorization: Bearer $TOKEN" | jq '.' && \
+echo "=== 5. Инвентарь ===" && \
+curl -s -X GET http://localhost:8079/api/shop/inventory -H "Authorization: Bearer $TOKEN" | jq '.'
+🚀 Сборка и запуск
+bash
+cd /home/denismatveev/event_horizon/services/shop
+
+# Сборка бинарника
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o shop-service ./cmd/main.go
+
+# Сборка Docker образа
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/shop:latest -f Dockerfile.shop.bin .
+
+# Пуш в Docker Hub
+docker push eastwesser/shop:latest
+
+# Перезапуск
+make deploy
+🔧 Управление кешем
+Очистка кеша товаров
+bash
+docker exec -it event-horizon-redis-shop redis-cli FLUSHALL
+Очистка кеша баланса Billing
+bash
+docker exec -it event-horizon-redis-billing redis-cli FLUSHALL
+🔥 Актуальные товары
 Игра	Товар	Цена	Описание
 Flappy Bird	Радужные трубы	100	Разноцветные трубы вместо зелёных
 Flappy Bird	Золотая птичка	200	Птичка становится золотой
 Hexagon	Космические блины	100	Блины в космическом стиле
 Towers	Радужные блоки	100	Разноцветные блоки для башни
 Memory	Карточки со зверями	150	Животные вместо фруктов
+Общий	Блинный мерч	50	Футболка с блином
+📌 Следующие шаги
+Базовый функционал магазина
 
-🚀 Сборка и запуск
+Интеграция с Billing
+
+Инвентарь пользователя
+
+Кеширование товаров
+
+Инвалидация кеша баланса
+
+Применение кастомизации в играх
+
+Полка чудес (мерч от художников)
+
+Дата: 13.07.2026
+Версия: v1.0.6
+
+text
+
+## 4. Пересобираем и деплоим
+
 ```bash
-cd ~/event_horizon/services/shop
+cd /home/denismatveev/event_horizon/services/shop
+
+# Обновляем зависимости
+go mod tidy
+
+# Собираем
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o shop-service ./cmd/main.go
-cd ~/event_horizon
-docker build -f Dockerfile.shop.bin -t eastwesser/shop:latest .
-docker-compose -f deployments/docker-compose.cluster.yml up -d shop
-```
 
-## 🎮 **Добавим товары для всех игр**
+# Собираем Docker образ
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/shop:latest -f Dockerfile.shop.bin .
 
-```bash
-docker exec -it event-horizon-postgres-shop psql -U eventhorizon -d eventhorizon_shop -c "
-INSERT INTO items (name, description, price, category, game_id, image_url) VALUES
-('Космические блины', 'Блины в стиле космос!', 100, 'game_skin', 'hexagon', '/images/space_pancakes.png'),
-('Радужные блоки', 'Разноцветные блоки для башни', 100, 'game_skin', 'towers', '/images/rainbow_blocks.png'),
-('Карточки со зверями', 'Животные вместо фруктов в Меморине', 150, 'game_skin', 'memory', '/images/animal_cards.png'),
-('Радужные трубы', 'Сделайте трубы в Flappy радужными!', 100, 'game_skin', 'flappy', '/images/rainbow_pipes.png'),
-('Золотая птичка', 'Птичка становится золотой!', 200, 'game_skin', 'flappy', '/images/golden_bird.png');
+# Пушим
+docker push eastwesser/shop:latest
+
+# Перезапускаем
+make deploy
+
+# Ждем 10 секунд
+sleep 10
+
+# Тестируем
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login -H "Content-Type: application/json" -d '{"email":"tuzer@example.com","password":"tuzer1"}' | jq -r '.access_token') && \
+echo "=== Баланс ДО ===" && curl -s -X GET "http://localhost:8079/api/billing/balance/all" -H "Authorization: Bearer $TOKEN" | jq '.' && \
+echo "=== Покупка ===" && curl -s -X POST http://localhost:8079/api/shop/purchase -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"item_id":"6a1de8dd-9457-4aa4-99a7-78267aee731d"}' | jq '.' && \
+echo "=== Баланс ПОСЛЕ ===" && curl -s -X GET "http://localhost:8079/api/billing/balance/all" -H "Authorization: Bearer $TOKEN" | jq '.'
+Теперь баланс должен обновляться сразу после покупки! 🚀
+
+---
+ОБНОВЛЕНО
+
+# 🛒 Shop Service — Магазин за билетики
+
+Микросервис для покупки кастомизации и мерча за внутриигровую валюту (билетики).
+
+---
+
+## 📦 Архитектура
+
+```text
+[Shop :50055] — gRPC
+    │
+    ├── PostgreSQL (товары, инвентарь, история покупок)
+    ├── Redis (кеш товаров, TTL 5 минут)
+    └── NATS (публикация shop.purchased)
+🔗 Интеграции
+Сервис	Протокол	Назначение
+Gateway	gRPC	Приём запросов от фронтенда
+Billing	gRPC	Проверка баланса и списание билетиков
+NATS	Async	Публикация события shop.purchased
+📚 gRPC методы
+Метод	Описание
+GetItems	Список товаров (с фильтром по категории/игре)
+PurchaseItem	Покупка товара (списание билетиков)
+GetInventory	Инвентарь пользователя
+🗄️ База данных
+Таблицы
+sql
+-- Товары
+CREATE TABLE items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    price INT NOT NULL,
+    category TEXT NOT NULL,
+    game_id TEXT,
+    image_url TEXT,
+    available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Инвентарь пользователя
+CREATE TABLE inventory (
+    user_id UUID NOT NULL,
+    item_id UUID NOT NULL,
+    purchased_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, item_id)
+);
+
+-- История покупок
+CREATE TABLE purchases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    item_id UUID NOT NULL,
+    price INT NOT NULL,
+    currency_type TEXT DEFAULT 'tickets',
+    purchased_at TIMESTAMP DEFAULT NOW()
+);
+Текущие товары
+ID	Название	Цена	Категория	Игра
+6a1de8dd...	Радужные трубы	100	game_skin	flappy
+82be50db...	Золотая птичка	200	game_skin	flappy
+6c827e89...	Радужные трубы	100	game_skin	-
+49b5b790...	Золотая птичка	200	game_skin	-
+52673df7...	Космический фон	150	game_skin	-
+b5b332fd...	Блинный мерч	50	merch	-
+🧪 Тестирование
+1. Настройка тестового пользователя
+bash
+# Добавляем баланс
+docker exec -it event-horizon-postgres-billing psql -U eventhorizon -d eventhorizon_billing -c "
+INSERT INTO user_currencies (user_id, currency_type, balance) 
+VALUES ('7fc8a659-1bb2-4d7c-b60e-c140239d5c62', 'tickets', 10000)
+ON CONFLICT (user_id, currency_type) 
+DO UPDATE SET balance = 10000;
 "
-```
 
+# Очищаем кеш Redis
+docker exec -it event-horizon-redis-billing redis-cli FLUSHALL
+2. Проверка API
+bash
+# Получаем токен
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"tuzer@example.com","password":"tuzer1"}' \
+  | jq -r '.access_token')
+
+# Получаем список товаров
+curl -s -X GET http://localhost:8079/api/shop/items \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Покупаем товар
+ITEM_ID="6a1de8dd-9457-4aa4-99a7-78267aee731d"
+curl -s -X POST http://localhost:8079/api/shop/purchase \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"item_id\":\"$ITEM_ID\"}" | jq '.'
+
+# Проверяем инвентарь
+curl -s -X GET http://localhost:8079/api/shop/inventory \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+🚀 Сборка и запуск
+bash
+cd /home/denismatveev/event_horizon/services/shop
+
+# Сборка бинарника
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o shop-service ./cmd/main.go
+
+# Сборка Docker образа
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/shop:latest -f Dockerfile.shop.bin .
+
+# Пуш в Docker Hub
+docker push eastwesser/shop:latest
+
+# Перезапуск
+make deploy
+🔧 Управление кешем
+bash
+# Очистка кеша товаров
+docker exec -it event-horizon-redis-shop redis-cli FLUSHALL
+
+# Очистка кеша баланса
+docker exec -it event-horizon-redis-billing redis-cli FLUSHALL
+🎮 Интеграция с играми
+Flappy Bird
+Радужные трубы - меняет цвет труб на радужный
+
+Золотая птичка - меняет цвет птички на золотой
+
+Hexagon
+Космические блины - меняет текстуру блинов
+
+Towers
+Радужные блоки - меняет цвет блоков
+
+Memory
+Карточки со зверями - меняет картинки на карточках
 
 📌 Следующие шаги
 
-Добавить товары для всех игр (Hexagon, Towers, Memory).
+Базовый функционал магазина
+Интеграция с Billing
+Инвентарь пользователя
+Кеширование товаров
+Инвалидация кеша баланса
+Фронтенд магазина
+Применение скинов в играх
+Добавление реальных картинок
+Мерч для профиля
 
-Фронтенд — страница магазина и инвентаря.
+Дата: 13.07.2026
+Версия: v1.0.6
+Статус: 🟢 Работает
 
-Применение кастомизации — сохранять выбор пользователя в Redis/БД.
-
-Полка чудес — мерч от художников (этап 2).
-
-Дата: 11.07.2026
-Версия: v1.0.5
-
-
-git add .
-git commit -m "feat: add shop items for all games & update README"
-git push origin main

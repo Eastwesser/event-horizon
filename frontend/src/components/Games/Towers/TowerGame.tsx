@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTowerStore } from '../../../store/towerStore';
+import { useSkins } from '../../../hooks/useSkins';
 import { Balance } from '../../Billing/Balance';
 import './TowerGame.css';
 
@@ -9,6 +10,7 @@ export function TowerGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { skins, loading: skinsLoading } = useSkins();
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   const {
@@ -82,16 +84,24 @@ export function TowerGame() {
     navigate('/');
   };
   
-  // Получение цвета блока в зависимости от уровня
+  // Получение цвета блока с учетом скина
   const getBlockColor = (blockLevel: number) => {
+    if (skins.towers.hasRainbowBlocks) {
+      const rainbowColors = [
+        '#FF6B6B', // Красный
+        '#FF9F43', // Оранжевый
+        '#FFD700', // Жёлтый
+        '#4ADE80', // Зелёный
+        '#60A5FA', // Голубой
+        '#818CF8', // Синий
+        '#C084FC', // Фиолетовый
+      ];
+      return rainbowColors[(blockLevel - 1) % rainbowColors.length];
+    }
+    
+    // Стандартные цвета
     const colors = [
-      '#FF6B6B', // 1-2 🔴 Красный
-      '#FFA500', // 3-4 🟠 Оранжевый
-      '#FFD700', // 5-6 🟡 Жёлтый
-      '#4ADE80', // 7-8 🟢 Зелёный
-      '#60A5FA', // 9-10 🔵 Голубой
-      '#818CF8', // 11-12 🟣 Синий
-      '#C084FC', // 13+ 🟣 Фиолетовый
+      '#FF6B6B', '#FFA500', '#FFD700', '#4ADE80', '#60A5FA', '#818CF8', '#C084FC'
     ];
     const index = Math.min(Math.floor((blockLevel - 1) / 2), colors.length - 1);
     return colors[index];
@@ -121,10 +131,12 @@ export function TowerGame() {
       const blockX = (GAME_WIDTH - blockW) / 2;
       const blockY = startY - (i * blockHeight);
       
+      const color = getBlockColor(i + 1);
+      
       // Градиент для объёма
       const gradient = ctx.createLinearGradient(blockX, blockY, blockX + blockW, blockY);
-      gradient.addColorStop(0, getBlockColor(i + 1));
-      gradient.addColorStop(1, getBlockColor(i + 1) + 'aa');
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, color + 'aa');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(blockX, blockY, blockW, blockHeight - 2);
@@ -142,8 +154,8 @@ export function TowerGame() {
     
     // Рисуем текущий движущийся блок
     const currentY = startY - (towerBlocks.length * blockHeight);
-    const gradientCurrent = ctx.createLinearGradient(currentBlockX, currentY, currentBlockX + blockWidth, currentY);
     const currentColor = getBlockColor(towerBlocks.length + 1);
+    const gradientCurrent = ctx.createLinearGradient(currentBlockX, currentY, currentBlockX + blockWidth, currentY);
     gradientCurrent.addColorStop(0, currentColor);
     gradientCurrent.addColorStop(1, currentColor + 'aa');
     
@@ -185,7 +197,7 @@ export function TowerGame() {
       ctx.fillStyle = '#ffffff';
       ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2 - 80, GAME_HEIGHT / 2 + 70);
     }
-  }, [towerBlocks, currentBlockX, blockWidth, score, gameOver, GAME_WIDTH, GAME_HEIGHT]);
+  }, [towerBlocks, currentBlockX, blockWidth, score, gameOver, GAME_WIDTH, GAME_HEIGHT, skins]);
   
   // Получение множителя для отображения
   const getMultiplierDisplay = () => {
@@ -194,6 +206,20 @@ export function TowerGame() {
     if (combo >= 3) return 'x2';
     return 'x1';
   };
+  
+  if (skinsLoading) {
+    return (
+      <div className="tower-container">
+        <div className="tower-header">
+          <div className="tower-stats">
+            <div className="tower-stat">
+              <span className="stat-label">🏗️ Загрузка...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="tower-container">
@@ -206,9 +232,12 @@ export function TowerGame() {
       <div className="tower-header">
         <Balance />
         <div className="tower-stats">
-          <div className="tower-debug" style={{ fontSize: '12px', opacity: 0.7, textAlign: 'center', marginTop: '8px' }}>
-            Комбо: {combo} | Очки за блок: {useTowerStore.getState().calculateBlockScore()}
-          </div>
+          {skins.towers.hasRainbowBlocks && (
+            <div className="tower-stat" style={{ borderColor: '#FF6B6B' }}>
+              <span className="stat-label">🌈 Скин</span>
+              <span className="stat-value" style={{ color: '#FF6B6B' }}>Радужные блоки</span>
+            </div>
+          )}
           <div className="tower-stat">
             <span className="stat-label">🏆 Счёт</span>
             <span className="stat-value">{score}</span>

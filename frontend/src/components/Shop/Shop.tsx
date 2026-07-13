@@ -1,5 +1,6 @@
 // frontend/src/components/Shop/Shop.tsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useShopStore } from '../../store/shopStore';
 import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
@@ -8,6 +9,7 @@ import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import './Shop.css';
 
 export const Shop: React.FC = () => {
+  const navigate = useNavigate();
   const {
     items,
     inventory,
@@ -76,6 +78,10 @@ export const Shop: React.FC = () => {
     setSelectedItem(null);
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   const token = localStorage.getItem('accessToken');
   if (!token) {
     return (
@@ -102,6 +108,11 @@ export const Shop: React.FC = () => {
 
   return (
     <div className="shop-container">
+      {/* Кнопка Назад */}
+      <button onClick={handleBack} className="back-btn" title="На главную">
+        ← Назад
+      </button>
+
       <div className="shop-header">
         <div className="shop-title">
           <h1>🎁 Магазин</h1>

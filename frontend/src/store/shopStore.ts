@@ -9,7 +9,7 @@ export interface ShopItem {
   description: string;
   price_tickets: number;
   icon_url: string;
-  type: 'game_skin' | 'profile_theme' | 'merch';
+  type: string;
   category: string;
   game_id?: string;
   image_url?: string;
@@ -69,20 +69,44 @@ export const useShopStore = create<ShopState>()(
           if (!userId) throw new Error('Пользователь не авторизован');
           
           const response = await getShopItems();
-          // Преобразуем данные из API в формат ShopItem
-          const shopItems: ShopItem[] = response.data.items.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            price_tickets: item.price,
-            icon_url: item.image_url || '',
-            type: item.category || 'merch',
-            category: item.category || 'merch',
-            game_id: item.game_id,
-            image_url: item.image_url,
-            available: item.available,
-            owned: item.owned || false,
+          console.log('📦 Ответ от API /shop/items:', response.data);
+          
+          // Обрабатываем разные форматы ответа
+          let itemsData = response.data;
+          
+          // Если ответ - объект с полем items (как в proto)
+          if (response.data && response.data.items && Array.isArray(response.data.items)) {
+            itemsData = response.data.items;
+          }
+          // Если ответ - массив
+          else if (Array.isArray(response.data)) {
+            itemsData = response.data;
+          }
+          // Если ответ - объект с полем data (axios обертка)
+          else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            itemsData = response.data.data;
+          }
+          // Если ничего не подошло
+          else {
+            console.error('❌ Неизвестный формат ответа:', response.data);
+            throw new Error('Неверный формат данных от сервера');
+          }
+          
+          const shopItems: ShopItem[] = itemsData.map((item: any) => ({
+            id: item.id || item.Id || '',
+            name: item.name || item.Name || 'Без названия',
+            description: item.description || item.Description || '',
+            price_tickets: item.price || item.Price || 0,
+            icon_url: item.image_url || item.ImageUrl || '',
+            type: item.category || item.Category || 'other',
+            category: item.category || item.Category || 'other',
+            game_id: item.game_id || item.GameId || undefined,
+            image_url: item.image_url || item.ImageUrl || '',
+            available: item.available !== undefined ? item.available : (item.Available !== undefined ? item.Available : true),
+            owned: item.owned !== undefined ? item.owned : (item.Owned !== undefined ? item.Owned : false),
           }));
+          
+          console.log('✅ Загружено товаров:', shopItems.length);
           
           set({ 
             items: shopItems, 
@@ -92,7 +116,7 @@ export const useShopStore = create<ShopState>()(
         } catch (error: any) {
           console.error('❌ Ошибка загрузки товаров:', error);
           set({ 
-            error: error.response?.data?.message || 'Ошибка загрузки товаров',
+            error: error.response?.data?.message || error.message || 'Ошибка загрузки товаров',
             loading: false 
           });
           throw error;
@@ -103,25 +127,49 @@ export const useShopStore = create<ShopState>()(
         set({ loading: true, error: null });
         try {
           const response = await getInventory();
-          // Преобразуем данные из API в формат PurchasedItem
-          const inventoryItems: PurchasedItem[] = response.data.items.map((item: any) => ({
-            id: item.id,
-            item_id: item.id,
-            purchased_at: new Date().toISOString(),
+          console.log('📦 Ответ от API /shop/inventory:', response.data);
+          
+          // Обрабатываем разные форматы ответа
+          let inventoryData = response.data;
+          
+          // Если ответ - объект с полем items
+          if (response.data && response.data.items && Array.isArray(response.data.items)) {
+            inventoryData = response.data.items;
+          }
+          // Если ответ - массив
+          else if (Array.isArray(response.data)) {
+            inventoryData = response.data;
+          }
+          // Если ответ - объект с полем data
+          else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            inventoryData = response.data.data;
+          }
+          // Если ничего не подошло
+          else {
+            console.warn('⚠️ Инвентарь пуст или неверный формат:', response.data);
+            inventoryData = [];
+          }
+          
+          const inventoryItems: PurchasedItem[] = inventoryData.map((item: any) => ({
+            id: item.id || item.Id || crypto.randomUUID(),
+            item_id: item.id || item.Id || '',
+            purchased_at: item.purchased_at || item.PurchasedAt || new Date().toISOString(),
             item: {
-              id: item.id,
-              name: item.name,
-              description: item.description || '',
-              price_tickets: item.price,
-              icon_url: item.image_url || '',
-              type: item.category || 'merch',
-              category: item.category || 'merch',
-              game_id: item.game_id,
-              image_url: item.image_url,
-              available: item.available,
+              id: item.id || item.Id || '',
+              name: item.name || item.Name || 'Без названия',
+              description: item.description || item.Description || '',
+              price_tickets: item.price || item.Price || 0,
+              icon_url: item.image_url || item.ImageUrl || '',
+              type: item.category || item.Category || 'other',
+              category: item.category || item.Category || 'other',
+              game_id: item.game_id || item.GameId || undefined,
+              image_url: item.image_url || item.ImageUrl || '',
+              available: item.available !== undefined ? item.available : (item.Available !== undefined ? item.Available : true),
               owned: true,
             }
           }));
+          
+          console.log('✅ Загружено предметов в инвентаре:', inventoryItems.length);
           
           set({ 
             inventory: inventoryItems, 
@@ -130,7 +178,7 @@ export const useShopStore = create<ShopState>()(
         } catch (error: any) {
           console.error('❌ Ошибка загрузки инвентаря:', error);
           set({ 
-            error: error.response?.data?.message || 'Ошибка загрузки инвентаря',
+            error: error.response?.data?.message || error.message || 'Ошибка загрузки инвентаря',
             loading: false 
           });
           throw error;
@@ -143,11 +191,31 @@ export const useShopStore = create<ShopState>()(
           if (!userId) return;
           
           const response = await getAllBalances(userId);
-          // Ищем баланс билетиков
-          const ticketsBalance = response.data.balances?.find(
-            (b: any) => b.currency === 'TICKETS' || b.currency === 'tickets'
-          );
-          set({ balance: ticketsBalance?.balance || 0 });
+          console.log('📦 Ответ от API /billing/balance/all:', response.data);
+          
+          // Обрабатываем разные форматы ответа
+          let tickets = 0;
+          let lamps = 0;
+          
+          // Если ответ - объект с полями tickets и lamps
+          if (response.data && typeof response.data === 'object') {
+            tickets = response.data.tickets || response.data.TICKETS || 0;
+            lamps = response.data.lamps || response.data.LAMPS || 0;
+          }
+          // Если ответ - массив балансов
+          else if (Array.isArray(response.data)) {
+            for (const balance of response.data) {
+              if (balance.currency === 'tickets' || balance.currency === 'TICKETS') {
+                tickets = balance.balance || 0;
+              }
+              if (balance.currency === 'lamps' || balance.currency === 'LAMPS') {
+                lamps = balance.balance || 0;
+              }
+            }
+          }
+          
+          set({ balance: tickets });
+          console.log('💰 Баланс загружен:', { tickets, lamps });
         } catch (error) {
           console.error('❌ Ошибка загрузки баланса:', error);
         }
@@ -160,6 +228,7 @@ export const useShopStore = create<ShopState>()(
           if (!userId) throw new Error('Пользователь не авторизован');
           
           const response = await buyShopItem(itemId);
+          console.log('📦 Ответ от API /shop/purchase:', response.data);
           
           // Обновляем баланс после покупки
           await get().fetchBalance();
@@ -173,7 +242,7 @@ export const useShopStore = create<ShopState>()(
           set({ buying: false });
           return response.data;
         } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Ошибка при покупке';
+          const errorMessage = error.response?.data?.message || error.message || 'Ошибка при покупке';
           console.error('❌ Ошибка покупки:', error);
           set({ 
             error: errorMessage,

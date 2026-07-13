@@ -27,13 +27,19 @@ func (h *ShopHandler) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*p
 
     pbItems := make([]*pb.Item, len(items))
     for i, item := range items {
+        // Обрабатываем nil GameID
+        gameID := ""
+        if item.GameID != nil {
+            gameID = *item.GameID
+        }
+        
         pbItems[i] = &pb.Item{
             Id:          item.ID,
             Name:        item.Name,
             Description: item.Description,
             Price:       int32(item.Price),
             Category:    item.Category,
-            GameId:      item.GameID,
+            GameId:      gameID,
             ImageUrl:    item.ImageURL,
             Available:   item.Available,
             Owned:       item.Owned,
@@ -67,15 +73,22 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
 
     pbItems := make([]*pb.Item, len(items))
     for i, item := range items {
+        // Обрабатываем nil GameID
+        gameID := ""
+        if item.GameID != nil {
+            gameID = *item.GameID
+        }
+        
         pbItems[i] = &pb.Item{
             Id:          item.ID,
             Name:        item.Name,
             Description: item.Description,
             Price:       int32(item.Price),
             Category:    item.Category,
-            GameId:      item.GameID,
+            GameId:      gameID,
             ImageUrl:    item.ImageURL,
             Available:   item.Available,
+            Owned:       item.Owned,
         }
     }
 
