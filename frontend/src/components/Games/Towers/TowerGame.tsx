@@ -112,11 +112,16 @@ export function TowerGame() {
       ];
       return rainbowColors[(blockLevel - 1) % rainbowColors.length];
     }
+
+    // // Радужные блоки - скиновые цвета
+    // if (useRainbowBlocks && skins.towers.hasRainbowBlocks) {
+    //   const rainbowColors = ['#FF6B6B', '#FF9F43', '#FFD700', '#4ADE80', '#60A5FA', '#818CF8', '#C084FC'];
+    //   return rainbowColors[(blockLevel - 1) % rainbowColors.length];
+    // }
     
     // Стандартные цвета
-    const colors = [
-      '#FF6B6B', '#FFA500', '#FFD700', '#4ADE80', '#60A5FA', '#818CF8', '#C084FC'
-    ];
+    const colors = ['#E74C3C', '#C0392B', '#A93226', '#922B21', '#7B241C', '#641E16', '#4A1A0A'];
+
     const index = Math.min(Math.floor((blockLevel - 1) / 2), colors.length - 1);
     return colors[index];
   };

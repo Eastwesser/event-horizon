@@ -31,7 +31,8 @@ type Item struct {
 	GameId        string                 `protobuf:"bytes,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // 'flappy', 'hexagon', null для мерча
 	ImageUrl      string                 `protobuf:"bytes,7,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
 	Available     bool                   `protobuf:"varint,8,opt,name=available,proto3" json:"available,omitempty"`
-	Owned         bool                   `protobuf:"varint,9,opt,name=owned,proto3" json:"owned,omitempty"` // флаг, куплен ли текущим пользователем
+	Owned         bool                   `protobuf:"varint,9,opt,name=owned,proto3" json:"owned,omitempty"`                                // флаг, куплен ли текущим пользователем
+	PurchasedAt   string                 `protobuf:"bytes,10,opt,name=purchased_at,json=purchasedAt,proto3" json:"purchased_at,omitempty"` // дата покупки (RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -127,6 +128,13 @@ func (x *Item) GetOwned() bool {
 		return x.Owned
 	}
 	return false
+}
+
+func (x *Item) GetPurchasedAt() string {
+	if x != nil {
+		return x.PurchasedAt
+	}
+	return ""
 }
 
 type GetItemsRequest struct {
@@ -437,7 +445,7 @@ var File_proto_shop_proto protoreflect.FileDescriptor
 
 const file_proto_shop_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/shop.proto\x12\x04shop\"\xe8\x01\n" +
+	"\x10proto/shop.proto\x12\x04shop\"\x8b\x02\n" +
 	"\x04Item\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -447,7 +455,9 @@ const file_proto_shop_proto_rawDesc = "" +
 	"\agame_id\x18\x06 \x01(\tR\x06gameId\x12\x1b\n" +
 	"\timage_url\x18\a \x01(\tR\bimageUrl\x12\x1c\n" +
 	"\tavailable\x18\b \x01(\bR\tavailable\x12\x14\n" +
-	"\x05owned\x18\t \x01(\bR\x05owned\"_\n" +
+	"\x05owned\x18\t \x01(\bR\x05owned\x12!\n" +
+	"\fpurchased_at\x18\n" +
+	" \x01(\tR\vpurchasedAt\"_\n" +
 	"\x0fGetItemsRequest\x12\x1a\n" +
 	"\bcategory\x18\x01 \x01(\tR\bcategory\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x17\n" +

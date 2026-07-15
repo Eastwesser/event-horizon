@@ -131,9 +131,9 @@ export function MemoryGame() {
             <button 
               className={`memory-skin-btn ${useAnimalCards ? 'active' : ''}`}
               onClick={toggleAnimalCards}
-              title="Карточки со зверями"
+              title={useAnimalCards ? 'Вернуть фрукты' : 'Показать зверей'}
             >
-              {useAnimalCards ? '🐾' : '🍎'} Карточки со зверями
+              {useAnimalCards ? '🐾 Карточки со зверями' : '🍎 Карточки с фруктами'}
             </button>
           )}
         </div>

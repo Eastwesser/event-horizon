@@ -112,7 +112,7 @@ export function HexagonGame() {
           onDrop={handleDrop}
           skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
         />
-        <Tray stacks={tray} />
+        <Tray stacks={tray} skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'} />
       </div>
 
       {isGameOver && (

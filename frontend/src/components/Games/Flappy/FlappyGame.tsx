@@ -125,7 +125,7 @@ export function FlappyGame() {
     if (useGoldenBird && skins.flappy.hasGoldenBird) {
       return '#FFD700'; // Золотой
     }
-    return '#FFD700'; // Стандартный
+    return '#4A90D9'; // Стандартный
   };
 
   const getPipeColor = () => {
@@ -137,16 +137,33 @@ export function FlappyGame() {
 
   // Функция для рисования радужной трубы
   const drawRainbowPipe = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, width: number, isTop: boolean) => {
-    const colors = ['#FF6B6B', '#FFA500', '#FFD700', '#4ADE80', '#60A5FA', '#818CF8', '#C084FC'];
-    const segmentHeight = Math.min(20, height / 7);
+  // Создаем градиент вдоль трубы
+  const gradient = ctx.createLinearGradient(x, y, x, y + height);
+    gradient.addColorStop(0, '#FF6B6B');
+    gradient.addColorStop(0.17, '#FFA500');
+    gradient.addColorStop(0.33, '#FFD700');
+    gradient.addColorStop(0.5, '#4ADE80');
+    gradient.addColorStop(0.67, '#60A5FA');
+    gradient.addColorStop(0.83, '#818CF8');
+    gradient.addColorStop(1, '#C084FC');
     
-    for (let i = 0; i < 7; i++) {
-      const startY = isTop ? y + i * segmentHeight : y + i * segmentHeight;
-      const color = colors[i % colors.length];
-      
-      ctx.fillStyle = color;
-      ctx.fillRect(x, startY, width, segmentHeight);
+    // Основная труба с градиентом
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, width, height);
+    
+    // 🆕 Шляпка трубы (как у обычной)
+    ctx.fillStyle = gradient;
+    if (isTop) {
+      // Шляпка сверху (расширение)
+      ctx.fillRect(x - 5, y + height - 30, width + 10, 30);
+    } else {
+      // Шляпка снизу
+      ctx.fillRect(x - 5, y, width + 10, 30);
     }
+    
+    // Обводка
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.strokeRect(x, y, width, height);
   };
 
   // Отрисовка игры
@@ -261,7 +278,8 @@ export function FlappyGame() {
     ctx.fill();
     
     // Крыло
-    ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FFA500';
+    // ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FFA500';
+    ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FF8C00';
     ctx.beginPath();
     ctx.ellipse(90, birdY + BIRD_SIZE/2, 12, 8, -Math.PI / 4, 0, Math.PI * 2);
     ctx.fill();

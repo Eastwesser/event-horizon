@@ -388,3 +388,40 @@ Memory
 Версия: v1.0.6
 Статус: 🟢 Работает
 
+--
+
+cd /home/denismatveev/event_horizon/services/shop
+
+# 1. Генерируем protobuf
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       proto/shop.proto
+
+# 2. Проверяем что сгенерировалось
+ls -la proto/*.pb.go
+
+# 3. Скачиваем зависимости
+go mod tidy
+
+# 4. Собираем бинарник
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o shop-service ./cmd/main.go
+
+# 5. Проверяем бинарник
+ls -la shop-service
+
+# 6. Собираем Docker образ
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/shop:latest -f Dockerfile.shop.bin .
+
+# 7. Пушим в Docker Hub
+docker push eastwesser/shop:latest
+
+# 8. Деплоим
+make deploy
+
+# 9. Проверяем логи
+docker logs deployments-shop-1 --tail=20
+
+# 10. Проверяем инвентарь с датой
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login -H "Content-Type: application/json" -d '{"email":"tuzer@example.com","password":"tuzer1"}' | jq -r '.access_token')
+curl -s -X GET http://localhost:8079/api/shop/inventory -H "Authorization: Bearer $TOKEN" | jq '.'

@@ -24,6 +24,31 @@ interface HexGridProps {
   skinMode?: 'default' | 'space';
 }
 
+// Расширяем маппинг для космических блинов - используем реальные типы из hexagon.ts
+const spaceEmojis: Record<string, string> = {
+  nutella: '🌙',      // шоколад → луна
+  strawberry: '⭐',   // клубника → звезда
+  fish: '🌌',         // рыба → космос (галактика)
+  sausage: '☄️',      // сосиска → комета
+  chicken: '🪐',      // курица → сатурн
+  caesar: '🌠',       // цезарь → падающая звезда
+  cranberry: '✨',    // клюква → искры/звезды
+  pancake: '☀️',      // обычный блин → солнце
+  default: '🌌',
+};
+
+const spaceColors: Record<string, string> = {
+  nutella: '#4A2C6B',    // фиолетовый (луна)
+  strawberry: '#A29BFE', // светло-фиолетовый (звезда)
+  fish: '#6C5CE7',       // фиолетовый (космос)
+  sausage: '#74B9FF',    // огненно-красный (комета)
+  chicken: '#E17055',    // желтый (сатурн)
+  caesar: '#FDA7DF',     // розовый (падающая звезда)
+  cranberry: '#00B894',  // зеленый (искры)
+  pancake: '#FDCB6E',    // желтый (солнце)
+  default: '#6C5CE7',
+};
+
 export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
@@ -84,14 +109,7 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   // Получение эмодзи с учетом скина
   const getPancakeEmoji = (type: string) => {
     if (skinMode === 'space') {
-      const spaceEmojis: Record<string, string> = {
-        plain: '🌌',
-        chocolate: '🌙',
-        strawberry: '⭐',
-        blueberry: '🪐',
-        banana: '☄️',
-      };
-      return spaceEmojis[type] || '🌌';
+      return spaceEmojis[type] || spaceEmojis.default || '🌌';
     }
     return pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞';
   };
@@ -99,14 +117,7 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   // Получение цвета с учетом скина
   const getPancakeColorFn = (type: string) => {
     if (skinMode === 'space') {
-      const spaceColors: Record<string, string> = {
-        plain: '#6C5CE7',
-        chocolate: '#4A2C6B',
-        strawberry: '#A29BFE',
-        blueberry: '#0984E3',
-        banana: '#FDCB6E',
-      };
-      return spaceColors[type] || '#6C5CE7';
+      return spaceColors[type] || spaceColors.default || '#6C5CE7';
     }
     return pancakeColor[type as keyof typeof pancakeColor] || '#DEB887';
   };

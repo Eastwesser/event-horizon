@@ -20,6 +20,7 @@ message Item {
     string image_url = 7;
     bool available = 8;
     bool owned = 9;          // флаг, куплен ли текущим пользователем
+    string purchased_at = 10; // дата покупки (RFC3339)
 }
 
 message GetItemsRequest {

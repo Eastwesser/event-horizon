@@ -2,6 +2,7 @@ package handler
 
 import (
     "context"
+    "time"
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
@@ -27,10 +28,15 @@ func (h *ShopHandler) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*p
 
     pbItems := make([]*pb.Item, len(items))
     for i, item := range items {
-        // Обрабатываем nil GameID
         gameID := ""
         if item.GameID != nil {
             gameID = *item.GameID
+        }
+        
+        // Конвертируем PurchasedAt в строку
+        purchasedAt := ""
+        if item.PurchasedAt != nil {
+            purchasedAt = item.PurchasedAt.Format(time.RFC3339)
         }
         
         pbItems[i] = &pb.Item{
@@ -43,6 +49,7 @@ func (h *ShopHandler) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*p
             ImageUrl:    item.ImageURL,
             Available:   item.Available,
             Owned:       item.Owned,
+            PurchasedAt: purchasedAt,
         }
     }
 
@@ -73,10 +80,15 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
 
     pbItems := make([]*pb.Item, len(items))
     for i, item := range items {
-        // Обрабатываем nil GameID
         gameID := ""
         if item.GameID != nil {
             gameID = *item.GameID
+        }
+        
+        // Конвертируем PurchasedAt в строку
+        purchasedAt := ""
+        if item.PurchasedAt != nil {
+            purchasedAt = item.PurchasedAt.Format(time.RFC3339)
         }
         
         pbItems[i] = &pb.Item{
@@ -89,6 +101,7 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
             ImageUrl:    item.ImageURL,
             Available:   item.Available,
             Owned:       item.Owned,
+            PurchasedAt: purchasedAt,
         }
     }
 
