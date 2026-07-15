@@ -38,16 +38,24 @@ export const Shop: React.FC = () => {
     { value: 'merch', label: '🎁 Мерч' },
   ];
 
+  // useEffect(() => {
+  //   const token = localStorage.getItem('accessToken');
+  //   if (token) {
+  //     fetchItems();
+  //     fetchBalance();
+  //     if (activeTab === 'inventory') {
+  //       fetchInventory();
+  //     }
+  //   }
+  // }, [fetchItems, fetchBalance, fetchInventory, activeTab]);
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken');
     if (token) {
       fetchItems();
       fetchBalance();
-      if (activeTab === 'inventory') {
-        fetchInventory();
-      }
+      fetchInventory();
     }
-  }, [fetchItems, fetchBalance, fetchInventory, activeTab]);
+  }, [fetchItems, fetchBalance, fetchInventory]);
 
   const handleBuyClick = (item: any) => {
     setSelectedItem(item);

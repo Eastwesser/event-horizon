@@ -144,7 +144,8 @@ export const useShopStore = create<ShopState>()(
           const inventoryItems: PurchasedItem[] = inventoryData.map((item: any) => ({
             id: item.id || item.Id || crypto.randomUUID(),
             item_id: item.id || item.Id || '',
-            purchased_at: item.purchased_at || item.PurchasedAt || new Date().toISOString(),
+            // purchased_at: item.purchased_at || item.PurchasedAt || new Date().toISOString(),
+            purchased_at: item.purchased_at || item.created_at || item.PurchasedAt || new Date().toISOString(),
             item: {
               id: item.id || item.Id || '',
               name: item.name || item.Name || 'Без названия',
