@@ -103,6 +103,21 @@ export function Profile() {
     
     fetchUserData();
 
+    // Добавить загрузку баланса
+    const fetchBalance = async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const response = await api.get('/billing/balance/all', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setBalance({ lamps: response.data.lamps || 0, tickets: response.data.tickets || 0 });
+        } catch (err) {
+          console.error('Failed to fetch balance', err);
+        }
+    };
+      
+    fetchBalance();
+
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,

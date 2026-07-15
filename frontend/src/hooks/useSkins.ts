@@ -31,7 +31,26 @@ export function useSkins() {
     const loadSkins = async () => {
       try {
         const response = await getInventory();
-        const items = response.data?.items || [];
+        console.log('📦 useSkins - ответ от API:', response.data);
+        
+        // response.data - это массив
+        let items = response.data;
+        
+        // Если ответ - объект с полем items
+        if (response.data && response.data.items && Array.isArray(response.data.items)) {
+          items = response.data.items;
+        }
+        // Если ответ - массив
+        else if (Array.isArray(response.data)) {
+          items = response.data;
+        }
+        // Если ничего не подошло
+        else {
+          console.warn('⚠️ Неизвестный формат инвентаря:', response.data);
+          items = [];
+        }
+        
+        console.log('📦 useSkins - items:', items);
         
         setSkins({
           flappy: {
