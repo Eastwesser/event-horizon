@@ -27,7 +27,8 @@ export function Leaderboard() {
   };
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
+    // const ws = new WebSocket('ws://localhost:8080/ws/leaderboard');
+    const ws = new WebSocket(`ws://${window.location.host}/ws/leaderboard`);
     wsRef.current = ws;
     
     ws.onopen = () => {

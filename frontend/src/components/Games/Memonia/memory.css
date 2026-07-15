@@ -140,6 +140,11 @@
   background: linear-gradient(135deg, #ffd700, #ffed4a);
   transform: rotateY(180deg);
 }
+/* Добавить для скина животных */
+.memory-card--animals .memory-card__front {
+  background: linear-gradient(135deg, #2d1b69, #1a1a2e);
+  border: 2px solid #4ADE80;
+}
 
 .memory-card__front .memory-card__emoji {
   font-size: 2rem;
@@ -327,4 +332,19 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Стиль для скина животных - фон карточки */
+.memory-card--animals .memory-card__front {
+  background: linear-gradient(135deg, #2d1b69, #1a1a2e) !important;
+  border: 2px solid #4ADE80 !important;
+}
+
+.memory-card--animals .memory-card__back {
+  background: linear-gradient(135deg, #2d1b69, #1a1a2e) !important;
+  border: 2px solid #4ADE80 !important;
+}
+
+.memory-card--animals .memory-card__question {
+  color: #4ADE80 !important;
 }

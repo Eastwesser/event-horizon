@@ -7,8 +7,10 @@ interface MemoryBoardProps {
 }
 
 // Эмодзи для разных скинов
-const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐'];
-const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];
+// const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐'];
+const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐', '🥑', '🥥', '🫐'];
+// const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];
+const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🦝', '🦊', '🐺'];
 
 export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
   const { cards, flipCard, gameOver } = useMemoryStore();
@@ -20,6 +22,9 @@ export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
       if (index !== -1 && index < animalEmojis.length) {
         return animalEmojis[index];
       }
+      // 🆕 Если эмодзи не найден в списке - возвращаем его как есть
+      console.warn('⚠️ Эмодзи не найден в списке:', originalEmoji);
+      return originalEmoji;
     }
     return originalEmoji;
   };

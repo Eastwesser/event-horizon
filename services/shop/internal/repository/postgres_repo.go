@@ -4,6 +4,7 @@ import (
     "context"
     "database/sql"
     "fmt"
+    "time"
 )
 
 type Item struct {
@@ -16,6 +17,7 @@ type Item struct {
     ImageURL    string
     Available   bool
     Owned       bool
+    PurchasedAt *time.Time
 }
 
 type PostgresShopRepo struct {
@@ -120,7 +122,7 @@ func (r *PostgresShopRepo) PurchaseItem(ctx context.Context, userID, itemID stri
 
 func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) ([]Item, error) {
     query := `
-        SELECT i.id, i.name, i.description, i.price, i.category, i.game_id, i.image_url, i.available
+        SELECT i.id, i.name, i.description, i.price, i.category, i.game_id, i.image_url, i.available, inv.purchased_at
         FROM inventory inv
         JOIN items i ON inv.item_id = i.id
         WHERE inv.user_id = $1
@@ -135,11 +137,26 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
     var items []Item
     for rows.Next() {
         var item Item
-        err := rows.Scan(&item.ID, &item.Name, &item.Description, &item.Price,
-            &item.Category, &item.GameID, &item.ImageURL, &item.Available)
+        var gameID sql.NullString
+        var purchasedAt time.Time
+        err := rows.Scan(
+            &item.ID, 
+            &item.Name, 
+            &item.Description, 
+            &item.Price,
+            &item.Category, 
+            &gameID,
+            &item.ImageURL, 
+            &item.Available,
+            &purchasedAt,
+        )
         if err != nil {
             return nil, err
         }
+        if gameID.Valid {
+            item.GameID = &gameID.String
+        }
+        item.PurchasedAt = &purchasedAt
         items = append(items, item)
     }
     return items, nil
