@@ -8,7 +8,7 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.0.4, 05.07.2026)
+## 📦 Архитектура (актуально v1.0.5, 15.07.2026)
 
 ```text
           [React Client :5173]
@@ -20,16 +20,16 @@
            [Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
                │ gRPC
                ▼
-┌──────────────┼──────────────┐
-│              │              │
-▼              ▼              ▼
-Auth :5051     Game :5052     Billing :5053     Leaderboard :5054
-│              │              │                  │
-▼              ▼              ▼                  ▼
-PG :5460       PG :5461       PG :5462          PG :5463 + Redis :6382
-(users)        (scores)       (balances)        (leaderboard)
-│              │              │                  │
-└──────────────┼──────────────┴──────────────────┘
+┌──────────────┼──────────────┬──────────────┬──────────────┐
+│              │              │              │              │
+▼              ▼              ▼              ▼              ▼
+Auth :5051     Game :5052     Billing :5053  Leaderboard   Shop :50055
+│              │              │              :5054          │
+▼              ▼              ▼              ▼              ▼
+PG :5460       PG :5461       PG :5462       PG :5463      PG :5465 + Redis :6383
+(users)        (scores)       (balances)     + Redis :6382 (items, inventory)
+│              │              │              (leaderboard)  │
+└──────────────┼──────────────┴──────────────┴──────────────┘
                │
                ▼
     ┌──────────────────────────────────────────────────────────────┐
@@ -40,10 +40,10 @@ PG :5460       PG :5461       PG :5462          PG :5463 + Redis :6382
     └──────────────────────────────────────────────────────────────┘
                │
                ▼
-    Profile Service подписан на score.updated, user.registered
+    Profile :50060 — подписан на score.updated, user.registered
                │
                ▼
-    Leaderboard подписан → обновляет Redis → WebSocket → клиент
+    Leaderboard обновляет Redis → WebSocket → клиент
 ```
 
 ---
@@ -63,9 +63,10 @@ make status
 ```
 
 **Готово!** Всё поднимется автоматически:
-- Docker-контейнеры (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
+- 30+ Docker-контейнеров (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
 - Миграции баз данных
-- Все микросервисы, включая Profile Service и NATS Hub
+- Все микросервисы, включая Profile, Shop и NATS Hub
+- Мониторинг (Prometheus + Grafana)
 
 ---
 
@@ -75,9 +76,12 @@ make status
 |-------|------|----------|
 | `POST` | `/api/auth/register` | Регистрация |
 | `POST` | `/api/auth/login` | Логин (JWT) |
-| `GET` | `/api/billing/balance/all` | Баланс (лампочки/билетики) |
 | `POST` | `/api/game/submit` | Отправить рекорд |
+| `GET` | `/api/billing/balance/all` | Баланс (лампочки/билетики) |
 | `GET` | `/api/leaderboard` | Топ-10 (публичный) |
+| `GET` |	`/api/shop/items` |	Список товаров |
+| `POST` |	`/api/shop/purchase` |	Купить товар (списание билетиков) |
+| `GET` |	`/api/shop/inventory` |	Инвентарь пользователя |
 | `GET` | `/api/profile` | Полный профиль пользователя (агрегированный) |
 | `WS` | `/ws/leaderboard` | WebSocket обновления |
 
@@ -97,18 +101,36 @@ TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
   -d '{"email":"test@example.com","password":"secret123"}' \
   | jq -r '.access_token')
 
+# Получить баланс
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Посмотреть товары в магазине
+curl -s -X GET http://localhost:8079/api/shop/items \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Купить товар
+curl -X POST http://localhost:8079/api/shop/purchase \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"item_id":"6a1de8dd-9457-4aa4-99a7-78267aee731d"}' | jq '.'
+
+# Посмотреть инвентарь
+curl -s -X GET http://localhost:8079/api/shop/inventory \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
 # Отправить рекорд
 curl -X POST http://localhost:8079/api/game/submit \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"user_id":"test-user","game_id":"hexagon","level":1,"score":150,"seed":"test_seed","moves":[]}'
+  -d '{"user_id":"7fc8a659-1bb2-4d7c-b60e-c140239d5c62","game_id":"hexagon","level":1,"score":150,"user_email":"test@example.com","seed":"test_seed","moves":[]}'
 
 # Посмотреть лидерборд
 curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.'
 
-# Получить профиль (агрегированный)
+# Получить профиль
 curl -X GET http://localhost:8079/api/profile \
-  -H "Authorization: Bearer $TOKEN" | jq '.'
+  -H "Authorization: Bearer $TOKEN" | jq '.'  
 ```
 
 ---
@@ -181,6 +203,7 @@ docker-compose -f deployments/docker-compose.cluster.yml down -v
 | **Billing** | `5053` | `9093` | PG `5462` | `6381` |
 | **Leaderboard** | `5054` | `9094` | PG `5463` | `6382` |
 | **Profile** | `50060` | `9099` | PG `5464` | — |
+| **Shop** |	`50055` |	`9095` | PG `5465` |	`6383` |
 | **Gateway** | HTTP `8081-8083` | `9095-9097` | — | — |
 | **Balancer** | HTTP `8079` | `9098` | — | — |
 
@@ -195,6 +218,15 @@ docker-compose -f deployments/docker-compose.cluster.yml down -v
 | **Jaeger UI** | `16686` | Трассировка |
 | **Prometheus** | `9090` | Метрики |
 | **Grafana** | `3000` | Дашборды |
+
+### 🎮 Игры
+
+| Игра |	Описание |	Скины |
+|--------|---------|------------|
+| **Flappy Bird** |	`Лети и не врезайся в трубы` |	`Золотая птичка, Радужные трубы` |
+| **Hexagon** |	`Гексагональный пазл с блинами` |	`Космические блины` |
+| **Towers** |	`Строй башню из плавающих блоков` |	`Радужные блоки` |
+| **Memory** |	`Найди пары фруктов` |	`Карточки со зверями` |
 
 ---
 
@@ -224,6 +256,7 @@ k6 run e2e-test.js
 ### 🔥 Ближайшие задачи (1–2 недели)
 
 - [ ] **Нагрузочное тестирование (k6)** — прогнать все сценарии, замерить RPS, latency
+- [ ] **Оптимизация** - индексов в БД всех сервисов
 - [ ] **Рефакторинг кода** — убрать хардкод, добавить структурные логи, комментарии
 - [ ] **Rate Limiter** — раскомментировать, настроить лимиты (10/сек на пользователя)
 - [ ] **Документация API** — OpenAPI/Swagger, README для каждого сервиса
@@ -240,17 +273,15 @@ k6 run e2e-test.js
 
 | Сервис | Назначение | Порт (gRPC) |
 |--------|------------|-------------|
-| **Shop** | Магазин за билетики | `50055` |
 | **Notification** | Push, Email, Telegram | `50056` |
 | **Analytics** | DAU, MAU, Retention (ClickHouse) | `50057` |
 | **Payment** | Реальные платежи (Boosty/Stripe) | `50058` |
 
 ### 🎮 Игровой контент
 
-- [ ] Добавить игры: `flappy`, `towers`, `memory`
+- [ ] Лампочки как бусты в играх (замедление, подсказки)
 - [ ] Уровни сложности (1–20)
 - [ ] Достижения (achievements)
-- [ ] Блинопекарня (магазин за лампочки)
 
 ### 🧠 Устойчивость
 
@@ -271,12 +302,18 @@ k6 run e2e-test.js
 
 ## 📦 Версия
 
-**Текущая:** `v1.0.4` (05.07.2026)
+**Текущая:** `v1.0.5` (15.07.2026)
 
-### Что нового в v1.0.4
-- **NATS кластер из 3 нод** — отказоустойчивая событийная шина.
-- **Персистентные рекорды** — Game сохраняет рекорды в PostgreSQL.
-- **Восстановление Leaderboard** — данные не теряются при перезапуске.
+### Что нового в v1.0.5
+
+- **Магазин (Shop Service)** — покупка скинов, инвентарь, интеграция с Billing
+- **Космические блины** — полный маппинг 8 типов для Hexagon
+- **Memory** — скин "Карточки со зверями" (15 видов)
+- **Flappy Bird** — синяя птичка, радужные трубы (сохранена форма)
+- **Towers** — дефолтные красные блоки + радужные скины
+- **Дата покупки** — добавлено поле purchased_at в /api/shop/inventory
+- **NATS кластер** — 3 ноды + мониторинг в Prometheus
+- **WebSocket** — исправлено подключение через балансировщик
 
 ---
 
