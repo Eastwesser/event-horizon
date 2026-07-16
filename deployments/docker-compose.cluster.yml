@@ -457,7 +457,8 @@ services:
     environment:
       - METRICS_PORT=9091
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -476,7 +477,8 @@ services:
     environment:
       - METRICS_PORT=9093
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-billing
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -497,7 +499,8 @@ services:
     environment:
       - METRICS_PORT=9092
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-game
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -516,7 +519,8 @@ services:
     environment:
       - METRICS_PORT=9094
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - REDIS_ADDR=event-horizon-redis-leaderboard:6379
       - REDIS_DB=0
       - DB_HOST=event-horizon-postgres-game
@@ -546,7 +550,8 @@ services:
       - GRPC_PORT=50060
       - METRICS_PORT=9099
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-profile
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -579,7 +584,8 @@ services:
     environment:
       - GRPC_PORT=50055
       - METRICS_PORT=9095
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-shop
       - DB_PORT=5432
       - DB_USER=eventhorizon
@@ -607,7 +613,8 @@ services:
       - PORT=8080
       - METRICS_PORT=9095
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
       - GAME_ADDR=game:50052
@@ -632,7 +639,8 @@ services:
       - PORT=8080
       - METRICS_PORT=9096
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
       - GAME_ADDR=game:50052
@@ -657,7 +665,8 @@ services:
       - PORT=8080
       - METRICS_PORT=9097
       - JAEGER_ENDPOINT=jaeger:4317
-      - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - REDIS_ADDR=event-horizon-redis:6379
       - AUTH_ADDR=auth:50051
       - GAME_ADDR=game:50052
