@@ -78,6 +78,16 @@ func (r *PostgresShopRepo) GetItems(ctx context.Context, category, gameID string
     return items, nil
 }
 
+// CreateItemFromInventory создаёт товар из события инвентаря
+func (r *PostgresShopRepo) CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64) error {
+    _, err := r.db.ExecContext(ctx, `
+        INSERT INTO items (id, name, description, price, category, game_id, image_url, available)
+        VALUES ($1, $2, $3, $4, 'merch', '', '', true)
+        ON CONFLICT (id) DO NOTHING
+    `, itemID, name, description, int(price))
+    return err
+}
+
 func (r *PostgresShopRepo) GetItemByID(ctx context.Context, itemID string) (*Item, error) {
     query := `SELECT id, name, description, price, category, game_id, image_url, available FROM items WHERE id = $1`
     var item Item
@@ -160,4 +170,69 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
         items = append(items, item)
     }
     return items, nil
+}
+
+func (r *PostgresShopRepo) CreatePendingPurchase(ctx context.Context, userID, itemID string, price int) (string, error) {
+    var purchaseID string
+    err := r.db.QueryRowContext(ctx, `
+        INSERT INTO purchases (user_id, item_id, price, status) 
+        VALUES ($1, $2, $3, 'PENDING') 
+        RETURNING id
+    `, userID, itemID, price).Scan(&purchaseID)
+    return purchaseID, err
+}
+
+func (r *PostgresShopRepo) CompletePurchase(ctx context.Context, purchaseID string) error {
+    _, err := r.db.ExecContext(ctx, `
+        UPDATE purchases SET status = 'COMPLETED', completed_at = NOW() 
+        WHERE id = $1 AND status = 'PENDING'
+    `, purchaseID)
+    return err
+}
+
+func (r *PostgresShopRepo) CancelPurchase(ctx context.Context, purchaseID string) error {
+    _, err := r.db.ExecContext(ctx, `
+        UPDATE purchases SET status = 'CANCELLED' 
+        WHERE id = $1 AND status = 'PENDING'
+    `, purchaseID)
+    return err
+}
+
+// PurchaseItemWithStock — покупка с проверкой стока
+func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int) error {
+    tx, err := r.db.BeginTx(ctx, nil)
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    // Блокируем строку товара
+    var stock int
+    err = tx.QueryRowContext(ctx, `SELECT stock FROM items WHERE id = $1 FOR UPDATE`, itemID).Scan(&stock)
+    if err != nil {
+        return err
+    }
+    if stock <= 0 {
+        return fmt.Errorf("item out of stock")
+    }
+
+    // Уменьшаем сток
+    _, err = tx.ExecContext(ctx, `UPDATE items SET stock = stock - 1 WHERE id = $1`, itemID)
+    if err != nil {
+        return err
+    }
+
+    // Добавляем в инвентарь
+    _, err = tx.ExecContext(ctx, `INSERT INTO inventory (user_id, item_id) VALUES ($1, $2)`, userID, itemID)
+    if err != nil {
+        return err
+    }
+
+    // Добавляем в историю покупок
+    _, err = tx.ExecContext(ctx, `INSERT INTO purchases (user_id, item_id, price, status) VALUES ($1, $2, $3, 'COMPLETED')`, userID, itemID, price)
+    if err != nil {
+        return err
+    }
+
+    return tx.Commit()
 }
