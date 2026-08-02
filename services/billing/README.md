@@ -113,3 +113,54 @@ cd ~/event_horizon
 docker build -f Dockerfile.billing.bin -t eastwesser/billing:latest .
 docker-compose -f deployments/docker-compose.cluster.yml up -d billing
 ```
+
+Чекаем биллинг (02.08.2026)
+
+cd /home/denismatveev/event_horizon
+
+# 1. Перегенерировать proto (billing)
+cd services/billing
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       proto/*.proto
+echo "✅ Billing proto regenerated"
+
+# 2. Собрать бинарник
+go mod tidy
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o billing-service ./cmd/main.go
+echo "✅ Billing binary built"
+
+# 3. Собрать Docker образ
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/billing:latest -f Dockerfile.billing.bin .
+echo "✅ Billing Docker image built"
+
+# 4. Запустить
+make deploy
+echo "✅ Billing deployed"
+
+# 5. Проверить логи
+docker logs deployments-billing-1 --tail=20
+🧪 Проверка Billing
+bash
+# Тест check_only (должен вернуть баланс БЕЗ списания)
+grpcurl -plaintext -d '{
+  "user_id": "7fc8a659-1bb2-4d7c-b60e-c140239d5c62",
+  "currency": 2,
+  "amount": 100,
+  "reason": "test_check",
+  "check_only": true
+}' localhost:50053 billing.BillingService/SpendCurrency
+
+# Тест реального списания (check_only = false или не указано)
+grpcurl -plaintext -d '{
+  "user_id": "7fc8a659-1bb2-4d7c-b60e-c140239d5c62",
+  "currency": 2,
+  "amount": 10,
+  "reason": "test_real_spend"
+}' localhost:50053 billing.BillingService/SpendCurrency
+Ожидаемый результат:
+
+check_only: true → возвращает текущий баланс, НЕ меняет его.
+
+check_only: false → списывает и возвращает новый баланс.
