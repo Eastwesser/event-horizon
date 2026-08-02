@@ -46,6 +46,11 @@ scrape_configs:
       - targets: ['balancer:9098']
     metrics_path: '/metrics'
 
+  - job_name: 'inventory'
+    static_configs:
+      - targets: ['inventory:9099']
+    metrics_path: '/metrics'
+
   # - job_name: 'nats'
   #   static_configs:
   #     - targets: 

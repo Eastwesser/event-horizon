@@ -126,8 +126,9 @@ func main() {
     mux.Handle("/metrics", promhttp.Handler())
     
     go func() {
-        log.Printf("Health check and metrics: http://localhost:9099/health")
-        if err := http.ListenAndServe(":9099", mux); err != nil {
+        metricsAddr := fmt.Sprintf(":%d", cfg.MetricsPort)
+        log.Printf("Health check and metrics: http://localhost%s/health", metricsAddr)
+        if err := http.ListenAndServe(metricsAddr, mux); err != nil {
             log.Printf("HTTP server error: %v", err)
         }
     }()

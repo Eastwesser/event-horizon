@@ -201,6 +201,29 @@ services:
       timeout: 5s
       retries: 5
 
+  inventory:
+    image: eastwesser/inventory:latest
+    container_name: deployments-inventory-1
+    ports:
+      - "50059:50059"
+      - "9096:9099"
+    environment:
+      - INVENTORY_GRPC_PORT=50059
+      - INVENTORY_METRICS_PORT=9099
+      - INVENTORY_DRIVER=postgres
+      - INVENTORY_PG_HOST=event-horizon-postgres-shop
+      - INVENTORY_PG_PORT=5432
+      - INVENTORY_PG_USER=eventhorizon
+      - INVENTORY_PG_PASSWORD=eventhorizon
+      - INVENTORY_PG_DB=eventhorizon_shop
+      - INVENTORY_REDIS_ADDR=event-horizon-redis-shop:6379
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+    depends_on:
+      - postgres-shop
+      - redis-shop
+      - nats-1
+    networks:
+      - event-horizon-net
 
   # ============================================================
   # 2. ЭКСПОРТЕРЫ ДЛЯ МОНИТОРИНГА

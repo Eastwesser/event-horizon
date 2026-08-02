@@ -30,4 +30,4 @@ $$ language 'plpgsql';
 
 DROP TRIGGER IF EXISTS update_inventory_updated_at ON inventory_items;
 CREATE TRIGGER update_inventory_updated_at BEFORE UPDATE ON inventory_items
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();    
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 
