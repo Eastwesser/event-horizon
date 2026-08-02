@@ -425,3 +425,70 @@ docker logs deployments-shop-1 --tail=20
 # 10. Проверяем инвентарь с датой
 TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login -H "Content-Type: application/json" -d '{"email":"tuzer@example.com","password":"tuzer1"}' | jq -r '.access_token')
 curl -s -X GET http://localhost:8079/api/shop/inventory -H "Authorization: Bearer $TOKEN" | jq '.'
+
+Чек 2 августа 2026:
+
+cd /home/denismatveev/event_horizon
+
+# 1. Перегенерировать proto (shop)
+cd services/shop
+protoc --go_out=. --go_opt=paths=source_relative \
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+       proto/*.proto
+echo "✅ Shop proto regenerated"
+
+# 2. Собрать бинарник
+go mod tidy
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o shop-service ./cmd/main.go
+echo "✅ Shop binary built"
+
+# 3. Собрать Docker образ
+cd /home/denismatveev/event_horizon
+docker build -t eastwesser/shop:latest -f Dockerfile.shop.bin .
+echo "✅ Shop Docker image built"
+
+# 4. Запустить
+make deploy
+echo "✅ Shop deployed"
+
+# 5. Проверить логи
+docker logs deployments-shop-1 --tail=20
+🧪 Проверка Shop
+bash
+# 1. Получить токен
+TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"tuzer@example.com","password":"tuzer1"}' \
+  | jq -r '.access_token')
+
+echo "Token: $TOKEN"
+
+# 2. Проверить баланс ДО покупки
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# 3. Список товаров
+curl -s -X GET http://localhost:8079/api/shop/items \
+  -H "Authorization: Bearer $TOKEN" | jq '.[] | {id, name, price}'
+
+# 4. Купить товар (используй ID из списка)
+ITEM_ID="6a1de8dd-9457-4aa4-99a7-78267aee731d"
+curl -s -X POST http://localhost:8079/api/shop/purchase \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"item_id\":\"$ITEM_ID\"}" | jq '.'
+
+# 5. Проверить баланс ПОСЛЕ покупки
+curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# 6. Проверить инвентарь
+curl -s -X GET http://localhost:8079/api/shop/inventory \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+Ожидаемый результат:
+
+Баланс уменьшился на цену товара.
+
+Товар появился в инвентаре.
+
+В логах Shop видно ✅ Shop item created from inventory (если покупаешь мерч).
