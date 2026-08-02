@@ -94,7 +94,15 @@ func (h *BillingHandler) SpendCurrency(ctx context.Context, req *pb.SpendCurrenc
     }
 
     currency := convertProtoCurrency(req.Currency)
-    newBalance, err := h.billingService.SpendCurrency(ctx, req.UserId, currency, int(req.Amount), req.Reason, req.ReferenceId)
+    newBalance, err := h.billingService.SpendCurrency(
+        ctx, 
+        req.UserId, 
+        currency, 
+        int(req.Amount), 
+        req.Reason, 
+        req.ReferenceId, 
+        req.CheckOnly,
+    )
     if err != nil {
         log.Printf("SpendCurrency error: %v", err)
         return &pb.SpendCurrencyResponse{

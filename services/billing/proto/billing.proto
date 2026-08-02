@@ -79,6 +79,7 @@ message SpendCurrencyRequest {
     int32 amount = 3;
     string reason = 4;        // "hint", "reroll", "continue"
     string reference_id = 5;  // idempotency key
+    bool check_only = 6;  // 👈 НОВОЕ ПОЛЕ в 1.0.6: если true — только проверка, без списания
 }
 
 message SpendCurrencyResponse {
