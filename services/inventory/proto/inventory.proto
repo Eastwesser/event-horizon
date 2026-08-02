@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package inventory;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/inventory/proto;inventory";
+
+import "google/protobuf/struct.proto";
+
+service InventoryService {
+    rpc CreateItem(CreateItemRequest) returns (ItemResponse);
+    rpc GetItem(GetItemRequest) returns (ItemResponse);
+    rpc UpdateItem(UpdateItemRequest) returns (ItemResponse);
+    rpc DeleteItem(DeleteItemRequest) returns (EmptyResponse);
+    rpc SearchItems(SearchItemsRequest) returns (SearchItemsResponse);
+    rpc GetByAuthor(GetByAuthorRequest) returns (SearchItemsResponse);
+    rpc GetByType(GetByTypeRequest) returns (SearchItemsResponse);
+}
+
+message Item {
+    string id = 1;
+    string author_id = 2;
+    string type = 3;
+    string name = 4;
+    string description = 5;
+    double price = 6;
+    int32 stock = 7;
+    google.protobuf.Struct attributes = 8;
+    repeated string images = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+message CreateItemRequest {
+    string author_id = 1;
+    string type = 2;
+    string name = 3;
+    string description = 4;
+    double price = 5;
+    int32 stock = 6;
+    google.protobuf.Struct attributes = 7;
+    repeated string images = 8;
+}
+
+message GetItemRequest {
+    string id = 1;
+}
+
+message UpdateItemRequest {
+    string id = 1;
+    string author_id = 2;
+    string type = 3;
+    string name = 4;
+    string description = 5;
+    double price = 6;
+    int32 stock = 7;
+    google.protobuf.Struct attributes = 8;
+    repeated string images = 9;
+}
+
+message DeleteItemRequest {
+    string id = 1;
+}
+
+message SearchItemsRequest {
+    map<string, string> filters = 1;  // author_id, type, price_min, price_max, query
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message GetByAuthorRequest {
+    string author_id = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message GetByTypeRequest {
+    string type = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message ItemResponse {
+    Item item = 1;
+}
+
+message SearchItemsResponse {
+    repeated Item items = 1;
+    int64 total = 2;
+}
+
+message EmptyResponse {}
