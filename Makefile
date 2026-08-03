@@ -29,6 +29,20 @@ docker-push-all:
 		docker push eastwesser/$$service:latest; \
 	done		
 
+# ===== BUILD =====
+
+build-all:
+	@echo "Building all services..."
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+		cd services/$$service && go build -o $$service-service ./cmd/main.go; \
+	done
+
+test-all:
+	@echo "Running all tests..."
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+		cd services/$$service && go test -v ./...; \
+	done
+
 # ===== MIGRATIONS =====
 migrate-auth:
 	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
