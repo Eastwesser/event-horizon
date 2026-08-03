@@ -1,4 +1,4 @@
--- services/inventory/migrations/20260803120000_add_outbox.sql
+-- +goose Up
 CREATE TABLE IF NOT EXISTS outbox (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type VARCHAR(100) NOT NULL,
@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS outbox (
 );
 
 CREATE INDEX idx_outbox_processed ON outbox(processed, created_at);
+
+-- +goose Down
+DROP INDEX IF EXISTS idx_outbox_processed;
+DROP TABLE IF EXISTS outbox;
