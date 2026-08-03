@@ -2,12 +2,24 @@
   hosts: all
   become: yes
   vars:
-    env: "{{ env | default('dev') }}"
-    version: "{{ version | default('latest') }}"
+    deploy_env: "{{ env | default('dev') }}"
+    commit_hash: "{{ version | default('main') }}"
     project_dir: /opt/event-horizon
 
   tasks:
-    - name: Install required packages
+    - name: Install required packages (Arch)
+      pacman:
+        name:
+          - docker
+          - docker-compose
+          - git
+          - curl
+          - jq
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == "Archlinux"
+
+    - name: Install required packages (Debian)
       apt:
         name:
           - docker.io
@@ -17,12 +29,21 @@
           - jq
         state: present
         update_cache: yes
+      when: ansible_facts['os_family'] == "Debian"
 
-    - name: Start Docker service
+    - name: Enable and start Docker (Arch)
       systemd:
         name: docker
         state: started
         enabled: yes
+      when: ansible_facts['os_family'] == "Archlinux"
+
+    - name: Enable and start Docker (Debian)
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: ansible_facts['os_family'] == "Debian"
 
     - name: Create project directory
       file:
@@ -34,15 +55,14 @@
       git:
         repo: "https://github.com/Eastwesser/event-horizon.git"
         dest: "{{ project_dir }}"
-        version: "{{ version }}"
+        version: "{{ commit_hash }}"
         force: yes
 
     - name: Copy .env file
       copy:
         content: |
-          ENV={{ env }}
-          VERSION={{ version }}
-          DOCKER_USERNAME={{ lookup('env', 'DOCKER_USERNAME') }}
+          ENV={{ deploy_env }}
+          VERSION={{ version | default('latest') }}
         dest: "{{ project_dir }}/.env"
         mode: '0644'
 
@@ -64,19 +84,21 @@
         state: file
         mode: '0666'
 
+    - name: Ensure project directory exists before pulling
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
     - name: Pull latest images
-      command: docker-compose pull
+      command: docker-compose -f deployments/docker-compose.cluster.yml pull
       args:
         chdir: "{{ project_dir }}"
-      environment:
-        DOCKER_USERNAME: "{{ lookup('env', 'DOCKER_USERNAME') }}"
 
     - name: Start docker-compose
-      command: docker-compose up -d --remove-orphans
+      command: docker-compose -f deployments/docker-compose.cluster.yml up -d --remove-orphans
       args:
         chdir: "{{ project_dir }}"
-      environment:
-        DOCKER_USERNAME: "{{ lookup('env', 'DOCKER_USERNAME') }}"
 
     - name: Wait for services to be healthy
       wait_for:
@@ -88,6 +110,6 @@
         status_code: 200
       loop:
         - "8079/health"
-        - "9090"  # prometheus
-        - "3000"  # grafana
+        - "9090"
+        - "3000"
       ignore_errors: yes

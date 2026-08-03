@@ -16,6 +16,19 @@ ps:
 clean:
 	docker-compose -f deployments/docker-compose.cluster.yml down -v
 
+# ===== DOCKER BUILD =====
+docker-build-all:
+	@echo "Building all services..."
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+		docker build -t eastwesser/$$service:latest -f Dockerfile.$$service.bin .; \
+	done
+
+docker-push-all:
+	@echo "Pushing all services..."
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+		docker push eastwesser/$$service:latest; \
+	done		
+
 # ===== MIGRATIONS =====
 migrate-auth:
 	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
@@ -68,3 +81,13 @@ restart: down deploy
 status:
 	@echo "🔍 Checking services..."
 	docker-compose -f deployments/docker-compose.cluster.yml ps
+
+# ===== DELIVERY =====
+delivery-dev:
+	cd delivery && ansible-playbook -i inventory/dev.ini ansible/site.yml
+
+delivery-staging:
+	cd delivery && ansible-playbook -i inventory/staging.ini ansible/site.yml
+
+delivery-prod:
+	cd delivery && ansible-playbook -i inventory/prod.ini ansible/site.yml
