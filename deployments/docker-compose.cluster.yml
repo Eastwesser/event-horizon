@@ -645,6 +645,7 @@ services:
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
+      - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
     depends_on:
       - nats-1
       - nats-2
@@ -671,6 +672,7 @@ services:
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
+      - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
     depends_on:
       - nats-1
       - nats-2
@@ -697,6 +699,7 @@ services:
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
+      - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
     depends_on:
       - nats-1
       - nats-2

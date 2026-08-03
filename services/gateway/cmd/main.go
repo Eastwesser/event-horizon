@@ -26,6 +26,7 @@ import (
     "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
+    "google.golang.org/protobuf/types/known/structpb"
     "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
@@ -46,6 +47,7 @@ import (
     billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
     profilePb "github.com/Eastwesser/event-horizon/services/profile/proto"
     shopPb "github.com/Eastwesser/event-horizon/services/shop/proto"
+    inventoryPb "github.com/Eastwesser/event-horizon/services/inventory/proto"
 )
 
 var upgrader = websocket.Upgrader{
@@ -577,6 +579,221 @@ func main() {
         }
 
         c.JSON(http.StatusOK, resp.Items)
+    })
+
+    // --- Inventory gRPC клиент ---
+    inventoryConn, err := grpc.NewClient(cfg.InventoryAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to inventory: %v", err)
+    }
+    defer inventoryConn.Close()
+    inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
+
+    // GET /api/inventory/items — список товаров с фильтрами
+    r.GET("/api/inventory/items", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        _, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        // Собираем фильтры из query
+        filters := make(map[string]string)
+        if authorID := c.Query("author_id"); authorID != "" {
+            filters["author_id"] = authorID
+        }
+        if itemType := c.Query("type"); itemType != "" {
+            filters["type"] = itemType
+        }
+        if priceMin := c.Query("price_min"); priceMin != "" {
+            filters["price_min"] = priceMin
+        }
+        if priceMax := c.Query("price_max"); priceMax != "" {
+            filters["price_max"] = priceMax
+        }
+        if query := c.Query("query"); query != "" {
+            filters["query"] = query
+        }
+
+        limit := int32(20)
+        if l := c.Query("limit"); l != "" {
+            if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+                limit = int32(parsed)
+            }
+        }
+        offset := int32(0)
+        if o := c.Query("offset"); o != "" {
+            if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+                offset = int32(parsed)
+            }
+        }
+
+        resp, err := inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
+            Filters: filters,
+            Limit:   limit,
+            Offset:  offset,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
+
+    // POST /api/inventory/items — создать товар
+    r.POST("/api/inventory/items", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        var req struct {
+            Type        string                 `json:"type"`
+            Name        string                 `json:"name"`
+            Description string                 `json:"description"`
+            Price       float64                `json:"price"`
+            Stock       int32                  `json:"stock"`
+            Attributes  map[string]interface{} `json:"attributes"`
+            Images      []string               `json:"images"`
+        }
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
+        // Конвертируем attributes в structpb.Struct
+        attrs, err := structpb.NewStruct(req.Attributes)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid attributes: " + err.Error()})
+            return
+        }
+
+        resp, err := inventoryClient.CreateItem(c.Request.Context(), &inventoryPb.CreateItemRequest{
+            AuthorId:    userID,
+            Type:        req.Type,
+            Name:        req.Name,
+            Description: req.Description,
+            Price:       req.Price,
+            Stock:       req.Stock,
+            Attributes:  attrs,
+            Images:      req.Images,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
+
+    // GET /api/inventory/items/:id — получить товар по ID
+    r.GET("/api/inventory/items/:id", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        _, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        itemID := c.Param("id")
+        if itemID == "" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
+            return
+        }
+
+        resp, err := inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{
+            Id: itemID,
+        })
+        if err != nil {
+            c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
+
+    // PUT /api/inventory/items/:id — обновить товар
+    r.PUT("/api/inventory/items/:id", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        userID, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        itemID := c.Param("id")
+        if itemID == "" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
+            return
+        }
+
+        var req struct {
+            Type        string                 `json:"type"`
+            Name        string                 `json:"name"`
+            Description string                 `json:"description"`
+            Price       float64                `json:"price"`
+            Stock       int32                  `json:"stock"`
+            Attributes  map[string]interface{} `json:"attributes"`
+            Images      []string               `json:"images"`
+        }
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
+        attrs, err := structpb.NewStruct(req.Attributes)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid attributes"})
+            return
+        }
+
+        resp, err := inventoryClient.UpdateItem(c.Request.Context(), &inventoryPb.UpdateItemRequest{
+            Id:          itemID,
+            AuthorId:    userID,
+            Type:        req.Type,
+            Name:        req.Name,
+            Description: req.Description,
+            Price:       req.Price,
+            Stock:       req.Stock,
+            Attributes:  attrs,
+            Images:      req.Images,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, resp)
+    })
+
+    // DELETE /api/inventory/items/:id — удалить товар
+    r.DELETE("/api/inventory/items/:id", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        _, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        itemID := c.Param("id")
+        if itemID == "" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
+            return
+        }
+
+        _, err = inventoryClient.DeleteItem(c.Request.Context(), &inventoryPb.DeleteItemRequest{
+            Id: itemID,
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, gin.H{"success": true, "message": "item deleted"})
     })
 
     r.GET("/api/leaderboard", func(c *gin.Context) {
