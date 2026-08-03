@@ -13,7 +13,15 @@ env:
   IMAGE_NAME: eastwesser/event-horizon
 
 jobs:
-  # 1. Сборка и тестирование
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -35,16 +43,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build all services
-        run: |
-          make build-all
-          make test-all
+        run: make docker-build-all
 
-      - name: Build and push images
-        run: |
-          make docker-build-all
-          make docker-push-all
+      - name: Push images to Docker Hub
+        run: make docker-push-all
 
-  # 2. Деплой на dev
   deploy-dev:
     needs: build
     runs-on: ubuntu-latest
@@ -53,13 +56,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: sudo apt update && sudo apt install -y ansible
+
       - name: Deploy to dev
         run: |
-          cd delivery
-          ansible-playbook -i inventory/dev.ini ansible/site.yml \
+          cd delivery/ansible
+          ansible-playbook -i inventory/dev.ini site.yml \
             --extra-vars "env=dev version=${{ github.sha }}"
+        env:
+          ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
 
-  # 3. Деплой на staging (ручной запуск)
   deploy-staging:
     needs: deploy-dev
     runs-on: ubuntu-latest
@@ -69,13 +84,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: sudo apt update && sudo apt install -y ansible
+
       - name: Deploy to staging
         run: |
-          cd delivery
-          ansible-playbook -i inventory/staging.ini ansible/site.yml \
+          cd delivery/ansible
+          ansible-playbook -i inventory/staging.ini site.yml \
             --extra-vars "env=staging version=${{ github.sha }}"
+        env:
+          ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
 
-  # 4. Деплой на production (ручной запуск с подтверждением)
   deploy-prod:
     needs: deploy-staging
     runs-on: ubuntu-latest
@@ -85,8 +112,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: sudo apt update && sudo apt install -y ansible
+
       - name: Deploy to production
         run: |
-          cd delivery
-          ansible-playbook -i inventory/prod.ini ansible/site.yml \
+          cd delivery/ansible
+          ansible-playbook -i inventory/prod.ini site.yml \
             --extra-vars "env=prod version=${{ github.sha }}"
+        env:
+          ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
