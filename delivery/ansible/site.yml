@@ -1,0 +1,93 @@
+- name: Prepare servers for Event Horizon
+  hosts: all
+  become: yes
+  vars:
+    env: "{{ env | default('dev') }}"
+    version: "{{ version | default('latest') }}"
+    project_dir: /opt/event-horizon
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - git
+          - curl
+          - jq
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Clone or update repository
+      git:
+        repo: "https://github.com/Eastwesser/event-horizon.git"
+        dest: "{{ project_dir }}"
+        version: "{{ version }}"
+        force: yes
+
+    - name: Copy .env file
+      copy:
+        content: |
+          ENV={{ env }}
+          VERSION={{ version }}
+          DOCKER_USERNAME={{ lookup('env', 'DOCKER_USERNAME') }}
+        dest: "{{ project_dir }}/.env"
+        mode: '0644'
+
+    - name: Create directories for volumes
+      file:
+        path: "{{ project_dir }}/volumes/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - postgres
+        - redis
+        - nats
+        - grafana
+        - prometheus
+
+    - name: Ensure proper permissions for Docker socket
+      file:
+        path: /var/run/docker.sock
+        state: file
+        mode: '0666'
+
+    - name: Pull latest images
+      command: docker-compose pull
+      args:
+        chdir: "{{ project_dir }}"
+      environment:
+        DOCKER_USERNAME: "{{ lookup('env', 'DOCKER_USERNAME') }}"
+
+    - name: Start docker-compose
+      command: docker-compose up -d --remove-orphans
+      args:
+        chdir: "{{ project_dir }}"
+      environment:
+        DOCKER_USERNAME: "{{ lookup('env', 'DOCKER_USERNAME') }}"
+
+    - name: Wait for services to be healthy
+      wait_for:
+        timeout: 30
+
+    - name: Check services status
+      uri:
+        url: "http://localhost:{{ item }}"
+        status_code: 200
+      loop:
+        - "8079/health"
+        - "9090"  # prometheus
+        - "3000"  # grafana
+      ignore_errors: yes
