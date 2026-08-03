@@ -63,7 +63,7 @@ migrate-shop:
 	cd services/shop && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5465/eventhorizon_shop?sslmode=disable" up
 
 migrate-inventory:
-	cd services/inventory && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5465/eventhorizon_shop?sslmode=disable" up
+	cd services/inventory && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5466/eventhorizon_inventory?sslmode=disable" up
 
 migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard migrate-profile migrate-shop migrate-inventory
 	@echo "✅ All migrations applied"
