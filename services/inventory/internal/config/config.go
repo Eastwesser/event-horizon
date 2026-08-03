@@ -34,7 +34,7 @@ type Config struct {
 func Load() (*Config, error) {
     cfg := &Config{
         GRPCPort:    getEnvAsInt("INVENTORY_GRPC_PORT", 50059),
-        MetricsPort: getEnvAsInt("INVENTORY_METRICS_PORT", 9099),
+        MetricsPort: getEnvAsInt("INVENTORY_METRICS_PORT", 9096),
 
         PGHost:     getEnv("INVENTORY_PG_HOST", "localhost"),
         PGPort:     getEnvAsInt("INVENTORY_PG_PORT", 5466),
@@ -45,7 +45,7 @@ func Load() (*Config, error) {
         MongoURI:    getEnv("INVENTORY_MONGO_URI", "mongodb://localhost:27017"),
         MongoDBName: getEnv("INVENTORY_MONGO_DB", "inventory"),
 
-        RedisAddr: getEnv("INVENTORY_REDIS_ADDR", "localhost:6379"),
+        RedisAddr: getEnv("INVENTORY_REDIS_ADDR", "localhost:6383"),
 
         Driver:  getEnv("INVENTORY_DRIVER", "postgres"),
         NATSURL: getEnv("NATS_URL", "nats://localhost:4222"),
