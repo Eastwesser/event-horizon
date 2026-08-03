@@ -1,0 +1,4 @@
+FROM scratch
+COPY services/inventory/inventory-service /inventory-service
+EXPOSE 50059
+CMD ["/inventory-service"]
