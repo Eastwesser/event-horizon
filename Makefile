@@ -105,3 +105,18 @@ delivery-staging:
 
 delivery-prod:
 	cd delivery && ansible-playbook -i inventory/prod.ini ansible/site.yml
+
+# ===== K3S =====
+deploy-k3s:
+	@echo "🚀 Deploying to k3s..."
+	kubectl apply -f deployments/k3s/deployment.yml
+	kubectl apply -f deployments/k3s/service.yml
+	kubectl apply -f deployments/k3s/ingress.yml
+	kubectl rollout status deployment/event-horizon
+
+undeploy-k3s:
+	@echo "🗑️ Removing from k3s..."
+	kubectl delete -f deployments/k3s/deployment.yml
+	kubectl delete -f deployments/k3s/service.yml
+	kubectl delete -f deployments/k3s/ingress.yml
+	

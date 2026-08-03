@@ -4,7 +4,7 @@ metadata:
   name: event-horizon
   namespace: default
 spec:
-  replicas: 3
+  replicas: 1  # для начала
   selector:
     matchLabels:
       app: event-horizon
@@ -14,12 +14,194 @@ spec:
         app: event-horizon
     spec:
       containers:
+      # Auth
+      - name: auth
+        image: eastwesser/auth:latest
+        ports:
+        - containerPort: 50051
+        env:
+        - name: METRICS_PORT
+          value: "9091"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon"
+
+      # Billing
+      - name: billing
+        image: eastwesser/billing:latest
+        ports:
+        - containerPort: 50053
+        env:
+        - name: METRICS_PORT
+          value: "9093"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: DB_HOST
+          value: "postgres-billing"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon_billing"
+        - name: REDIS_ADDR
+          value: "redis-billing:6379"
+
+      # Game
+      - name: game
+        image: eastwesser/game:latest
+        ports:
+        - containerPort: 50052
+        env:
+        - name: METRICS_PORT
+          value: "9092"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: DB_HOST
+          value: "postgres-game"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon_game"
+
+      # Leaderboard
+      - name: leaderboard
+        image: eastwesser/leaderboard:latest
+        ports:
+        - containerPort: 50054
+        env:
+        - name: METRICS_PORT
+          value: "9094"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: REDIS_ADDR
+          value: "redis-leaderboard:6379"
+        - name: DB_HOST
+          value: "postgres-game"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+
+      # Profile
+      - name: profile
+        image: eastwesser/profile:latest
+        ports:
+        - containerPort: 50060
+        env:
+        - name: GRPC_PORT
+          value: "50060"
+        - name: METRICS_PORT
+          value: "9099"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: DB_HOST
+          value: "postgres-profile"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon_profile"
+
+      # Shop
+      - name: shop
+        image: eastwesser/shop:latest
+        ports:
+        - containerPort: 50055
+        env:
+        - name: GRPC_PORT
+          value: "50055"
+        - name: METRICS_PORT
+          value: "9095"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: DB_HOST
+          value: "postgres-shop"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "eventhorizon"
+        - name: DB_PASSWORD
+          value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon_shop"
+        - name: REDIS_ADDR
+          value: "redis-shop:6379"
+        - name: BILLING_ADDR
+          value: "billing:50053"
+
+      # Inventory
+      - name: inventory
+        image: eastwesser/inventory:latest
+        ports:
+        - containerPort: 50059
+        env:
+        - name: INVENTORY_GRPC_PORT
+          value: "50059"
+        - name: INVENTORY_METRICS_PORT
+          value: "9099"
+        - name: INVENTORY_DRIVER
+          value: "postgres"
+        - name: INVENTORY_PG_HOST
+          value: "postgres-shop"
+        - name: INVENTORY_PG_PORT
+          value: "5432"
+        - name: INVENTORY_PG_USER
+          value: "eventhorizon"
+        - name: INVENTORY_PG_PASSWORD
+          value: "eventhorizon"
+        - name: INVENTORY_PG_DB
+          value: "eventhorizon_shop"
+        - name: INVENTORY_REDIS_ADDR
+          value: "redis-shop:6379"
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+
+      # Gateway
       - name: gateway
         image: eastwesser/gateway:latest
         ports:
         - containerPort: 8080
         env:
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9095"
         - name: NATS_URL
           value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
         - name: REDIS_ADDR
           value: "redis:6379"
+        - name: AUTH_ADDR
+          value: "auth:50051"
+        - name: GAME_ADDR
+          value: "game:50052"
+        - name: BILLING_ADDR
+          value: "billing:50053"
+        - name: LEADERBOARD_ADDR
+          value: "leaderboard:50054"
+        - name: PROFILE_ADDR
+          value: "profile:50060"
+        - name: SHOP_ADDR
+          value: "shop:50055"
+        - name: INVENTORY_ADDR
+          value: "inventory:50059"
