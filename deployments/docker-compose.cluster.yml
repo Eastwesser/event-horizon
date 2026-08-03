@@ -1,7 +1,7 @@
 # ============================================================
 # Event Horizon — Docker Compose (кластерная версия)
 # Все сервисы объединены в одну сеть event-horizon-net
-# Версия: v1.0.5
+# Версия: v1.0.6
 # ============================================================
 
 services:
@@ -166,6 +166,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      
+  # --- Redis для Profile (агрегированный профиль) ---
 
   # --- PostgreSQL для Shop ---
   postgres-shop:
@@ -201,29 +203,39 @@ services:
       timeout: 5s
       retries: 5
 
-  inventory:
-    image: eastwesser/inventory:latest
-    container_name: deployments-inventory-1
-    ports:
-      - "50059:50059"
-      - "9096:9099"
+  # --- PostgreSQL для Inventory (фенечки, мерч) ---
+  postgres-inventory:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-inventory
     environment:
-      - INVENTORY_GRPC_PORT=50059
-      - INVENTORY_METRICS_PORT=9099
-      - INVENTORY_DRIVER=postgres
-      - INVENTORY_PG_HOST=event-horizon-postgres-shop
-      - INVENTORY_PG_PORT=5432
-      - INVENTORY_PG_USER=eventhorizon
-      - INVENTORY_PG_PASSWORD=eventhorizon
-      - INVENTORY_PG_DB=eventhorizon_shop
-      - INVENTORY_REDIS_ADDR=event-horizon-redis-shop:6379
-      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
-    depends_on:
-      - postgres-shop
-      - redis-shop
-      - nats-1
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_inventory
+    ports:
+      - "5466:5432"
+    volumes:
+      - postgres_inventory_data:/var/lib/postgresql/data
     networks:
       - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Redis для Inventory (кеш товаров) ---
+  redis-inventory:
+    image: redis:7-alpine
+    container_name: event-horizon-redis-inventory
+    ports:
+      - "6384:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # ============================================================
   # 2. ЭКСПОРТЕРЫ ДЛЯ МОНИТОРИНГА
@@ -625,6 +637,31 @@ services:
     networks:
       - event-horizon-net
 
+  # --- Inventory service ---
+  inventory:
+    image: eastwesser/inventory:latest
+    container_name: deployments-inventory-1
+    ports:
+      - "50059:50059"
+      - "9096:9096"
+    environment:
+      - INVENTORY_GRPC_PORT=50059
+      - INVENTORY_METRICS_PORT=9096
+      - INVENTORY_DRIVER=postgres
+      - INVENTORY_PG_HOST=event-horizon-postgres-inventory
+      - INVENTORY_PG_PORT=5432
+      - INVENTORY_PG_USER=eventhorizon
+      - INVENTORY_PG_PASSWORD=eventhorizon
+      - INVENTORY_PG_DB=eventhorizon_inventory
+      - INVENTORY_REDIS_ADDR=event-horizon-redis-inventory:6379
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+    depends_on:
+      - postgres-inventory
+      - redis-inventory
+      - nats-1
+    networks:
+      - event-horizon-net
+
   # --- Gateway (API Gateway, 3 инстанса) ---
   gateway:
     image: eastwesser/gateway:latest
@@ -736,6 +773,7 @@ volumes:
   grafana_data:
   postgres_profile_data:
   postgres_shop_data:
+  postgres_inventory_data:
 
 
 # ============================================================
