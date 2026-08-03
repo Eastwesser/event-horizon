@@ -32,10 +32,11 @@ delivery/
 ## 🚀 Quick start
 
 # Dev deploy
-ansible-playbook -i inventory/dev.ini ansible/site.yml
+cd /home/denismatveev/event_horizon/delivery/ansible
+ansible-playbook -i inventory/dev.ini site.yml
 
 # Deploy specific version
-ansible-playbook -i inventory/dev.ini ansible/site.yml --extra-vars "version=v1.0.5"
+cd /home/denismatveev/event_horizon/delivery/ansible --extra-vars "version=v1.0.6"
 
 # Check service status
 curl -s http://localhost:8079/health | jq '.'
