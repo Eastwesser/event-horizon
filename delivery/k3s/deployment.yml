@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-horizon
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: event-horizon
+  template:
+    metadata:
+      labels:
+        app: event-horizon
+    spec:
+      containers:
+      - name: gateway
+        image: eastwesser/gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: NATS_URL
+          value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+        - name: REDIS_ADDR
+          value: "redis:6379"
