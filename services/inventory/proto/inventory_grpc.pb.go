@@ -19,13 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	InventoryService_CreateItem_FullMethodName  = "/inventory.InventoryService/CreateItem"
-	InventoryService_GetItem_FullMethodName     = "/inventory.InventoryService/GetItem"
-	InventoryService_UpdateItem_FullMethodName  = "/inventory.InventoryService/UpdateItem"
-	InventoryService_DeleteItem_FullMethodName  = "/inventory.InventoryService/DeleteItem"
-	InventoryService_SearchItems_FullMethodName = "/inventory.InventoryService/SearchItems"
-	InventoryService_GetByAuthor_FullMethodName = "/inventory.InventoryService/GetByAuthor"
-	InventoryService_GetByType_FullMethodName   = "/inventory.InventoryService/GetByType"
+	InventoryService_CreateItem_FullMethodName      = "/inventory.InventoryService/CreateItem"
+	InventoryService_GetItem_FullMethodName         = "/inventory.InventoryService/GetItem"
+	InventoryService_UpdateItem_FullMethodName      = "/inventory.InventoryService/UpdateItem"
+	InventoryService_DeleteItem_FullMethodName      = "/inventory.InventoryService/DeleteItem"
+	InventoryService_SearchItems_FullMethodName     = "/inventory.InventoryService/SearchItems"
+	InventoryService_GetByAuthor_FullMethodName     = "/inventory.InventoryService/GetByAuthor"
+	InventoryService_GetByType_FullMethodName       = "/inventory.InventoryService/GetByType"
+	InventoryService_BulkCreateItems_FullMethodName = "/inventory.InventoryService/BulkCreateItems"
+	InventoryService_ReserveItem_FullMethodName     = "/inventory.InventoryService/ReserveItem"
+	InventoryService_SoftDeleteItem_FullMethodName  = "/inventory.InventoryService/SoftDeleteItem"
+	InventoryService_RestoreItem_FullMethodName     = "/inventory.InventoryService/RestoreItem"
+	InventoryService_GetStats_FullMethodName        = "/inventory.InventoryService/GetStats"
 )
 
 // InventoryServiceClient is the client API for InventoryService service.
@@ -39,6 +44,11 @@ type InventoryServiceClient interface {
 	SearchItems(ctx context.Context, in *SearchItemsRequest, opts ...grpc.CallOption) (*SearchItemsResponse, error)
 	GetByAuthor(ctx context.Context, in *GetByAuthorRequest, opts ...grpc.CallOption) (*SearchItemsResponse, error)
 	GetByType(ctx context.Context, in *GetByTypeRequest, opts ...grpc.CallOption) (*SearchItemsResponse, error)
+	BulkCreateItems(ctx context.Context, in *BulkCreateItemsRequest, opts ...grpc.CallOption) (*BulkCreateItemsResponse, error)
+	ReserveItem(ctx context.Context, in *ReserveItemRequest, opts ...grpc.CallOption) (*ReserveItemResponse, error)
+	SoftDeleteItem(ctx context.Context, in *SoftDeleteItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	RestoreItem(ctx context.Context, in *RestoreItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	GetStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 }
 
 type inventoryServiceClient struct {
@@ -112,6 +122,51 @@ func (c *inventoryServiceClient) GetByType(ctx context.Context, in *GetByTypeReq
 	return out, nil
 }
 
+func (c *inventoryServiceClient) BulkCreateItems(ctx context.Context, in *BulkCreateItemsRequest, opts ...grpc.CallOption) (*BulkCreateItemsResponse, error) {
+	out := new(BulkCreateItemsResponse)
+	err := c.cc.Invoke(ctx, InventoryService_BulkCreateItems_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inventoryServiceClient) ReserveItem(ctx context.Context, in *ReserveItemRequest, opts ...grpc.CallOption) (*ReserveItemResponse, error) {
+	out := new(ReserveItemResponse)
+	err := c.cc.Invoke(ctx, InventoryService_ReserveItem_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inventoryServiceClient) SoftDeleteItem(ctx context.Context, in *SoftDeleteItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, InventoryService_SoftDeleteItem_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inventoryServiceClient) RestoreItem(ctx context.Context, in *RestoreItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, InventoryService_RestoreItem_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inventoryServiceClient) GetStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
+	out := new(StatsResponse)
+	err := c.cc.Invoke(ctx, InventoryService_GetStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InventoryServiceServer is the server API for InventoryService service.
 // All implementations must embed UnimplementedInventoryServiceServer
 // for forward compatibility
@@ -123,6 +178,11 @@ type InventoryServiceServer interface {
 	SearchItems(context.Context, *SearchItemsRequest) (*SearchItemsResponse, error)
 	GetByAuthor(context.Context, *GetByAuthorRequest) (*SearchItemsResponse, error)
 	GetByType(context.Context, *GetByTypeRequest) (*SearchItemsResponse, error)
+	BulkCreateItems(context.Context, *BulkCreateItemsRequest) (*BulkCreateItemsResponse, error)
+	ReserveItem(context.Context, *ReserveItemRequest) (*ReserveItemResponse, error)
+	SoftDeleteItem(context.Context, *SoftDeleteItemRequest) (*EmptyResponse, error)
+	RestoreItem(context.Context, *RestoreItemRequest) (*EmptyResponse, error)
+	GetStats(context.Context, *EmptyRequest) (*StatsResponse, error)
 	mustEmbedUnimplementedInventoryServiceServer()
 }
 
@@ -150,6 +210,21 @@ func (UnimplementedInventoryServiceServer) GetByAuthor(context.Context, *GetByAu
 }
 func (UnimplementedInventoryServiceServer) GetByType(context.Context, *GetByTypeRequest) (*SearchItemsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetByType not implemented")
+}
+func (UnimplementedInventoryServiceServer) BulkCreateItems(context.Context, *BulkCreateItemsRequest) (*BulkCreateItemsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkCreateItems not implemented")
+}
+func (UnimplementedInventoryServiceServer) ReserveItem(context.Context, *ReserveItemRequest) (*ReserveItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReserveItem not implemented")
+}
+func (UnimplementedInventoryServiceServer) SoftDeleteItem(context.Context, *SoftDeleteItemRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SoftDeleteItem not implemented")
+}
+func (UnimplementedInventoryServiceServer) RestoreItem(context.Context, *RestoreItemRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RestoreItem not implemented")
+}
+func (UnimplementedInventoryServiceServer) GetStats(context.Context, *EmptyRequest) (*StatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStats not implemented")
 }
 func (UnimplementedInventoryServiceServer) mustEmbedUnimplementedInventoryServiceServer() {}
 
@@ -290,6 +365,96 @@ func _InventoryService_GetByType_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InventoryService_BulkCreateItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkCreateItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).BulkCreateItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_BulkCreateItems_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).BulkCreateItems(ctx, req.(*BulkCreateItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InventoryService_ReserveItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).ReserveItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_ReserveItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).ReserveItem(ctx, req.(*ReserveItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InventoryService_SoftDeleteItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SoftDeleteItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).SoftDeleteItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_SoftDeleteItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).SoftDeleteItem(ctx, req.(*SoftDeleteItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InventoryService_RestoreItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).RestoreItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_RestoreItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).RestoreItem(ctx, req.(*RestoreItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InventoryService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_GetStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).GetStats(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // InventoryService_ServiceDesc is the grpc.ServiceDesc for InventoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -324,6 +489,26 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetByType",
 			Handler:    _InventoryService_GetByType_Handler,
+		},
+		{
+			MethodName: "BulkCreateItems",
+			Handler:    _InventoryService_BulkCreateItems_Handler,
+		},
+		{
+			MethodName: "ReserveItem",
+			Handler:    _InventoryService_ReserveItem_Handler,
+		},
+		{
+			MethodName: "SoftDeleteItem",
+			Handler:    _InventoryService_SoftDeleteItem_Handler,
+		},
+		{
+			MethodName: "RestoreItem",
+			Handler:    _InventoryService_RestoreItem_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _InventoryService_GetStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

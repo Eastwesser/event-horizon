@@ -754,6 +754,390 @@ func (*EmptyResponse) Descriptor() ([]byte, []int) {
 	return file_proto_inventory_proto_rawDescGZIP(), []int{10}
 }
 
+type BulkCreateItemsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*CreateItemRequest   `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BulkCreateItemsRequest) Reset() {
+	*x = BulkCreateItemsRequest{}
+	mi := &file_proto_inventory_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BulkCreateItemsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BulkCreateItemsRequest) ProtoMessage() {}
+
+func (x *BulkCreateItemsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BulkCreateItemsRequest.ProtoReflect.Descriptor instead.
+func (*BulkCreateItemsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *BulkCreateItemsRequest) GetItems() []*CreateItemRequest {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type BulkCreateItemsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BulkCreateItemsResponse) Reset() {
+	*x = BulkCreateItemsResponse{}
+	mi := &file_proto_inventory_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BulkCreateItemsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BulkCreateItemsResponse) ProtoMessage() {}
+
+func (x *BulkCreateItemsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BulkCreateItemsResponse.ProtoReflect.Descriptor instead.
+func (*BulkCreateItemsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *BulkCreateItemsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *BulkCreateItemsResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type ReserveItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReserveItemRequest) Reset() {
+	*x = ReserveItemRequest{}
+	mi := &file_proto_inventory_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReserveItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReserveItemRequest) ProtoMessage() {}
+
+func (x *ReserveItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReserveItemRequest.ProtoReflect.Descriptor instead.
+func (*ReserveItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ReserveItemRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ReserveItemRequest) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+type ReserveItemResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Success        bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	RemainingStock int32                  `protobuf:"varint,2,opt,name=remaining_stock,json=remainingStock,proto3" json:"remaining_stock,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ReserveItemResponse) Reset() {
+	*x = ReserveItemResponse{}
+	mi := &file_proto_inventory_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReserveItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReserveItemResponse) ProtoMessage() {}
+
+func (x *ReserveItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReserveItemResponse.ProtoReflect.Descriptor instead.
+func (*ReserveItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ReserveItemResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ReserveItemResponse) GetRemainingStock() int32 {
+	if x != nil {
+		return x.RemainingStock
+	}
+	return 0
+}
+
+type SoftDeleteItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SoftDeleteItemRequest) Reset() {
+	*x = SoftDeleteItemRequest{}
+	mi := &file_proto_inventory_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SoftDeleteItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SoftDeleteItemRequest) ProtoMessage() {}
+
+func (x *SoftDeleteItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SoftDeleteItemRequest.ProtoReflect.Descriptor instead.
+func (*SoftDeleteItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SoftDeleteItemRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RestoreItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreItemRequest) Reset() {
+	*x = RestoreItemRequest{}
+	mi := &file_proto_inventory_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreItemRequest) ProtoMessage() {}
+
+func (x *RestoreItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreItemRequest.ProtoReflect.Descriptor instead.
+func (*RestoreItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RestoreItemRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type EmptyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmptyRequest) Reset() {
+	*x = EmptyRequest{}
+	mi := &file_proto_inventory_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmptyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmptyRequest) ProtoMessage() {}
+
+func (x *EmptyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EmptyRequest.ProtoReflect.Descriptor instead.
+func (*EmptyRequest) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{17}
+}
+
+type StatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TotalItems    int64                  `protobuf:"varint,1,opt,name=total_items,json=totalItems,proto3" json:"total_items,omitempty"`
+	ByType        map[string]int64       `protobuf:"bytes,2,rep,name=by_type,json=byType,proto3" json:"by_type,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	ByAuthor      map[string]int64       `protobuf:"bytes,3,rep,name=by_author,json=byAuthor,proto3" json:"by_author,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatsResponse) Reset() {
+	*x = StatsResponse{}
+	mi := &file_proto_inventory_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatsResponse) ProtoMessage() {}
+
+func (x *StatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_inventory_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatsResponse.ProtoReflect.Descriptor instead.
+func (*StatsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_inventory_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *StatsResponse) GetTotalItems() int64 {
+	if x != nil {
+		return x.TotalItems
+	}
+	return 0
+}
+
+func (x *StatsResponse) GetByType() map[string]int64 {
+	if x != nil {
+		return x.ByType
+	}
+	return nil
+}
+
+func (x *StatsResponse) GetByAuthor() map[string]int64 {
+	if x != nil {
+		return x.ByAuthor
+	}
+	return nil
+}
+
 var File_proto_inventory_proto protoreflect.FileDescriptor
 
 const file_proto_inventory_proto_rawDesc = "" +
@@ -823,7 +1207,34 @@ const file_proto_inventory_proto_rawDesc = "" +
 	"\x13SearchItemsResponse\x12%\n" +
 	"\x05items\x18\x01 \x03(\v2\x0f.inventory.ItemR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"\x0f\n" +
-	"\rEmptyResponse2\x87\x04\n" +
+	"\rEmptyResponse\"L\n" +
+	"\x16BulkCreateItemsRequest\x122\n" +
+	"\x05items\x18\x01 \x03(\v2\x1c.inventory.CreateItemRequestR\x05items\"I\n" +
+	"\x17BulkCreateItemsResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\"@\n" +
+	"\x12ReserveItemRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantity\"X\n" +
+	"\x13ReserveItemResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12'\n" +
+	"\x0fremaining_stock\x18\x02 \x01(\x05R\x0eremainingStock\"'\n" +
+	"\x15SoftDeleteItemRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"$\n" +
+	"\x12RestoreItemRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x0e\n" +
+	"\fEmptyRequest\"\xac\x02\n" +
+	"\rStatsResponse\x12\x1f\n" +
+	"\vtotal_items\x18\x01 \x01(\x03R\n" +
+	"totalItems\x12=\n" +
+	"\aby_type\x18\x02 \x03(\v2$.inventory.StatsResponse.ByTypeEntryR\x06byType\x12C\n" +
+	"\tby_author\x18\x03 \x03(\v2&.inventory.StatsResponse.ByAuthorEntryR\bbyAuthor\x1a9\n" +
+	"\vByTypeEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\x1a;\n" +
+	"\rByAuthorEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x012\x84\a\n" +
 	"\x10InventoryService\x12C\n" +
 	"\n" +
 	"CreateItem\x12\x1c.inventory.CreateItemRequest\x1a\x17.inventory.ItemResponse\x12=\n" +
@@ -834,7 +1245,12 @@ const file_proto_inventory_proto_rawDesc = "" +
 	"DeleteItem\x12\x1c.inventory.DeleteItemRequest\x1a\x18.inventory.EmptyResponse\x12L\n" +
 	"\vSearchItems\x12\x1d.inventory.SearchItemsRequest\x1a\x1e.inventory.SearchItemsResponse\x12L\n" +
 	"\vGetByAuthor\x12\x1d.inventory.GetByAuthorRequest\x1a\x1e.inventory.SearchItemsResponse\x12H\n" +
-	"\tGetByType\x12\x1b.inventory.GetByTypeRequest\x1a\x1e.inventory.SearchItemsResponseBHZFgithub.com/Eastwesser/event-horizon/services/inventory/proto;inventoryb\x06proto3"
+	"\tGetByType\x12\x1b.inventory.GetByTypeRequest\x1a\x1e.inventory.SearchItemsResponse\x12X\n" +
+	"\x0fBulkCreateItems\x12!.inventory.BulkCreateItemsRequest\x1a\".inventory.BulkCreateItemsResponse\x12L\n" +
+	"\vReserveItem\x12\x1d.inventory.ReserveItemRequest\x1a\x1e.inventory.ReserveItemResponse\x12L\n" +
+	"\x0eSoftDeleteItem\x12 .inventory.SoftDeleteItemRequest\x1a\x18.inventory.EmptyResponse\x12F\n" +
+	"\vRestoreItem\x12\x1d.inventory.RestoreItemRequest\x1a\x18.inventory.EmptyResponse\x12=\n" +
+	"\bGetStats\x12\x17.inventory.EmptyRequest\x1a\x18.inventory.StatsResponseBHZFgithub.com/Eastwesser/event-horizon/services/inventory/proto;inventoryb\x06proto3"
 
 var (
 	file_proto_inventory_proto_rawDescOnce sync.Once
@@ -848,48 +1264,71 @@ func file_proto_inventory_proto_rawDescGZIP() []byte {
 	return file_proto_inventory_proto_rawDescData
 }
 
-var file_proto_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_proto_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_proto_inventory_proto_goTypes = []any{
-	(*Item)(nil),                // 0: inventory.Item
-	(*CreateItemRequest)(nil),   // 1: inventory.CreateItemRequest
-	(*GetItemRequest)(nil),      // 2: inventory.GetItemRequest
-	(*UpdateItemRequest)(nil),   // 3: inventory.UpdateItemRequest
-	(*DeleteItemRequest)(nil),   // 4: inventory.DeleteItemRequest
-	(*SearchItemsRequest)(nil),  // 5: inventory.SearchItemsRequest
-	(*GetByAuthorRequest)(nil),  // 6: inventory.GetByAuthorRequest
-	(*GetByTypeRequest)(nil),    // 7: inventory.GetByTypeRequest
-	(*ItemResponse)(nil),        // 8: inventory.ItemResponse
-	(*SearchItemsResponse)(nil), // 9: inventory.SearchItemsResponse
-	(*EmptyResponse)(nil),       // 10: inventory.EmptyResponse
-	nil,                         // 11: inventory.SearchItemsRequest.FiltersEntry
-	(*structpb.Struct)(nil),     // 12: google.protobuf.Struct
+	(*Item)(nil),                    // 0: inventory.Item
+	(*CreateItemRequest)(nil),       // 1: inventory.CreateItemRequest
+	(*GetItemRequest)(nil),          // 2: inventory.GetItemRequest
+	(*UpdateItemRequest)(nil),       // 3: inventory.UpdateItemRequest
+	(*DeleteItemRequest)(nil),       // 4: inventory.DeleteItemRequest
+	(*SearchItemsRequest)(nil),      // 5: inventory.SearchItemsRequest
+	(*GetByAuthorRequest)(nil),      // 6: inventory.GetByAuthorRequest
+	(*GetByTypeRequest)(nil),        // 7: inventory.GetByTypeRequest
+	(*ItemResponse)(nil),            // 8: inventory.ItemResponse
+	(*SearchItemsResponse)(nil),     // 9: inventory.SearchItemsResponse
+	(*EmptyResponse)(nil),           // 10: inventory.EmptyResponse
+	(*BulkCreateItemsRequest)(nil),  // 11: inventory.BulkCreateItemsRequest
+	(*BulkCreateItemsResponse)(nil), // 12: inventory.BulkCreateItemsResponse
+	(*ReserveItemRequest)(nil),      // 13: inventory.ReserveItemRequest
+	(*ReserveItemResponse)(nil),     // 14: inventory.ReserveItemResponse
+	(*SoftDeleteItemRequest)(nil),   // 15: inventory.SoftDeleteItemRequest
+	(*RestoreItemRequest)(nil),      // 16: inventory.RestoreItemRequest
+	(*EmptyRequest)(nil),            // 17: inventory.EmptyRequest
+	(*StatsResponse)(nil),           // 18: inventory.StatsResponse
+	nil,                             // 19: inventory.SearchItemsRequest.FiltersEntry
+	nil,                             // 20: inventory.StatsResponse.ByTypeEntry
+	nil,                             // 21: inventory.StatsResponse.ByAuthorEntry
+	(*structpb.Struct)(nil),         // 22: google.protobuf.Struct
 }
 var file_proto_inventory_proto_depIdxs = []int32{
-	12, // 0: inventory.Item.attributes:type_name -> google.protobuf.Struct
-	12, // 1: inventory.CreateItemRequest.attributes:type_name -> google.protobuf.Struct
-	12, // 2: inventory.UpdateItemRequest.attributes:type_name -> google.protobuf.Struct
-	11, // 3: inventory.SearchItemsRequest.filters:type_name -> inventory.SearchItemsRequest.FiltersEntry
+	22, // 0: inventory.Item.attributes:type_name -> google.protobuf.Struct
+	22, // 1: inventory.CreateItemRequest.attributes:type_name -> google.protobuf.Struct
+	22, // 2: inventory.UpdateItemRequest.attributes:type_name -> google.protobuf.Struct
+	19, // 3: inventory.SearchItemsRequest.filters:type_name -> inventory.SearchItemsRequest.FiltersEntry
 	0,  // 4: inventory.ItemResponse.item:type_name -> inventory.Item
 	0,  // 5: inventory.SearchItemsResponse.items:type_name -> inventory.Item
-	1,  // 6: inventory.InventoryService.CreateItem:input_type -> inventory.CreateItemRequest
-	2,  // 7: inventory.InventoryService.GetItem:input_type -> inventory.GetItemRequest
-	3,  // 8: inventory.InventoryService.UpdateItem:input_type -> inventory.UpdateItemRequest
-	4,  // 9: inventory.InventoryService.DeleteItem:input_type -> inventory.DeleteItemRequest
-	5,  // 10: inventory.InventoryService.SearchItems:input_type -> inventory.SearchItemsRequest
-	6,  // 11: inventory.InventoryService.GetByAuthor:input_type -> inventory.GetByAuthorRequest
-	7,  // 12: inventory.InventoryService.GetByType:input_type -> inventory.GetByTypeRequest
-	8,  // 13: inventory.InventoryService.CreateItem:output_type -> inventory.ItemResponse
-	8,  // 14: inventory.InventoryService.GetItem:output_type -> inventory.ItemResponse
-	8,  // 15: inventory.InventoryService.UpdateItem:output_type -> inventory.ItemResponse
-	10, // 16: inventory.InventoryService.DeleteItem:output_type -> inventory.EmptyResponse
-	9,  // 17: inventory.InventoryService.SearchItems:output_type -> inventory.SearchItemsResponse
-	9,  // 18: inventory.InventoryService.GetByAuthor:output_type -> inventory.SearchItemsResponse
-	9,  // 19: inventory.InventoryService.GetByType:output_type -> inventory.SearchItemsResponse
-	13, // [13:20] is the sub-list for method output_type
-	6,  // [6:13] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	1,  // 6: inventory.BulkCreateItemsRequest.items:type_name -> inventory.CreateItemRequest
+	20, // 7: inventory.StatsResponse.by_type:type_name -> inventory.StatsResponse.ByTypeEntry
+	21, // 8: inventory.StatsResponse.by_author:type_name -> inventory.StatsResponse.ByAuthorEntry
+	1,  // 9: inventory.InventoryService.CreateItem:input_type -> inventory.CreateItemRequest
+	2,  // 10: inventory.InventoryService.GetItem:input_type -> inventory.GetItemRequest
+	3,  // 11: inventory.InventoryService.UpdateItem:input_type -> inventory.UpdateItemRequest
+	4,  // 12: inventory.InventoryService.DeleteItem:input_type -> inventory.DeleteItemRequest
+	5,  // 13: inventory.InventoryService.SearchItems:input_type -> inventory.SearchItemsRequest
+	6,  // 14: inventory.InventoryService.GetByAuthor:input_type -> inventory.GetByAuthorRequest
+	7,  // 15: inventory.InventoryService.GetByType:input_type -> inventory.GetByTypeRequest
+	11, // 16: inventory.InventoryService.BulkCreateItems:input_type -> inventory.BulkCreateItemsRequest
+	13, // 17: inventory.InventoryService.ReserveItem:input_type -> inventory.ReserveItemRequest
+	15, // 18: inventory.InventoryService.SoftDeleteItem:input_type -> inventory.SoftDeleteItemRequest
+	16, // 19: inventory.InventoryService.RestoreItem:input_type -> inventory.RestoreItemRequest
+	17, // 20: inventory.InventoryService.GetStats:input_type -> inventory.EmptyRequest
+	8,  // 21: inventory.InventoryService.CreateItem:output_type -> inventory.ItemResponse
+	8,  // 22: inventory.InventoryService.GetItem:output_type -> inventory.ItemResponse
+	8,  // 23: inventory.InventoryService.UpdateItem:output_type -> inventory.ItemResponse
+	10, // 24: inventory.InventoryService.DeleteItem:output_type -> inventory.EmptyResponse
+	9,  // 25: inventory.InventoryService.SearchItems:output_type -> inventory.SearchItemsResponse
+	9,  // 26: inventory.InventoryService.GetByAuthor:output_type -> inventory.SearchItemsResponse
+	9,  // 27: inventory.InventoryService.GetByType:output_type -> inventory.SearchItemsResponse
+	12, // 28: inventory.InventoryService.BulkCreateItems:output_type -> inventory.BulkCreateItemsResponse
+	14, // 29: inventory.InventoryService.ReserveItem:output_type -> inventory.ReserveItemResponse
+	10, // 30: inventory.InventoryService.SoftDeleteItem:output_type -> inventory.EmptyResponse
+	10, // 31: inventory.InventoryService.RestoreItem:output_type -> inventory.EmptyResponse
+	18, // 32: inventory.InventoryService.GetStats:output_type -> inventory.StatsResponse
+	21, // [21:33] is the sub-list for method output_type
+	9,  // [9:21] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_inventory_proto_init() }
@@ -903,7 +1342,7 @@ func file_proto_inventory_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_inventory_proto_rawDesc), len(file_proto_inventory_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
