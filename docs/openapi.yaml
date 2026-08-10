@@ -636,6 +636,152 @@ paths:
         '401':
           description: Unauthorized
 
+  /api/inventory/items/bulk:
+    post:
+      summary: Bulk create inventory items
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/InventoryItem'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/reserve:
+    post:
+      summary: Reserve item (decrease stock)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  remaining_stock:
+                    type: integer
+        '400':
+          description: Not enough stock
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/soft:
+    delete:
+      summary: Soft delete inventory item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/restore:
+    post:
+      summary: Restore soft deleted item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/stats:
+    get:
+      summary: Get inventory statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_items:
+                    type: integer
+                  by_type:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  by_author:
+                    type: object
+                    additionalProperties:
+                      type: integer
+        '401':
+          description: Unauthorized
+
   # ===== WEBSOCKET =====
   /ws/leaderboard:
     get:
