@@ -1,5 +1,3 @@
-github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20260802221248-6ae607a1dcb5 h1:6H6+fuVU0r+1ufQoS6EgouTXEXO6k/AAeWlHdMX0aOI=
-github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20260802221248-6ae607a1dcb5/go.mod h1:KmgTlVG9fUOOp19wPG+PJAeZ2RhFaNjBrZM+8e9CtpA=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
