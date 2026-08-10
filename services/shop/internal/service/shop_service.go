@@ -42,7 +42,12 @@ func NewShopService(
     }
     billingClient := billingPb.NewBillingServiceClient(conn)
 
-    _, err := js.Subscribe("inventory.item.created", func(msg *nats.Msg) {
+    log.Println("🔍 Shop: trying to subscribe to inventory.item.created...")
+
+    // ИСПРАВЛЕНО: убрал :=, оставил =
+    _, err = js.Subscribe("inventory.item.created", func(msg *nats.Msg) {
+        log.Println("📩 Shop: received inventory.item.created event!")
+        
         var event map[string]interface{}
         if err := json.Unmarshal(msg.Data, &event); err != nil {
             log.Printf("Failed to parse inventory event: %v", err)
@@ -50,20 +55,19 @@ func NewShopService(
             return
         }
 
-        // Создаём товар в Shop
-        itemID, _ := event["item_id"].(string)
+        itemID, ok := event["item_id"].(string)
+        if !ok || itemID == "" {
+            log.Printf("❌ Invalid or empty item_id in event: %v", event)
+            msg.Nak()
+            return
+        }
+        
         name, _ := event["name"].(string)
         description, _ := event["description"].(string)
         price, _ := event["price"].(float64)
-        category := "merch"
-        gameID := ""
 
-        // Добавляем в БД Shop
-        // query := `INSERT INTO items (id, name, description, price, category, game_id, image_url, available)
-        //   VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-        //   ON CONFLICT (id) DO NOTHING`
-        
-        // _, err := pg.db.Exec(query, itemID, name, description, int(price), category, gameID, "")
+        log.Printf("📦 Creating shop item: %s (ID: %s)", name, itemID)
+
         if err := pg.CreateItemFromInventory(context.Background(), itemID, name, description, price); err != nil {
             log.Printf("Failed to create shop item from inventory: %v", err)
             msg.Nak()
@@ -76,6 +80,8 @@ func NewShopService(
 
     if err != nil {
         log.Printf("⚠️ Failed to subscribe to inventory events: %v", err)
+    } else {
+        log.Println("✅ Shop successfully subscribed to inventory.item.created")
     }
 
     return &shopService{

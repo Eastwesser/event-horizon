@@ -9,7 +9,9 @@ import { FlappyGame } from './components/Games/Flappy/FlappyGame';
 import { TowerGame } from './components/Games/Towers/TowerGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
-import { Shop } from './components/Shop/Shop'; // НОВОЕ
+import { Shop } from './components/Shop/Shop';
+import { InventoryPage, InventoryItemDetail } from './components/Inventory';
+import { ShopWithInfiniteScroll } from './components/Shop/ShopWithInfiniteScroll';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -66,6 +68,18 @@ function App() {
           <Route 
             path="/shop" 
             element={isAuthenticated ? <Shop /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/infiniteshop" 
+            element={isAuthenticated ? <ShopWithInfiniteScroll /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/inventory" 
+            element={isAuthenticated ? <InventoryPage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/inventory/:id" 
+            element={isAuthenticated ? <InventoryItemDetail /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
