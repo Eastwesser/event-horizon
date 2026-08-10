@@ -53,6 +53,11 @@
 
 ## 🚀 Как запустить
 
+Download nats:
+
+curl -sf https://binaries.nats.dev/nats-io/natscli/nats@latest | sh
+sudo mv nats /usr/local/bin/
+
 ### 1. Собрать бинарник
 
 ```bash
@@ -117,3 +122,65 @@ Subjects: []string{
 ```
 
 Всё остальное делает NATS Hub. 🚀
+
+cd /home/denismatveev/event_horizon
+
+# 1. Сборка бинарника NATS Hub
+cd services/nats-hub
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nats-hub main.go
+cd ../..
+
+# 2. Docker образ
+docker build -t eastwesser/nats-hub:latest -f Dockerfile.nats-hub.bin .
+
+# 3. Пуш
+docker push eastwesser/nats-hub:latest
+
+# 4. Перезапуск только NATS Hub
+docker-compose -f deployments/docker-compose.cluster.yml stop nats-hub
+docker-compose -f deployments/docker-compose.cluster.yml rm -f nats-hub
+docker-compose -f deployments/docker-compose.cluster.yml up -d nats-hub
+
+# 5. Проверка
+curl http://localhost:9097/health
+
+🔍 Проверка NATS без CLI (через HTTP)
+NATS имеет HTTP API для мониторинга:
+
+bash
+# 1. Статус NATS-1
+curl -s http://localhost:8222/varz | jq .
+
+# 2. Статистика Stream'ов
+curl -s http://localhost:8222/streams | jq .
+
+# 3. Информация о Stream EVENTS
+curl -s http://localhost:8222/streams/EVENTS | jq .
+
+# 4. Количество сообщений в Stream
+curl -s http://localhost:8222/streams/EVENTS | jq '.state.messages'
+
+# 5. Все consumer'ы
+curl -s http://localhost:8222/streams/EVENTS/consumers | jq .
+📊 Проверка через NATS Exporter
+bash
+# Метрики NATS
+curl -s http://localhost:7777/metrics | grep -E "nats_(streams|messages|consumers)" | head -10
+🚀 Быстрая проверка NATS через HTTP API
+bash
+echo "🔍 NATS Cluster Status:"
+curl -s http://localhost:8222/varz | jq '{server_name: .server_name, version: .version, uptime: .uptime, connections: .connections, subscriptions: .subscriptions}'
+
+echo ""
+echo "🔍 Stream EVENTS:"
+curl -s http://localhost:8222/streams/EVENTS | jq '{name: .config.name, messages: .state.messages, bytes: .state.bytes, subjects: .config.subjects}'
+
+echo ""
+echo "🔍 Consumers:"
+curl -s http://localhost:8222/streams/EVENTS/consumers | jq '.[] | {name: .name, subject: .config.filter_subject, delivered: .delivered}'
+📋 Итоговый чек-лист
+Проверка	Команда	Ожидаемый результат
+NATS статус	curl -s http://localhost:8222/varz | jq .server_name	nats-1
+Stream EVENTS	curl -s http://localhost:8222/streams/EVENTS | jq .state.messages	Число > 0
+NATS Hub логи	docker logs event-horizon-nats-hub --tail 5	✅ Stream EVENTS exists
+Health check	curl http://localhost:9097/health	{"status":"ok"}
