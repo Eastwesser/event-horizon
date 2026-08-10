@@ -14,6 +14,11 @@ service InventoryService {
     rpc SearchItems(SearchItemsRequest) returns (SearchItemsResponse);
     rpc GetByAuthor(GetByAuthorRequest) returns (SearchItemsResponse);
     rpc GetByType(GetByTypeRequest) returns (SearchItemsResponse);
+    rpc BulkCreateItems(BulkCreateItemsRequest) returns (BulkCreateItemsResponse);
+    rpc ReserveItem(ReserveItemRequest) returns (ReserveItemResponse);
+    rpc SoftDeleteItem(SoftDeleteItemRequest) returns (EmptyResponse);
+    rpc RestoreItem(RestoreItemRequest) returns (EmptyResponse);
+    rpc GetStats(EmptyRequest) returns (StatsResponse);
 }
 
 message Item {
@@ -89,3 +94,38 @@ message SearchItemsResponse {
 }
 
 message EmptyResponse {}
+
+message BulkCreateItemsRequest {
+    repeated CreateItemRequest items = 1;
+}
+
+message BulkCreateItemsResponse {
+    bool success = 1;
+    int32 count = 2;
+}
+
+message ReserveItemRequest {
+    string id = 1;
+    int32 quantity = 2;
+}
+
+message ReserveItemResponse {
+    bool success = 1;
+    int32 remaining_stock = 2;
+}
+
+message SoftDeleteItemRequest {
+    string id = 1;
+}
+
+message RestoreItemRequest {
+    string id = 1;
+}
+
+message EmptyRequest {}
+
+message StatsResponse {
+    int64 total_items = 1;
+    map<string, int64> by_type = 2;
+    map<string, int64> by_author = 3;
+}

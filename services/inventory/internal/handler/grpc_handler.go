@@ -190,3 +190,85 @@ func (h *GRPCHandler) GetByType(ctx context.Context, req *pb.GetByTypeRequest) (
         Total: total,
     }, nil
 }
+
+// BulkCreateItems - массовое создание товаров
+func (h *GRPCHandler) BulkCreateItems(ctx context.Context, req *pb.BulkCreateItemsRequest) (*pb.BulkCreateItemsResponse, error) {
+    items := make([]*model.Item, len(req.Items))
+    for i, pbItem := range req.Items {
+        attrs := pbItem.Attributes.AsMap()
+        items[i] = &model.Item{
+            AuthorID:    pbItem.AuthorId,
+            Type:        pbItem.Type,
+            Name:        pbItem.Name,
+            Description: pbItem.Description,
+            Price:       pbItem.Price,
+            Stock:       int(pbItem.Stock),
+            Attributes:  attrs,
+            Images:      pbItem.Images,
+        }
+    }
+
+    if err := h.service.BulkCreateItems(ctx, items); err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to bulk create items: %v", err)
+    }
+
+    return &pb.BulkCreateItemsResponse{
+        Success: true,
+        Count:   int32(len(items)),
+    }, nil
+}
+
+// ReserveItem - резервирование товара
+func (h *GRPCHandler) ReserveItem(ctx context.Context, req *pb.ReserveItemRequest) (*pb.ReserveItemResponse, error) {
+    remaining, err := h.service.ReserveItem(ctx, req.Id, int(req.Quantity))
+    if err != nil {
+        if err == model.ErrItemNotFound {
+            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+        }
+        if err == model.ErrNotEnoughStock {
+            return nil, status.Errorf(codes.FailedPrecondition, "not enough stock: %v", err)
+        }
+        return nil, status.Errorf(codes.Internal, "failed to reserve item: %v", err)
+    }
+
+    return &pb.ReserveItemResponse{
+        Success:        true,
+        RemainingStock: int32(remaining),
+    }, nil
+}
+
+// SoftDeleteItem - мягкое удаление
+func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItemRequest) (*pb.EmptyResponse, error) {
+    if err := h.service.SoftDeleteItem(ctx, req.Id); err != nil {
+        if err == model.ErrItemNotFound {
+            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+        }
+        return nil, status.Errorf(codes.Internal, "failed to soft delete item: %v", err)
+    }
+    return &pb.EmptyResponse{}, nil
+}
+
+// RestoreItem - восстановление после мягкого удаления
+func (h *GRPCHandler) RestoreItem(ctx context.Context, req *pb.RestoreItemRequest) (*pb.EmptyResponse, error) {
+    if err := h.service.RestoreItem(ctx, req.Id); err != nil {
+        if err == model.ErrItemNotFound {
+            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+        }
+        return nil, status.Errorf(codes.Internal, "failed to restore item: %v", err)
+    }
+    return &pb.EmptyResponse{}, nil
+}
+
+// GetStats - статистика
+func (h *GRPCHandler) GetStats(ctx context.Context, req *pb.EmptyRequest) (*pb.StatsResponse, error) {
+    stats, err := h.service.GetStats(ctx)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to get stats: %v", err)
+    }
+
+    return &pb.StatsResponse{
+        TotalItems: stats.TotalItems,
+        ByType:     stats.ByType,
+        ByAuthor:   stats.ByAuthor,
+    }, nil
+}
