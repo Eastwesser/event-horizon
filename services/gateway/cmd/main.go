@@ -598,7 +598,6 @@ func main() {
             return
         }
 
-        // Собираем фильтры из query
         filters := make(map[string]string)
         if authorID := c.Query("author_id"); authorID != "" {
             filters["author_id"] = authorID
@@ -665,7 +664,6 @@ func main() {
             return
         }
 
-        // Конвертируем attributes в structpb.Struct
         attrs, err := structpb.NewStruct(req.Attributes)
         if err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": "invalid attributes: " + err.Error()})
@@ -794,6 +792,28 @@ func main() {
         }
 
         c.JSON(http.StatusOK, gin.H{"success": true, "message": "item deleted"})
+    })
+
+    // GET /api/inventory/stats — статистика по товарам
+    r.GET("/api/inventory/stats", func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        _, err := getUserIDFromToken(token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+            return
+        }
+
+        resp, err := inventoryClient.GetStats(c.Request.Context(), &inventoryPb.EmptyRequest{})
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+
+        c.JSON(http.StatusOK, gin.H{
+            "total_items": resp.TotalItems,
+            "by_type":     resp.ByType,
+            "by_author":   resp.ByAuthor,
+        })
     })
 
     r.GET("/api/leaderboard", func(c *gin.Context) {
