@@ -34,3 +34,5 @@ go.work.sum
 .git.backup/services/*/*-service
 services/*/*-service-*
 .git.backup/
+kozirev_code/
+.kozirev_code

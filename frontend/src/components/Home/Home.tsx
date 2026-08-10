@@ -49,15 +49,15 @@ export function Home() {
 
   return (
     <div className="landing">
-      {/* Хедер с логотипом, меню и кнопкой выхода */}
       <header className="landing-header">
         <div className="logo">
           <h1>🎮 EventHorizon</h1>
         </div>
         
         <nav className="main-nav">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Главная</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>🛒 Магазин</a> {/* НОВОЕ */}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>🏠 Главная</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>🛒 Магазин</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/inventory'); }}>📦 Инвентарь</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>🏆 Лидерборд</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>👤 Профиль</a>
           <a href="#" onClick={(e) => { e.preventDefault(); window.open('https://boosty.to/eastwesser', '_blank'); }}>Поддержать</a>

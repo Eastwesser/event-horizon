@@ -71,10 +71,10 @@ func (s *InventoryService) CreateItem(ctx context.Context, item *model.Item) err
         return fmt.Errorf("stock cannot be negative")
     }
 
-    // Формируем событие
+    // Формируем событие (item.ID ещё пустой, но это не страшно — мы передадим item в CreateItemWithOutbox)
     event := map[string]interface{}{
         "event":      "item.created",
-        "item_id":    item.ID,
+        "item_id":    "", // заполнится внутри транзакции
         "author_id":  item.AuthorID,
         "type":       item.Type,
         "name":       item.Name,
@@ -89,7 +89,7 @@ func (s *InventoryService) CreateItem(ctx context.Context, item *model.Item) err
         return fmt.Errorf("failed to marshal event: %w", err)
     }
 
-    // Приводим repo к PostgresRepo для доступа к CreateItemWithOutbox
+    // Используем CreateItemWithOutbox — он сам сгенерит ID и сохранит в outbox
     pgRepo, ok := s.repo.(*repository.PostgresRepo)
     if !ok {
         return fmt.Errorf("repository is not PostgresRepo, cannot use outbox")

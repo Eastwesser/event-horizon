@@ -21,6 +21,13 @@ func NewPostgresRepo(db *sql.DB) *PostgresRepo {
     return &PostgresRepo{db: db}
 }
 
+func (r *PostgresRepo) CreateOutboxEvent(ctx context.Context, eventType string, payload []byte) error {
+    _, err := r.db.ExecContext(ctx, `
+        INSERT INTO outbox (event_type, payload) VALUES ($1, $2)
+    `, eventType, payload)
+    return err
+}
+
 // CreateItemWithOutbox — сохраняет товар и событие в outbox в одной транзакции
 func (r *PostgresRepo) CreateItemWithOutbox(ctx context.Context, item *model.Item, eventType string, eventPayload []byte) error {
     tx, err := r.db.BeginTx(ctx, nil)
@@ -55,10 +62,21 @@ func (r *PostgresRepo) CreateItemWithOutbox(ctx context.Context, item *model.Ite
         return err
     }
 
-    // 2. Сохраняем событие в outbox
+    // 👇 2. ОБНОВЛЯЕМ eventPayload с правильным item.ID!
+    var event map[string]interface{}
+    if err := json.Unmarshal(eventPayload, &event); err != nil {
+        return err
+    }
+    event["item_id"] = item.ID  // ← вставляем ID!
+    updatedPayload, err := json.Marshal(event)
+    if err != nil {
+        return err
+    }
+
+    // 3. Сохраняем обновлённое событие в outbox
     _, err = tx.ExecContext(ctx, `
         INSERT INTO outbox (event_type, payload) VALUES ($1, $2)
-    `, eventType, eventPayload)
+    `, eventType, updatedPayload)
     if err != nil {
         return err
     }
