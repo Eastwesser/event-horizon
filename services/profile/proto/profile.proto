@@ -4,13 +4,15 @@ package profile;
 
 option go_package = "github.com/Eastwesser/event-horizon/services/profile/proto;profile";
 
+import "validate/validate.proto";
+
 service ProfileService {
     rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
     rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
 }
 
 message GetProfileRequest {
-    string user_id = 1;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message GetProfileResponse {
@@ -24,8 +26,8 @@ message GetProfileResponse {
 }
 
 message UpdateProfileRequest {
-    string user_id = 1;
-    string nickname = 2;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string nickname = 2 [(validate.rules).string = {max_len: 64}];
     optional int32 total_score = 3;
     map<string, int32> best_scores = 4;
 }

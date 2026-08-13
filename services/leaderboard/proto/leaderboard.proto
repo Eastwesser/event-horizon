@@ -4,20 +4,17 @@ package leaderboard;
 
 option go_package = "event_horizon/services/leaderboard/proto;leaderboard";
 
+import "validate/validate.proto";
+
 service LeaderboardService {
-    // Получить топ-N игроков для конкретной игры
     rpc GetTopScores(GetTopScoresRequest) returns (GetTopScoresResponse);
-    
-    // Получить место конкретного игрока в топе
     rpc GetPlayerRank(GetPlayerRankRequest) returns (GetPlayerRankResponse);
-    
-    // Обновить рекорд (будет вызываться через NATS, но gRPC тоже держим)
     rpc UpdateScore(UpdateScoreRequest) returns (UpdateScoreResponse);
 }
 
 message GetTopScoresRequest {
-    string game_id = 1;      // "hexagon" или "flappy"
-    int32 limit = 2;          // сколько записей (макс 100)
+    string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+    int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 100}];
 }
 
 message GetTopScoresResponse {
@@ -25,26 +22,26 @@ message GetTopScoresResponse {
 }
 
 message GetPlayerRankRequest {
-    string game_id = 1;
-    string user_id = 2;
+    string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+    string user_id = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message GetPlayerRankResponse {
-    int32 rank = 1;           // 1 = первое место
+    int32 rank = 1;
     int32 score = 2;
 }
 
 message UpdateScoreRequest {
-    string game_id = 1;
-    string user_id = 2;
-    string user_email = 3;    // для отображения в топе
-    string nickname = 4;
-    int32 score = 5;
+    string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+    string user_id = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string user_email = 3 [(validate.rules).string = {max_len: 254}];
+    string nickname = 4 [(validate.rules).string = {max_len: 64}];
+    int32 score = 5 [(validate.rules).int32 = {gte: 0, lte: 100000}];
 }
 
 message UpdateScoreResponse {
     bool success = 1;
-    int32 new_rank = 2;       // новый ранг после обновления
+    int32 new_rank = 2;
     string message = 3;
 }
 
@@ -54,5 +51,5 @@ message ScoreEntry {
     string user_email = 3;
     string nickname = 4;
     int32 score = 5;
-    int64 updated_at = 6;     // Unix timestamp
+    int64 updated_at = 6;
 }

@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/leaderboard/leaderboard-service /leaderboard-service
-EXPOSE 50054
+EXPOSE 50054 9094
 CMD ["/leaderboard-service"]

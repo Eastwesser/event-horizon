@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/inventory/inventory-service /inventory-service
-EXPOSE 50059
+EXPOSE 50059 9096
 CMD ["/inventory-service"]

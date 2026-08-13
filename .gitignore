@@ -20,9 +20,11 @@ profile.cov
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# Go workspace file
-go.work
-go.work.sum
+# Go workspace — tracked for Week-1 monorepo (Kozirev-style).
+# Local override: GOWORK=off
+
+# Task / tool binaries
+bin/
 
 # env file
 .env
@@ -36,3 +38,4 @@ services/*/*-service-*
 .git.backup/
 kozirev_code/
 .kozirev_code
+.gomodcache/

@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/game/game-service /game-service
-EXPOSE 50052
+EXPOSE 50052 9092
 CMD ["/game-service"]

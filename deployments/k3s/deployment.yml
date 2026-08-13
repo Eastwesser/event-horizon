@@ -34,6 +34,13 @@ spec:
           value: "eventhorizon"
         - name: DB_NAME
           value: "eventhorizon"
+        - name: REDIS_ADDR
+          value: "redis:6379"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: JWT_SECRET
 
       # Billing
       - name: billing
@@ -92,13 +99,15 @@ spec:
         - name: REDIS_ADDR
           value: "redis-leaderboard:6379"
         - name: DB_HOST
-          value: "postgres-game"
+          value: "postgres-leaderboard"
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
           value: "eventhorizon"
         - name: DB_PASSWORD
           value: "eventhorizon"
+        - name: DB_NAME
+          value: "eventhorizon_leaderboard"
 
       # Profile
       - name: profile
@@ -122,6 +131,8 @@ spec:
           value: "eventhorizon"
         - name: DB_NAME
           value: "eventhorizon_profile"
+        - name: REDIS_ADDR
+          value: "redis-profile:6379"
 
       # Shop
       - name: shop
@@ -159,11 +170,11 @@ spec:
         - name: INVENTORY_GRPC_PORT
           value: "50059"
         - name: INVENTORY_METRICS_PORT
-          value: "9099"
+          value: "9096"
         - name: INVENTORY_DRIVER
           value: "postgres"
         - name: INVENTORY_PG_HOST
-          value: "postgres-shop"
+          value: "postgres-inventory"
         - name: INVENTORY_PG_PORT
           value: "5432"
         - name: INVENTORY_PG_USER
@@ -171,9 +182,9 @@ spec:
         - name: INVENTORY_PG_PASSWORD
           value: "eventhorizon"
         - name: INVENTORY_PG_DB
-          value: "eventhorizon_shop"
+          value: "eventhorizon_inventory"
         - name: INVENTORY_REDIS_ADDR
-          value: "redis-shop:6379"
+          value: "redis-inventory:6379"
         - name: NATS_URL
           value: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
 

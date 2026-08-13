@@ -6,10 +6,11 @@ import (
 )
 
 type Config struct {
-    GRPCPort    string
-    RedisAddr   string
-    RedisDB     int
-    NATSUrl     string
+    GRPCPort     string
+    MetricsPort  string
+    RedisAddr    string
+    RedisDB      int
+    NATSUrl      string
     DBHost       string
     DBPort       string
     DBUser       string
@@ -25,6 +26,7 @@ type Config struct {
 func Load() *Config {
     return &Config{
         GRPCPort:     getEnv("GRPC_PORT", "50054"),
+        MetricsPort:  getEnv("METRICS_PORT", "9094"),
         RedisAddr:    getEnv("REDIS_ADDR", "127.0.0.1:6382"),
         RedisDB:      getEnvAsInt("REDIS_DB", 0),
         NATSUrl:      getEnv("NATS_URL", "nats://localhost:4222"),
@@ -32,7 +34,7 @@ func Load() *Config {
         DBPort:       getEnv("DB_PORT", "5463"),
         DBUser:       getEnv("DB_USER", "eventhorizon"),
         DBPassword:   getEnv("DB_PASSWORD", "eventhorizon"),
-        DBName:       getEnv("DB_NAME", "eventhorizon_game"),
+        DBName:       getEnv("DB_NAME", "eventhorizon_leaderboard"),
     }
 }
 

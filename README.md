@@ -10,7 +10,7 @@
 ---
 
 ## 📦 Архитектура (актуально v1.0.6, 03.08.2026)
-
+```text
 [GitHub Actions] (в облаке)
         │
         │ SSH + Ansible
@@ -62,7 +62,7 @@ PG :5460       PG :5461       PG :5462       PG :5463      PG :5465 + Redis :638
     │               NEW: Inventory Service :50059                  │
     │   Управление мерчем авторов, интеграция с Shop через NATS   │
     └──────────────────────────────────────────────────────────────┘
-
+```
 ---
 
 ## 🚀 Быстрый старт
@@ -265,10 +265,31 @@ make delivery-dev
 
 ## 🧪 Тестирование
 
-Запустить нагрузочное тестирование (k6):
+Unit-тесты (Week 2 Clean Architecture + testify):
 
+```bash
+task test              # все сервисы
+task test-coverage     # покрытие по gRPC-сервисам
+task w2-check          # структурный чеклист W2
+```
+
+Auth service layer is covered by unit tests with hand-written repository mocks
+(`services/auth/internal/service/auth_service_test.go`). Converter layers have
+package tests across gRPC services. Mongo inventory test is `//go:build integration`.
+
+When you have network, you can optionally add testify/suite + mockery:
+
+```bash
+cd services/auth && go get github.com/stretchr/testify@v1.11.1
+# then regenerate mocks via //go:generate on UserRepository
+```
+
+Нагрузочное тестирование (k6):
+
+```bash
 cd deployments/k6
 k6 run loadtest.js
+```
 
 ---
 

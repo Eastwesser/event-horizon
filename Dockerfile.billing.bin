@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/billing/billing-service /billing-service
-EXPOSE 50053
+EXPOSE 50053 9093
 CMD ["/billing-service"]

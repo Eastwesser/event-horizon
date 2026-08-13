@@ -20,3 +20,4 @@ frontend/src/
 │   └── inventoryApi.ts               # API клиент для Inventory
 └── store/
     └── inventoryStore.ts             # Zustand store для состояния
+    

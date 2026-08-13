@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/auth/auth-service /auth-service
-EXPOSE 50051
+EXPOSE 50051 9091
 CMD ["/auth-service"]
