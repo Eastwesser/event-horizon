@@ -51,4 +51,9 @@ Prioritized from the audit. **Excluded** (not needed now): squirrel, swaggo, zap
 
 1 → 2 → 3 (ship) → 4 → 5 → then P2 as appetite allows.
 
-Sleep well. 💤
+P0: OpenAPI auth routes → version label → push gateway/inventory
+P1: History FE page → integration tests (payment/authors/history/analytics)
+P2: thin unit smokes / shop outbox / slog cleanup
+Cool to check: squirrel, swaggo, zap, Redis-on-everything, full ≥70%, MCP polish
+
+
