@@ -17,6 +17,7 @@ type Config struct {
     RedisDB      int
     NATSUrl      string
     BillingAddr  string
+    PaymentAddr  string
 }
 
 func Load() *Config {
@@ -32,6 +33,7 @@ func Load() *Config {
         RedisDB:     getEnvAsInt("REDIS_DB", 0),
         NATSUrl:     getEnv("NATS_URL", "nats://localhost:4222"),
         BillingAddr: getEnv("BILLING_ADDR", "billing:50053"),
+        PaymentAddr: getEnv("PAYMENT_ADDR", "payment:50058"),
     }
 }
 

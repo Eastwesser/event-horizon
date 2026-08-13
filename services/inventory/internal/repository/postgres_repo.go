@@ -117,7 +117,7 @@ func (r *PostgresRepo) CreateItem(ctx context.Context, item *model.Item) error {
 // GetItem возвращает товар по ID (игнорирует удаленные).
 func (r *PostgresRepo) GetItem(ctx context.Context, id string) (*model.Item, error) {
 	query := `
-		SELECT id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at
+		SELECT id, author_id, type, name, description, price, stock, COALESCE(version,1), attributes, images, created_at, updated_at
 		FROM inventory_items WHERE id = $1 AND deleted_at IS NULL
 	`
 	var item model.Item
@@ -126,7 +126,7 @@ func (r *PostgresRepo) GetItem(ctx context.Context, id string) (*model.Item, err
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&item.ID, &item.AuthorID, &item.Type, &item.Name, &item.Description,
-		&item.Price, &item.Stock, &attrsJSON, pq.Array(&images),
+		&item.Price, &item.Stock, &item.Version, &attrsJSON, pq.Array(&images),
 		&item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
@@ -145,7 +145,7 @@ func (r *PostgresRepo) GetItem(ctx context.Context, id string) (*model.Item, err
 	return &item, nil
 }
 
-// UpdateItem обновляет все поля товара (стратегия PUT).
+// UpdateItem обновляет все поля товара (стратегия PUT) with optimistic locking.
 func (r *PostgresRepo) UpdateItem(ctx context.Context, item *model.Item) error {
 	item.UpdatedAt = time.Now()
 
@@ -154,18 +154,31 @@ func (r *PostgresRepo) UpdateItem(ctx context.Context, item *model.Item) error {
 		return fmt.Errorf("marshal attributes: %w", err)
 	}
 
+	expected := item.Version
+	if expected <= 0 {
+		expected = 1
+	}
 	query := `
 		UPDATE inventory_items SET
 			author_id = $1, type = $2, name = $3, description = $4,
-			price = $5, stock = $6, attributes = $7, images = $8, updated_at = $9
-		WHERE id = $10 AND deleted_at IS NULL
+			price = $5, stock = $6, attributes = $7, images = $8, updated_at = $9,
+			version = version + 1
+		WHERE id = $10 AND deleted_at IS NULL AND version = $11
 	`
-	_, err = r.db.ExecContext(ctx, query,
+	res, err := r.db.ExecContext(ctx, query,
 		item.AuthorID, item.Type, item.Name, item.Description,
 		item.Price, item.Stock, attrsJSON, pq.Array(item.Images),
-		item.UpdatedAt, item.ID,
+		item.UpdatedAt, item.ID, expected,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return model.ErrVersionConflict
+	}
+	item.Version = expected + 1
+	return nil
 }
 
 // DeleteItem выполняет жесткое удаление товара.
@@ -198,7 +211,7 @@ func (r *PostgresRepo) SearchItems(ctx context.Context, filters map[string]inter
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at
+		SELECT id, author_id, type, name, description, price, stock, COALESCE(version,1), attributes, images, created_at, updated_at
 		FROM inventory_items %s
 		ORDER BY created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -219,7 +232,7 @@ func (r *PostgresRepo) SearchItems(ctx context.Context, filters map[string]inter
 
 		err := rows.Scan(
 			&item.ID, &item.AuthorID, &item.Type, &item.Name, &item.Description,
-			&item.Price, &item.Stock, &attrsJSON, pq.Array(&images),
+			&item.Price, &item.Stock, &item.Version, &attrsJSON, pq.Array(&images),
 			&item.CreatedAt, &item.UpdatedAt,
 		)
 		if err != nil {
@@ -282,52 +295,26 @@ func (r *PostgresRepo) BulkCreateItems(ctx context.Context, items []*model.Item)
 	return tx.Commit()
 }
 
-// ReserveItem — резервирует товар (уменьшает stock) в транзакции.
+// ReserveItem — atomic stock decrement with optimistic version bump (single conditional UPDATE).
 func (r *PostgresRepo) ReserveItem(ctx context.Context, id string, quantity int) (int, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-
-	// 1. Проверяем текущий остаток
-	var stock int
-	err = tx.QueryRowContext(ctx, `
-		SELECT stock FROM inventory_items WHERE id = $1 AND deleted_at IS NULL
-	`, id).Scan(&stock)
+	var remaining int
+	err := r.db.QueryRowContext(ctx, `
+		UPDATE inventory_items
+		SET stock = stock - $1, version = version + 1, updated_at = NOW()
+		WHERE id = $2 AND deleted_at IS NULL AND stock >= $1
+		RETURNING stock
+	`, quantity, id).Scan(&remaining)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, model.ErrItemNotFound
+			var exists bool
+			_ = r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inventory_items WHERE id = $1 AND deleted_at IS NULL)`, id).Scan(&exists)
+			if !exists {
+				return 0, model.ErrItemNotFound
+			}
+			return 0, model.ErrNotEnoughStock
 		}
 		return 0, err
 	}
-
-	if stock < quantity {
-		return 0, model.ErrNotEnoughStock
-	}
-
-	// 2. Уменьшаем остаток
-	_, err = tx.ExecContext(ctx, `
-		UPDATE inventory_items SET stock = stock - $1, updated_at = NOW()
-		WHERE id = $2 AND deleted_at IS NULL
-	`, quantity, id)
-	if err != nil {
-		return 0, err
-	}
-
-	// 3. Получаем новый остаток
-	var remaining int
-	err = tx.QueryRowContext(ctx, `
-		SELECT stock FROM inventory_items WHERE id = $1 AND deleted_at IS NULL
-	`, id).Scan(&remaining)
-	if err != nil {
-		return 0, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return 0, err
-	}
-
 	return remaining, nil
 }
 

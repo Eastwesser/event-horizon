@@ -1,0 +1,5 @@
+-- +goose Up
+ALTER TABLE items ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 1;
+
+-- +goose Down
+ALTER TABLE items DROP COLUMN IF EXISTS version;

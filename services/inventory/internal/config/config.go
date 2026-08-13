@@ -38,14 +38,14 @@ func Load() (*Config, error) {
 
         PGHost:     getEnv("INVENTORY_PG_HOST", "localhost"),
         PGPort:     getEnvAsInt("INVENTORY_PG_PORT", 5466),
-        PGUser:     getEnv("INVENTORY_PG_USER", "postgres"),
-        PGPassword: getEnv("INVENTORY_PG_PASSWORD", "postgres"),
-        PGDBName:   getEnv("INVENTORY_PG_DB", "inventory"),
+        PGUser:     getEnv("INVENTORY_PG_USER", "eventhorizon"),
+        PGPassword: getEnv("INVENTORY_PG_PASSWORD", "eventhorizon"),
+        PGDBName:   getEnv("INVENTORY_PG_DB", "eventhorizon_inventory"),
 
         MongoURI:    getEnv("INVENTORY_MONGO_URI", "mongodb://localhost:27017"),
         MongoDBName: getEnv("INVENTORY_MONGO_DB", "inventory"),
 
-        RedisAddr: getEnv("INVENTORY_REDIS_ADDR", "localhost:6383"),
+        RedisAddr: getEnv("INVENTORY_REDIS_ADDR", "localhost:6384"),
 
         Driver:  getEnv("INVENTORY_DRIVER", "postgres"),
         NATSURL: getEnv("NATS_URL", "nats://localhost:4222"),

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package analytics;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/analytics/proto;analytics";
+
+// AnalyticsService — OLAP metrics from ClickHouse (DAU/MAU/retention).
+service AnalyticsService {
+  rpc RecordEvent(RecordEventRequest) returns (RecordEventResponse);
+  rpc GetDAU(GetDAURequest) returns (GetDAUResponse);
+  rpc GetMAU(GetMAURequest) returns (GetMAUResponse);
+  rpc GetRetention(GetRetentionRequest) returns (GetRetentionResponse);
+}
+
+message RecordEventRequest {
+  string user_id = 1;
+  string event_type = 2;
+  string payload_json = 3;
+}
+
+message RecordEventResponse {
+  bool ok = 1;
+}
+
+message GetDAURequest {
+  int32 days = 1; // default 30
+}
+
+message DayCount {
+  string day = 1; // YYYY-MM-DD
+  int64 count = 2;
+}
+
+message GetDAUResponse {
+  repeated DayCount days = 1;
+}
+
+message GetMAURequest {
+  int32 days = 1; // lookback window, default 30
+}
+
+message GetMAUResponse {
+  int64 mau = 1;
+  int32 window_days = 2;
+}
+
+message GetRetentionRequest {
+  int32 cohort_days_ago = 1; // cohort start day offset, default 7
+  int32 window_days = 2;     // return days, default 7
+}
+
+message RetentionPoint {
+  int32 day_n = 1;
+  double rate = 2;
+}
+
+message GetRetentionResponse {
+  string cohort_day = 1;
+  int64 cohort_size = 2;
+  repeated RetentionPoint points = 3;
+}

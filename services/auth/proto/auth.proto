@@ -4,17 +4,29 @@ package auth;
 
 option go_package = "github.com/Eastwesser/event-horizon/services/auth/proto;auth";
 
+import "validate/validate.proto";
+
 service AuthService {
     rpc Register(RegisterRequest) returns (RegisterResponse);
     rpc Login(LoginRequest) returns (LoginResponse);
     rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc Whoami(WhoamiRequest) returns (WhoamiResponse);
+    rpc Logout(LogoutRequest) returns (LogoutResponse);
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
     rpc UpdateNickname(UpdateNicknameRequest) returns (UpdateNicknameResponse);
+    // UpdateRole меняет роль пользователя (user/author/admin).
+    // Вызывающая сторона (Gateway) обязана убедиться, что запрос делает admin,
+    // прежде чем звать этот RPC — сам AuthService доверяет вызывающей стороне.
+    rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
 }
 
 message RegisterRequest {
-    string email = 1;
-    string password = 2;
+    string email = 1 [(validate.rules).string = {email: true, min_len: 3, max_len: 254}];
+    string password = 2 [(validate.rules).string = {min_len: 8, max_len: 128}];
+    // role: "user" (по умолчанию) или "author". "admin" через публичную
+    // регистрацию выдать нельзя — назначается только через UpdateRole.
+    string role = 3 [(validate.rules).string = {max_len: 16}];
 }
 
 message RegisterResponse {
@@ -22,11 +34,12 @@ message RegisterResponse {
     string email = 2;
     bool success = 3;
     string message = 4;
+    string role = 5;
 }
 
 message LoginRequest {
-    string email = 1;
-    string password = 2;
+    string email = 1 [(validate.rules).string = {email: true, min_len: 3, max_len: 254}];
+    string password = 2 [(validate.rules).string = {min_len: 8, max_len: 128}];
 }
 
 message LoginResponse {
@@ -35,10 +48,12 @@ message LoginResponse {
     int64 expires_in = 3;
     string user_id = 4;
     string email = 5;
+    string role = 6;
+    string refresh_token = 7;
 }
 
 message ValidateTokenRequest {
-    string token = 1;
+    string token = 1 [(validate.rules).string = {min_len: 1}];
 }
 
 message ValidateTokenResponse {
@@ -46,10 +61,43 @@ message ValidateTokenResponse {
     string user_id = 2;
     string email = 3;
     int64 expires_at = 4;
+    string role = 5;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message RefreshTokenResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    string token_type = 3;
+    int64 expires_in = 4;
+    string user_id = 5;
+    string role = 6;
+}
+
+message WhoamiRequest {
+    string access_token = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message WhoamiResponse {
+    string user_id = 1;
+    string email = 2;
+    string role = 3;
+    string nickname = 4;
+}
+
+message LogoutRequest {
+    string token = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message LogoutResponse {
+    bool success = 1;
 }
 
 message GetUserRequest {
-    string user_id = 1;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message GetUserResponse {
@@ -57,16 +105,27 @@ message GetUserResponse {
     string email = 2;
     string created_at = 3;
     string nickname = 4;
-    map<string, int32> best_scores = 5;  // game_id -> best_score
+    map<string, int32> best_scores = 5;
     int32 total_score = 6;
+    string role = 7;
 }
 
 message UpdateNicknameRequest {
-    string user_id = 1;
-    string nickname = 2;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string nickname = 2 [(validate.rules).string = {min_len: 1, max_len: 32}];
 }
 
 message UpdateNicknameResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message UpdateRoleRequest {
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string role = 2 [(validate.rules).string = {min_len: 1, max_len: 16}];
+}
+
+message UpdateRoleResponse {
     bool success = 1;
     string message = 2;
 }

@@ -2,6 +2,14 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
 scrape_configs:
   - job_name: 'auth'
     static_configs:
@@ -49,6 +57,36 @@ scrape_configs:
   - job_name: 'inventory'
     static_configs:
       - targets: ['inventory:9096']
+    metrics_path: '/metrics'
+
+  - job_name: 'fulfillment'
+    static_configs:
+      - targets: ['fulfillment:9101']
+    metrics_path: '/metrics'
+
+  - job_name: 'notification'
+    static_configs:
+      - targets: ['notification:9102']
+    metrics_path: '/metrics'
+
+  - job_name: 'payment'
+    static_configs:
+      - targets: ['payment:9103']
+    metrics_path: '/metrics'
+
+  - job_name: 'authors'
+    static_configs:
+      - targets: ['authors:9104']
+    metrics_path: '/metrics'
+
+  - job_name: 'history'
+    static_configs:
+      - targets: ['history:9105']
+    metrics_path: '/metrics'
+
+  - job_name: 'analytics'
+    static_configs:
+      - targets: ['analytics:9106']
     metrics_path: '/metrics'
 
   # - job_name: 'nats'

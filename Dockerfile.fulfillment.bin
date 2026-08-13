@@ -1,0 +1,5 @@
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
+COPY services/fulfillment/fulfillment-service /fulfillment-service
+EXPOSE 9101
+CMD ["/fulfillment-service"]

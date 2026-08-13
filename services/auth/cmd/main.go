@@ -1,141 +1,28 @@
 package main
 
 import (
-    "context"
-    "log"
-    "net"
-    "net/http"
-    _ "net/http/pprof"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
+	"context"
+	"log"
+	"os"
 
-    "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/prometheus/client_golang/prometheus/promhttp"
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/reflection"
-    "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-    "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
-    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-    "go.opentelemetry.io/otel/propagation"
-    "go.opentelemetry.io/otel/sdk/resource"
-    "go.opentelemetry.io/otel/sdk/trace"
-    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-
-    "github.com/Eastwesser/event-horizon/services/auth/internal/config"
-    "github.com/Eastwesser/event-horizon/services/auth/internal/handler"
-    "github.com/Eastwesser/event-horizon/services/auth/internal/repository"
-    "github.com/Eastwesser/event-horizon/services/auth/internal/service"
-    pb "github.com/Eastwesser/event-horizon/services/auth/proto"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/app"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/config"
 )
 
-// Инициализация OpenTelemetry для Jaeger
-func initTracer(ctx context.Context) (func(context.Context) error, error) {
-    // Читаем эндпоинт из переменной окружения
-    endpoint := os.Getenv("JAEGER_ENDPOINT")
-    if endpoint == "" {
-        endpoint = "localhost:4317"
-    }
-    log.Printf("🔄 Initializing Jaeger tracer with endpoint: %s", endpoint)
-
-    exporter, err := otlptracegrpc.New(ctx,
-        otlptracegrpc.WithEndpoint(endpoint),
-        otlptracegrpc.WithInsecure(),
-    )
-    if err != nil {
-        log.Printf("❌ Failed to create exporter: %v", err)
-        return nil, err
-    }
-    log.Println("✅ Jaeger exporter created")
-
-    tp := trace.NewTracerProvider(
-        trace.WithBatcher(exporter),
-        trace.WithResource(resource.NewWithAttributes(
-            semconv.SchemaURL,
-            semconv.ServiceNameKey.String("auth"),
-            attribute.String("environment", "development"),
-        )),
-    )
-    otel.SetTracerProvider(tp)
-    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-        propagation.TraceContext{},
-        propagation.Baggage{},
-    ))
-
-    log.Println("✅ Jaeger tracer initialized")
-    return tp.Shutdown, nil
-}
-
 func main() {
-    cfg := config.Load()
-    ctx := context.Background()
+	cfg := config.Load()
+	if cfg.JWTSecret == "your-secret-key-change-me" {
+		log.Println("WARNING: JWT_SECRET is using the insecure default — set JWT_SECRET before production")
+	}
 
-    // Инициализация Jaeger
-    shutdown, err := initTracer(ctx)
-    if err != nil {
-        log.Fatalf("Failed to initialize tracer: %v", err)
-    }
-    defer shutdown(ctx)
+	ctx := context.Background()
+	application, err := app.New(ctx)
+	if err != nil {
+		log.Fatalf("failed to init auth app: %v", err)
+	}
 
-    // Подключаемся к PostgreSQL
-    dbURL := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
-    dbpool, err := pgxpool.New(context.Background(), dbURL)
-    if err != nil {
-        log.Fatalf("Unable to connect to database: %v", err)
-    }
-    defer dbpool.Close()
-
-    // Инициализируем слои
-    userRepo := repository.NewPostgresUserRepo(dbpool)
-    authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpHours)
-    authHandler := handler.NewAuthHandler(authService)
-
-    // Создаём gRPC сервер с интерсепторами для трейсинга
-    grpcServer := grpc.NewServer(
-        grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-        grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-    )
-    pb.RegisterAuthServiceServer(grpcServer, authHandler)
-    reflection.Register(grpcServer)
-
-    // Метрики
-    go func() {
-        http.Handle("/metrics", promhttp.Handler())
-        log.Printf("📊 Metrics endpoint: http://localhost:9091/metrics")
-        if err := http.ListenAndServe(":9091", nil); err != nil {
-            log.Printf("Metrics server error: %v", err)
-        }
-    }()
-
-    
-    // Запускаем
-    lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
-    if err != nil {
-        log.Fatalf("Failed to listen: %v", err)
-    }
-
-    // Запуск в горутине
-    go func() {
-        log.Printf("🔐 Auth service listening on :%s", cfg.GRPCPort)
-        if err := grpcServer.Serve(lis); err != nil {
-            log.Fatalf("Failed to serve: %v", err)
-        }
-    }()
-
-    // Graceful shutdown
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-    <-quit
-
-    log.Println("Shutting down auth service gracefully...")
-
-    // Даём время завершить текущие запросы
-    time.Sleep(2 * time.Second)
-
-    grpcServer.GracefulStop()
-    dbpool.Close()
-
-    log.Println("Auth service stopped gracefully")
+	if err := application.RunUntilSignal(ctx); err != nil {
+		log.Printf("auth stopped with error: %v", err)
+		os.Exit(1)
+	}
 }

@@ -76,7 +76,16 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     // В зависимости от игры — своя логика наград
     switch req.GameID {
     case "hexagon":
-        validatedScore = req.Score
+        valid, valScore, err := s.validator.ValidateMoves(req.Seed, req.Moves, req.Score)
+        if err != nil {
+            log.Printf("❌ Hexagon validation error: %v", err)
+            return &SubmitScoreResponse{Success: false, Message: "validation error"}, nil
+        }
+        if !valid {
+            log.Printf("⚠️ Invalid hexagon game state for user %s", req.UserID)
+            return &SubmitScoreResponse{Success: false, Message: "invalid game state or moves"}, nil
+        }
+        validatedScore = valScore
         lampsEarned = 10
         ticketsEarned = 0
         if validatedScore > 0 {
@@ -116,6 +125,9 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         lampsEarned, ticketsEarned = game.CalculateRewards(validatedScore)
 
     case "flappy":
+        if req.Score < 0 || req.Score > 10000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
         validatedScore = req.Score
         lampsEarned = 5
         ticketsEarned = req.Score / 10
@@ -123,6 +135,9 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
             ticketsEarned = 100
         }
     case "towers":
+        if req.Score < 0 || req.Score > 10000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
         validatedScore = req.Score
         lampsEarned = 5
         ticketsEarned = req.Score / 20

@@ -1,0 +1,843 @@
+openapi: 3.0.0
+info:
+  title: EventHorizon Gateway API
+  description: API для фронтенда (React/Angular)
+  version: 1.0.3
+servers:
+  - url: http://localhost:8079
+    description: Local development (через балансировщик)
+  - url: http://localhost:8081
+    description: Gateway-1 (напрямую)
+  - url: http://localhost:8082
+    description: Gateway-2 (напрямую)
+  - url: http://localhost:8083
+    description: Gateway-3 (напрямую)
+
+paths:
+  # ===== HEALTH =====
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  # ===== AUTH =====
+  /api/auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  example: secret123
+                nickname:
+                  type: string
+                  description: Опционально. Если не указан, генерируется из email
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/auth/login:
+    post:
+      summary: Login user (получить JWT токен)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: secret123
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                  description: JWT токен (Bearer)
+                token_type:
+                  type: string
+                  example: Bearer
+                expires_in:
+                  type: integer
+                  example: 86400
+                user_id:
+                  type: string
+
+  /api/auth/user:
+    get:
+      summary: Get user data (email, nickname)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  best_scores:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  total_score:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /api/auth/update-nickname:
+    post:
+      summary: Update user nickname
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nickname
+              properties:
+                nickname:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+
+  # ===== BILLING =====
+  /api/billing/balance/all:
+    get:
+      summary: Get all balances (lamps + tickets)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lamps:
+                    type: integer
+                  tickets:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  # ===== GAME =====
+  /api/game/submit:
+    post:
+      summary: Submit game score (server-side validation)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - game_id
+                - score
+                - seed
+              properties:
+                user_id:
+                  type: string
+                game_id:
+                  type: string
+                  enum: [hexagon, flappy, memory, towers]
+                level:
+                  type: integer
+                  default: 1
+                score:
+                  type: integer
+                  description: Количество очков (начисленных игрой)
+                user_email:
+                  type: string
+                nickname:
+                  type: string
+                seed:
+                  type: string
+                  description: Deterministic seed для валидации
+                moves:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      fromX:
+                        type: integer
+                      fromY:
+                        type: integer
+                      toX:
+                        type: integer
+                      toY:
+                        type: integer
+                      timestamp:
+                        type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  new_highscore:
+                    type: integer
+                  message:
+                    type: string
+                  lamps_earned:
+                    type: integer
+                  tickets_earned:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  # ===== LEADERBOARD =====
+  /api/leaderboard:
+    get:
+      summary: Get top 10 players
+      parameters:
+        - name: game_id
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hexagon, flappy, memory, towers]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                        user_id:
+                          type: string
+                        user_email:
+                          type: string
+                        score:
+                          type: integer
+                        updated_at:
+                          type: integer
+                          description: Unix timestamp
+
+  # ===== PROFILE =====
+  /api/profile:
+    get:
+      summary: Get aggregated user profile (CQRS read model)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  nickname:
+                    type: string
+                  total_score:
+                    type: integer
+                  best_scores:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  lamps:
+                    type: integer
+                  tickets:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '404':
+          description: Profile not found
+
+  # ===== SHOP =====
+  /api/shop/items:
+    get:
+      summary: Get shop items (with filters)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [all, game_skin, merch, profile_theme]
+          description: Filter by category
+        - name: game_id
+          in: query
+          schema:
+            type: string
+            enum: [hexagon, flappy, memory, towers]
+          description: Filter by game (for skins)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: integer
+                    category:
+                      type: string
+                    game_id:
+                      type: string
+                    image_url:
+                      type: string
+                    available:
+                      type: boolean
+                    owned:
+                      type: boolean
+        '401':
+          description: Unauthorized
+
+  /api/shop/purchase:
+    post:
+      summary: Purchase an item
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - item_id
+              properties:
+                item_id:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  new_balance:
+                    type: integer
+        '400':
+          description: Bad request (not enough tickets, already owned, etc.)
+        '401':
+          description: Unauthorized
+
+  /api/shop/inventory:
+    get:
+      summary: Get user inventory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: integer
+                    category:
+                      type: string
+                    game_id:
+                      type: string
+                    image_url:
+                      type: string
+                    available:
+                      type: boolean
+        '401':
+          description: Unauthorized
+
+  # ===== INVENTORY =====
+  /api/inventory/items:
+    get:
+      summary: Get inventory items with filters
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: author_id
+          in: query
+          schema:
+            type: string
+          description: Filter by author ID
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [брелок, картина, фенечка]
+        - name: price_min
+          in: query
+          schema:
+            type: number
+        - name: price_max
+          in: query
+          schema:
+            type: number
+        - name: query
+          in: query
+          schema:
+            type: string
+          description: Search in name and description
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryItem'
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create new inventory item
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - name
+                - price
+              properties:
+                type:
+                  type: string
+                  enum: [брелок, картина, фенечка]
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                stock:
+                  type: integer
+                  default: 0
+                attributes:
+                  type: object
+                  additionalProperties: true
+                images:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}:
+    get:
+      summary: Get inventory item by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+        '404':
+          description: Not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update inventory item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                stock:
+                  type: integer
+                attributes:
+                  type: object
+                images:
+                  type: array
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete inventory item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/bulk:
+    post:
+      summary: Bulk create inventory items
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/InventoryItem'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/reserve:
+    post:
+      summary: Reserve item (decrease stock)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  remaining_stock:
+                    type: integer
+        '400':
+          description: Not enough stock
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/soft:
+    delete:
+      summary: Soft delete inventory item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/items/{id}/restore:
+    post:
+      summary: Restore soft deleted item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Item not found
+        '401':
+          description: Unauthorized
+
+  /api/inventory/stats:
+    get:
+      summary: Get inventory statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_items:
+                    type: integer
+                  by_type:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  by_author:
+                    type: object
+                    additionalProperties:
+                      type: integer
+        '401':
+          description: Unauthorized
+
+  # ===== WEBSOCKET =====
+  /ws/leaderboard:
+    get:
+      summary: WebSocket connection for real-time leaderboard updates
+      description: |
+        Подключитесь к этому эндпоинту через WebSocket.
+        При каждом обновлении топа (кто-то побил рекорд) вы будете получать сообщение.
+
+        **Пример сообщения:**
+        ```json
+        {
+          "user_id": "user-123",
+          "game_id": "hexagon",
+          "score": 1500,
+          "is_record": true,
+          "level": 3,
+          "lamps_earned": 10,
+          "tickets_earned": 1,
+          "timestamp": 1234567890
+        }
+        ```
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+
+components:
+  schemas:
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        author_id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        stock:
+          type: integer
+        attributes:
+          type: object
+        images:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -4,26 +4,23 @@ package game;
 
 option go_package = "event_horizon/services/game/proto;game";
 
+import "validate/validate.proto";
+
 service GameService {
-    // Отправка результата игры с полной валидацией
     rpc SubmitScore(SubmitScoreRequest) returns (SubmitScoreResponse);
-    
-    // Получение информации об игре (уровни, правила)
     rpc GetGameInfo(GetGameInfoRequest) returns (GetGameInfoResponse);
 }
 
 message SubmitScoreRequest {
-    string user_id = 1;
-    string game_id = 2;            // "hexagon" или "flappy"
-    int32 level = 3;               // уровень сложности (1-5)
-    int32 score = 4;               // добавить счет
-    string user_email = 5;
-    string nickname = 6;
-    string seed = 7;               // начальное состояние (для валидации)
-    repeated Move moves = 8;       // все ходы игрока
-    int32 client_version = 10;     // для отладки (опционально)
-    
-    // Поле score УДАЛЕНО — сервер сам вычислит!
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string game_id = 2 [(validate.rules).string = {min_len: 1, max_len: 32}];
+    int32 level = 3 [(validate.rules).int32 = {gte: 0, lte: 100}];
+    int32 score = 4 [(validate.rules).int32 = {gte: 0, lte: 100000}];
+    string user_email = 5 [(validate.rules).string = {max_len: 254}];
+    string nickname = 6 [(validate.rules).string = {max_len: 64}];
+    string seed = 7 [(validate.rules).string = {max_len: 128}];
+    repeated Move moves = 8 [(validate.rules).repeated = {max_items: 10000}];
+    int32 client_version = 10;
 }
 
 message Move {
@@ -31,22 +28,20 @@ message Move {
     int32 from_y = 2;
     int32 to_x = 3;
     int32 to_y = 4;
-    int32 timestamp = 5;           // ms от начала игры
+    int32 timestamp = 5;
 }
 
 message SubmitScoreResponse {
     bool success = 1;
-    int32 new_highscore = 2;       // новый рекорд игрока (если побит)
-    int32 rank = 3;                // место в мировом топе
+    int32 new_highscore = 2;
+    int32 rank = 3;
     string message = 4;
-    
-    // Награды
-    int32 lamps_earned = 10;       // лампочки за активность
-    int32 tickets_earned = 11;     // билетики за рекорд
+    int32 lamps_earned = 10;
+    int32 tickets_earned = 11;
 }
 
 message GetGameInfoRequest {
-    string game_id = 1;
+    string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
 }
 
 message GetGameInfoResponse {
@@ -58,7 +53,7 @@ message GetGameInfoResponse {
 
 message LevelInfo {
     int32 level = 1;
-    int32 target_score = 2;        // сколько очков нужно для прохода
+    int32 target_score = 2;
     int32 reward_lamps = 3;
     int32 reward_tickets = 4;
 }

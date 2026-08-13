@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy test-all test-unit test-smoke test-k6
 
 # ===== DOCKER =====
 up:
@@ -19,30 +19,59 @@ clean:
 # ===== DOCKER BUILD =====
 docker-build-all:
 	@echo "Building all services..."
-	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory payment authors history analytics fulfillment notification; do \
 		docker build -t eastwesser/$$service:latest -f Dockerfile.$$service.bin .; \
 	done
 
 docker-push-all:
 	@echo "Pushing all services..."
-	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
+	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory payment authors history analytics fulfillment notification; do \
 		docker push eastwesser/$$service:latest; \
-	done		
+	done
 
 # ===== BUILD =====
+SERVICES ?= auth billing game leaderboard profile shop gateway balancer nats-hub inventory payment authors history analytics fulfillment notification
 
 build-all:
 	@echo "Building all services..."
-	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
-		cd services/$$service && go build -o $$service-service ./cmd/main.go; \
+	for service in $(SERVICES); do \
+		(cd services/$$service && go build -o $$service-service ./cmd/main.go) || exit 1; \
 	done
 
-test-all:
-	@echo "Running all tests..."
-	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory; do \
-		cd services/$$service && go test -v ./...; \
+test-unit:
+	@echo "Unit tests..."
+	@failed=0; for service in $(SERVICES); do \
+		echo "===== $$service ====="; \
+		(cd services/$$service && GOWORK=off go test ./... -count=1) || failed=1; \
+	done; \
+	(cd pkg/sqb && GOWORK=off go test ./...) || failed=1; \
+	(cd pkg/migrator && GOWORK=off go test ./...) || failed=1; \
+	(cd platform && GOWORK=off go test ./...) || failed=1; \
+	exit $$failed
+
+test-smoke:
+	@echo "Smoke: curl /health|/ready on local metrics ports (cluster must be up)"
+	@set -e; \
+	for url in \
+	  http://127.0.0.1:9091/health \
+	  http://127.0.0.1:9092/health \
+	  http://127.0.0.1:9093/health \
+	  http://127.0.0.1:9103/ready \
+	  http://127.0.0.1:9104/ready \
+	  http://127.0.0.1:9105/ready \
+	  http://127.0.0.1:9106/ready \
+	  http://127.0.0.1:8081/ready; do \
+	  echo "→ $$url"; \
+	  curl -fsS -o /dev/null --max-time 3 "$$url" || echo "SKIP/FAIL $$url (is compose up?)"; \
 	done
 
+test-k6:
+	@echo "Optional k6 load (requires k6 + running stack)"
+	@command -v k6 >/dev/null || { echo "k6 not installed — skip"; exit 0; }
+	k6 run deployments/k6/loadtest.js
+
+test-all: test-unit
+	@echo "Unit OK. Optional: make test-smoke (compose up) / make test-k6"
 # ===== MIGRATIONS =====
 migrate-auth:
 	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
@@ -109,6 +138,7 @@ delivery-prod:
 # ===== K3S =====
 deploy-k3s:
 	@echo "🚀 Deploying to k3s..."
+	kubectl apply -f deployments/k3s/secret.yml
 	kubectl apply -f deployments/k3s/deployment.yml
 	kubectl apply -f deployments/k3s/service.yml
 	kubectl apply -f deployments/k3s/ingress.yml
@@ -119,4 +149,5 @@ undeploy-k3s:
 	kubectl delete -f deployments/k3s/deployment.yml
 	kubectl delete -f deployments/k3s/service.yml
 	kubectl delete -f deployments/k3s/ingress.yml
+	kubectl delete -f deployments/k3s/secret.yml
 	

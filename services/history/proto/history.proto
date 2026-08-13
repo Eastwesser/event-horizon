@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package history;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/history/proto;history";
+
+// HistoryService — append-only user/platform event trail (retention ~30d).
+service HistoryService {
+  rpc RecordEvent(RecordEventRequest) returns (RecordEventResponse);
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+}
+
+message HistoryEvent {
+  string id = 1;
+  string user_id = 2;
+  string event_type = 3;
+  string payload_json = 4;
+  int64 created_at_unix = 5;
+}
+
+message RecordEventRequest {
+  string user_id = 1;
+  string event_type = 2;
+  string payload_json = 3;
+}
+
+message RecordEventResponse {
+  string event_id = 1;
+}
+
+message ListEventsRequest {
+  string user_id = 1;
+  string event_type = 2; // optional filter
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListEventsResponse {
+  repeated HistoryEvent events = 1;
+  int64 total = 2;
+}

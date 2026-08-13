@@ -15,6 +15,10 @@ type Config struct {
     ProfileAddr     string
     ShopAddr        string
     InventoryAddr   string
+    PaymentAddr     string
+    AuthorsAddr     string
+    HistoryAddr     string
+    AnalyticsAddr   string
 
     // Infrastructure
     NATSUrl   string
@@ -32,6 +36,10 @@ func Load() *Config {
         ProfileAddr:     getEnv("PROFILE_ADDR", "profile:50060"),
         ShopAddr:        getEnv("SHOP_ADDR", "shop:50055"),
         InventoryAddr:   getEnv("INVENTORY_ADDR", "inventory:50059"),
+        PaymentAddr:     getEnv("PAYMENT_ADDR", "payment:50058"),
+        AuthorsAddr:     getEnv("AUTHORS_ADDR", "authors:50061"),
+        HistoryAddr:     getEnv("HISTORY_ADDR", "history:50062"),
+        AnalyticsAddr:   getEnv("ANALYTICS_ADDR", "analytics:50057"),
         NATSUrl:         getEnv("NATS_URL", "nats://localhost:4222"),
         RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
     }

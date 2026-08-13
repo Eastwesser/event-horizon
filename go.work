@@ -1,0 +1,26 @@
+go 1.25.7
+
+use (
+	./contracts/events
+	./pkg/migrator
+	./pkg/redisclient
+	./pkg/sqb
+	./platform
+	./services/auth
+	./services/balancer
+	./services/billing
+	./services/fulfillment
+	./services/game
+	./services/gateway
+	./services/inventory
+	./services/leaderboard
+	./services/nats-hub
+	./services/notification
+	./services/payment
+	./services/authors
+	./services/history
+	./services/analytics
+	./services/mcp
+	./services/profile
+	./services/shop
+)

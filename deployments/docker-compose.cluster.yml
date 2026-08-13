@@ -167,7 +167,19 @@ services:
       timeout: 5s
       retries: 5
       
-  # --- Redis для Profile (агрегированный профиль) ---
+  # --- Redis для Profile (кеш агрегированного профиля) ---
+  redis-profile:
+    image: redis:7-alpine
+    container_name: event-horizon-redis-profile
+    ports:
+      - "6385:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- PostgreSQL для Shop ---
   postgres-shop:
@@ -422,6 +434,35 @@ services:
       - event-horizon-net
 
 
+  # --- Kafka (KRaft, Week 5) ---
+  kafka:
+    image: apache/kafka:3.8.1
+    container_name: event-horizon-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+
   # ============================================================
   # 5. МИКРОСЕРВИСЫ
   # ============================================================
@@ -433,6 +474,12 @@ services:
     ports:
       - "50051:50051"   # gRPC
       - "9091:9091"     # метрики
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9091/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - METRICS_PORT=9091
       - JAEGER_ENDPOINT=jaeger:4317
@@ -443,6 +490,15 @@ services:
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
       - DB_NAME=eventhorizon
+      - REDIS_ADDR=event-horizon-redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXP_HOURS=${JWT_EXP_HOURS:-24}
+      - USER_CACHE_TTL_MINUTES=${USER_CACHE_TTL_MINUTES:-5}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - event-horizon-net
 
@@ -453,6 +509,12 @@ services:
     ports:
       - "50053:50053"
       - "9093:9093"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9093/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - METRICS_PORT=9093
       - JAEGER_ENDPOINT=jaeger:4317
@@ -475,6 +537,12 @@ services:
     ports:
       - "50052:50052"
       - "9092:9092"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9092/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - METRICS_PORT=9092
       - JAEGER_ENDPOINT=jaeger:4317
@@ -495,6 +563,12 @@ services:
     ports:
       - "50054:50054"
       - "9094:9094"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9094/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - METRICS_PORT=9094
       - JAEGER_ENDPOINT=jaeger:4317
@@ -502,10 +576,11 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - REDIS_ADDR=event-horizon-redis-leaderboard:6379
       - REDIS_DB=0
-      - DB_HOST=event-horizon-postgres-game
+      - DB_HOST=event-horizon-postgres-leaderboard
       - DB_PORT=5432
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_leaderboard
     networks:
       - event-horizon-net
     depends_on:
@@ -517,6 +592,8 @@ services:
         condition: service_started
       nats-hub:
         condition: service_started
+      postgres-leaderboard:
+        condition: service_healthy
 
   # --- Profile (агрегатор пользовательских данных) ---
   profile:
@@ -525,6 +602,12 @@ services:
     ports:
       - "50060:50060"
       - "9099:9099"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9099/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - GRPC_PORT=50060
       - METRICS_PORT=9099
@@ -536,6 +619,7 @@ services:
       - DB_USER=eventhorizon
       - DB_PASSWORD=eventhorizon
       - DB_NAME=eventhorizon_profile
+      - REDIS_ADDR=event-horizon-redis-profile:6379
     depends_on:
       nats-1:
         condition: service_started
@@ -544,6 +628,8 @@ services:
       nats-3:
         condition: service_started
       postgres-profile:
+        condition: service_healthy
+      redis-profile:
         condition: service_healthy
     networks:
       - event-horizon-net
@@ -556,10 +642,11 @@ services:
       - "50055:50055"
       - "9095:9095"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9095/metrics"]
-      interval: 30s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9095/ready"]
+      interval: 15s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 20s
     environment:
       - GRPC_PORT=50055
       - METRICS_PORT=9095
@@ -573,13 +660,52 @@ services:
       - REDIS_ADDR=event-horizon-redis-shop:6379
       - REDIS_DB=0
       - BILLING_ADDR=billing:50053
+      - PAYMENT_ADDR=payment:50058
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
       - postgres-shop
       - nats-1
       - nats-2
       - nats-3
+      - kafka
     networks:
       - event-horizon-net
+
+  # --- Fulfillment (Week 5 Assembly analogue) ---
+  fulfillment:
+    image: eastwesser/fulfillment:latest
+    container_name: deployments-fulfillment-1
+    ports:
+      - "9101:9101"
+    environment:
+      - METRICS_PORT=9101
+      - KAFKA_BROKERS=kafka:9092
+      - LOG_LEVEL=info
+    depends_on:
+      kafka:
+        condition: service_started
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+
+  # --- Notification (Week 5 Telegram consumer) ---
+  notification:
+    image: eastwesser/notification:latest
+    container_name: deployments-notification-1
+    ports:
+      - "9102:9102"
+    environment:
+      - METRICS_PORT=9102
+      - KAFKA_BROKERS=kafka:9092
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - LOG_LEVEL=info
+    depends_on:
+      kafka:
+        condition: service_started
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
 
   # --- Inventory service ---
   inventory:
@@ -588,6 +714,12 @@ services:
     ports:
       - "50059:50059"
       - "9096:9096"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9096/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       - INVENTORY_GRPC_PORT=50059
       - INVENTORY_METRICS_PORT=9096
@@ -606,6 +738,235 @@ services:
     networks:
       - event-horizon-net
 
+  # --- PostgreSQL for Payment (subscriptions) ---
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-payment
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_payment
+    ports:
+      - "5467:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-payment:
+    image: redis:7-alpine
+    container_name: event-horizon-redis-payment
+    ports:
+      - "6386:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  payment:
+    image: eastwesser/payment:latest
+    container_name: deployments-payment-1
+    ports:
+      - "50058:50058"
+      - "9103:9103"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9103/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      - GRPC_PORT=50058
+      - METRICS_PORT=9103
+      - DB_HOST=event-horizon-postgres-payment
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_payment
+      - REDIS_ADDR=event-horizon-redis-payment:6379
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - BOOSTY_CHECKOUT_URL=${BOOSTY_CHECKOUT_URL:-https://boosty.to/eastwesser}
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
+      - SUBSCRIPTION_DAYS=30
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres-payment
+      - redis-payment
+      - nats-1
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+
+  # --- Authors (catalog profiles) ---
+  postgres-authors:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-authors
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_authors
+    ports:
+      - "5468:5432"
+    volumes:
+      - postgres_authors_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-authors:
+    image: redis:7-alpine
+    container_name: event-horizon-redis-authors
+    ports:
+      - "6387:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  authors:
+    image: eastwesser/authors:latest
+    container_name: deployments-authors-1
+    ports:
+      - "50061:50061"
+      - "9104:9104"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9104/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      - GRPC_PORT=50061
+      - METRICS_PORT=9104
+      - DB_HOST=event-horizon-postgres-authors
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_authors
+      - REDIS_ADDR=event-horizon-redis-authors:6379
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres-authors
+      - redis-authors
+      - nats-1
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+
+  # --- History (event trail, retention) ---
+  postgres-history:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-history
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_history
+    ports:
+      - "5469:5432"
+    volumes:
+      - postgres_history_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  history:
+    image: eastwesser/history:latest
+    container_name: deployments-history-1
+    ports:
+      - "50062:50062"
+      - "9105:9105"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9105/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      - GRPC_PORT=50062
+      - METRICS_PORT=9105
+      - DB_HOST=event-horizon-postgres-history
+      - DB_PORT=5432
+      - DB_USER=eventhorizon
+      - DB_PASSWORD=eventhorizon
+      - DB_NAME=eventhorizon_history
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - RETENTION_DAYS=30
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres-history
+      - nats-1
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+
+  # --- Analytics (ClickHouse OLAP) ---
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: event-horizon-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  analytics:
+    image: eastwesser/analytics:latest
+    container_name: deployments-analytics-1
+    ports:
+      - "50057:50057"
+      - "9106:9106"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9106/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    environment:
+      - GRPC_PORT=50057
+      - METRICS_PORT=9106
+      - CLICKHOUSE_URL=http://event-horizon-clickhouse:8123
+      - CLICKHOUSE_DB=eventhorizon
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - LOG_LEVEL=info
+    depends_on:
+      - clickhouse
+      - nats-1
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+
   # --- Gateway (API Gateway, 3 инстанса) ---
   gateway:
     image: eastwesser/gateway:latest
@@ -613,6 +974,12 @@ services:
     command: ["/gateway"]
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       - PORT=8080
       - METRICS_PORT=9095
@@ -627,6 +994,10 @@ services:
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
       - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
+      - PAYMENT_ADDR=payment:50058
+      - AUTHORS_ADDR=authors:50061
+      - HISTORY_ADDR=history:50062
+      - ANALYTICS_ADDR=analytics:50057
     depends_on:
       - nats-1
       - nats-2
@@ -640,6 +1011,12 @@ services:
     command: ["/gateway"]
     ports:
       - "8082:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       - PORT=8080
       - METRICS_PORT=9096
@@ -654,6 +1031,10 @@ services:
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
       - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
+      - PAYMENT_ADDR=payment:50058
+      - AUTHORS_ADDR=authors:50061
+      - HISTORY_ADDR=history:50062
+      - ANALYTICS_ADDR=analytics:50057
     depends_on:
       - nats-1
       - nats-2
@@ -667,6 +1048,12 @@ services:
     command: ["/gateway"]
     ports:
       - "8083:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       - PORT=8080
       - METRICS_PORT=9097
@@ -681,6 +1068,10 @@ services:
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
       - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
+      - PAYMENT_ADDR=payment:50058
+      - AUTHORS_ADDR=authors:50061
+      - HISTORY_ADDR=history:50062
+      - ANALYTICS_ADDR=analytics:50057
     depends_on:
       - nats-1
       - nats-2
@@ -718,6 +1109,10 @@ volumes:
   postgres_profile_data:
   postgres_shop_data:
   postgres_inventory_data:
+  postgres_payment_data:
+  postgres_authors_data:
+  postgres_history_data:
+  clickhouse_data:
 
 
 # ============================================================
