@@ -206,9 +206,9 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
     }
     defer tx.Rollback()
 
-    // Блокируем строку товара
-    var stock int
-    err = tx.QueryRowContext(ctx, `SELECT stock FROM items WHERE id = $1 FOR UPDATE`, itemID).Scan(&stock)
+    // Pessimistic row lock + optimistic version bump on stock change.
+    var stock, version int
+    err = tx.QueryRowContext(ctx, `SELECT stock, version FROM items WHERE id = $1 FOR UPDATE`, itemID).Scan(&stock, &version)
     if err != nil {
         return err
     }
@@ -216,10 +216,13 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
         return fmt.Errorf("item out of stock")
     }
 
-    // Уменьшаем сток
-    _, err = tx.ExecContext(ctx, `UPDATE items SET stock = stock - 1 WHERE id = $1`, itemID)
+    res, err := tx.ExecContext(ctx, `
+        UPDATE items SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2`, itemID, version)
     if err != nil {
         return err
+    }
+    if n, _ := res.RowsAffected(); n == 0 {
+        return fmt.Errorf("optimistic lock conflict on item %s", itemID)
     }
 
     // Добавляем в инвентарь

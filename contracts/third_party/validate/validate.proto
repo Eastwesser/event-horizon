@@ -1,0 +1,231 @@
+// Protocol Buffers validation rules (subset of envoyproxy/protoc-gen-validate).
+// Vendored for offline / Week-1 use. Prefer buf dep buf.build/envoyproxy/protoc-gen-validate
+// when regenerating with network available.
+syntax = "proto2";
+package validate;
+
+option go_package = "github.com/envoyproxy/protoc-gen-validate/validate;validate";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  optional FieldRules rules = 1071;
+}
+
+message FieldRules {
+  optional FloatRules float = 1;
+  optional DoubleRules double = 2;
+  optional Int32Rules int32 = 3;
+  optional Int64Rules int64 = 4;
+  optional UInt32Rules uint32 = 5;
+  optional UInt64Rules uint64 = 6;
+  optional Sint32Rules sint32 = 7;
+  optional Sint64Rules sint64 = 8;
+  optional Fixed32Rules fixed32 = 9;
+  optional Fixed64Rules fixed64 = 10;
+  optional SFixed32Rules sfixed32 = 11;
+  optional SFixed64Rules sfixed64 = 12;
+  optional BoolRules bool = 13;
+  optional StringRules string = 14;
+  optional BytesRules bytes = 15;
+  optional EnumRules enum = 16;
+  optional MessageRules message = 17;
+  optional RepeatedRules repeated = 18;
+  optional MapRules map = 19;
+  optional AnyRules any = 20;
+  optional DurationRules duration = 21;
+  optional TimestampRules timestamp = 22;
+}
+
+message FloatRules {
+  optional float const = 1;
+  optional float lt = 2;
+  optional float lte = 3;
+  optional float gt = 4;
+  optional float gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message DoubleRules {
+  optional double const = 1;
+  optional double lt = 2;
+  optional double lte = 3;
+  optional double gt = 4;
+  optional double gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Int32Rules {
+  optional int32 const = 1;
+  optional int32 lt = 2;
+  optional int32 lte = 3;
+  optional int32 gt = 4;
+  optional int32 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Int64Rules {
+  optional int64 const = 1;
+  optional int64 lt = 2;
+  optional int64 lte = 3;
+  optional int64 gt = 4;
+  optional int64 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message UInt32Rules {
+  optional uint32 const = 1;
+  optional uint32 lt = 2;
+  optional uint32 lte = 3;
+  optional uint32 gt = 4;
+  optional uint32 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message UInt64Rules {
+  optional uint64 const = 1;
+  optional uint64 lt = 2;
+  optional uint64 lte = 3;
+  optional uint64 gt = 4;
+  optional uint64 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Sint32Rules {
+  optional sint32 const = 1;
+  optional sint32 lt = 2;
+  optional sint32 lte = 3;
+  optional sint32 gt = 4;
+  optional sint32 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Sint64Rules {
+  optional sint64 const = 1;
+  optional sint64 lt = 2;
+  optional sint64 lte = 3;
+  optional sint64 gt = 4;
+  optional sint64 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Fixed32Rules {
+  optional fixed32 const = 1;
+  optional fixed32 lt = 2;
+  optional fixed32 lte = 3;
+  optional fixed32 gt = 4;
+  optional fixed32 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message Fixed64Rules {
+  optional fixed64 const = 1;
+  optional fixed64 lt = 2;
+  optional fixed64 lte = 3;
+  optional fixed64 gt = 4;
+  optional fixed64 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message SFixed32Rules {
+  optional sfixed32 const = 1;
+  optional sfixed32 lt = 2;
+  optional sfixed32 lte = 3;
+  optional sfixed32 gt = 4;
+  optional sfixed32 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message SFixed64Rules {
+  optional sfixed64 const = 1;
+  optional sfixed64 lt = 2;
+  optional sfixed64 lte = 3;
+  optional sfixed64 gt = 4;
+  optional sfixed64 gte = 5;
+  optional bool ignore_empty = 6;
+}
+
+message BoolRules {
+  optional bool const = 1;
+}
+
+message StringRules {
+  optional string const = 1;
+  optional uint64 len = 19;
+  optional uint64 min_len = 2;
+  optional uint64 max_len = 3;
+  optional string pattern = 6;
+  optional string prefix = 7;
+  optional string suffix = 8;
+  optional string contains = 9;
+  optional string not_contains = 23;
+  optional bool email = 12;
+  optional bool hostname = 13;
+  optional bool ip = 14;
+  optional bool ipv4 = 15;
+  optional bool ipv6 = 16;
+  optional bool uri = 17;
+  optional bool uri_ref = 18;
+  optional bool uuid = 22;
+  optional bool ignore_empty = 24;
+}
+
+message BytesRules {
+  optional bytes const = 1;
+  optional uint64 len = 13;
+  optional uint64 min_len = 2;
+  optional uint64 max_len = 3;
+  optional string pattern = 4;
+  optional bytes prefix = 5;
+  optional bytes suffix = 6;
+  optional bytes contains = 7;
+  optional bool ip = 8;
+  optional bool ipv4 = 9;
+  optional bool ipv6 = 10;
+  optional bool ignore_empty = 11;
+}
+
+message EnumRules {
+  optional int32 const = 1;
+  optional bool defined_only = 2;
+  repeated int32 in = 3;
+  repeated int32 not_in = 4;
+}
+
+message MessageRules {
+  optional bool skip = 1;
+  optional bool required = 2;
+}
+
+message RepeatedRules {
+  optional uint64 min_items = 1;
+  optional uint64 max_items = 2;
+  optional bool unique = 3;
+  optional FieldRules items = 4;
+  optional bool ignore_empty = 5;
+}
+
+message MapRules {
+  optional uint64 min_pairs = 1;
+  optional uint64 max_pairs = 2;
+  optional bool no_sparse = 3;
+  optional FieldRules keys = 4;
+  optional FieldRules values = 5;
+  optional bool ignore_empty = 6;
+}
+
+message AnyRules {
+  optional bool required = 1;
+  repeated string in = 2;
+  repeated string not_in = 3;
+}
+
+message DurationRules {
+  optional bool required = 1;
+  optional bool ignore_empty = 2;
+}
+
+message TimestampRules {
+  optional bool required = 1;
+  optional bool ignore_empty = 2;
+}

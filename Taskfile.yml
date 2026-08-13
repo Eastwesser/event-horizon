@@ -1,0 +1,237 @@
+version: '3'
+
+vars:
+  BIN_DIR: '{{.ROOT_DIR}}/bin'
+  SERVICES: auth billing game inventory leaderboard profile shop gateway balancer nats-hub payment authors history analytics fulfillment notification
+  GRPC_SERVICES: auth billing game inventory leaderboard profile shop
+  NEW_GRPC_SERVICES: payment authors history analytics
+
+tasks:
+  default:
+    desc: "List common tasks"
+    cmds:
+      - task --list
+
+  build:
+    desc: "Build linux/amd64 binaries for all services (CGO off)"
+    cmds:
+      - |
+        set -e
+        for svc in {{.SERVICES}}; do
+          echo "===== BUILD $svc ====="
+          (cd services/$svc && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ${svc}-service ./cmd/main.go)
+        done
+
+  build-one:
+    desc: "Build one service: task build-one SVC=auth"
+    requires:
+      vars: [SVC]
+    cmds:
+      - |
+        cd services/{{.SVC}} && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o {{.SVC}}-service ./cmd/main.go
+
+  test:
+    desc: "go test for all service modules"
+    cmds:
+      - |
+        set -e
+        for svc in {{.SERVICES}}; do
+          echo "===== TEST $svc ====="
+          (cd services/$svc && GOWORK=off go test ./...)
+        done
+
+  test-coverage:
+    desc: "Unit-test coverage per gRPC service (excludes integration tags)"
+    cmds:
+      - |
+        set -e
+        for svc in {{.GRPC_SERVICES}} {{.NEW_GRPC_SERVICES}}; do
+          echo "===== COVERAGE $svc ====="
+          (cd services/$svc && GOWORK=off go test ./... -coverprofile=coverage.out -covermode=atomic)
+          (cd services/$svc && go tool cover -func=coverage.out | tail -1)
+        done
+
+  test-smoke:
+    desc: "HTTP smoke against local metrics/health (compose must be up)"
+    cmds:
+      - make test-smoke
+
+  test-k6:
+    desc: "Optional k6 loadtest"
+    cmds:
+      - make test-k6
+
+  lint:
+    desc: "golangci-lint if installed in ./bin or PATH"
+    cmds:
+      - |
+        LINT="{{.BIN_DIR}}/golangci-lint"
+        if [ ! -x "$LINT" ]; then LINT=$(command -v golangci-lint || true); fi
+        if [ -z "$LINT" ]; then
+          echo "golangci-lint not found — install manually: GOBIN={{.BIN_DIR}} go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest"
+          exit 1
+        fi
+        for svc in {{.SERVICES}}; do
+          echo "===== LINT $svc ====="
+          (cd services/$svc && "$LINT" run ./...)
+        done
+
+  gen-proto:
+    desc: "buf generate for contracts/proto (requires buf + plugins; run when network is available)"
+    dir: contracts/proto
+    cmds:
+      - |
+        if ! command -v buf >/dev/null 2>&1 && [ ! -x "{{.BIN_DIR}}/buf" ]; then
+          echo "buf not found. Install manually, then re-run: task gen-proto"
+          exit 1
+        fi
+        BUF=$(command -v buf || echo "{{.BIN_DIR}}/buf")
+        "$BUF" generate
+
+  gen-openapi-note:
+    desc: "Reminder: HTTP OpenAPI lives in docs/openapi.yaml (Gateway serves it)"
+    cmds:
+      - echo "Canonical OpenAPI: docs/openapi.yaml"
+      - echo "Served by gateway at GET /openapi.yaml and Swagger UI at GET /docs"
+      - echo "ogen codegen is optional later; do not replace Gin gateway without an explicit decision"
+
+  w1-check:
+    desc: "Quick Week-1 structural checklist"
+    cmds:
+      - |
+        set -e
+        test -f .cursor/rules/event-horizon.mdc
+        test -f .cursor/agents/event-horizon-agent.md
+        test -f .cursor/settings.json
+        test -f go.work
+        test -f contracts/proto/buf.yaml
+        test -f contracts/third_party/validate/validate.proto
+        for svc in {{.GRPC_SERVICES}}; do
+          test -f services/$svc/internal/interceptor/logger.go
+          test -f services/$svc/internal/interceptor/recovery.go
+          test -f services/$svc/internal/interceptor/validate.go
+        done
+        echo "W1 structural check OK"
+
+  w2-check:
+    desc: "Week-2 structural checklist (converter, model errors, tests)"
+    cmds:
+      - |
+        set -e
+        for svc in {{.GRPC_SERVICES}}; do
+          test -d services/$svc/internal/model
+          test -f services/$svc/internal/model/errors.go
+          test -d services/$svc/internal/converter
+          test -n "$(find services/$svc -name '*_test.go' ! -name 'mongo_repo_test.go' | head -1)"
+        done
+        test -f services/auth/internal/repository/mocks/user_repository_mock.go
+        test -f services/auth/internal/service/auth_service_test.go
+        echo "W2 structural check OK"
+
+  w3-check:
+    desc: "Week-3 structural checklist (lint config, migrator, sqb, compose)"
+    cmds:
+      - |
+        set -e
+        test -f .golangci.yml
+        test -d pkg/migrator
+        test -d pkg/sqb
+        test -f deployments/compose/README.md
+        test -f deployments/compose/core/docker-compose.yml
+        test -f deployments/compose/auth/docker-compose.yml
+        test -f services/profile/Dockerfile
+        for svc in auth billing game inventory leaderboard profile shop; do
+          test -f services/$svc/migrations/embed.go
+          grep -rq 'migrator.Up' "services/$svc" --include='*.go'
+        done
+        grep -q 'pkg/sqb' services/auth/internal/repository/user_repo.go
+        grep -q '/ready' deployments/docker-compose.cluster.yml
+        echo "W3 structural check OK"
+
+  w4-check:
+    desc: "Week-4 structural checklist (platform, auth DI, env templates)"
+    cmds:
+      - |
+        set -e
+        test -d platform/pkg/closer
+        test -d platform/pkg/logger
+        test -f services/auth/internal/app/app.go
+        test -f services/auth/internal/app/di.go
+        test -f services/auth/internal/config/interfaces.go
+        test -f deployments/env/auth.env.template
+        test -f services/auth/tests/integration/user_repo_test.go
+        test -f services/auth/tests/integration/e2e_auth_test.go
+        grep -q 'app.New' services/auth/cmd/main.go
+        echo "W4 structural check OK"
+
+  di-check:
+    desc: "All services use thin main + internal/app DI"
+    cmds:
+      - |
+        set -e
+        for svc in auth billing game inventory leaderboard profile shop gateway balancer nats-hub fulfillment notification payment authors history analytics; do
+          test -d "services/$svc/internal/app"
+          test -f "services/$svc/cmd/main.go"
+          grep -q 'app.New' "services/$svc/cmd/main.go"
+        done
+        echo "DI structural check OK"
+
+  w5-check:
+    desc: "Week-5 Kafka + fulfillment/notification checklist"
+    cmds:
+      - |
+        set -e
+        test -d platform/pkg/kafka
+        test -f contracts/events/purchase.go
+        test -f services/fulfillment/internal/app/app.go
+        test -f services/notification/internal/app/app.go
+        grep -q 'kafka:' deployments/docker-compose.cluster.yml
+        grep -q 'kafka:' deployments/compose/core/docker-compose.yml
+        grep -q 'TopicPurchasePaid\|purchase.paid' services/shop/internal/service/shop_service.go
+        echo "W5 structural check OK"
+
+  w6-check:
+    desc: "Week-6 JWT refresh + redisclient checklist"
+    cmds:
+      - |
+        set -e
+        test -f services/auth/internal/jwt/manager.go
+        test -f services/auth/internal/repository/refresh_store.go
+        test -d pkg/redisclient
+        grep -q 'RefreshToken' services/auth/proto/auth.proto
+        grep -q 'Whoami' services/auth/proto/auth.proto
+        grep -q 'JWT_ACCESS_MINUTES' services/auth/internal/config/config.go
+        echo "W6 structural check OK"
+
+  test-integration-auth:
+    desc: "Auth integration/e2e tests (needs AUTH_TEST_DATABASE_URL)"
+    cmds:
+      - |
+        cd services/auth && GOWORK=off go test -tags=integration ./tests/integration/ -count=1 -v
+
+  w7-check:
+    desc: "Week-7 metrics + tracing checklist"
+    cmds:
+      - |
+        set -e
+        test -f platform/pkg/tracing/tracer.go
+        test -f platform/pkg/metrics/grpc.go
+        grep -q 'tracing.Init' services/auth/internal/app/di.go
+        grep -q 'metrics.UnaryServerInterceptor' services/auth/internal/app/di.go
+        grep -q 'metrics.UnaryServerInterceptor' services/inventory/internal/app/di.go
+        grep -q 'metrics.UnaryServerInterceptor' services/shop/internal/app/di.go
+        grep -q 'GetTraceID' platform/pkg/logger/logger.go
+        echo "W7 structural check OK"
+
+  w8-check:
+    desc: "Week-8 business metrics + alert stubs"
+    cmds:
+      - |
+        set -e
+        test -f platform/pkg/metrics/business.go
+        grep -q 'RecordOrder' services/shop/internal/service/shop_service.go
+        grep -q 'ObserveAssembly' services/fulfillment/internal/service/fulfillment.go
+        grep -q 'orders_total' deployments/prometheus/alerts.yml
+        test -f deployments/alertmanager/README.md
+        grep -q 'fulfillment:9101' deployments/prometheus/prometheus.yml
+        echo "W8 structural check OK"

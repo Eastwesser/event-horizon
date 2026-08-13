@@ -296,11 +296,11 @@ curl http://localhost:9096/metrics
 | INVENTORY_METRICS_PORT | Порт для метрик и health check | 9096 |
 | INVENTORY_DRIVER | Драйвер: postgres или mongo | postgres |
 | INVENTORY_PG_HOST | Хост PostgreSQL | localhost |
-| INVENTORY_PG_PORT | Порт PostgreSQL | 5465 |
+| INVENTORY_PG_PORT | Порт PostgreSQL | 5466 |
 | INVENTORY_PG_USER | Пользователь PostgreSQL | eventhorizon |
 | INVENTORY_PG_PASSWORD | Пароль PostgreSQL | eventhorizon |
-| INVENTORY_PG_DB | База данных | eventhorizon_shop |
-| INVENTORY_REDIS_ADDR | Адрес Redis | localhost:6379 |
+| INVENTORY_PG_DB | База данных | eventhorizon_inventory |
+| INVENTORY_REDIS_ADDR | Адрес Redis | localhost:6384 |
 | INVENTORY_MONGO_URI | URI MongoDB | mongodb://localhost:27017 |
 | INVENTORY_MONGO_DB | Имя БД в MongoDB | inventory |
 | NATS_URL | URL NATS кластера | nats://localhost:4222 |
@@ -391,3 +391,32 @@ EXPOSE 50059 9096
 CMD ["/inventory-service"]
 
 **Важно:** Проверь порты в docker-compose.yml (50059 и 9096 должны соответствовать).
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                     EVENT HORIZON — EVENT DRIVEN                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────────────┐  ┌──────────────────────────────┐   │
+│  │        NATS              │  │          KAFKA              │   │
+│  │  (игровые сессии)        │  │  (покупки, платежи)         │   │
+│  ├──────────────────────────┤  ├──────────────────────────────┤   │
+│  │ • score.updated          │  │ • shop.purchased            │   │
+│  │ • user.registered        │  │ • payment.completed         │   │
+│  │ • inventory.item.*       │  │ • order.created            │   │
+│  └────────────┬─────────────┘  └──────────────┬───────────────┘   │
+│               │                                │                    │
+│               ▼                                ▼                    │
+│  ┌──────────────────────────┐  ┌──────────────────────────────┐   │
+│  │   Inventory (Producer)   │  │   Shop (Kafka Producer)      │   │
+│  │   • Outbox → NATS        │  │   • При покупке → Kafka      │   │
+│  └──────────────────────────┘  └──────────────────────────────┘   │
+│               │                                │                    │
+│               ▼                                ▼                    │
+│  ┌──────────────────────────┐  ┌──────────────────────────────┐   │
+│  │   Billing (Consumer)     │  │   Payment (Kafka Consumer)   │   │
+│  │   • Слушает NATS         │  │   • Обрабатывает платежи     │   │
+│  │   • Создает цены         │  └──────────────────────────────┘   │
+│  └──────────────────────────┘                                     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘

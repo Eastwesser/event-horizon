@@ -1,0 +1,36 @@
+# Shop dependencies
+services:
+  postgres-shop:
+    image: postgres:16-alpine
+    container_name: eh-compose-postgres-shop
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_shop
+    ports:
+      - "5463:5432"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis-shop:
+    image: redis:7-alpine
+    container_name: eh-compose-redis-shop
+    ports:
+      - "6382:6379"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  event-horizon-net:
+    external: true
+    name: event-horizon-net

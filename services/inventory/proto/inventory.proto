@@ -5,6 +5,7 @@ package inventory;
 option go_package = "github.com/Eastwesser/event-horizon/services/inventory/proto;inventory";
 
 import "google/protobuf/struct.proto";
+import "validate/validate.proto";
 
 service InventoryService {
     rpc CreateItem(CreateItemRequest) returns (ItemResponse);
@@ -36,52 +37,52 @@ message Item {
 }
 
 message CreateItemRequest {
-    string author_id = 1;
-    string type = 2;
-    string name = 3;
-    string description = 4;
-    double price = 5;
-    int32 stock = 6;
+    string author_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string type = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string name = 3 [(validate.rules).string = {min_len: 1, max_len: 200}];
+    string description = 4 [(validate.rules).string = {max_len: 2000}];
+    double price = 5 [(validate.rules).double = {gte: 0}];
+    int32 stock = 6 [(validate.rules).int32 = {gte: 0}];
     google.protobuf.Struct attributes = 7;
-    repeated string images = 8;
+    repeated string images = 8 [(validate.rules).repeated = {max_items: 20}];
 }
 
 message GetItemRequest {
-    string id = 1;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message UpdateItemRequest {
-    string id = 1;
-    string author_id = 2;
-    string type = 3;
-    string name = 4;
-    string description = 5;
-    double price = 6;
-    int32 stock = 7;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string author_id = 2 [(validate.rules).string = {max_len: 64}];
+    string type = 3 [(validate.rules).string = {max_len: 64}];
+    string name = 4 [(validate.rules).string = {max_len: 200}];
+    string description = 5 [(validate.rules).string = {max_len: 2000}];
+    double price = 6 [(validate.rules).double = {gte: 0}];
+    int32 stock = 7 [(validate.rules).int32 = {gte: 0}];
     google.protobuf.Struct attributes = 8;
-    repeated string images = 9;
+    repeated string images = 9 [(validate.rules).repeated = {max_items: 20}];
 }
 
 message DeleteItemRequest {
-    string id = 1;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message SearchItemsRequest {
-    map<string, string> filters = 1;  // author_id, type, price_min, price_max, query
-    int32 limit = 2;
-    int32 offset = 3;
+    map<string, string> filters = 1;
+    int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 100}];
+    int32 offset = 3 [(validate.rules).int32 = {gte: 0}];
 }
 
 message GetByAuthorRequest {
-    string author_id = 1;
-    int32 limit = 2;
-    int32 offset = 3;
+    string author_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 100}];
+    int32 offset = 3 [(validate.rules).int32 = {gte: 0}];
 }
 
 message GetByTypeRequest {
-    string type = 1;
-    int32 limit = 2;
-    int32 offset = 3;
+    string type = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 100}];
+    int32 offset = 3 [(validate.rules).int32 = {gte: 0}];
 }
 
 message ItemResponse {
@@ -96,7 +97,7 @@ message SearchItemsResponse {
 message EmptyResponse {}
 
 message BulkCreateItemsRequest {
-    repeated CreateItemRequest items = 1;
+    repeated CreateItemRequest items = 1 [(validate.rules).repeated = {min_items: 1, max_items: 100}];
 }
 
 message BulkCreateItemsResponse {
@@ -105,8 +106,8 @@ message BulkCreateItemsResponse {
 }
 
 message ReserveItemRequest {
-    string id = 1;
-    int32 quantity = 2;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    int32 quantity = 2 [(validate.rules).int32 = {gt: 0}];
 }
 
 message ReserveItemResponse {
@@ -115,11 +116,11 @@ message ReserveItemResponse {
 }
 
 message SoftDeleteItemRequest {
-    string id = 1;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message RestoreItemRequest {
-    string id = 1;
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message EmptyRequest {}

@@ -1,0 +1,5 @@
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
+COPY services/history/history-service /history-service
+EXPOSE 50062 9105
+CMD ["/history-service"]

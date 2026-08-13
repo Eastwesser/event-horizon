@@ -4,6 +4,7 @@ import (
     "context"
 	"errors"
     "database/sql"
+    "encoding/json"
     "fmt"
     "time"
 	
@@ -64,6 +65,12 @@ func (r *PostgresBillingRepo) GetBalance(ctx context.Context, userID string, cur
     return balance, nil
 }
 
+// AddBalance credits currency atomically via an upsert-increment (INSERT ... ON CONFLICT
+// DO UPDATE SET balance = balance + amount), which avoids the classic
+// SELECT-then-UPDATE lost-update race that the old implementation had: two concurrent
+// credits could both read the same stale balance and one would silently overwrite the
+// other. The balance change, transaction row, and outbox event are all written in one
+// transaction so an event is never lost or emitted without the balance actually changing.
 func (r *PostgresBillingRepo) AddBalance(ctx context.Context, userID string, currency CurrencyType, amount int, reason, referenceID string) (int, error) {
     tx, err := r.db.Begin(ctx)
     if err != nil {
@@ -71,34 +78,30 @@ func (r *PostgresBillingRepo) AddBalance(ctx context.Context, userID string, cur
     }
     defer tx.Rollback(ctx)
 
-    var currentBalance int
-    query := `SELECT balance FROM user_currencies WHERE user_id = $1 AND currency_type = $2`
-    err = tx.QueryRow(ctx, query, userID, currency).Scan(&currentBalance)
-    if err != nil {
-        if errors.Is(err, pgx.ErrNoRows) {
-            currentBalance = 0
-        } else {
-            return 0, err
-        }
-    }
-
-    newBalance := currentBalance + amount
-
-    if currentBalance == 0 && errors.Is(err, pgx.ErrNoRows) {
-        insertQuery := `INSERT INTO user_currencies (user_id, currency_type, balance) VALUES ($1, $2, $3)`
-        _, err = tx.Exec(ctx, insertQuery, userID, currency, newBalance)
-    } else {
-        updateQuery := `UPDATE user_currencies SET balance = $1, updated_at = NOW() WHERE user_id = $2 AND currency_type = $3`
-        _, err = tx.Exec(ctx, updateQuery, newBalance, userID, currency)
-    }
-    if err != nil {
+    var newBalance int
+    upsertQuery := `
+        INSERT INTO user_currencies (user_id, currency_type, balance, version)
+        VALUES ($1, $2, $3, 1)
+        ON CONFLICT (user_id, currency_type)
+        DO UPDATE SET
+            balance = user_currencies.balance + EXCLUDED.balance,
+            version = user_currencies.version + 1,
+            updated_at = NOW()
+        RETURNING balance
+    `
+    if err := tx.QueryRow(ctx, upsertQuery, userID, currency, amount).Scan(&newBalance); err != nil {
         return 0, err
     }
 
     txQuery := `INSERT INTO transactions (user_id, currency_type, amount, balance_after, reason, reference_id) 
                 VALUES ($1, $2, $3, $4, $5, $6)`
-    _, err = tx.Exec(ctx, txQuery, userID, currency, amount, newBalance, reason, referenceID)
-    if err != nil {
+    if _, err = tx.Exec(ctx, txQuery, userID, currency, amount, newBalance, reason, referenceID); err != nil {
+        return 0, err
+    }
+
+    if err := insertOutboxEvent(ctx, tx, "balance.updated", balanceUpdatedEvent{
+        UserID: userID, Currency: string(currency), Delta: amount, Balance: newBalance, Reason: reason,
+    }); err != nil {
         return 0, err
     }
 
@@ -109,6 +112,11 @@ func (r *PostgresBillingRepo) AddBalance(ctx context.Context, userID string, cur
     return newBalance, nil
 }
 
+// SpendBalance debits currency atomically via a conditional UPDATE
+// (`SET balance = balance - $1 WHERE balance >= $1`). Postgres re-checks the WHERE
+// clause against the row's current committed value when acquiring the row lock for the
+// UPDATE, so this can never drive the balance negative or lose a concurrent update —
+// unlike the previous SELECT-then-UPDATE approach.
 func (r *PostgresBillingRepo) SpendBalance(ctx context.Context, userID string, currency CurrencyType, amount int, reason, referenceID string) (int, error) {
     tx, err := r.db.Begin(ctx)
     if err != nil {
@@ -116,30 +124,37 @@ func (r *PostgresBillingRepo) SpendBalance(ctx context.Context, userID string, c
     }
     defer tx.Rollback(ctx)
 
-    // Проверяем баланс
-    var currentBalance int
-    query := `SELECT balance FROM user_currencies WHERE user_id = $1 AND currency_type = $2`
-    err = tx.QueryRow(ctx, query, userID, currency).Scan(&currentBalance)
+    var newBalance int
+    updateQuery := `
+        UPDATE user_currencies
+        SET balance = balance - $1, version = version + 1, updated_at = NOW()
+        WHERE user_id = $2 AND currency_type = $3 AND balance >= $1
+        RETURNING balance
+    `
+    err = tx.QueryRow(ctx, updateQuery, amount, userID, currency).Scan(&newBalance)
     if err != nil {
-        return 0, fmt.Errorf("user not found or no balance: %w", err)
-    }
-
-    if currentBalance < amount {
-        return 0, fmt.Errorf("insufficient balance: have %d, need %d", currentBalance, amount)
-    }
-
-    newBalance := currentBalance - amount
-
-    updateQuery := `UPDATE user_currencies SET balance = $1, updated_at = NOW() WHERE user_id = $2 AND currency_type = $3`
-    _, err = tx.Exec(ctx, updateQuery, newBalance, userID, currency)
-    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            var currentBalance int
+            checkErr := tx.QueryRow(ctx,
+                `SELECT balance FROM user_currencies WHERE user_id = $1 AND currency_type = $2`,
+                userID, currency).Scan(&currentBalance)
+            if checkErr != nil {
+                return 0, fmt.Errorf("user not found or no balance: %w", checkErr)
+            }
+            return 0, fmt.Errorf("insufficient balance: have %d, need %d", currentBalance, amount)
+        }
         return 0, err
     }
 
     txQuery := `INSERT INTO transactions (user_id, currency_type, amount, balance_after, reason, reference_id) 
                 VALUES ($1, $2, $3, $4, $5, $6)`
-    _, err = tx.Exec(ctx, txQuery, userID, currency, -amount, newBalance, reason, referenceID)
-    if err != nil {
+    if _, err = tx.Exec(ctx, txQuery, userID, currency, -amount, newBalance, reason, referenceID); err != nil {
+        return 0, err
+    }
+
+    if err := insertOutboxEvent(ctx, tx, "balance.updated", balanceUpdatedEvent{
+        UserID: userID, Currency: string(currency), Delta: -amount, Balance: newBalance, Reason: reason,
+    }); err != nil {
         return 0, err
     }
 
@@ -148,6 +163,23 @@ func (r *PostgresBillingRepo) SpendBalance(ctx context.Context, userID string, c
     }
 
     return newBalance, nil
+}
+
+type balanceUpdatedEvent struct {
+    UserID   string `json:"user_id"`
+    Currency string `json:"currency"`
+    Delta    int    `json:"delta"`
+    Balance  int    `json:"balance"`
+    Reason   string `json:"reason"`
+}
+
+func insertOutboxEvent(ctx context.Context, tx pgx.Tx, eventType string, event any) error {
+    payload, err := json.Marshal(event)
+    if err != nil {
+        return fmt.Errorf("marshal outbox payload: %w", err)
+    }
+    _, err = tx.Exec(ctx, `INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`, eventType, payload)
+    return err
 }
 
 func (r *PostgresBillingRepo) GetTransactionHistory(ctx context.Context, userID string, currency CurrencyType, limit, offset int) ([]Transaction, int, error) {

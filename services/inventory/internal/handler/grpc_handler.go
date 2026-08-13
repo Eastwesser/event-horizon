@@ -6,8 +6,8 @@ import (
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
-    "google.golang.org/protobuf/types/known/structpb"
 
+    "github.com/Eastwesser/event-horizon/services/inventory/internal/converter"
     "github.com/Eastwesser/event-horizon/services/inventory/internal/model"
     "github.com/Eastwesser/event-horizon/services/inventory/internal/service"
     pb "github.com/Eastwesser/event-horizon/services/inventory/proto"
@@ -24,45 +24,14 @@ func NewGRPCHandler(svc *service.InventoryService) *GRPCHandler {
     }
 }
 
-func itemToProto(item *model.Item) (*pb.Item, error) {
-    attrs, err := structpb.NewStruct(item.Attributes)
-    if err != nil {
-        return nil, err
-    }
-
-    return &pb.Item{
-        Id:          item.ID,
-        AuthorId:    item.AuthorID,
-        Type:        item.Type,
-        Name:        item.Name,
-        Description: item.Description,
-        Price:       item.Price,
-        Stock:       int32(item.Stock),
-        Attributes:  attrs,
-        Images:      item.Images,
-        CreatedAt:   item.CreatedAt.String(),
-        UpdatedAt:   item.UpdatedAt.String(),
-    }, nil
-}
-
 func (h *GRPCHandler) CreateItem(ctx context.Context, req *pb.CreateItemRequest) (*pb.ItemResponse, error) {
-    attrs := req.Attributes.AsMap()
-    item := &model.Item{
-        AuthorID:    req.AuthorId,
-        Type:        req.Type,
-        Name:        req.Name,
-        Description: req.Description,
-        Price:       req.Price,
-        Stock:       int(req.Stock),
-        Attributes:  attrs,
-        Images:      req.Images,
-    }
+    item := converter.ItemFromCreateRequest(req)
 
     if err := h.service.CreateItem(ctx, item); err != nil {
         return nil, status.Errorf(codes.Internal, "failed to create item: %v", err)
     }
 
-    protoItem, err := itemToProto(item)
+    protoItem, err := converter.ItemToProto(item)
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
     }
@@ -76,7 +45,7 @@ func (h *GRPCHandler) GetItem(ctx context.Context, req *pb.GetItemRequest) (*pb.
         return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
     }
 
-    protoItem, err := itemToProto(item)
+    protoItem, err := converter.ItemToProto(item)
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
     }
@@ -85,24 +54,13 @@ func (h *GRPCHandler) GetItem(ctx context.Context, req *pb.GetItemRequest) (*pb.
 }
 
 func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*pb.ItemResponse, error) {
-    attrs := req.Attributes.AsMap()
-    item := &model.Item{
-        ID:          req.Id,
-        AuthorID:    req.AuthorId,
-        Type:        req.Type,
-        Name:        req.Name,
-        Description: req.Description,
-        Price:       req.Price,
-        Stock:       int(req.Stock),
-        Attributes:  attrs,
-        Images:      req.Images,
-    }
+    item := converter.ItemFromUpdateRequest(req)
 
     if err := h.service.UpdateItem(ctx, item); err != nil {
         return nil, status.Errorf(codes.Internal, "failed to update item: %v", err)
     }
 
-    protoItem, err := itemToProto(item)
+    protoItem, err := converter.ItemToProto(item)
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
     }
@@ -136,7 +94,7 @@ func (h *GRPCHandler) SearchItems(ctx context.Context, req *pb.SearchItemsReques
 
     protoItems := make([]*pb.Item, len(items))
     for i, item := range items {
-        protoItem, err := itemToProto(item)
+        protoItem, err := converter.ItemToProto(item)
         if err != nil {
             return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
         }
@@ -157,7 +115,7 @@ func (h *GRPCHandler) GetByAuthor(ctx context.Context, req *pb.GetByAuthorReques
 
     protoItems := make([]*pb.Item, len(items))
     for i, item := range items {
-        protoItem, err := itemToProto(item)
+        protoItem, err := converter.ItemToProto(item)
         if err != nil {
             return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
         }
@@ -178,7 +136,7 @@ func (h *GRPCHandler) GetByType(ctx context.Context, req *pb.GetByTypeRequest) (
 
     protoItems := make([]*pb.Item, len(items))
     for i, item := range items {
-        protoItem, err := itemToProto(item)
+        protoItem, err := converter.ItemToProto(item)
         if err != nil {
             return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
         }
@@ -195,17 +153,7 @@ func (h *GRPCHandler) GetByType(ctx context.Context, req *pb.GetByTypeRequest) (
 func (h *GRPCHandler) BulkCreateItems(ctx context.Context, req *pb.BulkCreateItemsRequest) (*pb.BulkCreateItemsResponse, error) {
     items := make([]*model.Item, len(req.Items))
     for i, pbItem := range req.Items {
-        attrs := pbItem.Attributes.AsMap()
-        items[i] = &model.Item{
-            AuthorID:    pbItem.AuthorId,
-            Type:        pbItem.Type,
-            Name:        pbItem.Name,
-            Description: pbItem.Description,
-            Price:       pbItem.Price,
-            Stock:       int(pbItem.Stock),
-            Attributes:  attrs,
-            Images:      pbItem.Images,
-        }
+        items[i] = converter.ItemFromCreateRequest(pbItem)
     }
 
     if err := h.service.BulkCreateItems(ctx, items); err != nil {

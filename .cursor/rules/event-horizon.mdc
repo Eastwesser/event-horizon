@@ -1,0 +1,51 @@
+---
+description: Event Horizon development rules (from w1 agent / Kozirev course)
+globs:
+  - "services/**/*.go"
+  - "contracts/**/*.proto"
+  - "**/Dockerfile"
+alwaysApply: true
+---
+
+# Event Horizon Development Rules
+
+## Architecture
+
+Clean Architecture layers:
+1. **API** (`internal/handler/`) — gRPC handlers only; no business logic
+2. **Service** (`internal/service/`) — business logic
+3. **Repository** (`internal/repository/`) — data access
+4. **Model** (`internal/model/`) — domain types
+
+Dependencies: Handler → Service → Repository. Never reverse.
+
+## gRPC / Week 1 standards
+
+- Wire `ChainUnaryInterceptor(Recovery(), Logger(), Validate(), …)` on every gRPC server
+- Proto request messages must declare `validate.rules` and implement `Validate()` (hand-written until `task gen-proto`)
+- Do not invent a second HTTP gateway — keep Gin gateway + `docs/openapi.yaml` in sync
+- Gateway serves `GET /openapi.yaml` and `GET /docs` (Swagger UI)
+- Inventory is the reference service for Outbox / Redis / transactions
+
+## Config & security
+
+- No hardcoded secrets/ports — env vars via `internal/config`
+- JWT roles: `user` | `author` | `admin`; auth sessions live in Redis
+- bcrypt cost 12
+
+## Resilience
+
+- DB pools: MaxOpen/MaxConns=25, MinIdle/MinConns=10, MaxConnLifetime=5m
+- Expose `/health` (liveness) and `/ready` (dependency ping) on metrics HTTP
+
+## Do not
+
+- Use `io/ioutil`, `http.DefaultClient`, or store `context.Context` in structs
+- Remove MongoDB from inventory without asking
+- Commit `.env` files
+- Push Docker images or git commits unless Emma asks
+
+## Knowledge
+
+Course examples: `kozirev_code/microservices-course-examples-main/week_N/`
+Week agents: `confluence/agents/cursor_agents/wN/`

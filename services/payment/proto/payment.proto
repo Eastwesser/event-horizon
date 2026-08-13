@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/payment/proto;payment";
+
+// PaymentService — real-money subscriptions (Boosty / external checkout).
+// Billing remains in-game tickets/lamps; this service never touches game currency.
+service PaymentService {
+  rpc CreateCheckout(CreateCheckoutRequest) returns (CreateCheckoutResponse);
+  rpc ConfirmPayment(ConfirmPaymentRequest) returns (ConfirmPaymentResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc CanPurchaseMerch(CanPurchaseMerchRequest) returns (CanPurchaseMerchResponse);
+}
+
+message CreateCheckoutRequest {
+  string user_id = 1;
+  // plan: "present" (200 RUB) | "future" (300 RUB)
+  string plan = 2;
+}
+
+message CreateCheckoutResponse {
+  string payment_id = 1;
+  string checkout_url = 2;
+  int32 amount_rub = 3;
+  string plan = 4;
+  string status = 5;
+}
+
+message ConfirmPaymentRequest {
+  string payment_id = 1;
+  string provider_ref = 2;
+  string webhook_secret = 3;
+}
+
+message ConfirmPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string subscription_id = 3;
+  int64 expires_at_unix = 4;
+}
+
+message GetSubscriptionRequest {
+  string user_id = 1;
+}
+
+message GetSubscriptionResponse {
+  bool active = 1;
+  string plan = 2;
+  string status = 3;
+  int64 expires_at_unix = 4;
+  int32 amount_rub = 5;
+}
+
+message CanPurchaseMerchRequest {
+  string user_id = 1;
+}
+
+message CanPurchaseMerchResponse {
+  bool allowed = 1;
+  string reason = 2;
+}

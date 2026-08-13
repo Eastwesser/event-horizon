@@ -1,0 +1,7 @@
+-- +goose Up
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'COMPLETED';
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;
+
+-- +goose Down
+ALTER TABLE purchases DROP COLUMN IF EXISTS completed_at;
+ALTER TABLE purchases DROP COLUMN IF EXISTS status;

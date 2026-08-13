@@ -7,9 +7,10 @@ import (
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
-    pb "github.com/Eastwesser/event-horizon/services/billing/proto"
+    "github.com/Eastwesser/event-horizon/services/billing/internal/converter"
     "github.com/Eastwesser/event-horizon/services/billing/internal/repository"
     "github.com/Eastwesser/event-horizon/services/billing/internal/service"
+    pb "github.com/Eastwesser/event-horizon/services/billing/proto"
 )
 
 type BillingHandler struct {
@@ -28,7 +29,7 @@ func (h *BillingHandler) GetBalance(ctx context.Context, req *pb.GetBalanceReque
         return nil, status.Error(codes.InvalidArgument, "user_id is required")
     }
 
-    currency := convertProtoCurrency(req.Currency)
+    currency := converter.ProtoCurrencyToRepo(req.Currency)
     balance, err := h.billingService.GetBalance(ctx, req.UserId, currency)
     if err != nil {
         log.Printf("GetBalance error: %v", err)
@@ -71,7 +72,7 @@ func (h *BillingHandler) AddCurrency(ctx context.Context, req *pb.AddCurrencyReq
         return nil, status.Error(codes.InvalidArgument, "user_id and valid amount are required")
     }
 
-    currency := convertProtoCurrency(req.Currency)
+    currency := converter.ProtoCurrencyToRepo(req.Currency)
     newBalance, err := h.billingService.AddCurrency(ctx, req.UserId, currency, int(req.Amount), req.Reason, req.ReferenceId)
     if err != nil {
         log.Printf("AddCurrency error: %v", err)
@@ -93,7 +94,7 @@ func (h *BillingHandler) SpendCurrency(ctx context.Context, req *pb.SpendCurrenc
         return nil, status.Error(codes.InvalidArgument, "user_id and valid amount are required")
     }
 
-    currency := convertProtoCurrency(req.Currency)
+    currency := converter.ProtoCurrencyToRepo(req.Currency)
     newBalance, err := h.billingService.SpendCurrency(
         ctx, 
         req.UserId, 
@@ -123,7 +124,7 @@ func (h *BillingHandler) GetTransactionHistory(ctx context.Context, req *pb.GetT
         return nil, status.Error(codes.InvalidArgument, "user_id is required")
     }
 
-    currency := convertProtoCurrency(req.Currency)
+    currency := converter.ProtoCurrencyToRepo(req.Currency)
     limit := int(req.Limit)
     if limit <= 0 || limit > 100 {
         limit = 20
@@ -139,7 +140,7 @@ func (h *BillingHandler) GetTransactionHistory(ctx context.Context, req *pb.GetT
         pbTransactions[i] = &pb.Transaction{
             Id:           t.ID,
             UserId:       t.UserID,
-            Currency:     convertToProtoCurrency(t.Currency),
+            Currency:     converter.RepoCurrencyToProto(t.Currency),
             Amount:       int32(t.Amount),
             BalanceAfter: int32(t.BalanceAfter),
             Reason:       t.Reason,
@@ -152,26 +153,4 @@ func (h *BillingHandler) GetTransactionHistory(ctx context.Context, req *pb.GetT
         Transactions: pbTransactions,
         Total:        int32(total),
     }, nil
-}
-
-func convertProtoCurrency(c pb.CurrencyType) repository.CurrencyType {
-    switch c {
-    case pb.CurrencyType_LAMPS:
-        return repository.Lamps
-    case pb.CurrencyType_TICKETS:
-        return repository.Tickets
-    default:
-        return repository.Lamps
-    }
-}
-
-func convertToProtoCurrency(c repository.CurrencyType) pb.CurrencyType {
-    switch c {
-    case repository.Lamps:
-        return pb.CurrencyType_LAMPS
-    case repository.Tickets:
-        return pb.CurrencyType_TICKETS
-    default:
-        return pb.CurrencyType_LAMPS
-    }
 }

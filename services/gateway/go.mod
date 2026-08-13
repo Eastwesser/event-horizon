@@ -3,11 +3,16 @@ module github.com/Eastwesser/event-horizon/services/gateway
 go 1.25.7
 
 require (
+	github.com/Eastwesser/event-horizon/platform v0.0.0
+	github.com/Eastwesser/event-horizon/services/analytics/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-00010101000000-000000000000
-	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/authors/proto v0.0.0
+	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-20260705204628-4da8765922fb
 	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/history/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20260810133207-bb7ed616e612
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-00010101000000-000000000000
 	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.9.1
@@ -16,10 +21,10 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/redis/go-redis/v9 v9.21.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.51.0
-	go.opentelemetry.io/otel v1.44.0
+	go.opentelemetry.io/otel v1.45.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
-	go.opentelemetry.io/otel/sdk v1.44.0
-	google.golang.org/grpc v1.82.0
+	go.opentelemetry.io/otel/sdk v1.45.0
+	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -31,9 +36,10 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
+	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -59,8 +65,8 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
-	go.opentelemetry.io/otel/metric v1.44.0 // indirect
-	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.45.0 // indirect
+	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
@@ -69,16 +75,21 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
+	github.com/Eastwesser/event-horizon/platform => ../../platform
+	github.com/Eastwesser/event-horizon/services/analytics/proto => ../analytics/proto
 	github.com/Eastwesser/event-horizon/services/auth/proto => ../auth/proto
+	github.com/Eastwesser/event-horizon/services/authors/proto => ../authors/proto
 	github.com/Eastwesser/event-horizon/services/billing/proto => ../billing/proto
 	github.com/Eastwesser/event-horizon/services/game/proto => ../game/proto
+	github.com/Eastwesser/event-horizon/services/history/proto => ../history/proto
 	github.com/Eastwesser/event-horizon/services/inventory/proto => ../inventory/proto
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto => ../leaderboard/proto
+	github.com/Eastwesser/event-horizon/services/payment/proto => ../payment/proto
 	github.com/Eastwesser/event-horizon/services/profile/proto => ../profile/proto
 	github.com/Eastwesser/event-horizon/services/shop/proto => ../shop/proto
 )

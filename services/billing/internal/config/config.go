@@ -7,6 +7,7 @@ import (
 
 type Config struct {
     GRPCPort    string
+    MetricsPort string
     DBHost      string
     DBPort      string
     DBUser      string
@@ -19,15 +20,16 @@ type Config struct {
 
 func Load() *Config {
     return &Config{
-        GRPCPort:   getEnv("GRPC_PORT", "50053"),
-        DBHost:     getEnv("DB_HOST", "localhost"),
-        DBPort:     getEnv("DB_PORT", "5462"), // billing postgres
-        DBUser:     getEnv("DB_USER", "eventhorizon"),
-        DBPassword: getEnv("DB_PASSWORD", "eventhorizon"),
-        DBName:     getEnv("DB_NAME", "eventhorizon_billing"),
-        RedisAddr:  getEnv("REDIS_ADDR", "localhost:6381"),
-        RedisDB:    getEnvAsInt("REDIS_DB", 0),
-        NATSUrl:    getEnv("NATS_URL", "nats://localhost:4222"),
+        GRPCPort:    getEnv("GRPC_PORT", "50053"),
+        MetricsPort: getEnv("METRICS_PORT", "9093"),
+        DBHost:      getEnv("DB_HOST", "localhost"),
+        DBPort:      getEnv("DB_PORT", "5462"), // billing postgres
+        DBUser:      getEnv("DB_USER", "eventhorizon"),
+        DBPassword:  getEnv("DB_PASSWORD", "eventhorizon"),
+        DBName:      getEnv("DB_NAME", "eventhorizon_billing"),
+        RedisAddr:   getEnv("REDIS_ADDR", "localhost:6381"),
+        RedisDB:     getEnvAsInt("REDIS_DB", 0),
+        NATSUrl:     getEnv("NATS_URL", "nats://localhost:4222"),
     }
 }
 

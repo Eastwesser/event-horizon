@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package authors;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/authors/proto;authors";
+
+// AuthorsService — author public profiles (linked to auth user_id with role=author).
+// Inventory stocking stays on Inventory gRPC (RequireRole author); this service is the catalog.
+service AuthorsService {
+  rpc UpsertProfile(UpsertProfileRequest) returns (UpsertProfileResponse);
+  rpc GetAuthor(GetAuthorRequest) returns (GetAuthorResponse);
+  rpc ListAuthors(ListAuthorsRequest) returns (ListAuthorsResponse);
+}
+
+message Author {
+  string id = 1;
+  string user_id = 2;
+  string display_name = 3;
+  string bio = 4;
+  string avatar_url = 5;
+  bool active = 6;
+  int64 created_at_unix = 7;
+  int64 updated_at_unix = 8;
+}
+
+message UpsertProfileRequest {
+  string user_id = 1;
+  string display_name = 2;
+  string bio = 3;
+  string avatar_url = 4;
+}
+
+message UpsertProfileResponse {
+  Author author = 1;
+}
+
+message GetAuthorRequest {
+  string user_id = 1;
+}
+
+message GetAuthorResponse {
+  Author author = 1;
+}
+
+message ListAuthorsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListAuthorsResponse {
+  repeated Author authors = 1;
+  int64 total = 2;
+}

@@ -1,0 +1,23 @@
+# Game dependencies
+services:
+  postgres-game:
+    image: postgres:16-alpine
+    container_name: eh-compose-postgres-game
+    environment:
+      POSTGRES_USER: eventhorizon
+      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_DB: eventhorizon_game
+    ports:
+      - "5461:5432"
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  event-horizon-net:
+    external: true
+    name: event-horizon-net

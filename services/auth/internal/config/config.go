@@ -6,26 +6,36 @@ import (
 )
 
 type Config struct {
-    GRPCPort    string
-    DBHost      string
-    DBPort      string
-    DBUser      string
-    DBPassword  string
-    DBName      string
-    JWTSecret   string
-    JWTExpHours int
+    GRPCPort            string
+    MetricsPort         string
+    DBHost              string
+    DBPort              string
+    DBUser              string
+    DBPassword          string
+    DBName              string
+    JWTSecret           string
+    JWTExpHours         int // legacy; prefer AccessTokenMinutes + RefreshTokenDays
+    AccessTokenMinutes  int
+    RefreshTokenDays    int
+    RedisAddr           string
+    UserCacheTTLMinutes int
 }
 
 func Load() *Config {
     return &Config{
-        GRPCPort:    getEnv("GRPC_PORT", "50051"),
-        DBHost:      getEnv("DB_HOST", "localhost"),
-        DBPort:      getEnv("DB_PORT", "5460"),
-        DBUser:      getEnv("DB_USER", "eventhorizon"),
-        DBPassword:  getEnv("DB_PASSWORD", "eventhorizon"),
-        DBName:      getEnv("DB_NAME", "eventhorizon"),
-        JWTSecret:   getEnv("JWT_SECRET", "your-secret-key-change-me"),
-        JWTExpHours: getEnvAsInt("JWT_EXP_HOURS", 24),
+        GRPCPort:            getEnv("GRPC_PORT", "50051"),
+        MetricsPort:         getEnv("METRICS_PORT", "9091"),
+        DBHost:              getEnv("DB_HOST", "localhost"),
+        DBPort:              getEnv("DB_PORT", "5460"),
+        DBUser:              getEnv("DB_USER", "eventhorizon"),
+        DBPassword:          getEnv("DB_PASSWORD", "eventhorizon"),
+        DBName:              getEnv("DB_NAME", "eventhorizon"),
+        JWTSecret:           getEnv("JWT_SECRET", "your-secret-key-change-me"),
+        JWTExpHours:         getEnvAsInt("JWT_EXP_HOURS", 24),
+        AccessTokenMinutes:  getEnvAsInt("JWT_ACCESS_MINUTES", 15),
+        RefreshTokenDays:    getEnvAsInt("JWT_REFRESH_DAYS", 7),
+        RedisAddr:           getEnv("REDIS_ADDR", "localhost:6379"),
+        UserCacheTTLMinutes: getEnvAsInt("USER_CACHE_TTL_MINUTES", 5),
     }
 }
 

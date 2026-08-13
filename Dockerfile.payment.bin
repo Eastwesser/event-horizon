@@ -1,0 +1,5 @@
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
+COPY services/payment/payment-service /payment-service
+EXPOSE 50058 9103
+CMD ["/payment-service"]

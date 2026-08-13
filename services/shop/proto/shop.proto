@@ -4,6 +4,8 @@ package shop;
 
 option go_package = "github.com/Eastwesser/event-horizon/services/shop/proto;shop";
 
+import "validate/validate.proto";
+
 service ShopService {
     rpc GetItems(GetItemsRequest) returns (GetItemsResponse);
     rpc PurchaseItem(PurchaseItemRequest) returns (PurchaseItemResponse);
@@ -15,18 +17,18 @@ message Item {
     string name = 2;
     string description = 3;
     int32 price = 4;
-    string category = 5;     // 'game_skin', 'merch', 'profile_theme'
-    string game_id = 6;      // 'flappy', 'hexagon', null для мерча
+    string category = 5;
+    string game_id = 6;
     string image_url = 7;
     bool available = 8;
-    bool owned = 9;          // флаг, куплен ли текущим пользователем
-    string purchased_at = 10; // дата покупки (RFC3339)
+    bool owned = 9;
+    string purchased_at = 10;
 }
 
 message GetItemsRequest {
-    string category = 1;     // 'all', 'game_skin', 'merch'
-    string game_id = 2;      // фильтр по игре (для кастомизации)
-    string user_id = 3;      // для проверки owned
+    string category = 1 [(validate.rules).string = {max_len: 32}];
+    string game_id = 2 [(validate.rules).string = {max_len: 32}];
+    string user_id = 3 [(validate.rules).string = {max_len: 64}];
 }
 
 message GetItemsResponse {
@@ -34,18 +36,18 @@ message GetItemsResponse {
 }
 
 message PurchaseItemRequest {
-    string user_id = 1;
-    string item_id = 2;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string item_id = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message PurchaseItemResponse {
     bool success = 1;
     string message = 2;
-    int32 new_balance = 3;   // новый баланс билетиков после покупки
+    int32 new_balance = 3;
 }
 
 message GetInventoryRequest {
-    string user_id = 1;
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
 message GetInventoryResponse {

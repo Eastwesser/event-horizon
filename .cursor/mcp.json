@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "event-horizon": {
+      "command": "/home/denismatveev/event_horizon/services/mcp/mcp-server",
+      "args": [],
+      "env": {
+        "NATS_URL": "nats://localhost:4222",
+        "REDIS_ADDR": "localhost:6379",
+        "MCP_POSTGRES_DSN": "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable",
+        "PRYDWEN_ROOT": "/home/denismatveev/event_horizon/confluence/agents/prydwen_knowledge"
+      }
+    }
+  }
+}

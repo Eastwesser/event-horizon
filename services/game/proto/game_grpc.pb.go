@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: game.proto
+// source: proto/game.proto
 
 package game
 
@@ -146,5 +146,5 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "game.proto",
+	Metadata: "proto/game.proto",
 }

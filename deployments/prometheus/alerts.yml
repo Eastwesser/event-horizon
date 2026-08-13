@@ -1,0 +1,12 @@
+groups:
+  - name: event_horizon_business
+    rules:
+      - alert: HighOrderRate
+        expr: rate(orders_total[1m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: shop
+        annotations:
+          summary: "Shop purchases exceed 10/min"
+          description: "orders_total rate is {{ $value }} per second over 1m window"

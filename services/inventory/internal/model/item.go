@@ -13,6 +13,7 @@ type Item struct {
     Description string                 `json:"description"`
     Price       float64                `json:"price"`
     Stock       int                    `json:"stock"`
+    Version     int                    `json:"version"` // optimistic lock
     Attributes  map[string]interface{} `json:"attributes"`  // динамические поля
     Images      []string               `json:"images"`
     CreatedAt   time.Time              `json:"created_at"`
