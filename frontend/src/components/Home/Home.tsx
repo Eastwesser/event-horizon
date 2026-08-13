@@ -1,5 +1,6 @@
 // frontend/src/components/Home/Home.tsx
 import { useNavigate } from 'react-router-dom';
+import { useUserRole } from '../../hooks/useUserRole';
 
 const games = [
   {
@@ -27,6 +28,14 @@ const games = [
     available: true,
   },
   {
+    id: 'hanoi',
+    name: 'Ханойская башня',
+    description: 'Классическая головоломка с кольцами',
+    icon: '🪈',
+    path: '/game/hanoi',
+    available: true,
+  },
+  {
     id: 'memory',
     name: 'Мемония',
     description: 'Найди пары фруктов',
@@ -39,10 +48,12 @@ const games = [
 export function Home() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
+  const { isAdmin } = useUserRole();
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userId');
+    localStorage.removeItem('role');
     window.dispatchEvent(new Event('storage'));
     navigate('/login');
   };
@@ -58,6 +69,11 @@ export function Home() {
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>🏠 Главная</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>🛒 Магазин</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/inventory'); }}>📦 Инвентарь</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/subscription'); }}>💳 Подписка</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/authors'); }}>✍️ Авторы</a>
+          {isAdmin && (
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>📊 Аналитика</a>
+          )}
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/leaderboard'); }}>🏆 Лидерборд</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/profile'); }}>👤 Профиль</a>
           <a href="#" onClick={(e) => { e.preventDefault(); window.open('https://boosty.to/eastwesser', '_blank'); }}>Поддержать</a>
@@ -103,4 +119,3 @@ export function Home() {
     </div>
   );
 }
-

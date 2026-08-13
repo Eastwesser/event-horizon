@@ -34,6 +34,7 @@ message Item {
     repeated string images = 9;
     string created_at = 10;
     string updated_at = 11;
+    int32 version = 12; // optimistic lock
 }
 
 message CreateItemRequest {
@@ -61,6 +62,7 @@ message UpdateItemRequest {
     int32 stock = 7 [(validate.rules).int32 = {gte: 0}];
     google.protobuf.Struct attributes = 8;
     repeated string images = 9 [(validate.rules).repeated = {max_items: 20}];
+    int32 version = 10; // expected version; 0 = load current in service
 }
 
 message DeleteItemRequest {

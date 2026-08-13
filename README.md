@@ -9,59 +9,30 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.0.6, 03.08.2026)
+## 📦 Архитектура (актуально v1.0.6+, 13.08.2026)
+
+Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
+
 ```text
-[GitHub Actions] (в облаке)
-        │
-        │ SSH + Ansible
-        ▼
-[Твоя виртуалка]
-        │
-        │ запускает
-        ▼
-[docker-compose up -d]
-        │
-        ▼
-[Event Horizon работает]
+[GitHub Actions] ──SSH/Ansible──► [VM] ──docker-compose──► Event Horizon
 
-          [React Client :5173]
-               │ HTTP (JSON)
-               ▼
-           [Balancer :8079] — самописный, Least Connections
-               │ HTTP
-               ▼
-           [Gateway 1-3 :8081-8083] — JWT, HTTP → gRPC
-               │ gRPC
-               ▼
-┌──────────────┼──────────────┬──────────────┬──────────────┐
-│              │              │              │              │
-▼              ▼              ▼              ▼              ▼
-Auth :5051     Game :5052     Billing :5053  Leaderboard   Shop :50055
-│              │              │              :5054          │
-▼              ▼              ▼              ▼              ▼
-PG :5460       PG :5461       PG :5462       PG :5463      PG :5465 + Redis :6383
-(users)        (scores)       (balances)     + Redis :6382 (items, inventory)
-│              │              │              (leaderboard)  │
-└──────────────┼──────────────┴──────────────┴──────────────┘
-               │
-               ▼
-    ┌──────────────────────────────────────────────────────────────┐
-    │                   NATS КЛАСТЕР (3 ноды)                      │
-    │        nats-1 :4222  |  nats-2 :4223  |  nats-3 :4224        │
-    │   ── создаёт Stream `EVENTS` через NATS Hub ──►              │
-    │      Subjects: score.updated, user.registered, shop.*        │
-    └──────────────────────────────────────────────────────────────┘
-               │
-               ▼
-    Profile :50060 — подписан на score.updated, user.registered
-               │
-               ▼
-    Leaderboard обновляет Redis → WebSocket → клиент
-
-    ┌──────────────────────────────────────────────────────────────┐
-    │               NEW: Inventory Service :50059                  │
-    │   Управление мерчем авторов, интеграция с Shop через NATS   │
-    └──────────────────────────────────────────────────────────────┘
+[React :5173] ──HTTP──► [Balancer :8079] ──HTTP──► [Gateway ×3 :8081–8083]
+                                                      │ JWT · HTTP→gRPC
+                                                      ▼
+┌───────────────┬───────────────┬───────────────┬───────────────┬───────────────┐
+│ Auth :50051   │ Game :50052   │ Billing:50053 │ Leaderboard   │ Shop :50055   │
+│ PG:5460 Redis │ PG:5461       │ PG:5462 Redis │ :50054        │ PG:5465 Redis │
+└───────────────┴───────────────┴───────────────┴─PG:5463+R6382─┴───────────────┘
+┌───────────────┬───────────────┬───────────────┬───────────────┬───────────────┐
+│ Inventory     │ Profile:50060 │ Payment:50058 │ Authors:50061 │ History:50062 │
+│ :50059        │ PG:5464       │ sub/merch gate│ PG:5468 Redis │ PG:5469       │
+└───────────────┴───────────────┴───────────────┴───────────────┴───────────────┘
+┌───────────────┬───────────────────────────────────────────────────────────────┐
+│ Analytics     │ NATS JetStream :4222/:4223/:4224  Stream EVENTS (NATS Hub)    │
+│ :50057        │ subjects: score.updated, user.registered, shop.*, …           │
+│ ClickHouse    │ async ──► Profile / Leaderboard / Notification / Fulfillment  │
+│ :8123/:9000   │ Leaderboard Redis Sorted Set ──WS──► Client                   │
+└───────────────┴───────────────────────────────────────────────────────────────┘
 ```
 ---
 
@@ -82,9 +53,9 @@ make deploy-k3s
 
 Готово! Всё поднимется автоматически:
 
-- 30+ Docker-контейнеров (PostgreSQL, Redis, NATS, Jaeger, Prometheus, Grafana)
+- 30+ Docker-контейнеров (PostgreSQL, Redis, NATS, ClickHouse, Jaeger, Prometheus, Grafana)
 - Миграции баз данных
-- Все микросервисы, включая Profile, Shop, Inventory и NATS Hub
+- Микросервисы: Auth, Game, Billing, Leaderboard, Shop, Inventory, Profile, Payment, Authors, History, Analytics, NATS Hub, …
 - Мониторинг (Prometheus + Grafana)
 - Опционально: k3s кластер
 
@@ -103,6 +74,11 @@ make deploy-k3s
 | POST | /api/shop/purchase | Купить товар (списание билетиков) |
 | GET | /api/shop/inventory | Инвентарь пользователя |
 | GET | /api/profile | Полный профиль пользователя (агрегированный) |
+| GET/POST | /api/payment/… | Подписка / CanPurchaseMerch |
+| GET/POST | /api/authors/… | Авторы |
+| GET | /api/history/… | История |
+| GET | /api/analytics/… | Аналитика (admin) |
+| GET | /openapi.yaml · /docs | OpenAPI + Swagger UI |
 | WS | /ws/leaderboard | WebSocket обновления |
 
 ---
@@ -218,12 +194,16 @@ make delivery-dev
 | Сервис | gRPC | Metrics | БД | Redis |
 |--------|------|---------|-----|-------|
 | Auth | 50051 | 9091 | PG 5460 | 6379 |
-| Game | 50052 | 9092 | PG 5461 | 6380 |
+| Game | 50052 | 9092 | PG 5461 | — |
 | Billing | 50053 | 9093 | PG 5462 | 6381 |
 | Leaderboard | 50054 | 9094 | PG 5463 | 6382 |
-| Profile | 50060 | 9099 | PG 5464 | — |
 | Shop | 50055 | 9095 | PG 5465 | 6383 |
-| Inventory | 50059 | 9096 | PG 5465 | 6383 |
+| Analytics | 50057 | 9106 | ClickHouse 8123/9000 | — |
+| Payment | 50058 | 9103 | (subscription) | — |
+| Inventory | 50059 | 9096 | PG / Mongo | Redis |
+| Profile | 50060 | 9099 | PG 5464 | — |
+| Authors | 50061 | 9104 | PG 5468 | 6387 |
+| History | 50062 | 9105 | PG 5469 | — |
 | Gateway | HTTP 8081-8083 | 9095-9097 | — | — |
 | Balancer | HTTP 8079 | 9098 | — | — |
 
@@ -235,6 +215,7 @@ make delivery-dev
 | NATS-2 | 4223, 8223 | Узел кластера |
 | NATS-3 | 4224, 8224 | Узел кластера |
 | NATS Hub | — | Создаёт Stream EVENTS |
+| ClickHouse | 8123, 9000 | Analytics OLAP |
 | Jaeger UI | 16686 | Трассировка |
 | Prometheus | 9090 | Метрики |
 | Grafana | 3000 | Дашборды |
@@ -247,8 +228,9 @@ make delivery-dev
 |------|----------|-------|
 | Flappy Bird | Лети и не врезайся в трубы | Золотая птичка, Радужные трубы |
 | Hexagon | Гексагональный пазл с блинами | Космические блины |
-| Towers | Строй башню из падающих блоков | Радужные блоки |
+| Towers (Башенки) | Строй башню из падающих блоков | Радужные блоки |
 | Memory | Найди пары фруктов | Карточки со зверями |
+| Hanoi (Ханойская башня) | Классика 3 стержня / кольца 3–8 | — |
 
 ---
 

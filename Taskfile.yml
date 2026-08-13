@@ -56,10 +56,10 @@ tasks:
     cmds:
       - make test-smoke
 
-  test-k6:
-    desc: "Optional k6 loadtest"
+  test-integration:
+    desc: "Postgres testcontainers (needs Docker or *_TEST_DATABASE_URL)"
     cmds:
-      - make test-k6
+      - make test-integration
 
   lint:
     desc: "golangci-lint if installed in ./bin or PATH"

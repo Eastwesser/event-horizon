@@ -86,6 +86,13 @@ func (s *InventoryService) UpdateItem(ctx context.Context, item *model.Item) err
 	if item.ID == "" {
 		return fmt.Errorf("id is required")
 	}
+	if item.Version <= 0 {
+		cur, err := s.repo.GetItem(ctx, item.ID)
+		if err != nil {
+			return err
+		}
+		item.Version = cur.Version
+	}
 	return s.repo.UpdateItem(ctx, item)
 }
 

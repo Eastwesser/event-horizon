@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
@@ -12,6 +13,7 @@ import (
 type stubPayment struct {
 	allowed bool
 	reason  string
+	err     error
 }
 
 func (s stubPayment) CreateCheckout(context.Context, *paymentPb.CreateCheckoutRequest, ...grpc.CallOption) (*paymentPb.CreateCheckoutResponse, error) {
@@ -24,30 +26,47 @@ func (s stubPayment) GetSubscription(context.Context, *paymentPb.GetSubscription
 	return nil, errors.New("unused")
 }
 func (s stubPayment) CanPurchaseMerch(context.Context, *paymentPb.CanPurchaseMerchRequest, ...grpc.CallOption) (*paymentPb.CanPurchaseMerchResponse, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
 	return &paymentPb.CanPurchaseMerchResponse{Allowed: s.allowed, Reason: s.reason}, nil
 }
 
-func TestPurchaseItem_MerchBlockedWithoutSubscription(t *testing.T) {
-	svc := &shopService{payment: stubPayment{allowed: false, reason: "no subscription"}}
-	gate, err := svc.payment.CanPurchaseMerch(context.Background(), &paymentPb.CanPurchaseMerchRequest{UserId: "u1"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if gate.GetAllowed() {
-		t.Fatal("expected blocked")
-	}
-	if gate.GetReason() != "no subscription" {
-		t.Fatalf("reason=%q", gate.GetReason())
+func TestCheckMerchAllowed_NilClient(t *testing.T) {
+	s := &shopService{}
+	err := s.checkMerchAllowed(context.Background(), "u1")
+	if err == nil || !strings.Contains(err.Error(), "payment service") {
+		t.Fatalf("got %v", err)
 	}
 }
 
-func TestPurchaseItem_MerchAllowedWithSubscription(t *testing.T) {
-	svc := &shopService{payment: stubPayment{allowed: true}}
-	gate, err := svc.payment.CanPurchaseMerch(context.Background(), &paymentPb.CanPurchaseMerchRequest{UserId: "u1"})
-	if err != nil {
+func TestCheckMerchAllowed_Blocked(t *testing.T) {
+	s := &shopService{payment: stubPayment{allowed: false, reason: "no subscription"}}
+	err := s.checkMerchAllowed(context.Background(), "u1")
+	if err == nil || !strings.Contains(err.Error(), "no subscription") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestCheckMerchAllowed_Allowed(t *testing.T) {
+	s := &shopService{payment: stubPayment{allowed: true}}
+	if err := s.checkMerchAllowed(context.Background(), "u1"); err != nil {
 		t.Fatal(err)
 	}
-	if !gate.GetAllowed() {
-		t.Fatal("expected allowed")
+}
+
+func TestCheckMerchAllowed_RPCError(t *testing.T) {
+	s := &shopService{payment: stubPayment{err: errors.New("down")}}
+	err := s.checkMerchAllowed(context.Background(), "u1")
+	if err == nil || !strings.Contains(err.Error(), "subscription check failed") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestCheckMerchAllowed_DefaultReason(t *testing.T) {
+	s := &shopService{payment: stubPayment{allowed: false, reason: ""}}
+	err := s.checkMerchAllowed(context.Background(), "u1")
+	if err == nil || !strings.Contains(err.Error(), "active subscription required") {
+		t.Fatalf("got %v", err)
 	}
 }

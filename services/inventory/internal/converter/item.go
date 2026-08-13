@@ -47,6 +47,7 @@ func ItemFromUpdateRequest(req *pb.UpdateItemRequest) *model.Item {
 		Stock:       int(req.Stock),
 		Attributes:  attrs,
 		Images:      req.Images,
+		Version:     int(req.Version),
 	}
 }
 
@@ -74,6 +75,7 @@ func ItemToProto(item *model.Item) (*pb.Item, error) {
 		Images:      item.Images,
 		CreatedAt:   item.CreatedAt.Format(timeRFC3339),
 		UpdatedAt:   item.UpdatedAt.Format(timeRFC3339),
+		Version:     int32(item.Version),
 	}, nil
 }
 

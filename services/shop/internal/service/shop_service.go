@@ -154,19 +154,8 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
     }
 
     if item.Category == "merch" {
-        if s.payment == nil {
-            return 0, fmt.Errorf("merch purchases require payment service")
-        }
-        gate, gerr := s.payment.CanPurchaseMerch(ctx, &paymentPb.CanPurchaseMerchRequest{UserId: userID})
-        if gerr != nil {
-            return 0, fmt.Errorf("subscription check failed: %w", gerr)
-        }
-        if !gate.GetAllowed() {
-            reason := gate.GetReason()
-            if reason == "" {
-                reason = "active subscription required for merch"
-            }
-            return 0, fmt.Errorf("%s", reason)
+        if err := s.checkMerchAllowed(ctx, userID); err != nil {
+            return 0, err
         }
     }
 
@@ -258,6 +247,24 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 
 func (s *shopService) GetInventory(ctx context.Context, userID string) ([]repository.Item, error) {
     return s.pgRepo.GetUserInventory(ctx, userID)
+}
+
+func (s *shopService) checkMerchAllowed(ctx context.Context, userID string) error {
+    if s.payment == nil {
+        return fmt.Errorf("merch purchases require payment service")
+    }
+    gate, err := s.payment.CanPurchaseMerch(ctx, &paymentPb.CanPurchaseMerchRequest{UserId: userID})
+    if err != nil {
+        return fmt.Errorf("subscription check failed: %w", err)
+    }
+    if !gate.GetAllowed() {
+        reason := gate.GetReason()
+        if reason == "" {
+            reason = "active subscription required for merch"
+        }
+        return fmt.Errorf("%s", reason)
+    }
+    return nil
 }
 
 // SetKafkaProducer attaches an optional Kafka producer for PurchasePaid events (Week 5).

@@ -22,8 +22,10 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "github.com/redis/go-redis/v9"
     "google.golang.org/grpc"
+    "google.golang.org/grpc/codes"
     "google.golang.org/grpc/credentials/insecure"
     "google.golang.org/grpc/metadata"
+    "google.golang.org/grpc/status"
     "google.golang.org/protobuf/types/known/structpb"
     "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
     "go.opentelemetry.io/otel"
@@ -86,6 +88,35 @@ func throughBreaker(b *circuit.Breaker, c *gin.Context, fn func() (any, error)) 
         return nil, err
     }
     return out, err
+}
+
+// writeGRPCError maps common gRPC codes to HTTP (see architecture/STATUS_CODES.md).
+func writeGRPCError(c *gin.Context, err error) {
+    st, ok := status.FromError(err)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    code := http.StatusInternalServerError
+    switch st.Code() {
+    case codes.InvalidArgument:
+        code = http.StatusBadRequest
+    case codes.Unauthenticated:
+        code = http.StatusUnauthorized
+    case codes.PermissionDenied:
+        code = http.StatusForbidden
+    case codes.NotFound:
+        code = http.StatusNotFound
+    case codes.AlreadyExists, codes.Aborted:
+        code = http.StatusConflict
+    case codes.FailedPrecondition:
+        code = http.StatusConflict
+    case codes.ResourceExhausted:
+        code = http.StatusTooManyRequests
+    case codes.Unavailable:
+        code = http.StatusServiceUnavailable
+    }
+    c.JSON(code, gin.H{"error": st.Message(), "grpc_code": st.Code().String()})
 }
 
 var upgrader = websocket.Upgrader{
@@ -242,6 +273,7 @@ func runGateway() {
         log.Fatalf("Failed to connect to auth: %v", err)
     }
     defer authClient.Close()
+    authCB := newServiceBreaker("auth")
 
     gameConn, err := grpc.NewClient(cfg.GameAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
@@ -249,6 +281,23 @@ func runGateway() {
     }
     defer gameConn.Close()
     gameClient := gamePb.NewGameServiceClient(gameConn)
+    gameCB := newServiceBreaker("game")
+
+    profileConn, err := grpc.NewClient(cfg.ProfileAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to profile: %v", err)
+    }
+    defer profileConn.Close()
+    profileClient := profilePb.NewProfileServiceClient(profileConn)
+    profileCB := newServiceBreaker("profile")
+
+    leaderboardConn, err := grpc.NewClient(cfg.LeaderboardAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to leaderboard: %v", err)
+    }
+    defer leaderboardConn.Close()
+    leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(leaderboardConn)
+    leaderboardCB := newServiceBreaker("leaderboard")
 
     // NATS SECTION
     var js nats.JetStreamContext
@@ -389,11 +438,17 @@ func runGateway() {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
-        resp, err := authClient.GetClient().Register(c.Request.Context(), &req)
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().Register(c.Request.Context(), &req)
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.RegisterResponse)
         eventData := map[string]interface{}{
             "event":   "user.registered",
             "user_id": resp.UserId,
@@ -416,11 +471,17 @@ func runGateway() {
             return
         }
 
-        resp, err := authClient.GetClient().Login(c.Request.Context(), &req)
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().Login(c.Request.Context(), &req)
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.LoginResponse)
 
         c.JSON(http.StatusOK, gin.H{
             "access_token":  resp.AccessToken,
@@ -441,13 +502,19 @@ func runGateway() {
             c.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token required"})
             return
         }
-        resp, err := authClient.GetClient().RefreshToken(c.Request.Context(), &authPb.RefreshTokenRequest{
-            RefreshToken: req.RefreshToken,
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().RefreshToken(c.Request.Context(), &authPb.RefreshTokenRequest{
+                RefreshToken: req.RefreshToken,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.RefreshTokenResponse)
         c.JSON(http.StatusOK, gin.H{
             "access_token":  resp.AccessToken,
             "refresh_token": resp.RefreshToken,
@@ -460,11 +527,17 @@ func runGateway() {
 
     r.GET("/api/auth/whoami", middleware.RequireAuth(authClient), func(c *gin.Context) {
         token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
-        resp, err := authClient.GetClient().Whoami(c.Request.Context(), &authPb.WhoamiRequest{AccessToken: token})
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().Whoami(c.Request.Context(), &authPb.WhoamiRequest{AccessToken: token})
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.WhoamiResponse)
         c.JSON(http.StatusOK, gin.H{
             "user_id":  resp.UserId,
             "email":    resp.Email,
@@ -475,7 +548,12 @@ func runGateway() {
 
     r.POST("/api/auth/logout", middleware.RequireAuth(authClient), func(c *gin.Context) {
         token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
-        _, err := authClient.GetClient().Logout(c.Request.Context(), &authPb.LogoutRequest{Token: token})
+        _, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().Logout(c.Request.Context(), &authPb.LogoutRequest{Token: token})
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
@@ -494,14 +572,20 @@ func runGateway() {
             return
         }
 
-        resp, err := authClient.GetClient().UpdateRole(c.Request.Context(), &authPb.UpdateRoleRequest{
-            UserId: req.UserID,
-            Role:   req.Role,
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().UpdateRole(c.Request.Context(), &authPb.UpdateRoleRequest{
+                UserId: req.UserID,
+                Role:   req.Role,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.UpdateRoleResponse)
 
         c.JSON(http.StatusOK, gin.H{"success": resp.Success, "message": resp.Message})
     })
@@ -509,13 +593,19 @@ func runGateway() {
     scoreCache := cache.NewScoreCache(2 * time.Second)
 
     r.GET("/api/auth/user", middleware.RequireAuth(authClient), func(c *gin.Context) {
-        resp, err := authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{
-            UserId: middleware.UserID(c),
+        out, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{
+                UserId: middleware.UserID(c),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authPb.GetUserResponse)
 
         c.JSON(http.StatusOK, gin.H{
             "user_id":     resp.UserId,
@@ -530,21 +620,19 @@ func runGateway() {
     r.GET("/api/profile", middleware.RequireAuth(authClient), func(c *gin.Context) {
         userID := middleware.UserID(c)
 
-        conn, err := grpc.Dial(cfg.ProfileAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-            return
-        }
-        defer conn.Close()
-
-        client := profilePb.NewProfileServiceClient(conn)
-        resp, err := client.GetProfile(c.Request.Context(), &profilePb.GetProfileRequest{
-            UserId: userID,
+        out, err := throughBreaker(profileCB, c, func() (any, error) {
+            return profileClient.GetProfile(c.Request.Context(), &profilePb.GetProfileRequest{
+                UserId: userID,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*profilePb.GetProfileResponse)
 
         c.JSON(http.StatusOK, resp)
     })
@@ -594,22 +682,27 @@ func runGateway() {
     defer shopConn.Close()
     shopClient := shopPb.NewShopServiceClient(shopConn)
     shopCB := newServiceBreaker("shop")
-    _ = shopCB // used below
 
     // Добавь эндпоинты:
     r.GET("/api/shop/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
         category := c.Query("category")
         gameID := c.Query("game_id")
 
-        resp, err := shopClient.GetItems(c.Request.Context(), &shopPb.GetItemsRequest{
-            UserId:   middleware.UserID(c),
-            Category: category,
-            GameId:   gameID,
+        out, err := throughBreaker(shopCB, c, func() (any, error) {
+            return shopClient.GetItems(c.Request.Context(), &shopPb.GetItemsRequest{
+                UserId:   middleware.UserID(c),
+                Category: category,
+                GameId:   gameID,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*shopPb.GetItemsResponse)
 
         c.JSON(http.StatusOK, resp.Items)
     })
@@ -642,13 +735,19 @@ func runGateway() {
     })
 
     r.GET("/api/shop/inventory", middleware.RequireAuth(authClient), func(c *gin.Context) {
-        resp, err := shopClient.GetInventory(c.Request.Context(), &shopPb.GetInventoryRequest{
-            UserId: middleware.UserID(c),
+        out, err := throughBreaker(shopCB, c, func() (any, error) {
+            return shopClient.GetInventory(c.Request.Context(), &shopPb.GetInventoryRequest{
+                UserId: middleware.UserID(c),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*shopPb.GetInventoryResponse)
 
         c.JSON(http.StatusOK, resp.Items)
     })
@@ -743,15 +842,21 @@ func runGateway() {
             c.JSON(http.StatusBadRequest, gin.H{"error": "payment_id is required"})
             return
         }
-        resp, err := paymentClient.ConfirmPayment(c.Request.Context(), &paymentPb.ConfirmPaymentRequest{
-            PaymentId:     req.PaymentID,
-            ProviderRef:   req.ProviderRef,
-            WebhookSecret: req.WebhookSecret,
+        out, err := throughBreaker(paymentCB, c, func() (any, error) {
+            return paymentClient.ConfirmPayment(c.Request.Context(), &paymentPb.ConfirmPaymentRequest{
+                PaymentId:     req.PaymentID,
+                ProviderRef:   req.ProviderRef,
+                WebhookSecret: req.WebhookSecret,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*paymentPb.ConfirmPaymentResponse)
         c.JSON(http.StatusOK, gin.H{
             "success":         resp.Success,
             "message":         resp.Message,
@@ -767,6 +872,7 @@ func runGateway() {
     }
     defer authorsConn.Close()
     authorsClient := authorsPb.NewAuthorsServiceClient(authorsConn)
+    authorsCB := newServiceBreaker("authors")
 
     r.PUT("/api/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
         var req struct {
@@ -778,41 +884,59 @@ func runGateway() {
             c.JSON(http.StatusBadRequest, gin.H{"error": "display_name is required"})
             return
         }
-        resp, err := authorsClient.UpsertProfile(c.Request.Context(), &authorsPb.UpsertProfileRequest{
-            UserId:      middleware.UserID(c),
-            DisplayName: req.DisplayName,
-            Bio:         req.Bio,
-            AvatarUrl:   req.AvatarURL,
+        out, err := throughBreaker(authorsCB, c, func() (any, error) {
+            return authorsClient.UpsertProfile(c.Request.Context(), &authorsPb.UpsertProfileRequest{
+                UserId:      middleware.UserID(c),
+                DisplayName: req.DisplayName,
+                Bio:         req.Bio,
+                AvatarUrl:   req.AvatarURL,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authorsPb.UpsertProfileResponse)
         c.JSON(http.StatusOK, resp.Author)
     })
 
     r.GET("/api/authors/:user_id", func(c *gin.Context) {
-        resp, err := authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
-            UserId: c.Param("user_id"),
+        out, err := throughBreaker(authorsCB, c, func() (any, error) {
+            return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
+                UserId: c.Param("user_id"),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authorsPb.GetAuthorResponse)
         c.JSON(http.StatusOK, resp.Author)
     })
 
     r.GET("/api/authors", func(c *gin.Context) {
         limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
         offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-        resp, err := authorsClient.ListAuthors(c.Request.Context(), &authorsPb.ListAuthorsRequest{
-            Limit:  int32(limit),
-            Offset: int32(offset),
+        out, err := throughBreaker(authorsCB, c, func() (any, error) {
+            return authorsClient.ListAuthors(c.Request.Context(), &authorsPb.ListAuthorsRequest{
+                Limit:  int32(limit),
+                Offset: int32(offset),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*authorsPb.ListAuthorsResponse)
         c.JSON(http.StatusOK, gin.H{"authors": resp.Authors, "total": resp.Total})
     })
 
@@ -823,20 +947,27 @@ func runGateway() {
     }
     defer historyConn.Close()
     historyClient := historyPb.NewHistoryServiceClient(historyConn)
+    historyCB := newServiceBreaker("history")
 
     r.GET("/api/history", middleware.RequireAuth(authClient), func(c *gin.Context) {
         limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
         offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-        resp, err := historyClient.ListEvents(c.Request.Context(), &historyPb.ListEventsRequest{
-            UserId:    middleware.UserID(c),
-            EventType: c.Query("event_type"),
-            Limit:     int32(limit),
-            Offset:    int32(offset),
+        out, err := throughBreaker(historyCB, c, func() (any, error) {
+            return historyClient.ListEvents(c.Request.Context(), &historyPb.ListEventsRequest{
+                UserId:    middleware.UserID(c),
+                EventType: c.Query("event_type"),
+                Limit:     int32(limit),
+                Offset:    int32(offset),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*historyPb.ListEventsResponse)
         c.JSON(http.StatusOK, gin.H{"events": resp.Events, "total": resp.Total})
     })
 
@@ -847,38 +978,57 @@ func runGateway() {
     }
     defer analyticsConn.Close()
     analyticsClient := analyticsPb.NewAnalyticsServiceClient(analyticsConn)
+    analyticsCB := newServiceBreaker("analytics")
 
     r.GET("/api/analytics/dau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
         days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
-        resp, err := analyticsClient.GetDAU(c.Request.Context(), &analyticsPb.GetDAURequest{Days: int32(days)})
+        out, err := throughBreaker(analyticsCB, c, func() (any, error) {
+            return analyticsClient.GetDAU(c.Request.Context(), &analyticsPb.GetDAURequest{Days: int32(days)})
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*analyticsPb.GetDAUResponse)
         c.JSON(http.StatusOK, gin.H{"days": resp.Days})
     })
 
     r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
         days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
-        resp, err := analyticsClient.GetMAU(c.Request.Context(), &analyticsPb.GetMAURequest{Days: int32(days)})
+        out, err := throughBreaker(analyticsCB, c, func() (any, error) {
+            return analyticsClient.GetMAU(c.Request.Context(), &analyticsPb.GetMAURequest{Days: int32(days)})
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*analyticsPb.GetMAUResponse)
         c.JSON(http.StatusOK, gin.H{"mau": resp.Mau, "window_days": resp.WindowDays})
     })
 
     r.GET("/api/analytics/retention", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
         cohort, _ := strconv.Atoi(c.DefaultQuery("cohort_days_ago", "7"))
         window, _ := strconv.Atoi(c.DefaultQuery("window_days", "7"))
-        resp, err := analyticsClient.GetRetention(c.Request.Context(), &analyticsPb.GetRetentionRequest{
-            CohortDaysAgo: int32(cohort),
-            WindowDays:    int32(window),
+        out, err := throughBreaker(analyticsCB, c, func() (any, error) {
+            return analyticsClient.GetRetention(c.Request.Context(), &analyticsPb.GetRetentionRequest{
+                CohortDaysAgo: int32(cohort),
+                WindowDays:    int32(window),
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*analyticsPb.GetRetentionResponse)
         c.JSON(http.StatusOK, gin.H{
             "cohort_day":  resp.CohortDay,
             "cohort_size": resp.CohortSize,
@@ -894,7 +1044,6 @@ func runGateway() {
     defer inventoryConn.Close()
     inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
     inventoryCB := newServiceBreaker("inventory")
-    _ = inventoryCB
 
     // GET /api/inventory/items — список товаров с фильтрами
     r.GET("/api/inventory/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -928,15 +1077,21 @@ func runGateway() {
             }
         }
 
-        resp, err := inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
-            Filters: filters,
-            Limit:   limit,
-            Offset:  offset,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
+                Filters: filters,
+                Limit:   limit,
+                Offset:  offset,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*inventoryPb.SearchItemsResponse)
 
         c.JSON(http.StatusOK, resp)
     })
@@ -965,20 +1120,26 @@ func runGateway() {
             return
         }
 
-        resp, err := inventoryClient.CreateItem(withUserRole(c.Request.Context(), c), &inventoryPb.CreateItemRequest{
-            AuthorId:    userID,
-            Type:        req.Type,
-            Name:        req.Name,
-            Description: req.Description,
-            Price:       req.Price,
-            Stock:       req.Stock,
-            Attributes:  attrs,
-            Images:      req.Images,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.CreateItem(withUserRole(c.Request.Context(), c), &inventoryPb.CreateItemRequest{
+                AuthorId:    userID,
+                Type:        req.Type,
+                Name:        req.Name,
+                Description: req.Description,
+                Price:       req.Price,
+                Stock:       req.Stock,
+                Attributes:  attrs,
+                Images:      req.Images,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*inventoryPb.ItemResponse)
 
         c.JSON(http.StatusOK, resp)
     })
@@ -1027,13 +1188,19 @@ func runGateway() {
             })
         }
 
-        resp, err := inventoryClient.BulkCreateItems(c.Request.Context(), &inventoryPb.BulkCreateItemsRequest{
-            Items: pbItems,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.BulkCreateItems(c.Request.Context(), &inventoryPb.BulkCreateItemsRequest{
+                Items: pbItems,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*inventoryPb.BulkCreateItemsResponse)
 
         c.JSON(http.StatusOK, gin.H{"success": resp.Success, "count": resp.Count})
     })
@@ -1046,13 +1213,19 @@ func runGateway() {
             return
         }
 
-        resp, err := inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{
-            Id: itemID,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{
+                Id: itemID,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
             return
         }
+        resp := out.(*inventoryPb.ItemResponse)
 
         c.JSON(http.StatusOK, resp)
     })
@@ -1068,8 +1241,18 @@ func runGateway() {
         }
 
         if middleware.Role(c) != RoleAdmin {
-            existing, err := inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
-            if err != nil || existing.Item == nil {
+            out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+                return inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
+            })
+            if err == circuit.ErrOpen {
+                return
+            }
+            if err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+                return
+            }
+            existing := out.(*inventoryPb.ItemResponse)
+            if existing.Item == nil {
                 c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
                 return
             }
@@ -1085,6 +1268,7 @@ func runGateway() {
             Description string                 `json:"description"`
             Price       float64                `json:"price"`
             Stock       int32                  `json:"stock"`
+            Version     int32                  `json:"version"`
             Attributes  map[string]interface{} `json:"attributes"`
             Images      []string               `json:"images"`
         }
@@ -1099,21 +1283,28 @@ func runGateway() {
             return
         }
 
-        resp, err := inventoryClient.UpdateItem(withUserRole(c.Request.Context(), c), &inventoryPb.UpdateItemRequest{
-            Id:          itemID,
-            AuthorId:    userID,
-            Type:        req.Type,
-            Name:        req.Name,
-            Description: req.Description,
-            Price:       req.Price,
-            Stock:       req.Stock,
-            Attributes:  attrs,
-            Images:      req.Images,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.UpdateItem(withUserRole(c.Request.Context(), c), &inventoryPb.UpdateItemRequest{
+                Id:          itemID,
+                AuthorId:    userID,
+                Type:        req.Type,
+                Name:        req.Name,
+                Description: req.Description,
+                Price:       req.Price,
+                Stock:       req.Stock,
+                Version:     req.Version,
+                Attributes:  attrs,
+                Images:      req.Images,
+            })
         })
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        if err == circuit.ErrOpen {
             return
         }
+        if err != nil {
+            writeGRPCError(c, err)
+            return
+        }
+        resp := out.(*inventoryPb.ItemResponse)
 
         c.JSON(http.StatusOK, resp)
     })
@@ -1129,8 +1320,18 @@ func runGateway() {
         }
 
         if middleware.Role(c) != RoleAdmin {
-            existing, err := inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
-            if err != nil || existing.Item == nil {
+            out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+                return inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
+            })
+            if err == circuit.ErrOpen {
+                return
+            }
+            if err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+                return
+            }
+            existing := out.(*inventoryPb.ItemResponse)
+            if existing.Item == nil {
                 c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
                 return
             }
@@ -1140,9 +1341,14 @@ func runGateway() {
             }
         }
 
-        _, err := inventoryClient.DeleteItem(withUserRole(c.Request.Context(), c), &inventoryPb.DeleteItemRequest{
-            Id: itemID,
+        _, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.DeleteItem(withUserRole(c.Request.Context(), c), &inventoryPb.DeleteItemRequest{
+                Id: itemID,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
@@ -1171,14 +1377,20 @@ func runGateway() {
             return
         }
 
-        resp, err := inventoryClient.ReserveItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReserveItemRequest{
-            Id:       itemID,
-            Quantity: req.Quantity,
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.ReserveItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReserveItemRequest{
+                Id:       itemID,
+                Quantity: req.Quantity,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*inventoryPb.ReserveItemResponse)
 
         c.JSON(http.StatusOK, gin.H{
             "success":         resp.Success,
@@ -1196,8 +1408,18 @@ func runGateway() {
         }
 
         if middleware.Role(c) != RoleAdmin {
-            existing, err := inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
-            if err != nil || existing.Item == nil {
+            out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+                return inventoryClient.GetItem(c.Request.Context(), &inventoryPb.GetItemRequest{Id: itemID})
+            })
+            if err == circuit.ErrOpen {
+                return
+            }
+            if err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+                return
+            }
+            existing := out.(*inventoryPb.ItemResponse)
+            if existing.Item == nil {
                 c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
                 return
             }
@@ -1207,7 +1429,11 @@ func runGateway() {
             }
         }
 
-        if _, err := inventoryClient.SoftDeleteItem(withUserRole(c.Request.Context(), c), &inventoryPb.SoftDeleteItemRequest{Id: itemID}); err != nil {
+        if _, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.SoftDeleteItem(withUserRole(c.Request.Context(), c), &inventoryPb.SoftDeleteItemRequest{Id: itemID})
+        }); err == circuit.ErrOpen {
+            return
+        } else if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
@@ -1223,7 +1449,11 @@ func runGateway() {
             return
         }
 
-        if _, err := inventoryClient.RestoreItem(withUserRole(c.Request.Context(), c), &inventoryPb.RestoreItemRequest{Id: itemID}); err != nil {
+        if _, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.RestoreItem(withUserRole(c.Request.Context(), c), &inventoryPb.RestoreItemRequest{Id: itemID})
+        }); err == circuit.ErrOpen {
+            return
+        } else if err != nil {
             c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
             return
         }
@@ -1233,11 +1463,17 @@ func runGateway() {
 
     // GET /api/inventory/stats — статистика по товарам (только admin)
     r.GET("/api/inventory/stats", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
-        resp, err := inventoryClient.GetStats(withUserRole(c.Request.Context(), c), &inventoryPb.EmptyRequest{})
+        out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+            return inventoryClient.GetStats(withUserRole(c.Request.Context(), c), &inventoryPb.EmptyRequest{})
+        })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*inventoryPb.StatsResponse)
 
         c.JSON(http.StatusOK, gin.H{
             "total_items": resp.TotalItems,
@@ -1250,15 +1486,6 @@ func runGateway() {
         gameID := c.Query("game_id")
         limit := c.Query("limit")
 
-        conn, err := grpc.Dial(cfg.LeaderboardAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-            return
-        }
-        defer conn.Close()
-
-        leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(conn)
-
         var limitInt int32 = 10
         if limit != "" {
             if l, err := strconv.Atoi(limit); err == nil {
@@ -1266,14 +1493,20 @@ func runGateway() {
             }
         }
 
-        resp, err := leaderboardClient.GetTopScores(c.Request.Context(), &leaderboardPb.GetTopScoresRequest{
-            GameId: gameID,
-            Limit:  limitInt,
+        out, err := throughBreaker(leaderboardCB, c, func() (any, error) {
+            return leaderboardClient.GetTopScores(c.Request.Context(), &leaderboardPb.GetTopScoresRequest{
+                GameId: gameID,
+                Limit:  limitInt,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*leaderboardPb.GetTopScoresResponse)
 
         c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
     })
@@ -1287,10 +1520,15 @@ func runGateway() {
             return
         }
 
-        _, err := authClient.GetClient().UpdateNickname(c.Request.Context(), &authPb.UpdateNicknameRequest{
-            UserId:   middleware.UserID(c),
-            Nickname: req.Nickname,
+        _, err := throughBreaker(authCB, c, func() (any, error) {
+            return authClient.GetClient().UpdateNickname(c.Request.Context(), &authPb.UpdateNicknameRequest{
+                UserId:   middleware.UserID(c),
+                Nickname: req.Nickname,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
@@ -1345,20 +1583,26 @@ func runGateway() {
             }
         }
 
-        resp, err := gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
-            UserId:    middleware.UserID(c),
-            GameId:    req.GameID,
-            Level:     req.Level,
-            Score:     req.Score,
-            UserEmail: req.UserEmail,
-            Nickname:  req.Nickname,
-            Seed:      req.Seed,
-            Moves:     moves,
+        out, err := throughBreaker(gameCB, c, func() (any, error) {
+            return gameClient.SubmitScore(c.Request.Context(), &gamePb.SubmitScoreRequest{
+                UserId:    middleware.UserID(c),
+                GameId:    req.GameID,
+                Level:     req.Level,
+                Score:     req.Score,
+                UserEmail: req.UserEmail,
+                Nickname:  req.Nickname,
+                Seed:      req.Seed,
+                Moves:     moves,
+            })
         })
+        if err == circuit.ErrOpen {
+            return
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
+        resp := out.(*gamePb.SubmitScoreResponse)
 
         respJSON, _ := json.Marshal(resp)
         scoreCache.Set(cacheKey, respJSON)
@@ -1394,6 +1638,8 @@ func runGateway() {
 
     authClient.Close()
     gameConn.Close()
+    profileConn.Close()
+    leaderboardConn.Close()
     billingConn.Close()
     if nc != nil {
         nc.Drain()

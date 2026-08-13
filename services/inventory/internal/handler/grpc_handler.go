@@ -2,6 +2,7 @@ package handler
 
 import (
     "context"
+    "errors"
     "strconv"
 
     "google.golang.org/grpc/codes"
@@ -57,7 +58,7 @@ func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest)
     item := converter.ItemFromUpdateRequest(req)
 
     if err := h.service.UpdateItem(ctx, item); err != nil {
-        return nil, status.Errorf(codes.Internal, "failed to update item: %v", err)
+        return nil, mapInventoryErr(err, "failed to update item")
     }
 
     protoItem, err := converter.ItemToProto(item)
@@ -219,4 +220,18 @@ func (h *GRPCHandler) GetStats(ctx context.Context, req *pb.EmptyRequest) (*pb.S
         ByType:     stats.ByType,
         ByAuthor:   stats.ByAuthor,
     }, nil
+}
+func mapInventoryErr(err error, fallback string) error {
+	switch {
+	case errors.Is(err, model.ErrVersionConflict):
+		return status.Error(codes.Aborted, err.Error())
+	case errors.Is(err, model.ErrItemNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, model.ErrNotEnoughStock):
+		return status.Error(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, model.ErrInvalidItem):
+		return status.Error(codes.InvalidArgument, err.Error())
+	default:
+		return status.Errorf(codes.Internal, "%s: %v", fallback, err)
+	}
 }

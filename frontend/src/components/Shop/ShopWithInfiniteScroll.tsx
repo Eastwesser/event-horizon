@@ -88,11 +88,6 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     }
   }, [fetchBalance, fetchInventory]);
 
-  // Фильтрация товаров
-  const filteredItems = allItems.filter(item =>
-    filterType === 'all' || item.category === filterType
-  );
-
   // Обновление отображаемых товаров при изменении фильтра
   useEffect(() => {
     setPage(1);

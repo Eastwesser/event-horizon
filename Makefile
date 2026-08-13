@@ -70,8 +70,15 @@ test-k6:
 	@command -v k6 >/dev/null || { echo "k6 not installed — skip"; exit 0; }
 	k6 run deployments/k6/loadtest.js
 
+test-integration:
+	@echo "Integration tests (testcontainers; needs Docker OR *_TEST_DATABASE_URL)"
+	@set -e; \
+	(cd services/billing && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/shop && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/inventory && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m)
+
 test-all: test-unit
-	@echo "Unit OK. Optional: make test-smoke (compose up) / make test-k6"
+	@echo "Unit OK. Optional: make test-smoke | make test-k6 | make test-integration"
 # ===== MIGRATIONS =====
 migrate-auth:
 	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up

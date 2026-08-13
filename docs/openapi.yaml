@@ -807,6 +807,130 @@ paths:
         '101':
           description: WebSocket upgrade successful
 
+  # ===== PAYMENT =====
+  /api/payment/checkout:
+    post:
+      summary: Create Boosty checkout (subscription)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                  enum: [present, future]
+      responses:
+        '200':
+          description: Checkout created
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+  /api/payment/subscription:
+    get:
+      summary: Current subscription status
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Subscription info
+        '401':
+          description: Unauthorized
+  /api/payment/can-purchase-merch:
+    get:
+      summary: Whether merch purchase is allowed
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: allowed + reason
+  /api/payment/webhook:
+    post:
+      summary: Payment provider webhook (secret in body)
+      responses:
+        '200':
+          description: Confirmed
+
+  # ===== AUTHORS =====
+  /api/authors/me:
+    put:
+      summary: Upsert author profile (author|admin)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Author profile
+        '403':
+          description: Forbidden
+  /api/authors:
+    get:
+      summary: List authors
+      responses:
+        '200':
+          description: authors + total
+  /api/authors/{user_id}:
+    get:
+      summary: Get author by user id
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Author
+        '404':
+          description: Not found
+
+  # ===== HISTORY =====
+  /api/history:
+    get:
+      summary: Own event trail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: event_type
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: offset
+          schema: { type: integer }
+      responses:
+        '200':
+          description: events + total
+
+  # ===== ANALYTICS (admin) =====
+  /api/analytics/dau:
+    get:
+      summary: Daily active users
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: days[]
+        '403':
+          description: Admin only
+  /api/analytics/mau:
+    get:
+      summary: Monthly active users
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: mau + window_days
+        '403':
+          description: Admin only
+  /api/analytics/retention:
+    get:
+      summary: Cohort retention
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: cohort + points
+        '403':
+          description: Admin only
+
 components:
   schemas:
     InventoryItem:

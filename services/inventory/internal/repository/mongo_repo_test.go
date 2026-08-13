@@ -228,8 +228,9 @@ func TestMongoRepo_ReserveItem(t *testing.T) {
 	require.NoError(t, err)
 
 	// Резервируем 3 штуки
-	err = repo.ReserveItem(ctx, item.ID, 3)
+	left, err := repo.ReserveItem(ctx, item.ID, 3)
 	assert.NoError(t, err)
+	assert.Equal(t, 7, left)
 
 	// Проверяем остаток
 	saved, err := repo.GetItem(ctx, item.ID)
@@ -237,7 +238,7 @@ func TestMongoRepo_ReserveItem(t *testing.T) {
 	assert.Equal(t, 7, saved.Stock)
 
 	// Пытаемся зарезервировать больше, чем есть
-	err = repo.ReserveItem(ctx, item.ID, 10)
+	_, err = repo.ReserveItem(ctx, item.ID, 10)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not enough stock")
 }
