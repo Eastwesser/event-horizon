@@ -1,0 +1,8 @@
+The push refers to repository [docker.io/eastwesser/auth]
+70d3433a3cdf: Preparing
+03b7fe2ad5a2: Preparing
+08bc4e534116: Preparing
+03b7fe2ad5a2: Layer already exists
+08bc4e534116: Layer already exists
+70d3433a3cdf: Pushed
+latest: digest: sha256:e5d081eff6e269402ba1bd7ee84579ec0581d1f5e749d51650999fe006255160 size: 950

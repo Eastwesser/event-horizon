@@ -1,4 +1,5 @@
-FROM scratch
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates wget
 COPY services/nats-hub/nats-hub /nats-hub
-EXPOSE 4222
+EXPOSE 9097
 CMD ["/nats-hub"]

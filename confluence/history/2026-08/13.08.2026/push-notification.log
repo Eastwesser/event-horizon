@@ -1,0 +1,8 @@
+The push refers to repository [docker.io/eastwesser/notification]
+7d2c098979b1: Preparing
+03b7fe2ad5a2: Preparing
+08bc4e534116: Preparing
+03b7fe2ad5a2: Pushed
+7d2c098979b1: Pushed
+08bc4e534116: Pushed
+latest: digest: sha256:c858b111d4544e166f1820bd35d35e9a7633cc2ab0cf453a01ffa23e7c818dbf size: 950

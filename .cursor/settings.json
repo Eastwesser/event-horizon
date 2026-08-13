@@ -1,0 +1,31 @@
+{
+  "agent": {
+    "default": "event-horizon-agent",
+    "enabled": true
+  },
+  "rules": {
+    "enabled": true,
+    "autoApply": true
+  },
+  "completion": {
+    "enabled": true,
+    "suggestions": true
+  },
+  "chat": {
+    "contextFiles": [
+      "*.go",
+      "*.proto",
+      "*.yaml",
+      "*.yml",
+      "Dockerfile*",
+      "Makefile",
+      "Taskfile*.yml"
+    ]
+  },
+  "formatting": {
+    "go": {
+      "formatter": "gofumpt",
+      "imports": "gci"
+    }
+  }
+}

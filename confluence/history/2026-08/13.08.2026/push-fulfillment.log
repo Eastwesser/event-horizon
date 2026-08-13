@@ -1,0 +1,8 @@
+The push refers to repository [docker.io/eastwesser/fulfillment]
+c669b4a79895: Preparing
+03b7fe2ad5a2: Preparing
+08bc4e534116: Preparing
+08bc4e534116: Layer already exists
+03b7fe2ad5a2: Layer already exists
+c669b4a79895: Pushed
+latest: digest: sha256:1062b6cfe62793dd77e3c8dacf0a82adbf163f007b5aa29be5d8909b4ebf48ca size: 950

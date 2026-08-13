@@ -17,6 +17,10 @@ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=p
 cd /home/denismatveev/event_horizon/services/billing
 protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/*.proto
 
+# Для inventory:
+cd /home/denismatveev/event_horizon/services/inventory
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/*.proto
+
 # Или одна команда для всех сразу:
 
 cd /home/denismatveev/event_horizon
@@ -60,6 +64,11 @@ echo "✅ Billing service built"
 cd ../gateway
 go build -o gateway ./cmd/main.go
 echo "✅ Gateway service built"
+
+# Inventory
+cd ../inventory
+go build -o inventory-service ./cmd/main.go
+echo "✅ Inventory service built"
 
 cd ~/event_horizon
 echo "🎉 All services built!"

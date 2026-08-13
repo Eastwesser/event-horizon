@@ -45,6 +45,10 @@ docker push eastwesser/leaderboard:latest
 docker build -t eastwesser/balancer:latest -f services/balancer/Dockerfile services/balancer/
 docker push eastwesser/balancer:latest
 
+# Inventory
+docker build -t eastwesser/inventory:latest -f services/inventory/Dockerfile services/inventory/
+docker push eastwesser/inventory:latest
+
 🚀 Фаза 3: Обновить docker-compose и запустить
 
 1. Обнови docker-compose.cluster.yml — замени build на image

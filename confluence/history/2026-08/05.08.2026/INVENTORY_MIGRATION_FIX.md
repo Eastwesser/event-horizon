@@ -22,3 +22,4 @@ curl -X POST http://localhost:8079/api/inventory/items \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"type":"брелок","name":"Брелок с медведем","price":150}' | jq '.'
+

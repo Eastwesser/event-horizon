@@ -1,0 +1,8 @@
+The push refers to repository [docker.io/eastwesser/shop]
+f353c1a17601: Preparing
+03b7fe2ad5a2: Preparing
+08bc4e534116: Preparing
+08bc4e534116: Layer already exists
+03b7fe2ad5a2: Layer already exists
+f353c1a17601: Pushed
+latest: digest: sha256:22e50b9fc257a6c7b485c7224b791c23594d185ef4ed2588a719bab9263c0284 size: 950

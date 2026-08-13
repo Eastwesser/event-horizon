@@ -75,25 +75,27 @@ func (r *RedisLeaderboardRepo) UpdateScore(ctx context.Context, gameID, userID, 
         r.client.HSet(ctx, infoKey, userID+"_nickname", defaultNick)
     }
 
-    // Получаем текущий счёт
-    currentScore, err := r.client.ZScore(ctx, key, userID).Result()
-    if err == redis.Nil {
-        currentScore = 0
-    } else if err != nil {
+    // Keep the highest score, never sum. Game publishes a highscore, not a delta.
+    if err := r.client.ZAddArgs(ctx, key, redis.ZAddArgs{
+        GT:      true,
+        Members: []redis.Z{{Score: float64(score), Member: userID}},
+    }).Err(); err != nil {
         return 0, err
     }
-    
-    newScore := int(currentScore) + score
-    log.Printf("💰 Summing score for %s: %d + %d = %d", userID, int(currentScore), score, newScore)
-    
-    member := &redis.Z{
-        Score:  float64(newScore),
-        Member: userID,
+
+    if r.db != nil {
+        if _, err := r.db.Exec(ctx, `
+            INSERT INTO leaderboard_backup (game_id, user_id, score, user_email, updated_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            ON CONFLICT (game_id, user_id) DO UPDATE
+            SET score = GREATEST(leaderboard_backup.score, EXCLUDED.score),
+                user_email = COALESCE(NULLIF(EXCLUDED.user_email, ''), leaderboard_backup.user_email),
+                updated_at = NOW()
+        `, gameID, userID, score, userEmail); err != nil {
+            log.Printf("⚠️ Failed to persist leaderboard backup: %v", err)
+        }
     }
-    if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
-        return 0, err
-    }
-    
+
     rank, err := r.client.ZRevRank(ctx, key, userID).Result()
     if err != nil {
         return 0, err
@@ -110,26 +112,27 @@ func (r *RedisLeaderboardRepo) UpdateScoreOnly(ctx context.Context, gameID, user
     if userEmail != "" {
         r.client.HSet(ctx, emailKey, userID, userEmail)
     }
-    
-    // Получаем текущий счёт
-    currentScore, err := r.client.ZScore(ctx, key, userID).Result()
-    if err == redis.Nil {
-        currentScore = 0
-    } else if err != nil {
+
+    if err := r.client.ZAddArgs(ctx, key, redis.ZAddArgs{
+        GT:      true,
+        Members: []redis.Z{{Score: float64(score), Member: userID}},
+    }).Err(); err != nil {
         return err
     }
-    
-    newScore := int(currentScore) + score  // СУММИРУЕМ
-    log.Printf("💰 SUMMING (fast): user=%s, current=%.0f, add=%d, new=%d", userID, currentScore, score, newScore)
-    
-    member := &redis.Z{
-        Score:  float64(newScore),
-        Member: userID,
+
+    if r.db != nil {
+        if _, err := r.db.Exec(ctx, `
+            INSERT INTO leaderboard_backup (game_id, user_id, score, user_email, updated_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            ON CONFLICT (game_id, user_id) DO UPDATE
+            SET score = GREATEST(leaderboard_backup.score, EXCLUDED.score),
+                user_email = COALESCE(NULLIF(EXCLUDED.user_email, ''), leaderboard_backup.user_email),
+                updated_at = NOW()
+        `, gameID, userID, score, userEmail); err != nil {
+            log.Printf("⚠️ Failed to persist leaderboard backup: %v", err)
+        }
     }
-    if err := r.client.ZAdd(ctx, key, *member).Err(); err != nil {
-        return err
-    }
-    
+
     return nil
 }
 
@@ -228,11 +231,10 @@ func (r *RedisLeaderboardRepo) SaveUserInfo(ctx context.Context, gameID, userID,
 func (r *RedisLeaderboardRepo) RestoreFromPostgres(ctx context.Context, gameID string) error {
     // Запрос к PostgreSQL (через gRPC или прямой доступ к БД)
     rows, err := r.db.Query(ctx, `
-        SELECT user_id, MAX(score) as best_score
-        FROM scores
+        SELECT user_id, score
+        FROM leaderboard_backup
         WHERE game_id = $1
-        GROUP BY user_id
-        ORDER BY best_score DESC
+        ORDER BY score DESC
     `, gameID)
     if err != nil {
         return err
