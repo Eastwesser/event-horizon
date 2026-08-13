@@ -1,0 +1,176 @@
+/* frontend/src/components/Authors/AuthorsPage.css */
+.authors-container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.authors-container .back-btn {
+  display: inline-flex;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #e8eaf0;
+  cursor: pointer;
+}
+
+.authors-container .back-btn:hover {
+  border-color: #ffd700;
+}
+
+.authors-header h1 {
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+}
+
+.authors-header p {
+  color: #8a94a8;
+  margin-bottom: 2rem;
+}
+
+.authors-form {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.authors-form h2 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.authors-form label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.authors-form input,
+.authors-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-family: inherit;
+}
+
+.authors-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.authors-form button {
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 12px;
+  background: #ffd700;
+  color: #1a1a2e;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.authors-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.authors-list h2 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.author-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.author-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-info h3 {
+  margin-bottom: 0.25rem;
+}
+
+.author-info p {
+  color: #8a94a8;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.author-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.35rem;
+}
+
+.authors-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #8a94a8;
+}
+
+.authors-error {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid #ff6b6b;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #ff6b6b;
+}
+
+.authors-success {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid #4ade80;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  color: #4ade80;
+}
+
+.authors-load-more {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.authors-load-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

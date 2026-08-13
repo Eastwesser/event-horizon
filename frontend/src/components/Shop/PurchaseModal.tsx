@@ -10,6 +10,9 @@ interface PurchaseModalProps {
   onConfirm: () => void;
   onClose: () => void;
   loading: boolean;
+  merchAllowed?: boolean | null;
+  merchBlockReason?: string;
+  onGoSubscription?: () => void;
 }
 
 const PurchaseModal: React.FC<PurchaseModalProps> = ({
@@ -19,10 +22,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   onConfirm,
   onClose,
   loading,
+  merchAllowed = true,
+  merchBlockReason = '',
+  onGoSubscription,
 }) => {
   if (!isOpen || !item) return null;
 
   const canAfford = balance >= item.price_tickets;
+  const merchBlocked = merchAllowed === false;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -45,7 +52,21 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
           <div className="modal-balance">
             <span>Ваш баланс: 🎟️ {balance}</span>
           </div>
-          {!canAfford && (
+          {merchBlocked && (
+            <div className="modal-error">
+              ❌ {merchBlockReason || 'Покупка мерча недоступна без подписки'}
+              {onGoSubscription && (
+                <button
+                  type="button"
+                  className="modal-subscription-link"
+                  onClick={onGoSubscription}
+                >
+                  Оформить подписку →
+                </button>
+              )}
+            </div>
+          )}
+          {!canAfford && !merchBlocked && (
             <div className="modal-error">
               ❌ Недостаточно билетиков!
             </div>
@@ -61,7 +82,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
             <button
               className="modal-confirm"
               onClick={onConfirm}
-              disabled={!canAfford || loading}
+              disabled={!canAfford || loading || merchBlocked}
             >
               {loading ? 'Покупка...' : 'Да, купить'}
             </button>

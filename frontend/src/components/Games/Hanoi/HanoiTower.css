@@ -1,0 +1,295 @@
+/* frontend/src/components/Games/Hanoi/HanoiTower.css */
+.hanoi-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.hanoi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.hanoi-title h1 {
+  font-size: 1.5rem;
+  color: #ffd700;
+  margin: 0;
+}
+
+.hanoi-title p {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.hanoi-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hanoi-stat {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  text-align: center;
+  min-width: 80px;
+}
+
+.hanoi-stat .stat-label {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.hanoi-stat .stat-value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.hanoi-stat--moves-optimal .stat-value {
+  color: #4ade80;
+}
+
+.hanoi-stat--moves-over .stat-value {
+  color: #ff6b6b;
+}
+
+.hanoi-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.hanoi-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.hanoi-controls select {
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.hanoi-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hanoi-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hanoi-btn--reset {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.hanoi-btn--auto {
+  background: rgba(96, 165, 250, 0.2);
+  border: 1px solid #60a5fa;
+  color: #60a5fa;
+}
+
+.hanoi-btn--back {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.hanoi-board {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-height: 320px;
+  padding: 1rem 0.5rem 0;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 20px;
+  position: relative;
+}
+
+.hanoi-peg {
+  flex: 1;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  min-height: 280px;
+  padding-bottom: 12px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.hanoi-peg:hover:not(.hanoi-peg--disabled) {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.hanoi-peg--selected {
+  background: rgba(255, 215, 0, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.5);
+}
+
+.hanoi-peg--disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.hanoi-peg-label {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-bottom: 0.5rem;
+}
+
+.hanoi-peg-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  width: 100%;
+  min-height: 240px;
+  position: relative;
+  z-index: 2;
+}
+
+.hanoi-rod {
+  position: absolute;
+  bottom: 12px;
+  width: 6px;
+  height: 200px;
+  background: linear-gradient(180deg, #8b7355 0%, #5c4a32 100%);
+  border-radius: 3px;
+  z-index: 0;
+}
+
+.hanoi-base {
+  position: absolute;
+  bottom: 0;
+  width: 90%;
+  height: 12px;
+  background: linear-gradient(180deg, #6b5344 0%, #3d2f24 100%);
+  border-radius: 6px;
+  z-index: 1;
+}
+
+.hanoi-ring {
+  height: 28px;
+  border-radius: 14px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  z-index: 3;
+  position: relative;
+}
+
+.hanoi-ring--top-selected {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 12px rgba(255, 215, 0, 0.4);
+}
+
+.hanoi-ring--hidden {
+  opacity: 0;
+}
+
+.hanoi-floating-ring {
+  position: fixed;
+  height: 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  pointer-events: none;
+  transition: left 0.25s ease, top 0.25s ease;
+}
+
+.hanoi-win-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.hanoi-win-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #ffd700;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.hanoi-win-modal h2 {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+.hanoi-win-modal p {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.hanoi-win-modal .win-optimal {
+  color: #4ade80;
+}
+
+.hanoi-win-modal .win-over {
+  color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+  .hanoi-board {
+    min-height: 260px;
+  }
+
+  .hanoi-ring {
+    height: 22px;
+    font-size: 0.55rem;
+  }
+
+  .hanoi-rod {
+    height: 160px;
+  }
+
+  .hanoi-peg-stack {
+    min-height: 200px;
+  }
+}

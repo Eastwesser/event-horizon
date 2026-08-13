@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/inventory.proto
+// source: inventory.proto
 
 package inventory
 
@@ -512,5 +512,5 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/inventory.proto",
+	Metadata: "inventory.proto",
 }

@@ -5,8 +5,15 @@ import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
 import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
+import { paymentApi } from '../../services/paymentApi';
 import './Shop.css';
 import { useShopStore, type ShopItem } from '../../store/shopStore';
+
+function isMerchItem(item: ShopItem): boolean {
+  const cat = (item.category || '').toLowerCase();
+  const type = (item.type || '').toLowerCase();
+  return cat.includes('merch') || type.includes('merch');
+}
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
@@ -27,9 +34,12 @@ export const Shop: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'shop' | 'inventory'>('shop');
   const [filterType, setFilterType] = useState<string>('all');
   const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
+    type: 'success' | 'error' | 'info';
     message: string;
+    link?: { label: string; path: string };
   } | null>(null);
+  const [merchAllowed, setMerchAllowed] = useState<boolean | null>(null);
+  const [merchBlockReason, setMerchBlockReason] = useState('');
 
   const itemTypes = [
     { value: 'all', label: 'Все' },
@@ -57,7 +67,33 @@ export const Shop: React.FC = () => {
     }
   }, [fetchItems, fetchBalance, fetchInventory]);
 
-  const handleBuyClick = (item: any) => {
+  const handleBuyClick = async (item: ShopItem) => {
+    if (isMerchItem(item)) {
+      try {
+        const { allowed, reason } = await paymentApi.canPurchaseMerch();
+        setMerchAllowed(allowed);
+        if (!allowed) {
+          setMerchBlockReason(reason || 'Покупка мерча недоступна без активной подписки');
+          setNotification({
+            type: 'error',
+            message: `❌ ${reason || 'Покупка мерча недоступна'}. Оформите подписку.`,
+            link: { label: 'Перейти к подписке', path: '/subscription' },
+          });
+          return;
+        }
+      } catch {
+        setMerchAllowed(false);
+        setMerchBlockReason('Не удалось проверить доступ к мерчу');
+        setNotification({
+          type: 'error',
+          message: '❌ Не удалось проверить доступ к покупке мерча',
+        });
+        return;
+      }
+    } else {
+      setMerchAllowed(null);
+      setMerchBlockReason('');
+    }
     setSelectedItem(item);
     setShowModal(true);
   };
@@ -154,11 +190,26 @@ export const Shop: React.FC = () => {
       )}
 
       {notification && (
-        <Notification
-          type={notification.type}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
+        <>
+          <Notification
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+          {notification.link && (
+            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              <button
+                className="filter-btn active"
+                onClick={() => {
+                  setNotification(null);
+                  navigate(notification.link!.path);
+                }}
+              >
+                {notification.link.label}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Вкладки */}
@@ -250,6 +301,9 @@ export const Shop: React.FC = () => {
         onConfirm={handleConfirmPurchase}
         onClose={handleCloseModal}
         loading={useShopStore.getState().buying}
+        merchAllowed={selectedItem && isMerchItem(selectedItem) ? merchAllowed : true}
+        merchBlockReason={merchBlockReason}
+        onGoSubscription={() => navigate('/subscription')}
       />
     </div>
   );

@@ -7,11 +7,15 @@ import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
 import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 import { FlappyGame } from './components/Games/Flappy/FlappyGame';
 import { TowerGame } from './components/Games/Towers/TowerGame';
+import { HanoiTower } from './components/Games/Hanoi/HanoiTower';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { Shop } from './components/Shop/Shop';
 import { InventoryPage, InventoryItemDetail } from './components/Inventory';
 import { ShopWithInfiniteScroll } from './components/Shop/ShopWithInfiniteScroll';
+import { Subscription } from './components/Payment/Subscription';
+import { AuthorsPage } from './components/Authors/AuthorsPage';
+import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -58,6 +62,10 @@ function App() {
             element={isAuthenticated ? <TowerGame /> : <Navigate to="/login" />} 
           />
           <Route 
+            path="/game/hanoi" 
+            element={isAuthenticated ? <HanoiTower /> : <Navigate to="/login" />} 
+          />
+          <Route 
             path="/leaderboard" 
             element={isAuthenticated ? <LeaderboardFull /> : <Navigate to="/login" />} 
           />
@@ -80,6 +88,18 @@ function App() {
           <Route 
             path="/inventory/:id" 
             element={isAuthenticated ? <InventoryItemDetail /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/subscription" 
+            element={isAuthenticated ? <Subscription /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/authors" 
+            element={isAuthenticated ? <AuthorsPage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/analytics" 
+            element={isAuthenticated ? <AnalyticsDashboard /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
