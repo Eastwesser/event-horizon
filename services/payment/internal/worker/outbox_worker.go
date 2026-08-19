@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,7 +38,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 		ORDER BY created_at ASC
 		LIMIT 50`)
 	if err != nil {
-		log.Printf("payment outbox: query: %v", err)
+		slog.Error("payment outbox: query", "err", err)
 		return
 	}
 	defer rows.Close()
@@ -47,20 +47,20 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 		var id, eventType string
 		var payload []byte
 		if err := rows.Scan(&id, &eventType, &payload); err != nil {
-			log.Printf("payment outbox: scan: %v", err)
+			slog.Error("payment outbox: scan", "err", err)
 			continue
 		}
 		if w.js != nil {
 			if _, err := w.js.Publish(eventType, payload); err != nil {
-				log.Printf("payment outbox: publish %s: %v", eventType, err)
+				slog.Error("payment outbox: publish", "event_type", eventType, "err", err)
 				continue
 			}
 		}
 		if _, err := w.db.Exec(ctx, `
 			UPDATE outbox SET processed = true, processed_at = NOW() WHERE id = $1`, id); err != nil {
-			log.Printf("payment outbox: mark processed: %v", err)
+			slog.Error("payment outbox: mark processed", "err", err)
 			continue
 		}
-		log.Printf("payment outbox: published %s (%s)", eventType, id)
+		slog.Info("payment outbox: published", "event_type", eventType, "id", id)
 	}
 }

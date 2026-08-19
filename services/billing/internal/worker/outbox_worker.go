@@ -3,7 +3,7 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,7 +44,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
         LIMIT 100
     `)
 	if err != nil {
-		log.Printf("Billing outbox: failed to query: %v", err)
+		slog.Error("billing outbox: query", "err", err)
 		return
 	}
 	defer rows.Close()
@@ -58,7 +58,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 	for rows.Next() {
 		var p pending
 		if err := rows.Scan(&p.id, &p.eventType, &p.payload); err != nil {
-			log.Printf("Billing outbox: scan error: %v", err)
+			slog.Error("billing outbox: scan", "err", err)
 			continue
 		}
 		batch = append(batch, p)
@@ -67,7 +67,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 
 	for _, p := range batch {
 		if _, err := w.js.Publish(p.eventType, p.payload); err != nil {
-			log.Printf("Billing outbox: failed to publish %s: %v", p.eventType, err)
+			slog.Error("billing outbox: publish", "event_type", p.eventType, "err", err)
 			continue
 		}
 
@@ -75,9 +75,9 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
             UPDATE outbox SET processed = true, processed_at = NOW()
             WHERE id = $1
         `, p.id); err != nil {
-			log.Printf("Billing outbox: failed to mark processed: %v", err)
+			slog.Error("billing outbox: mark processed", "err", err)
 		} else {
-			log.Printf("Billing outbox: published %s (ID: %s)", p.eventType, p.id)
+			slog.Info("billing outbox: published", "event_type", p.eventType, "id", p.id)
 		}
 	}
 }

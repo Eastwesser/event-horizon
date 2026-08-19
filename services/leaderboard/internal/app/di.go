@@ -283,13 +283,12 @@ func (a *App) initGRPC(_ context.Context) error {
 	})
 
 	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			interceptor.Recovery(),
 			interceptor.Logger(),
 			interceptor.Validate(),
-			otelgrpc.UnaryServerInterceptor(),
 		),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 	)
 	pb.RegisterLeaderboardServiceServer(grpcServer, a.di.api)
 	reflection.Register(grpcServer)

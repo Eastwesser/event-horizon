@@ -22,14 +22,15 @@ import (
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
 	"github.com/Eastwesser/event-horizon/platform/pkg/metrics"
 	"github.com/Eastwesser/event-horizon/platform/pkg/tracing"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/config"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/handler"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/interceptor"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/repository"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/service"
+	"github.com/Eastwesser/event-horizon/services/shop/internal/worker"
 	"github.com/Eastwesser/event-horizon/services/shop/migrations"
 	pb "github.com/Eastwesser/event-horizon/services/shop/proto"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 type diContainer struct {
@@ -59,6 +60,7 @@ func (a *App) init(ctx context.Context) error {
 		a.initNATS,
 		a.initKafka,
 		a.initDomain,
+		a.initOutbox,
 		a.initGRPC,
 		a.initMetricsHTTP,
 	}
@@ -184,6 +186,18 @@ func (a *App) initDomain(_ context.Context) error {
 		a.di.svc.SetKafkaProducer(a.di.kafkaProd)
 	}
 	a.di.api = handler.NewShopHandler(a.di.svc)
+	return nil
+}
+
+func (a *App) initOutbox(_ context.Context) error {
+	outboxCtx, cancelOutbox := context.WithCancel(context.Background())
+	outboxWorker := worker.NewOutboxWorker(a.di.db, a.di.js)
+	go outboxWorker.Start(outboxCtx)
+	a.closer.AddNamed("outbox worker", func(context.Context) error {
+		cancelOutbox()
+		return nil
+	})
+	a.log.Info("outbox worker started")
 	return nil
 }
 
