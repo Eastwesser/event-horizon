@@ -1,39 +1,43 @@
-# TODO FINAL LIST — 14.08.2026
+# TODO FINAL LIST — 14.08.2026 (updated 19.08.2026)
 
-Prioritized from the audit. **Excluded** (not needed now): squirrel, swaggo, zap migration, Redis on game/history/analytics, whole-service coverage ≥70%, Envoy, CQRS rewrites, Qdrant MCP upgrade.
+Prioritized from the audit. **Excluded**: squirrel, swaggo, zap, Redis on game/history/analytics, whole-service ≥70%, Envoy, CQRS rewrites, Qdrant MCP.
 
 ---
 
 ## P0 — Do next (small, high value)
 
-| # | Task | Why |
-|---|------|-----|
-| 1 | OpenAPI: add `POST /api/auth/refresh`, `GET /api/auth/whoami`, `POST /api/auth/logout`, `POST /api/auth/update-role` | Routes sync gap; 15–30 min |
-| 2 | Bump version label README / badge **1.0.6 → 1.0.7** (or keep 1.0.6 explicitly with changelog note) | Docs match stack |
-| 3 | Rebuild + push **gateway** + **inventory** (CB + proto version) when awake | Runtime matches hardening |
+| # | Task | Status |
+|---|------|--------|
+| 1 | OpenAPI: `POST /api/auth/refresh`, `GET /api/auth/whoami`, `POST /api/auth/logout`, `POST /api/auth/update-role` | ✅ 19.08 |
+| 2 | Bump version label README / badge **1.0.6 → 1.0.7** | ✅ 19.08 |
+| 3 | Rebuild + push **gateway** + **inventory** (CB + proto version) | ✅ 19.08 pushed + nats-hub |
+| 3b | `make deploy` / nats-hub: `./cmd/main.go`, go.work + mcp `go 1.25.7` | ✅ 19.08 |
+| 3c | Kafka host port clash with Game metrics `:9092` → Kafka **19092:9092** | ✅ 19.08 |
 
 ---
 
 ## P1 — Product gaps
 
-| # | Task | Why |
-|---|------|-----|
-| 4 | FE **History** page (`/history`) wired to `GET /api/history` | Last FE↔BE lag |
-| 5 | Integration tests: **≥1** each for payment, authors, history, analytics | Audit Q2 bar |
+| # | Task | Status |
+|---|------|--------|
+| 4 | FE **History** page (`/history`) → `GET /api/history` | ✅ 19.08 |
+| 5 | Integration tests: **≥1** each for payment, authors, history, analytics | ✅ 19.08 `make test-integration` |
 
 ---
 
 ## P2 — Nice hardening (when free)
 
-| # | Task | Why |
-|---|------|-----|
-| 6 | Unit smoke for balancer / fulfillment / notification (even config/health) | Zero tests today |
-| 7 | Shop: optional outbox for `shop.purchased` (today direct NATS publish) | Align with inventory/billing pattern |
-| 8 | Replace `log.Printf` in outbox workers / gateway WS with `slog` | Logging consistency |
+| # | Task | Status |
+|---|------|--------|
+| 6 | Unit smoke for balancer / fulfillment / notification | ✅ 19.08 |
+| 7 | Shop: optional outbox for `shop.purchased` | ✅ 19.08 |
+| 8 | Replace `log.Printf` in outbox workers / gateway WS with `slog` | ✅ 19.08 |
 
 ---
 
-## Explicitly deferred / skip
+**Counted work is complete.** P0 / P1 / P2 are the audit list. There is no P3.
+
+## Explicitly deferred / skip (not a backlog to grind — we chose not to)
 
 | Item | Reason |
 |------|--------|
@@ -41,19 +45,12 @@ Prioritized from the audit. **Excluded** (not needed now): squirrel, swaggo, zap
 | swaggo annotations | Hand OpenAPI + `/docs` by design |
 | zap instead of slog | slog is the standard |
 | Redis on game/history/analytics | Intentional absence |
-| Full `internal/` ≥70% coverage | Critical packages OK; needs interface refactors |
-| MCP fine-tune / Qdrant | Binary works; optional later |
-| Live Boosty signature verification | Stub webhook OK for now |
+| Full `internal/` ≥70% coverage | Critical packages OK |
+| MCP fine-tune / Qdrant | Binary works |
+| Live Boosty signature verification | Stub webhook OK |
 
 ---
 
-## Suggested order when back
+## Next when back
 
-1 → 2 → 3 (ship) → 4 → 5 → then P2 as appetite allows.
-
-P0: OpenAPI auth routes → version label → push gateway/inventory
-P1: History FE page → integration tests (payment/authors/history/analytics)
-P2: thin unit smokes / shop outbox / slog cleanup
-Cool to check: squirrel, swaggo, zap, Redis-on-everything, full ≥70%, MCP polish
-
-
+Nothing required from this list. Optional later (only if a real need appears): live Boosty signatures, extra coverage, MCP/Qdrant polish.

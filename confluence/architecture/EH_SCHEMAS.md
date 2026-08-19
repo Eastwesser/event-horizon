@@ -1,6 +1,6 @@
-# Event Horizon — схемы архитектуры (v1.0.6+)
+# Event Horizon — схемы архитектуры (v1.0.7)
 
-Источник: Miro `SYSTEM_DESIGN/event-horizon-v1.0.6.png` + актуальный `docker-compose.cluster.yml` / gateway.
+Источник: Miro `SYSTEM_DESIGN/event-horizon-v1.0.6.png` + **[`SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md`](./SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md)** (полные Mermaid-диаграммы) + актуальный `docker-compose.cluster.yml` / gateway.
 
 Стрелки: **сплошные** = sync (HTTP/gRPC), **пунктир** = async (NATS/Kafka/Outbox/WS).
 
@@ -15,7 +15,7 @@
 [Balancer :8079]  Least Connections
         │ HTTP
         ▼
-[Gateway ×3 :8081–8083]  JWT · HTTP→gRPC · circuit breaker (billing/shop/…)
+[Gateway ×3 :8081–8083]  JWT · HTTP→gRPC · circuit breaker (all gRPC clients)
         │ gRPC
         ▼
    микросервисы (см. блок 2)

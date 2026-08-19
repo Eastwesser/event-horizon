@@ -43,7 +43,7 @@ Rules of thumb for interview:
 
 ## 3. gRPC → HTTP mapping (intended)
 
-Gateway today often flattens many RPC errors to **400/500**. Target mapping (align OpenAPI + handlers over time):
+Gateway today routes RPC errors through `writeGRPCError()` / `handleRPCError()` on all gRPC-backed routes. Payment webhooks use `writePaymentConfirmError()` (duplicate delivery → **200**).
 
 | gRPC `codes.*` | HTTP |
 |----------------|------|
@@ -72,9 +72,10 @@ Inventory mutating RPCs without `x-user-role` metadata → `PermissionDenied` (4
 - `UpdateRole` without admin → 403 at Gateway
 
 ### Shop / Payment
-- Merch without subscription → business error (today often **400**/message from `CanPurchaseMerch`); prefer **403** or **402**-style product code later — document as product decision
-- Out of stock → 409 or 400 (prefer **409** “state conflict”)
+- Merch without subscription → **403** + `{ error: "subscription_required", code: "subscription_required" }` on `POST /api/shop/purchase`; probe via `GET /api/payment/can-purchase-merch` (200 + `allowed`/`reason`)
+- Out of stock / insufficient tickets → **409** (`FailedPrecondition` / `AlreadyExists`)
 - Circuit on Billing/Shop/Payment → **503**
+- Duplicate `POST /api/payment/webhook` or `/api/payment/yookassa/webhook` (gRPC `AlreadyExists`) → **HTTP 200** (idempotency)
 
 ### Inventory
 - Soft-deleted / missing item → 404
@@ -107,7 +108,7 @@ Inventory mutating RPCs without `x-user-role` metadata → `PermissionDenied` (4
 
 ## 7. Follow-ups (tech debt)
 
-- [ ] Normalize Gateway error mapping from gRPC status (today uneven 400/500)
-- [ ] Map inventory version conflict → 409 consistently
-- [ ] Decide merch-gate code: 403 vs domain `subscription_required`
-- [ ] Keep `docs/openapi.yaml` in sync with this table
+- [x] Normalize Gateway error mapping from gRPC status (`handleRPCError` / `writeGRPCError` on RPC routes)
+- [x] Map inventory version conflict → 409 consistently (`Aborted` via `mapInventoryErr` + gateway mapping)
+- [x] Merch-gate: **403** + domain code `subscription_required` on shop purchase; can-purchase-merch stays 200 probe
+- [x] Keep `docs/openapi.yaml` in sync (YooKassa webhook stub, shop/payment status codes)

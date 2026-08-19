@@ -1,7 +1,7 @@
 # How does Event Horizon work?
 
 > Living explanation of the system for engineers and **system design interviews**.  
-> Sources: Miro `event-horizon-v1.0.6.png`, `confluence/architecture/*`, compose + real `services/*` (Aug 2026).  
+> Sources: Miro `event-horizon-v1.0.6.png`, **[`event-horizon-v1.0.7-system-design.md`](./event-horizon-v1.0.7-system-design.md)** (Mermaid), `confluence/architecture/*`, compose + real `services/*` (Aug 2026).  
 > Older docs (`SYSTEM_DESIGN.md`) still say `:5051` etc. — **canonical gRPC ports are `5005x`** below.
 
 ---
