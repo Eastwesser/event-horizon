@@ -1,5 +1,6 @@
 // frontend/src/store/memoryStore.ts
 import { create } from 'zustand';
+import api from '../services/api';
 
 export interface Card {
   id: number;
@@ -227,10 +228,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     if (!userId || !userEmail) return;
 
     try {
-        const response = await fetch('/api/game/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const response = await api.post('/game/submit', {
                 user_id: userId,
                 game_id: 'memory',
                 level: 1,
@@ -239,10 +237,9 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
                 nickname: nickname,
                 seed: `memory_seed_${Date.now()}`,
                 moves: [],
-            }),
         });
 
-        if (response.ok) {
+        if (response.status >= 200 && response.status < 300) {
             console.log(`✅ Memory score submitted: ${score}`);
             
             // 💾 Сохраняем статистику с привязкой к userId

@@ -1,5 +1,6 @@
 // frontend/src/store/flappyStore.ts
 import { create } from 'zustand';
+import api from '../services/api';
 
 export interface Pipe {
   id: number;
@@ -198,10 +199,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
     if (!userId || !userEmail) return;
     
     try {
-        const response = await fetch('/api/game/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const response = await api.post('/game/submit', {
                 user_id: userId,
                 game_id: 'flappy',
                 level: 1,
@@ -210,10 +208,9 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
                 nickname: nickname,
                 seed: `flappy_seed_${Date.now()}`,
                 moves: [],
-            }),
         });
         
-        if (response.ok) {
+        if (response.status >= 200 && response.status < 300) {
             console.log(`✅ Flappy score submitted: ${score}`);
             
             // 💾 Сохраняем статистику с привязкой к userId

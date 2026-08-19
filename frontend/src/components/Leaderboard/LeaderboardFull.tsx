@@ -1,6 +1,7 @@
 // frontend/src/components/Leaderboard/LeaderboardFull.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getLeaderboard } from '../../services/api';
 
 interface LeaderboardEntry {
   rank: number;
@@ -19,9 +20,8 @@ export function LeaderboardFull() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/leaderboard?game_id=${selectedGame}&limit=50`)
-      .then(res => res.json())
-      .then(data => {
+    getLeaderboard(selectedGame, 50)
+      .then(({ data }) => {
         setEntries(data.entries || []);
         setLoading(false);
       })

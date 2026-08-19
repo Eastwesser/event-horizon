@@ -1,5 +1,6 @@
 // frontend/src/store/towerStore.ts
 import { create } from 'zustand';
+import api from '../services/api';
 
 interface TowerState {
   // Башня
@@ -204,10 +205,7 @@ export const useTowerStore = create<TowerState>((set, get) => ({
     }
     
     try {
-        const response = await fetch('/api/game/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const response = await api.post('/game/submit', {
                 user_id: userId,
                 game_id: 'towers',
                 level: 1,
@@ -216,10 +214,9 @@ export const useTowerStore = create<TowerState>((set, get) => ({
                 nickname: nickname,
                 seed: `towers_seed_${Date.now()}`,
                 moves: [],
-            }),
         });
         
-        if (response.ok) {
+        if (response.status >= 200 && response.status < 300) {
             console.log(`✅ Towers score submitted: ${score}`);
             
             // 💾 Сохраняем статистику с привязкой к userId
