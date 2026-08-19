@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,7 +36,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 		SELECT id, event_type, payload FROM outbox
 		WHERE processed = false ORDER BY created_at ASC LIMIT 50`)
 	if err != nil {
-		log.Printf("authors outbox: query: %v", err)
+		slog.Error("authors outbox: query", "err", err)
 		return
 	}
 	defer rows.Close()
@@ -48,7 +48,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 		}
 		if w.js != nil {
 			if _, err := w.js.Publish(eventType, payload); err != nil {
-				log.Printf("authors outbox: publish %s: %v", eventType, err)
+				slog.Error("authors outbox: publish", "event_type", eventType, "err", err)
 				continue
 			}
 		}
