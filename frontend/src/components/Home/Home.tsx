@@ -71,6 +71,7 @@ export function Home() {
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/inventory'); }}>📦 Инвентарь</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/subscription'); }}>💳 Подписка</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/authors'); }}>✍️ Авторы</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/history'); }}>📜 История</a>
           {isAdmin && (
             <a href="#" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>📊 Аналитика</a>
           )}

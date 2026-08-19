@@ -13,15 +13,15 @@ export interface Author {
 
 export const authorsApi = {
   upsertMe: async (body: { display_name: string; bio?: string; avatar_url?: string }): Promise<Author> => {
-    const { data } = await api.put('/api/authors/me', body);
+    const { data } = await api.put('/authors/me', body);
     return data;
   },
   get: async (userId: string): Promise<Author> => {
-    const { data } = await api.get(`/api/authors/${userId}`);
+    const { data } = await api.get(`/authors/${userId}`);
     return data;
   },
   list: async (limit = 20, offset = 0): Promise<{ authors: Author[]; total: number }> => {
-    const { data } = await api.get('/api/authors', { params: { limit, offset } });
+    const { data } = await api.get('/authors', { params: { limit, offset } });
     return data;
   },
 };

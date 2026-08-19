@@ -16,6 +16,7 @@ import { ShopWithInfiniteScroll } from './components/Shop/ShopWithInfiniteScroll
 import { Subscription } from './components/Payment/Subscription';
 import { AuthorsPage } from './components/Authors/AuthorsPage';
 import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
+import { HistoryPage } from './components/History/HistoryPage';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -100,6 +101,10 @@ function App() {
           <Route 
             path="/analytics" 
             element={isAuthenticated ? <AnalyticsDashboard /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/history" 
+            element={isAuthenticated ? <HistoryPage /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>

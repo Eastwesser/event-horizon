@@ -18,15 +18,15 @@ export interface CheckoutResponse {
 
 export const paymentApi = {
   getSubscription: async (): Promise<SubscriptionStatus> => {
-    const { data } = await api.get('/api/payment/subscription');
+    const { data } = await api.get('/payment/subscription');
     return data;
   },
   createCheckout: async (plan: 'present' | 'future'): Promise<CheckoutResponse> => {
-    const { data } = await api.post('/api/payment/checkout', { plan });
+    const { data } = await api.post('/payment/checkout', { plan });
     return data;
   },
   canPurchaseMerch: async (): Promise<{ allowed: boolean; reason: string }> => {
-    const { data } = await api.get('/api/payment/can-purchase-merch');
+    const { data } = await api.get('/payment/can-purchase-merch');
     return data;
   },
 };
