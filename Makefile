@@ -16,11 +16,15 @@ ps:
 clean:
 	docker-compose -f deployments/docker-compose.cluster.yml down -v
 
+# BuildKit (DOCKER_BUILDKIT=1) replaces the deprecated legacy builder.
+# Full `docker buildx` needs the plugin: Arch `sudo pacman -S docker-buildx`.
+export DOCKER_BUILDKIT=1
+
 # ===== DOCKER BUILD =====
 docker-build-all:
 	@echo "Building all services..."
 	for service in auth billing game leaderboard profile shop gateway balancer nats-hub inventory payment authors history analytics fulfillment notification; do \
-		docker build -t eastwesser/$$service:latest -f Dockerfile.$$service.bin .; \
+		DOCKER_BUILDKIT=1 docker build -t eastwesser/$$service:latest -f Dockerfile.$$service.bin .; \
 	done
 
 docker-push-all:
@@ -75,7 +79,11 @@ test-integration:
 	@set -e; \
 	(cd services/billing && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
 	(cd services/shop && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
-	(cd services/inventory && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m)
+	(cd services/inventory && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/payment && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/authors && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/history && GOWORK=off go test -tags=integration ./internal/repository/ -count=1 -timeout 5m); \
+	(cd services/analytics && GOWORK=off go test -tags=integration ./internal/repository/clickhouse/ -count=1 -timeout 5m)
 
 test-all: test-unit
 	@echo "Unit OK. Optional: make test-smoke | make test-k6 | make test-integration"
@@ -107,8 +115,8 @@ migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard migra
 # ===== NATS HUB =====
 build-nats-hub:
 	@echo "🔨 Building nats-hub..."
-	cd services/nats-hub && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nats-hub ./main.go
-	docker build -f Dockerfile.nats-hub.bin -t eastwesser/nats-hub:latest .
+	cd services/nats-hub && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nats-hub ./cmd/main.go
+	DOCKER_BUILDKIT=1 docker build -f Dockerfile.nats-hub.bin -t eastwesser/nats-hub:latest .
 
 # ===== DEPLOY =====
 deploy:

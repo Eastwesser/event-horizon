@@ -1,7 +1,7 @@
 # ============================================================
 # Event Horizon — Docker Compose (кластерная версия)
 # Все сервисы объединены в одну сеть event-horizon-net
-# Версия: v1.0.6
+# Версия: v1.0.7
 # ============================================================
 
 services:
@@ -439,7 +439,8 @@ services:
     image: apache/kafka:3.8.1
     container_name: event-horizon-kafka
     ports:
-      - "9092:9092"
+      # Host 19092 — Game metrics already binds host 9092.
+      - "19092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
