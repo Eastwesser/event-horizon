@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -92,7 +93,19 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, provider
 		"provider_ref":    providerRef,
 		"timestamp":       now.Unix(),
 	}
+	// Happy path: activate subscription in a single DB transaction.
 	if err := s.repo.CompletePaymentAndActivateSubscription(ctx, paymentID, providerRef, sub, "payment.completed", event); err != nil {
+		// Idempotency: Boosty may retry the same delivery, and we already handled this `payment_id`.
+		// In that case, return the already-active subscription (so merch unlock remains correct).
+		if errors.Is(err, model.ErrAlreadyPaid) {
+			existing, getErr := s.repo.GetActiveSubscription(ctx, p.UserID)
+			if getErr == nil {
+				if s.cache != nil {
+					_ = s.cache.SetSubscription(ctx, existing)
+				}
+				return existing, nil
+			}
+		}
 		return nil, err
 	}
 	if s.cache != nil {
