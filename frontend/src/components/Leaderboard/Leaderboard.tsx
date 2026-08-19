@@ -1,5 +1,6 @@
 // frontend/src/components/Leaderboard/Leaderboard.tsx
 import { useEffect, useState, useRef } from 'react';
+import { getLeaderboard } from '../../services/api';
 
 interface LeaderboardEntry {
   rank: number;
@@ -16,11 +17,8 @@ export function Leaderboard() {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch(`/api/leaderboard?game_id=${selectedGame}&limit=10`);
-      if (response.ok) {
-        const data = await response.json();
-        setEntries(data.entries || []);
-      }
+      const { data } = await getLeaderboard(selectedGame, 10);
+      setEntries(data.entries || []);
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
     }

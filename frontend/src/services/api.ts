@@ -1,8 +1,17 @@
 // frontend/src/services/api.ts
+//
+// HTTP API convention (v1.0.x):
+//   - Gateway serves all routes under /api/… (no /api/v1/ segment).
+//   - This client sets baseURL='/api'; pass paths WITHOUT the /api prefix
+//     (e.g. api.post('/shop/purchase') → GET /api/shop/purchase).
+//   - WebSocket and ops endpoints (/ws/…, /health) are outside /api.
 import axios from 'axios';
 
+/** Public HTTP API prefix on the gateway (for docs / rare raw fetch). */
+export const API_BASE = '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -25,7 +34,7 @@ api.interceptors.response.use(
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message,
+      message: error.response?.data?.error || error.response?.data?.message || error.message,
     });
 
     if (error.response?.status === 401) {
@@ -48,6 +57,9 @@ export const login = (email: string, password: string) =>
 // ========== GAME ==========
 export const submitScore = (userId: string, gameId: string, level: number, seed: string, moves: any[]) =>
   api.post('/game/submit', { user_id: userId, game_id: gameId, level, seed, moves });
+
+export const getLeaderboard = (gameId: string, limit = 10) =>
+  api.get('/leaderboard', { params: { game_id: gameId, limit } });
 
 // ========== BILLING ==========
 export const getBalance = (userId: string, currency: 'lamps' | 'tickets') =>

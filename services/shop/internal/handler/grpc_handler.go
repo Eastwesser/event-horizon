@@ -2,12 +2,14 @@ package handler
 
 import (
     "context"
+    "errors"
     "time"
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
 
     pb "github.com/Eastwesser/event-horizon/services/shop/proto"
+    "github.com/Eastwesser/event-horizon/services/shop/internal/model"
     "github.com/Eastwesser/event-horizon/services/shop/internal/service"
 )
 
@@ -59,10 +61,7 @@ func (h *ShopHandler) GetItems(ctx context.Context, req *pb.GetItemsRequest) (*p
 func (h *ShopHandler) PurchaseItem(ctx context.Context, req *pb.PurchaseItemRequest) (*pb.PurchaseItemResponse, error) {
     newBalance, err := h.shopService.PurchaseItem(ctx, req.UserId, req.ItemId)
     if err != nil {
-        return &pb.PurchaseItemResponse{
-            Success: false,
-            Message: err.Error(),
-        }, nil
+        return nil, mapShopErr(err)
     }
 
     return &pb.PurchaseItemResponse{
@@ -106,4 +105,19 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
     }
 
     return &pb.GetInventoryResponse{Items: pbItems}, nil
+}
+
+func mapShopErr(err error) error {
+    switch {
+    case errors.Is(err, model.ErrSubscriptionRequired):
+        return status.Error(codes.PermissionDenied, "subscription_required")
+    case errors.Is(err, model.ErrItemNotFound):
+        return status.Error(codes.NotFound, err.Error())
+    case errors.Is(err, model.ErrAlreadyOwned):
+        return status.Error(codes.AlreadyExists, err.Error())
+    case errors.Is(err, model.ErrInsufficientFunds), errors.Is(err, model.ErrItemUnavailable):
+        return status.Error(codes.FailedPrecondition, err.Error())
+    default:
+        return status.Error(codes.Internal, err.Error())
+    }
 }

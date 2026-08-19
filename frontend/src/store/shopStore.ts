@@ -239,7 +239,7 @@ export const useShopStore = create<ShopState>()(
           set({ buying: false });
           return response.data;
         } catch (error: any) {
-          const errorMessage = error.response?.data?.message || error.message || 'Ошибка при покупке';
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Ошибка при покупке';
           console.error('❌ Ошибка покупки:', error);
           set({ 
             error: errorMessage,
