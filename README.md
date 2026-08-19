@@ -5,13 +5,13 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-✓-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-v1.0.6-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/Status-v1.0.7-brightgreen.svg)]()
 
 ---
 
-## 📦 Архитектура (актуально v1.0.6+, 13.08.2026)
+## 📦 Архитектура (актуально v1.0.7, 19.08.2026)
 
-Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
+Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Mermaid: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md` · Miro legacy: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
 
 ```text
 [GitHub Actions] ──SSH/Ansible──► [VM] ──docker-compose──► Event Horizon
@@ -55,7 +55,7 @@ make deploy-k3s
 
 - 30+ Docker-контейнеров (PostgreSQL, Redis, NATS, ClickHouse, Jaeger, Prometheus, Grafana)
 - Миграции баз данных
-- Микросервисы: Auth, Game, Billing, Leaderboard, Shop, Inventory, Profile, Payment, Authors, History, Analytics, NATS Hub, …
+- Микросервисы: Auth, Game, Billing, Leaderboard, Shop, Inventory, Profile, Payment, Authors, History, Analytics, Fulfillment, Notification, NATS Hub, …
 - Мониторинг (Prometheus + Grafana)
 - Опционально: k3s кластер
 
@@ -76,10 +76,22 @@ make deploy-k3s
 | GET | /api/profile | Полный профиль пользователя (агрегированный) |
 | GET/POST | /api/payment/… | Подписка / CanPurchaseMerch |
 | GET/POST | /api/authors/… | Авторы |
-| GET | /api/history/… | История |
+| GET | /api/history | История событий |
 | GET | /api/analytics/… | Аналитика (admin) |
 | GET | /openapi.yaml · /docs | OpenAPI + Swagger UI |
 | WS | /ws/leaderboard | WebSocket обновления |
+
+### API prefix (v1.0.x)
+
+Публичный HTTP API живёт под **`/api/`** — без сегмента версии (`/api/v1/` не используется).
+
+| Кто | Как вызывать |
+|-----|----------------|
+| **Gateway / curl / OpenAPI** | полный путь: `/api/shop/purchase` |
+| **Frontend (axios)** | `baseURL: '/api'` + относительный путь: `api.post('/shop/purchase')` |
+| **WebSocket / ops** | вне `/api`: `/ws/leaderboard`, `/health`, `/ready` |
+
+Подробная таблица маршрутов и RBAC: [`confluence/architecture/API_ROUTES.md`](confluence/architecture/API_ROUTES.md).
 
 ---
 
@@ -199,7 +211,9 @@ make delivery-dev
 | Leaderboard | 50054 | 9094 | PG 5463 | 6382 |
 | Shop | 50055 | 9095 | PG 5465 | 6383 |
 | Analytics | 50057 | 9106 | ClickHouse 8123/9000 | — |
-| Payment | 50058 | 9103 | (subscription) | — |
+| Fulfillment | — | 9101 | — | — |
+| Notification | — | 9102 | — | — |
+| Payment | 50058 | 9103 | PG 5467 | 6386 |
 | Inventory | 50059 | 9096 | PG / Mongo | Redis |
 | Profile | 50060 | 9099 | PG 5464 | — |
 | Authors | 50061 | 9104 | PG 5468 | 6387 |
@@ -293,13 +307,13 @@ k6 run loadtest.js
 - [ ] Helm-чарты — для управления деплоем
 - [ ] Service Discovery — Consul
 
-### 🧩 Новые сервисы (1–2 месяца)
+### 🧩 Payment / Notification / Analytics (уже в стеке)
 
-| Сервис | Назначение | Порт (gRPC) |
-|--------|------------|-------------|
-| Payment | Реальные платежи (Boosty/Stripe) | 50058 |
-| Notification | Push, Email, Telegram | 50056 |
-| Analytics | DAU, MAU, Retention (ClickHouse) | 50057 |
+| Сервис | Статус | Порт (gRPC) |
+|--------|--------|-------------|
+| Payment | ✅ реализовано (hardening: Boosty signature verification) | 50058 |
+| Notification | ✅ реализовано (consumer; Telegram optional) | — |
+| Analytics | ✅ реализовано (ClickHouse ingest + admin APIs) | 50057 |
 
 ### 🎮 Игровой контент
 
@@ -326,7 +340,15 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: v1.0.6 (03.08.2026)
+Текущая: v1.0.7 (19.08.2026)
+
+### Что нового в v1.0.7
+
+- Payment / Authors / History / Analytics (+ ClickHouse) за Gateway
+- Circuit breaker на всех gRPC-клиентах Gateway
+- Frontend: подписка, авторы, аналитика, Ханойская башня, merch-gate
+- MCP/RAG (stdio) для Cursor
+- OpenAPI: auth refresh / whoami / logout / update-role + новые API
 
 ### Что нового в v1.0.6
 

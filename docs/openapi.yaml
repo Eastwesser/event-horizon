@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: EventHorizon Gateway API
   description: API для фронтенда (React/Angular)
-  version: 1.0.3
+  version: 1.0.7
 servers:
   - url: http://localhost:8079
     description: Local development (через балансировщик)
@@ -96,20 +96,130 @@ paths:
           description: Success
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: JWT токен (Bearer)
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 86400
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                    enum: [user, author, admin]
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
             schema:
               type: object
+              required: [refresh_token]
               properties:
-                access_token:
+                refresh_token:
                   type: string
-                  description: JWT токен (Bearer)
-                token_type:
-                  type: string
-                  example: Bearer
-                expires_in:
-                  type: integer
-                  example: 86400
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  refresh_token: { type: string }
+                  token_type: { type: string }
+                  expires_in: { type: integer }
+                  user_id: { type: string }
+                  role: { type: string }
+        '400':
+          description: refresh_token required
+        '401':
+          description: Invalid refresh token
+
+  /api/auth/whoami:
+    get:
+      summary: Current user from access token
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Identity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id: { type: string }
+                  email: { type: string }
+                  role: { type: string }
+                  nickname: { type: string }
+        '401':
+          description: Unauthorized
+
+  /api/auth/logout:
+    post:
+      summary: Invalidate current session
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        '401':
+          description: Unauthorized
+
+  /api/auth/update-role:
+    post:
+      summary: Change a user's role (admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, role]
+              properties:
                 user_id:
                   type: string
+                role:
+                  type: string
+                  enum: [user, author, admin]
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Admin role required
 
   /api/auth/user:
     get:
@@ -421,9 +531,29 @@ paths:
                   new_balance:
                     type: integer
         '400':
-          description: Bad request (not enough tickets, already owned, etc.)
+          description: Bad request (invalid item_id, unavailable item)
         '401':
           description: Unauthorized
+        '403':
+          description: Merch purchase blocked — active subscription required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: subscription_required
+                  code:
+                    type: string
+                    example: subscription_required
+                  grpc_code:
+                    type: string
+                    example: PermissionDenied
+        '404':
+          description: Item not found
+        '409':
+          description: Conflict (already owned, insufficient tickets)
 
   /api/shop/inventory:
     get:
@@ -848,10 +978,54 @@ paths:
           description: allowed + reason
   /api/payment/webhook:
     post:
-      summary: Payment provider webhook (secret in body)
+      summary: Payment provider webhook (Boosty; secret in body/header/query)
       responses:
         '200':
-          description: Confirmed
+          description: Confirmed (also returned for duplicate/idempotent deliveries)
+        '400':
+          description: Invalid payload or payment state
+        '403':
+          description: Invalid webhook secret
+        '404':
+          description: Payment not found
+  /api/payment/yookassa/webhook:
+    post:
+      summary: YooKassa webhook stub (local dev / smoke tests)
+      description: |
+        Maps a simplified YooKassa notification to ConfirmPayment.
+        Minimal payload: `{ "event": "payment.succeeded", "object": { "id": "<payment_id>", "status": "succeeded" } }`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [object]
+              properties:
+                event:
+                  type: string
+                  example: payment.succeeded
+                webhook_secret:
+                  type: string
+                object:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                      description: payment_id from checkout
+                    status:
+                      type: string
+                      example: succeeded
+      responses:
+        '200':
+          description: Confirmed or ignored (non-success status) or duplicate delivery
+        '400':
+          description: Invalid payload
+        '403':
+          description: Invalid webhook secret
+        '404':
+          description: Payment not found
 
   # ===== AUTHORS =====
   /api/authors/me:
