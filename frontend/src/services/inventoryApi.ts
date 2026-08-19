@@ -49,7 +49,7 @@ export interface SearchItemsResponse {
   total: number;
 }
 
-const BASE_URL = '/api/inventory/items';
+const BASE_URL = '/inventory/items';
 
 export const inventoryApi = {
   // Создать товар

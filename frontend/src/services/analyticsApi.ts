@@ -13,15 +13,15 @@ export interface RetentionPoint {
 /** Admin-only analytics endpoints (gateway RequireRole admin). */
 export const analyticsApi = {
   dau: async (days = 30): Promise<{ days: DayCount[] }> => {
-    const { data } = await api.get('/api/analytics/dau', { params: { days } });
+    const { data } = await api.get('/analytics/dau', { params: { days } });
     return data;
   },
   mau: async (days = 30): Promise<{ mau: number; window_days: number }> => {
-    const { data } = await api.get('/api/analytics/mau', { params: { days } });
+    const { data } = await api.get('/analytics/mau', { params: { days } });
     return data;
   },
   retention: async (cohortDaysAgo = 7, windowDays = 7) => {
-    const { data } = await api.get('/api/analytics/retention', {
+    const { data } = await api.get('/analytics/retention', {
       params: { cohort_days_ago: cohortDaysAgo, window_days: windowDays },
     });
     return data as {

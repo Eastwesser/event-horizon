@@ -1,0 +1,136 @@
+.history-container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.history-container .back-btn {
+  display: inline-flex;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #e8eaf0;
+  cursor: pointer;
+}
+
+.history-container .back-btn:hover {
+  border-color: #ffd700;
+}
+
+.history-header h1 {
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+}
+
+.history-header p {
+  color: #8a94a8;
+  margin-bottom: 1.5rem;
+}
+
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-filter {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.35);
+  color: #e8eaf0;
+  cursor: pointer;
+}
+
+.history-filter.active {
+  border-color: #ffd700;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.history-count {
+  color: #8a94a8;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.history-type {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.history-time {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.history-payload {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  color: #c5cde0;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.history-empty,
+.history-error {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.history-empty {
+  color: #8a94a8;
+}
+
+.history-error {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid #ff6b6b;
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+}
+
+.history-load-more {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.history-load-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
