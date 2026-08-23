@@ -1,0 +1,63 @@
+# VIP for Auth: set Auth Deployment DB_HOST=auth-pg-haproxy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-pg-haproxy
+  namespace: eh-patroni-auth
+data:
+  haproxy.cfg: |
+    global
+      maxconn 100
+    defaults
+      mode tcp
+      timeout connect 5s
+      timeout client 30m
+      timeout server 30m
+    listen postgres_write
+      bind *:5432
+      option httpchk GET /primary
+      http-check expect status 200
+      default-server inter 3s fall 3 rise 2
+      server patroni-0 patroni-0.patroni:5432 check port 8008
+      server patroni-1 patroni-1.patroni:5432 check port 8008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-pg-haproxy
+  namespace: eh-patroni-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-pg-haproxy
+  template:
+    metadata:
+      labels:
+        app: auth-pg-haproxy
+    spec:
+      containers:
+        - name: haproxy
+          image: haproxy:2.9-alpine
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: cfg
+              mountPath: /usr/local/etc/haproxy
+      volumes:
+        - name: cfg
+          configMap:
+            name: auth-pg-haproxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-pg-haproxy
+  namespace: eh-patroni-auth
+spec:
+  selector:
+    app: auth-pg-haproxy
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres

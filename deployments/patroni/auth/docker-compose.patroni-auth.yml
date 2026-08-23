@@ -1,0 +1,72 @@
+# Optional local Patroni pilot for Auth DB (NOT part of make deploy).
+# Uses a dedicated compose project so it does not collide with event-horizon-postgres.
+
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.15
+    container_name: auth-patroni-etcd
+    command:
+      - etcd
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+    networks: [patroni-auth-net]
+
+  patroni-1:
+    image: aginies/patroni:latest
+    container_name: auth-patroni-1
+    environment:
+      PATRONI_NAME: patroni-1
+      PATRONI_SCOPE: eh-auth
+      PATRONI_ETCD3_HOSTS: etcd:2379
+      PATRONI_RESTAPI_CONNECT_ADDRESS: patroni-1:8008
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-1:5432
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_POSTGRESQL_DATA_DIR: /home/postgres/pgdata
+      PATRONI_SUPERUSER_USERNAME: postgres
+      PATRONI_SUPERUSER_PASSWORD: patroni
+      PATRONI_REPLICATION_USERNAME: replicator
+      PATRONI_REPLICATION_PASSWORD: replicator
+      # App role (stub — create DB/user on first bootstrap if image supports POST_INIT)
+      PATRONI_admin_USERNAME: eventhorizon
+      PATRONI_admin_PASSWORD: eventhorizon
+    volumes:
+      - ./patroni.yml:/etc/patroni/patroni.yml:ro
+    depends_on: [etcd]
+    networks: [patroni-auth-net]
+    # STUB: many Patroni images expect a different entrypoint; adjust when bringing live.
+
+  patroni-2:
+    image: aginies/patroni:latest
+    container_name: auth-patroni-2
+    environment:
+      PATRONI_NAME: patroni-2
+      PATRONI_SCOPE: eh-auth
+      PATRONI_ETCD3_HOSTS: etcd:2379
+      PATRONI_RESTAPI_CONNECT_ADDRESS: patroni-2:8008
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-2:5432
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_POSTGRESQL_DATA_DIR: /home/postgres/pgdata
+      PATRONI_SUPERUSER_USERNAME: postgres
+      PATRONI_SUPERUSER_PASSWORD: patroni
+      PATRONI_REPLICATION_USERNAME: replicator
+      PATRONI_REPLICATION_PASSWORD: replicator
+    volumes:
+      - ./patroni.yml:/etc/patroni/patroni.yml:ro
+    depends_on: [etcd]
+    networks: [patroni-auth-net]
+
+  auth-pg-haproxy:
+    image: haproxy:2.9-alpine
+    container_name: auth-pg-haproxy
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5433:5432"   # host:5433 → VIP (avoid clash with other Postgres host ports)
+    depends_on: [patroni-1, patroni-2]
+    networks: [patroni-auth-net]
+
+networks:
+  patroni-auth-net:
+    driver: bridge

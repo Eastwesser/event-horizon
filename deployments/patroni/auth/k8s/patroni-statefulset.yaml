@@ -1,0 +1,58 @@
+# STUB StatefulSet — image/env must be validated on your k3s before go-live.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: patroni
+  namespace: eh-patroni-auth
+spec:
+  serviceName: patroni
+  replicas: 2
+  selector:
+    matchLabels:
+      app: patroni
+  template:
+    metadata:
+      labels:
+        app: patroni
+    spec:
+      containers:
+        - name: patroni
+          image: aginies/patroni:latest
+          env:
+            - name: PATRONI_SCOPE
+              value: eh-auth
+            - name: PATRONI_ETCD3_HOSTS
+              value: etcd:2379
+            - name: PATRONI_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patroni-auth-secrets
+                  key: superuser-password
+                  optional: true
+            - name: PATRONI_REPLICATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: patroni-auth-secrets
+                  key: replication-password
+                  optional: true
+          ports:
+            - containerPort: 5432
+              name: postgres
+            - containerPort: 8008
+              name: rest
+          # volumeClaimTemplates omitted in stub — add PVC + storageClass for real deploy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: patroni
+  namespace: eh-patroni-auth
+spec:
+  clusterIP: None
+  selector:
+    app: patroni
+  ports:
+    - port: 5432
+      name: postgres
+    - port: 8008
+      name: rest

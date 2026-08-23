@@ -1,0 +1,11 @@
+<!-- Allow default user from Docker network (analytics → clickhouse).
+     Official image users.d/default-user.xml restricts default to 127.0.0.1 only. -->
+<clickhouse>
+  <users>
+    <default>
+      <networks>
+        <ip>::/0</ip>
+      </networks>
+    </default>
+  </users>
+</clickhouse>

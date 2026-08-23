@@ -1,0 +1,46 @@
+# STUB Patroni config — values overridden by env in compose where possible.
+scope: eh-auth
+namespace: /eventhorizon/
+name: patroni-node
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: 127.0.0.1:8008
+
+etcd3:
+  hosts: etcd:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  users:
+    eventhorizon:
+      password: eventhorizon
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: 127.0.0.1:5432
+  data_dir: /home/postgres/pgdata
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: replicator
+    superuser:
+      username: postgres
+      password: patroni
+  parameters:
+    max_connections: 100
+    shared_buffers: 128MB
+    wal_level: replica
+    hot_standby: "on"
+    max_wal_senders: 5
