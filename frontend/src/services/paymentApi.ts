@@ -22,7 +22,7 @@ export const paymentApi = {
     return data;
   },
   createCheckout: async (plan: 'present' | 'future'): Promise<CheckoutResponse> => {
-    const { data } = await api.post('/payment/checkout', { plan });
+    const { data } = await api.post('/payment/checkout', { plan }, { timeout: 30000 });
     return data;
   },
   canPurchaseMerch: async (): Promise<{ allowed: boolean; reason: string }> => {

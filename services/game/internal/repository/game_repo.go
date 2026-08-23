@@ -1,42 +1,86 @@
 package repository
 
 import (
-    "context"
-    "database/sql"
+	"context"
+	"database/sql"
+	"encoding/json"
 )
 
 type GameRepository interface {
-    GetHighscore(ctx context.Context, userID, gameID string) (int, error)
-    SaveHighscore(ctx context.Context, userID, gameID string, score int) error
+	GetHighscore(ctx context.Context, userID, gameID string) (int, error)
+	SaveHighscore(ctx context.Context, userID, gameID string, score int) error
+	// EnqueueOutbox inserts a NATS event for the outbox worker (no highscore change).
+	EnqueueOutbox(ctx context.Context, eventType string, payload []byte) error
+	// SaveHighscoreAndEnqueueOutbox writes highscore + outbox row in one transaction.
+	SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score int, eventType string, payload []byte) error
+}
+
+// OutboxRecord is optional metadata for callers that build payloads separately.
+type OutboxRecord struct {
+	EventType string
+	Payload   json.RawMessage
 }
 
 type PostgresGameRepo struct {
-    db *sql.DB
+	db *sql.DB
 }
 
 func NewPostgresGameRepo(db *sql.DB) *PostgresGameRepo {
-    return &PostgresGameRepo{db: db}
+	return &PostgresGameRepo{db: db}
 }
 
 func (r *PostgresGameRepo) GetHighscore(ctx context.Context, userID, gameID string) (int, error) {
-    var score int
-    err := r.db.QueryRowContext(ctx,
-        "SELECT COALESCE(score, 0) FROM highscores WHERE user_id = $1 AND game_id = $2",
-        userID, gameID,
-    ).Scan(&score)
-    if err == sql.ErrNoRows {
-        return 0, nil
-    }
-    return score, err
+	var score int
+	err := r.db.QueryRowContext(ctx,
+		"SELECT COALESCE(score, 0) FROM highscores WHERE user_id = $1 AND game_id = $2",
+		userID, gameID,
+	).Scan(&score)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return score, err
 }
 
 func (r *PostgresGameRepo) SaveHighscore(ctx context.Context, userID, gameID string, score int) error {
-    _, err := r.db.ExecContext(ctx,
-        `INSERT INTO highscores (user_id, game_id, score, updated_at)
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO highscores (user_id, game_id, score, updated_at)
          VALUES ($1, $2, $3, NOW())
          ON CONFLICT (user_id, game_id) DO UPDATE
          SET score = EXCLUDED.score, updated_at = NOW()`,
-        userID, gameID, score,
-    )
-    return err
+		userID, gameID, score,
+	)
+	return err
+}
+
+func (r *PostgresGameRepo) EnqueueOutbox(ctx context.Context, eventType string, payload []byte) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
+		eventType, payload,
+	)
+	return err
+}
+
+func (r *PostgresGameRepo) SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score int, eventType string, payload []byte) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO highscores (user_id, game_id, score, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (user_id, game_id) DO UPDATE
+         SET score = EXCLUDED.score, updated_at = NOW()`,
+		userID, gameID, score,
+	); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
+		eventType, payload,
+	); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

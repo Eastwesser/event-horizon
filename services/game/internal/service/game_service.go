@@ -161,18 +161,10 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
 
     isNewRecord := validatedScore > currentHighscore
 
-    // Сохраняем рекорд если это новый рекорд
-    if isNewRecord {
-        err = s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore)
-        if err != nil {
-            log.Printf("Failed to save highscore: %v", err)
-        }
-    }
-
     log.Printf("🎯 isNewRecord=%v, validatedScore=%d, lamps=%d, tickets=%d",
         isNewRecord, validatedScore, lampsEarned, ticketsEarned)
 
-    // Публикуем событие в NATS
+    // Event for Leaderboard / Billing (same payload shape as before).
     event := map[string]interface{}{
         "user_id":         req.UserID,
         "game_id":         req.GameID,
@@ -187,12 +179,25 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     }
     eventData, _ := json.Marshal(event)
 
-    _, err = s.js.Publish("score.updated", eventData)
-    if err != nil {
-        log.Printf("Failed to publish to NATS: %v", err)
+    // Prefer transactional outbox (reliable). Fall back to legacy direct NATS publish
+    // if outbox insert fails (e.g. migration not yet applied).
+    if isNewRecord {
+        if err := s.repo.SaveHighscoreAndEnqueueOutbox(ctx, req.UserID, req.GameID, validatedScore, "score.updated", eventData); err != nil {
+            log.Printf("outbox+highscore failed, falling back to SaveHighscore+Publish: %v", err)
+            if saveErr := s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore); saveErr != nil {
+                log.Printf("Failed to save highscore: %v", saveErr)
+            }
+            s.publishScoreUpdatedDirect(eventData, req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
+        } else {
+            log.Printf("📬 Enqueued score.updated (with highscore): user=%s game=%s score=%d", req.UserID, req.GameID, validatedScore)
+        }
     } else {
-        log.Printf("📡 Published score.updated: user=%s, game=%s, score=%d, is_record=%v, lamps=%d, tickets=%d",
-            req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
+        if err := s.repo.EnqueueOutbox(ctx, "score.updated", eventData); err != nil {
+            log.Printf("outbox enqueue failed, falling back to direct Publish: %v", err)
+            s.publishScoreUpdatedDirect(eventData, req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
+        } else {
+            log.Printf("📬 Enqueued score.updated: user=%s game=%s score=%d", req.UserID, req.GameID, validatedScore)
+        }
     }
 
     return &SubmitScoreResponse{
@@ -203,6 +208,21 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         LampsEarned:   lampsEarned,
         TicketsEarned: ticketsEarned,
     }, nil
+}
+
+// publishScoreUpdatedDirect is the legacy path (kept for fallback / tests).
+func (s *gameService) publishScoreUpdatedDirect(eventData []byte, userID, gameID string, score int, isRecord bool, lamps, tickets int) {
+    if s.js == nil {
+        log.Printf("NATS JetStream nil; skip direct score.updated publish")
+        return
+    }
+    _, err := s.js.Publish("score.updated", eventData)
+    if err != nil {
+        log.Printf("Failed to publish to NATS: %v", err)
+        return
+    }
+    log.Printf("📡 Published score.updated (direct): user=%s, game=%s, score=%d, is_record=%v, lamps=%d, tickets=%d",
+        userID, gameID, score, isRecord, lamps, tickets)
 }
 
 func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo, error) {
