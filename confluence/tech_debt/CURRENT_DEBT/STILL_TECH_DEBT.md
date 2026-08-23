@@ -6,8 +6,12 @@ This file enumerates the “audit exclusions” from `TODO_FINAL_LIST.md` and ma
 
 ## Still outstanding (real work)
 
+### 0) Game Outbox for `score.updated`
+**Status:** implemented (23.08.2026). Rebuild/push `eastwesser/game:latest` to run in cluster.
+See `confluence/architecture/GAME_OUTBOX.md`.
+
 ### 1) Live Boosty signature verification
-**Status:** partial (shared secret equality check), not full Boosty signature verification.
+**Status:** partial (shared secret equality check), not full Boosty signature verification. Boosty treated as secondary/manual path.
 
 **What exists now**
 - `POST /api/payment/webhook` ultimately calls `PaymentService.ConfirmPayment(..., webhookSecret)` and compares it to `PAYMENT_WEBHOOK_SECRET`.
