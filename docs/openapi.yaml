@@ -940,7 +940,13 @@ paths:
   # ===== PAYMENT =====
   /api/payment/checkout:
     post:
-      summary: Create Boosty checkout (subscription)
+      summary: Create subscription checkout (YooKassa stub or Boosty redirect)
+      description: |
+        Creates an internal pending payment and returns checkout_url.
+        - Local/dev: often completed via POST /api/payment/yookassa/webhook (stub).
+        - Boosty: checkout_url is a redirect helper to the creator page; Boosty has no
+          native webhook URL in creator UI — treat as secondary/manual path.
+          Autosubscription is not guaranteed via Boosty alone.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
