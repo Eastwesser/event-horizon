@@ -1,20 +1,23 @@
 .PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy test-all test-unit test-smoke test-k6
 
+# Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
+COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
+
 # ===== DOCKER =====
 up:
-	docker-compose -f deployments/docker-compose.cluster.yml up -d
+	$(COMPOSE) up -d
 
 down:
-	docker-compose -f deployments/docker-compose.cluster.yml down
+	$(COMPOSE) down
 
 logs:
-	docker-compose -f deployments/docker-compose.cluster.yml logs -f
+	$(COMPOSE) logs -f
 
 ps:
-	docker-compose -f deployments/docker-compose.cluster.yml ps
+	$(COMPOSE) ps
 
 clean:
-	docker-compose -f deployments/docker-compose.cluster.yml down -v
+	$(COMPOSE) down -v
 
 # BuildKit (DOCKER_BUILDKIT=1) replaces the deprecated legacy builder.
 # Full `docker buildx` needs the plugin: Arch `sudo pacman -S docker-buildx`.
@@ -123,7 +126,7 @@ deploy:
 	@echo "🚀 Building nats-hub..."
 	$(MAKE) build-nats-hub
 	@echo "🚀 Starting infrastructure..."
-	docker-compose -f deployments/docker-compose.cluster.yml up -d
+	$(COMPOSE) up -d
 	@sleep 5
 	@echo "📦 Running migrations..."
 	$(MAKE) migrate-all
@@ -138,7 +141,7 @@ restart: down deploy
 # ===== STATUS =====
 status:
 	@echo "🔍 Checking services..."
-	docker-compose -f deployments/docker-compose.cluster.yml ps
+	$(COMPOSE) ps
 
 # ===== DELIVERY =====
 delivery-dev:
