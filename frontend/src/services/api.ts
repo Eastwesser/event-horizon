@@ -12,6 +12,7 @@ export const API_BASE = '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 15000, // default UI timeout; checkout can override higher
   headers: { 'Content-Type': 'application/json' },
 });
 

@@ -38,7 +38,8 @@ func New(baseURL, db string) *Client {
 func (c *Client) DB() string { return c.db }
 
 func (c *Client) Ping(ctx context.Context) error {
-	_, err := c.Exec(ctx, "SELECT 1", nil)
+	// Use system DB so cold starts work before EnsureSchema creates c.db.
+	_, err := c.execDB(ctx, "default", "SELECT 1", nil)
 	return err
 }
 

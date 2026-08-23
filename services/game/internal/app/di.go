@@ -32,6 +32,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/game/internal/interceptor"
 	"github.com/Eastwesser/event-horizon/services/game/internal/repository"
 	"github.com/Eastwesser/event-horizon/services/game/internal/service"
+	"github.com/Eastwesser/event-horizon/services/game/internal/worker"
 	"github.com/Eastwesser/event-horizon/services/game/migrations"
 	pb "github.com/Eastwesser/event-horizon/services/game/proto"
 )
@@ -59,6 +60,7 @@ func (a *App) init(ctx context.Context) error {
 		a.initPostgres,
 		a.initNATS,
 		a.initDomain,
+		a.initOutbox,
 		a.initGRPC,
 		a.initMetricsHTTP,
 	}
@@ -175,6 +177,18 @@ func (a *App) initDomain(_ context.Context) error {
 	a.di.repo = repository.NewPostgresGameRepo(a.di.db)
 	a.di.svc = service.NewGameService(a.di.repo, a.di.js)
 	a.di.api = handler.NewGameHandler(a.di.svc)
+	return nil
+}
+
+func (a *App) initOutbox(_ context.Context) error {
+	outboxCtx, cancelOutbox := context.WithCancel(context.Background())
+	outboxWorker := worker.NewOutboxWorker(a.di.db, a.di.js)
+	go outboxWorker.Start(outboxCtx)
+	a.closer.AddNamed("outbox worker", func(context.Context) error {
+		cancelOutbox()
+		return nil
+	})
+	a.log.Info("outbox worker started")
 	return nil
 }
 
