@@ -39,3 +39,5 @@ services/*/*-service-*
 kozirev_code/
 .kozirev_code
 .gomodcache/
+.unrelated
+.unrelated/
