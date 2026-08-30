@@ -51,10 +51,12 @@ export function Login() {
       
       if (status === 401 || message?.includes('invalid credentials')) {
         setError('Неверный email или пароль. Попробуйте ещё раз.');
+      } else if (status === 400 || message?.includes('password')) {
+        setError('Пароль должен быть от 8 до 128 символов');
       } else if (status === 404) {
         setError('Пользователь с таким email не найден.');
       } else {
-        setError('Ошибка соединения. Попробуйте позже.');
+        setError(message || 'Ошибка соединения. Попробуйте позже.');
       }
     } finally {
       setLoading(false);
@@ -63,7 +65,7 @@ export function Login() {
 
   return (
     <div className="auth-container">
-      <h2>Вход в Блинопёк</h2>
+      <h2>Вход в Event Horizon</h2>
       <form onSubmit={handleSubmit}>
         <div>
           <label>🍳 Email:</label>
@@ -81,7 +83,7 @@ export function Login() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••"
+            placeholder="••••••••"
             required
           />
         </div>

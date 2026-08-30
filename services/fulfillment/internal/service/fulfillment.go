@@ -7,14 +7,18 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/nats-io/nats.go"
+
 	"github.com/Eastwesser/event-horizon/contracts/events"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
 	"github.com/Eastwesser/event-horizon/platform/pkg/metrics"
 )
 
 // FulfillmentService consumes PurchasePaid, waits, produces PurchaseFulfilled.
+// Publishes to NATS JetStream when js is set; Kafka producer kept for optional heavy path.
 type FulfillmentService struct {
 	out   kafka.Producer
+	js    nats.JetStreamContext
 	log   *slog.Logger
 	delay time.Duration
 }
@@ -24,6 +28,10 @@ func New(out kafka.Producer, log *slog.Logger, delay time.Duration) *Fulfillment
 		delay = 10 * time.Second
 	}
 	return &FulfillmentService{out: out, log: log, delay: delay}
+}
+
+func (s *FulfillmentService) SetJetStream(js nats.JetStreamContext) {
+	s.js = js
 }
 
 func (s *FulfillmentService) HandlePurchasePaid(ctx context.Context, msg kafka.Message) error {
@@ -49,8 +57,16 @@ func (s *FulfillmentService) HandlePurchasePaid(ctx context.Context, msg kafka.M
 	if err != nil {
 		return err
 	}
-	if err := s.out.Send(ctx, []byte(out.PurchaseUUID), body); err != nil {
-		return err
+	if s.js != nil {
+		if _, err := s.js.Publish(kafka.TopicPurchaseFulfilled, body); err != nil {
+			s.log.Error("nats publish purchase.fulfilled", "err", err)
+			return err
+		}
+	}
+	if s.out != nil {
+		if err := s.out.Send(ctx, []byte(out.PurchaseUUID), body); err != nil {
+			return err
+		}
 	}
 	s.log.Info("purchase fulfilled published", "purchase", out.PurchaseUUID)
 	return nil

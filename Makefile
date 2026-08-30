@@ -1,7 +1,9 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy test-all test-unit test-smoke test-k6
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
+# Optional: Kafka broker only (apps already use NATS; set KAFKA_BROKERS when enabling)
+COMPOSE_HEAVY := --profile kafka
 
 # ===== DOCKER =====
 up:
@@ -18,6 +20,7 @@ ps:
 
 clean:
 	$(COMPOSE) down -v
+	-$(COMPOSE) $(COMPOSE_HEAVY) down
 
 # BuildKit (DOCKER_BUILDKIT=1) replaces the deprecated legacy builder.
 # Full `docker buildx` needs the plugin: Arch `sudo pacman -S docker-buildx`.
@@ -121,19 +124,58 @@ build-nats-hub:
 	cd services/nats-hub && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nats-hub ./cmd/main.go
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.nats-hub.bin -t eastwesser/nats-hub:latest .
 
+# ===== PROTO / REBUILD HELPERS =====
+gen-proto-local:
+	bash scripts/rebuild-proto.sh
+
+rebuild-services:
+	@test -n "$(SVC)" || (echo "Usage: make rebuild-services SVC='game analytics'"; exit 1)
+	bash scripts/rebuild-services.sh $(SVC)
+
+docker-push:
+	@test -n "$(SVC)" || (echo "Usage: make docker-push SVC='game analytics' or SVC=--all"; exit 1)
+	bash scripts/docker-push-images.sh $(SVC)
+
+patroni-auth-up:
+	docker compose --env-file .env -f deployments/patroni/auth/docker-compose.patroni-auth.yml up -d
+
 # ===== DEPLOY =====
+# Thin (default): NATS + apps + fulfillment/notification/analytics + ClickHouse + obs.
+# Heavy: same + Kafka broker (optional dual-write when KAFKA_BROKERS=kafka:9092).
+# k3s: make deploy-k3s — separate, leave manifests untouched.
 deploy:
 	@echo "🚀 Building nats-hub..."
 	$(MAKE) build-nats-hub
-	@echo "🚀 Starting infrastructure..."
+	@echo "🚀 Starting thin stack (NATS path; Kafka OFF)..."
 	$(COMPOSE) up -d
 	@sleep 5
 	@echo "📦 Running migrations..."
 	$(MAKE) migrate-all
-	@echo "✅ Everything is ready!"
+	@echo "✅ Thin stack ready"
 	@echo "   🎯 Gateway: http://localhost:8079"
-	@echo "   📊 Grafana: http://localhost:3000 (admin/admin)"
+	@echo "   📊 Grafana: http://localhost:3000"
 	@echo "   🔍 Jaeger: http://localhost:16686"
+	@echo "   📈 Prometheus: http://localhost:9090"
+	@echo "   Stronger box later: make deploy-heavy  (adds Kafka broker)"
+	@echo "   Stop Kafka only: make stop-heavy"
+
+deploy-kafka:
+	@echo "🚀 Starting Kafka broker (apps keep NATS; set KAFKA_BROKERS=kafka:9092 to dual-write)..."
+	$(COMPOSE) --profile kafka up -d
+
+# Prefer this name over deploy-full on a stronger machine.
+deploy-heavy: deploy-kafka
+	@echo "✅ Heavy extras up (Kafka). Thin stack already includes fulfillment/notification/analytics."
+	@echo "   To dual-write shop→Kafka: export KAFKA_BROKERS=kafka:9092 and recreate shop/fulfillment/notification"
+
+# Alias kept for muscle memory.
+deploy-full: deploy-heavy
+
+# Stop Kafka / qdrant only (do not stop thin apps or ClickHouse).
+stop-heavy:
+	@echo "⏹ Stopping Kafka / qdrant (thin stack left running)..."
+	-docker stop event-horizon-kafka event-horizon-qdrant 2>/dev/null || true
+	@echo "✅ Done"
 
 # ===== RESTART =====
 restart: down deploy
@@ -142,6 +184,8 @@ restart: down deploy
 status:
 	@echo "🔍 Checking services..."
 	$(COMPOSE) ps
+	@echo "---"
+	@$(COMPOSE) $(COMPOSE_HEAVY) ps 2>/dev/null || true
 
 # ===== DELIVERY =====
 delivery-dev:

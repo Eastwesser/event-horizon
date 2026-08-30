@@ -23,6 +23,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+// ShopService is the interface for the shop service.
 type ShopService interface {
 	GetItems(ctx context.Context, category, gameID, userID string) ([]repository.Item, error)
 	PurchaseItem(ctx context.Context, userID, itemID string) (int32, error)
@@ -30,6 +31,7 @@ type ShopService interface {
 	SetKafkaProducer(p kafka.Producer)
 }
 
+// Note: kafka is replaced with NATS in our project
 type shopService struct {
 	pgRepo    *repository.PostgresShopRepo
 	redisRepo *repository.RedisShopRepo
@@ -221,7 +223,7 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		return 0, fmt.Errorf("failed to record purchase: %w", err)
 	}
 
-	if s.kafkaProd != nil {
+	if s.js != nil || s.kafkaProd != nil {
 		paid := events.PurchasePaid{
 			EventUUID:    newEventID(),
 			PurchaseUUID: newEventID(),
@@ -230,8 +232,15 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 			Price:        int32(item.Price),
 		}
 		if body, mErr := paid.Marshal(); mErr == nil {
-			if err := s.kafkaProd.Send(ctx, []byte(paid.PurchaseUUID), body); err != nil {
-				log.Printf("⚠️ Failed to publish kafka purchase.paid: %v", err)
+			if s.js != nil {
+				if _, err := s.js.Publish(kafka.TopicPurchasePaid, body); err != nil {
+					log.Printf("⚠️ Failed to publish NATS purchase.paid: %v", err)
+				}
+			}
+			if s.kafkaProd != nil {
+				if err := s.kafkaProd.Send(ctx, []byte(paid.PurchaseUUID), body); err != nil {
+					log.Printf("⚠️ Failed to publish kafka purchase.paid: %v", err)
+				}
 			}
 		}
 	}

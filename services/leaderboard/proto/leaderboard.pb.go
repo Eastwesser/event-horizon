@@ -7,6 +7,7 @@
 package leaderboard
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,8 +24,8 @@ const (
 
 type GetTopScoresRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // "hexagon" или "flappy"
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`                // сколько записей (макс 100)
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -171,7 +172,7 @@ func (x *GetPlayerRankRequest) GetUserId() string {
 
 type GetPlayerRankResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Rank          int32                  `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"` // 1 = первое место
+	Rank          int32                  `protobuf:"varint,1,opt,name=rank,proto3" json:"rank,omitempty"`
 	Score         int32                  `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -225,7 +226,7 @@ type UpdateScoreRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"` // для отображения в топе
+	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
 	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
 	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -300,7 +301,7 @@ func (x *UpdateScoreRequest) GetScore() int32 {
 type UpdateScoreResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	NewRank       int32                  `protobuf:"varint,2,opt,name=new_rank,json=newRank,proto3" json:"new_rank,omitempty"` // новый ранг после обновления
+	NewRank       int32                  `protobuf:"varint,2,opt,name=new_rank,json=newRank,proto3" json:"new_rank,omitempty"`
 	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -364,7 +365,7 @@ type ScoreEntry struct {
 	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
 	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
 	Score         int32                  `protobuf:"varint,5,opt,name=score,proto3" json:"score,omitempty"`
-	UpdatedAt     int64                  `protobuf:"varint,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Unix timestamp
+	UpdatedAt     int64                  `protobuf:"varint,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -445,25 +446,25 @@ var File_proto_leaderboard_proto protoreflect.FileDescriptor
 
 const file_proto_leaderboard_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/leaderboard.proto\x12\vleaderboard\"D\n" +
-	"\x13GetTopScoresRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"I\n" +
+	"\x17proto/leaderboard.proto\x12\vleaderboard\x1a\x17validate/validate.proto\"Z\n" +
+	"\x13GetTopScoresRequest\x12\"\n" +
+	"\agame_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\x12\x1f\n" +
+	"\x05limit\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x18d(\x00R\x05limit\"I\n" +
 	"\x14GetTopScoresResponse\x121\n" +
-	"\aentries\x18\x01 \x03(\v2\x17.leaderboard.ScoreEntryR\aentries\"H\n" +
-	"\x14GetPlayerRankRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"A\n" +
+	"\aentries\x18\x01 \x03(\v2\x17.leaderboard.ScoreEntryR\aentries\"^\n" +
+	"\x14GetPlayerRankRequest\x12\"\n" +
+	"\agame_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\x12\"\n" +
+	"\auser_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"A\n" +
 	"\x15GetPlayerRankResponse\x12\x12\n" +
 	"\x04rank\x18\x01 \x01(\x05R\x04rank\x12\x14\n" +
-	"\x05score\x18\x02 \x01(\x05R\x05score\"\x97\x01\n" +
-	"\x12UpdateScoreRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
+	"\x05score\x18\x02 \x01(\x05R\x05score\"\xcd\x01\n" +
+	"\x12UpdateScoreRequest\x12\"\n" +
+	"\agame_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\x12\"\n" +
+	"\auser_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12'\n" +
 	"\n" +
-	"user_email\x18\x03 \x01(\tR\tuserEmail\x12\x1a\n" +
-	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x14\n" +
-	"\x05score\x18\x05 \x01(\x05R\x05score\"d\n" +
+	"user_email\x18\x03 \x01(\tB\b\xfaB\x05r\x03\x18\xfe\x01R\tuserEmail\x12#\n" +
+	"\bnickname\x18\x04 \x01(\tB\a\xfaB\x04r\x02\x18@R\bnickname\x12!\n" +
+	"\x05score\x18\x05 \x01(\x05B\v\xfaB\b\x1a\x06\x18\xa0\x8d\x06(\x00R\x05score\"d\n" +
 	"\x13UpdateScoreResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x19\n" +
 	"\bnew_rank\x18\x02 \x01(\x05R\anewRank\x12\x18\n" +

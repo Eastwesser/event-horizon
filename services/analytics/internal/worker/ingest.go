@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 
 	"github.com/nats-io/nats.go"
 
@@ -33,6 +34,7 @@ func (w *IngestWorker) Start(ctx context.Context) {
 	}
 	for _, subj := range subjects {
 		s := subj
+		durable := "analytics-" + strings.ReplaceAll(s, ".", "-")
 		_, err := w.js.Subscribe(s, func(msg *nats.Msg) {
 			userID := ""
 			var raw map[string]any
@@ -47,7 +49,7 @@ func (w *IngestWorker) Start(ctx context.Context) {
 				return
 			}
 			_ = msg.Ack()
-		}, nats.Durable("analytics-"+s), nats.ManualAck())
+		}, nats.Durable(durable), nats.ManualAck())
 		if err != nil {
 			log.Printf("analytics subscribe %s: %v", s, err)
 		}

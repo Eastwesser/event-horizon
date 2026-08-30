@@ -9,13 +9,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/nats-io/nats.go"
+
 	"github.com/Eastwesser/event-horizon/platform/pkg/closer"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
 	"github.com/Eastwesser/event-horizon/platform/pkg/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/Eastwesser/event-horizon/services/fulfillment/internal/config"
 	"github.com/Eastwesser/event-horizon/services/fulfillment/internal/service"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type App struct {
@@ -25,6 +27,8 @@ type App struct {
 	consumer kafka.Consumer
 	producer kafka.Producer
 	svc      *service.FulfillmentService
+	nc       *nats.Conn
+	js       nats.JetStreamContext
 	http     *http.Server
 }
 
@@ -44,6 +48,25 @@ func New(ctx context.Context) (*App, error) {
 	a.closer.AddNamed("kafka consumer", func(context.Context) error { return a.consumer.Close() })
 
 	a.svc = service.New(a.producer, log, time.Duration(cfg.AssembleDelaySec)*time.Second)
+
+	if cfg.NATSURL != "" {
+		nc, err := nats.Connect(cfg.NATSURL)
+		if err != nil {
+			a.log.Warn("nats connect failed; Kafka-only path", "err", err)
+		} else {
+			a.nc = nc
+			js, err := nc.JetStream()
+			if err != nil {
+				a.log.Warn("jetstream failed", "err", err)
+				_ = nc.Drain()
+			} else {
+				a.js = js
+				a.svc.SetJetStream(js)
+				a.closer.AddNamed("nats", func(context.Context) error { return nc.Drain() })
+				a.log.Info("nats connected", "url", cfg.NATSURL)
+			}
+		}
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
@@ -71,12 +94,40 @@ func (a *App) RunUntilSignal(ctx context.Context) error {
 			a.log.Error("http error", "err", err)
 		}
 	}()
-	go func() {
-		a.log.Info("fulfillment consuming", "topic", kafka.TopicPurchasePaid)
-		if err := a.consumer.Consume(runCtx, a.svc.HandlePurchasePaid); err != nil && runCtx.Err() == nil {
-			a.log.Error("consume stopped", "err", err)
-		}
-	}()
+
+	// Primary path: NATS JetStream (thin deploy).
+	if a.js != nil {
+		go func() {
+			a.log.Info("fulfillment consuming NATS", "subject", kafka.TopicPurchasePaid)
+			_, err := a.js.Subscribe(kafka.TopicPurchasePaid, func(msg *nats.Msg) {
+				err := a.svc.HandlePurchasePaid(runCtx, kafka.Message{
+					Topic: msg.Subject,
+					Value: msg.Data,
+				})
+				if err != nil {
+					a.log.Error("handle purchase.paid", "err", err)
+					_ = msg.Nak()
+					return
+				}
+				_ = msg.Ack()
+			}, nats.Durable("fulfillment-purchase-paid"), nats.ManualAck())
+			if err != nil {
+				a.log.Error("nats subscribe failed", "err", err)
+			}
+			<-runCtx.Done()
+		}()
+	}
+
+	// Optional Kafka path (heavy deploy with KAFKA_BROKERS set).
+	if a.cfg.KafkaBrokers != "" {
+		go func() {
+			a.log.Info("fulfillment consuming Kafka", "topic", kafka.TopicPurchasePaid)
+			if err := a.consumer.Consume(runCtx, a.svc.HandlePurchasePaid); err != nil && runCtx.Err() == nil {
+				a.log.Error("kafka consume stopped", "err", err)
+			}
+		}()
+	}
+
 	if err := a.closer.WaitSignal(ctx); err != nil {
 		cancel()
 		return fmt.Errorf("shutdown: %w", err)
@@ -100,7 +151,6 @@ func splitCSV(s string) []string {
 	for i := 0; i <= len(s); i++ {
 		if i == len(s) || s[i] == ',' {
 			p := s[start:i]
-			// trim spaces
 			for len(p) > 0 && p[0] == ' ' {
 				p = p[1:]
 			}

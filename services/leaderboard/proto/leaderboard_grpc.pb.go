@@ -28,11 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LeaderboardServiceClient interface {
-	// Получить топ-N игроков для конкретной игры
 	GetTopScores(ctx context.Context, in *GetTopScoresRequest, opts ...grpc.CallOption) (*GetTopScoresResponse, error)
-	// Получить место конкретного игрока в топе
 	GetPlayerRank(ctx context.Context, in *GetPlayerRankRequest, opts ...grpc.CallOption) (*GetPlayerRankResponse, error)
-	// Обновить рекорд (будет вызываться через NATS, но gRPC тоже держим)
 	UpdateScore(ctx context.Context, in *UpdateScoreRequest, opts ...grpc.CallOption) (*UpdateScoreResponse, error)
 }
 
@@ -75,11 +72,8 @@ func (c *leaderboardServiceClient) UpdateScore(ctx context.Context, in *UpdateSc
 // All implementations must embed UnimplementedLeaderboardServiceServer
 // for forward compatibility
 type LeaderboardServiceServer interface {
-	// Получить топ-N игроков для конкретной игры
 	GetTopScores(context.Context, *GetTopScoresRequest) (*GetTopScoresResponse, error)
-	// Получить место конкретного игрока в топе
 	GetPlayerRank(context.Context, *GetPlayerRankRequest) (*GetPlayerRankResponse, error)
-	// Обновить рекорд (будет вызываться через NATS, но gRPC тоже держим)
 	UpdateScore(context.Context, *UpdateScoreRequest) (*UpdateScoreResponse, error)
 	mustEmbedUnimplementedLeaderboardServiceServer()
 }

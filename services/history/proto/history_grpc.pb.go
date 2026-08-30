@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: history.proto
+// source: proto/history.proto
 
 package history
 
@@ -142,5 +142,5 @@ var HistoryService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "history.proto",
+	Metadata: "proto/history.proto",
 }

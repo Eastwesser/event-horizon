@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: analytics.proto
+// source: proto/analytics.proto
 
 package analytics
 
@@ -32,7 +32,7 @@ type RecordEventRequest struct {
 
 func (x *RecordEventRequest) Reset() {
 	*x = RecordEventRequest{}
-	mi := &file_analytics_proto_msgTypes[0]
+	mi := &file_proto_analytics_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *RecordEventRequest) String() string {
 func (*RecordEventRequest) ProtoMessage() {}
 
 func (x *RecordEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[0]
+	mi := &file_proto_analytics_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *RecordEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordEventRequest.ProtoReflect.Descriptor instead.
 func (*RecordEventRequest) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{0}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RecordEventRequest) GetUserId() string {
@@ -90,7 +90,7 @@ type RecordEventResponse struct {
 
 func (x *RecordEventResponse) Reset() {
 	*x = RecordEventResponse{}
-	mi := &file_analytics_proto_msgTypes[1]
+	mi := &file_proto_analytics_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +102,7 @@ func (x *RecordEventResponse) String() string {
 func (*RecordEventResponse) ProtoMessage() {}
 
 func (x *RecordEventResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[1]
+	mi := &file_proto_analytics_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +115,7 @@ func (x *RecordEventResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordEventResponse.ProtoReflect.Descriptor instead.
 func (*RecordEventResponse) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{1}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RecordEventResponse) GetOk() bool {
@@ -134,7 +134,7 @@ type GetDAURequest struct {
 
 func (x *GetDAURequest) Reset() {
 	*x = GetDAURequest{}
-	mi := &file_analytics_proto_msgTypes[2]
+	mi := &file_proto_analytics_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +146,7 @@ func (x *GetDAURequest) String() string {
 func (*GetDAURequest) ProtoMessage() {}
 
 func (x *GetDAURequest) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[2]
+	mi := &file_proto_analytics_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +159,7 @@ func (x *GetDAURequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDAURequest.ProtoReflect.Descriptor instead.
 func (*GetDAURequest) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{2}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetDAURequest) GetDays() int32 {
@@ -179,7 +179,7 @@ type DayCount struct {
 
 func (x *DayCount) Reset() {
 	*x = DayCount{}
-	mi := &file_analytics_proto_msgTypes[3]
+	mi := &file_proto_analytics_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *DayCount) String() string {
 func (*DayCount) ProtoMessage() {}
 
 func (x *DayCount) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[3]
+	mi := &file_proto_analytics_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *DayCount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DayCount.ProtoReflect.Descriptor instead.
 func (*DayCount) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{3}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DayCount) GetDay() string {
@@ -230,7 +230,7 @@ type GetDAUResponse struct {
 
 func (x *GetDAUResponse) Reset() {
 	*x = GetDAUResponse{}
-	mi := &file_analytics_proto_msgTypes[4]
+	mi := &file_proto_analytics_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +242,7 @@ func (x *GetDAUResponse) String() string {
 func (*GetDAUResponse) ProtoMessage() {}
 
 func (x *GetDAUResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[4]
+	mi := &file_proto_analytics_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +255,7 @@ func (x *GetDAUResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDAUResponse.ProtoReflect.Descriptor instead.
 func (*GetDAUResponse) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{4}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetDAUResponse) GetDays() []*DayCount {
@@ -274,7 +274,7 @@ type GetMAURequest struct {
 
 func (x *GetMAURequest) Reset() {
 	*x = GetMAURequest{}
-	mi := &file_analytics_proto_msgTypes[5]
+	mi := &file_proto_analytics_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +286,7 @@ func (x *GetMAURequest) String() string {
 func (*GetMAURequest) ProtoMessage() {}
 
 func (x *GetMAURequest) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[5]
+	mi := &file_proto_analytics_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +299,7 @@ func (x *GetMAURequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMAURequest.ProtoReflect.Descriptor instead.
 func (*GetMAURequest) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{5}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetMAURequest) GetDays() int32 {
@@ -319,7 +319,7 @@ type GetMAUResponse struct {
 
 func (x *GetMAUResponse) Reset() {
 	*x = GetMAUResponse{}
-	mi := &file_analytics_proto_msgTypes[6]
+	mi := &file_proto_analytics_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +331,7 @@ func (x *GetMAUResponse) String() string {
 func (*GetMAUResponse) ProtoMessage() {}
 
 func (x *GetMAUResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[6]
+	mi := &file_proto_analytics_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +344,7 @@ func (x *GetMAUResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMAUResponse.ProtoReflect.Descriptor instead.
 func (*GetMAUResponse) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{6}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetMAUResponse) GetMau() int64 {
@@ -371,7 +371,7 @@ type GetRetentionRequest struct {
 
 func (x *GetRetentionRequest) Reset() {
 	*x = GetRetentionRequest{}
-	mi := &file_analytics_proto_msgTypes[7]
+	mi := &file_proto_analytics_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -383,7 +383,7 @@ func (x *GetRetentionRequest) String() string {
 func (*GetRetentionRequest) ProtoMessage() {}
 
 func (x *GetRetentionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[7]
+	mi := &file_proto_analytics_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -396,7 +396,7 @@ func (x *GetRetentionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRetentionRequest.ProtoReflect.Descriptor instead.
 func (*GetRetentionRequest) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{7}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetRetentionRequest) GetCohortDaysAgo() int32 {
@@ -423,7 +423,7 @@ type RetentionPoint struct {
 
 func (x *RetentionPoint) Reset() {
 	*x = RetentionPoint{}
-	mi := &file_analytics_proto_msgTypes[8]
+	mi := &file_proto_analytics_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -435,7 +435,7 @@ func (x *RetentionPoint) String() string {
 func (*RetentionPoint) ProtoMessage() {}
 
 func (x *RetentionPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[8]
+	mi := &file_proto_analytics_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +448,7 @@ func (x *RetentionPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetentionPoint.ProtoReflect.Descriptor instead.
 func (*RetentionPoint) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{8}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RetentionPoint) GetDayN() int32 {
@@ -476,7 +476,7 @@ type GetRetentionResponse struct {
 
 func (x *GetRetentionResponse) Reset() {
 	*x = GetRetentionResponse{}
-	mi := &file_analytics_proto_msgTypes[9]
+	mi := &file_proto_analytics_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -488,7 +488,7 @@ func (x *GetRetentionResponse) String() string {
 func (*GetRetentionResponse) ProtoMessage() {}
 
 func (x *GetRetentionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_analytics_proto_msgTypes[9]
+	mi := &file_proto_analytics_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -501,7 +501,7 @@ func (x *GetRetentionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRetentionResponse.ProtoReflect.Descriptor instead.
 func (*GetRetentionResponse) Descriptor() ([]byte, []int) {
-	return file_analytics_proto_rawDescGZIP(), []int{9}
+	return file_proto_analytics_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetRetentionResponse) GetCohortDay() string {
@@ -525,11 +525,11 @@ func (x *GetRetentionResponse) GetPoints() []*RetentionPoint {
 	return nil
 }
 
-var File_analytics_proto protoreflect.FileDescriptor
+var File_proto_analytics_proto protoreflect.FileDescriptor
 
-const file_analytics_proto_rawDesc = "" +
+const file_proto_analytics_proto_rawDesc = "" +
 	"\n" +
-	"\x0fanalytics.proto\x12\tanalytics\"o\n" +
+	"\x15proto/analytics.proto\x12\tanalytics\"o\n" +
 	"\x12RecordEventRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
@@ -570,19 +570,19 @@ const file_analytics_proto_rawDesc = "" +
 	"\fGetRetention\x12\x1e.analytics.GetRetentionRequest\x1a\x1f.analytics.GetRetentionResponseBHZFgithub.com/Eastwesser/event-horizon/services/analytics/proto;analyticsb\x06proto3"
 
 var (
-	file_analytics_proto_rawDescOnce sync.Once
-	file_analytics_proto_rawDescData []byte
+	file_proto_analytics_proto_rawDescOnce sync.Once
+	file_proto_analytics_proto_rawDescData []byte
 )
 
-func file_analytics_proto_rawDescGZIP() []byte {
-	file_analytics_proto_rawDescOnce.Do(func() {
-		file_analytics_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_analytics_proto_rawDesc), len(file_analytics_proto_rawDesc)))
+func file_proto_analytics_proto_rawDescGZIP() []byte {
+	file_proto_analytics_proto_rawDescOnce.Do(func() {
+		file_proto_analytics_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_analytics_proto_rawDesc), len(file_proto_analytics_proto_rawDesc)))
 	})
-	return file_analytics_proto_rawDescData
+	return file_proto_analytics_proto_rawDescData
 }
 
-var file_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_analytics_proto_goTypes = []any{
+var file_proto_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_analytics_proto_goTypes = []any{
 	(*RecordEventRequest)(nil),   // 0: analytics.RecordEventRequest
 	(*RecordEventResponse)(nil),  // 1: analytics.RecordEventResponse
 	(*GetDAURequest)(nil),        // 2: analytics.GetDAURequest
@@ -594,7 +594,7 @@ var file_analytics_proto_goTypes = []any{
 	(*RetentionPoint)(nil),       // 8: analytics.RetentionPoint
 	(*GetRetentionResponse)(nil), // 9: analytics.GetRetentionResponse
 }
-var file_analytics_proto_depIdxs = []int32{
+var file_proto_analytics_proto_depIdxs = []int32{
 	3, // 0: analytics.GetDAUResponse.days:type_name -> analytics.DayCount
 	8, // 1: analytics.GetRetentionResponse.points:type_name -> analytics.RetentionPoint
 	0, // 2: analytics.AnalyticsService.RecordEvent:input_type -> analytics.RecordEventRequest
@@ -612,26 +612,26 @@ var file_analytics_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_analytics_proto_init() }
-func file_analytics_proto_init() {
-	if File_analytics_proto != nil {
+func init() { file_proto_analytics_proto_init() }
+func file_proto_analytics_proto_init() {
+	if File_proto_analytics_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_analytics_proto_rawDesc), len(file_analytics_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_analytics_proto_rawDesc), len(file_proto_analytics_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_analytics_proto_goTypes,
-		DependencyIndexes: file_analytics_proto_depIdxs,
-		MessageInfos:      file_analytics_proto_msgTypes,
+		GoTypes:           file_proto_analytics_proto_goTypes,
+		DependencyIndexes: file_proto_analytics_proto_depIdxs,
+		MessageInfos:      file_proto_analytics_proto_msgTypes,
 	}.Build()
-	File_analytics_proto = out.File
-	file_analytics_proto_goTypes = nil
-	file_analytics_proto_depIdxs = nil
+	File_proto_analytics_proto = out.File
+	file_proto_analytics_proto_goTypes = nil
+	file_proto_analytics_proto_depIdxs = nil
 }

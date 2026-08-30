@@ -3,13 +3,23 @@
 **Игровая платформа** с микросервисной архитектурой на Go, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
 
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
-[![Docker](https://img.shields.io/badge/Docker-✓-blue.svg)](https://docker.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-v1.0.7-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/Release-v1.0.8-brightgreen.svg)](https://github.com/Eastwesser/event-horizon/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
+
+**Event Horizon** — production-style microservices platform: gRPC mesh, NATS events, OpenAPI gateway, observability, and a React game client. Designed for learning and as a reference implementation you can deploy locally in one command.
+
+| | |
+|---|---|
+| **Repository** | [github.com/Eastwesser/event-horizon](https://github.com/Eastwesser/event-horizon) |
+| **Architecture** | Clean Architecture per service · Gateway HTTP `/api/` → gRPC |
+| **Security** | JWT in Redis, bcrypt cost 12, secrets via env (`.env` gitignored) |
+| **Docs** | [`confluence/architecture/`](confluence/architecture/) · [OpenAPI `/docs`](http://localhost:8079/docs) when running |
 
 ---
 
-## 📦 Архитектура (актуально v1.0.7, 19.08.2026)
+## 📦 Архитектура (актуально v1.0.8, 30.08.2026)
 
 Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Mermaid: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md` · Miro legacy: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
 
@@ -29,35 +39,46 @@
 └───────────────┴───────────────┴───────────────┴───────────────┴───────────────┘
 ┌───────────────┬───────────────────────────────────────────────────────────────┐
 │ Analytics     │ NATS JetStream :4222/:4223/:4224  Stream EVENTS (NATS Hub)    │
-│ :50057        │ subjects: score.updated, user.registered, shop.*, …           │
+│ :50057        │ subjects: score.updated, purchase.paid/fulfilled, shop.*, …   │
 │ ClickHouse    │ async ──► Profile / Leaderboard / Notification / Fulfillment  │
 │ :8123/:9000   │ Leaderboard Redis Sorted Set ──WS──► Client                   │
 └───────────────┴───────────────────────────────────────────────────────────────┘
 ```
+
+**Deploy profiles (v1.0.8):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`.
 ---
 
 ## 🚀 Быстрый старт
 
+```bash
 # 1. Клонировать
 git clone https://github.com/Eastwesser/event-horizon.git
 cd event-horizon
 
-# 2. Запустить всё одной командой (Docker Compose)
+# 2. Локальные секреты — скопируй шаблон и задай свои значения
+cp .env.example .env
+# Отредактируй: JWT_SECRET, POSTGRES_PASSWORD, GRAFANA_ADMIN_PASSWORD (см. .env.example)
+
+# 3. Запустить thin-стек одной командой (NATS path; без Kafka)
 make deploy
 
-# 3. Проверить
+# 4. Проверить
 make status
 
-# 4. Или запустить в k3s
+# 5. Опционально: Kafka broker на более мощной машине
+# make deploy-heavy
+
+# 6. Или запустить в k3s
 make deploy-k3s
+```
 
 Готово! Всё поднимется автоматически:
 
-- 30+ Docker-контейнеров (PostgreSQL, Redis, NATS, ClickHouse, Jaeger, Prometheus, Grafana)
+- PostgreSQL, Redis, NATS, ClickHouse, Jaeger, Prometheus, Grafana (+ apps)
 - Миграции баз данных
 - Микросервисы: Auth, Game, Billing, Leaderboard, Shop, Inventory, Profile, Payment, Authors, History, Analytics, Fulfillment, Notification, NATS Hub, …
-- Мониторинг (Prometheus + Grafana)
-- Опционально: k3s кластер
+- Purchase path: Shop → NATS `purchase.paid` → Fulfillment / Notification
+- Опционально: Kafka (`make deploy-heavy`), k3s (`make deploy-k3s`)
 
 ---
 
@@ -97,6 +118,7 @@ make deploy-k3s
 
 ## 🔧 Примеры запросов
 
+```bash
 # Регистрация
 curl -X POST http://localhost:8079/api/auth/register \
   -H "Content-Type: application/json" \
@@ -138,6 +160,7 @@ curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.
 # Получить профиль
 curl -X GET http://localhost:8079/api/profile \
   -H "Authorization: Bearer $TOKEN" | jq '.'
+```
 
 ---
 
@@ -145,46 +168,55 @@ curl -X GET http://localhost:8079/api/profile \
 
 Подключиться к real-time обновлениям лидерборда:
 
+```bash
 # Через терминал
 wscat -c ws://localhost:8079/ws/leaderboard
+```
 
-# В браузере
+```javascript
+// В браузере
 const ws = new WebSocket('ws://localhost:5173/ws/leaderboard');
 ws.onmessage = (e) => console.log('📩', JSON.parse(e.data));
+```
 
 ---
 
 ## 🐳 Makefile & Docker-команды
 
-# Запустить всё
+```bash
+# Thin stack (NATS; Kafka OFF)
 make deploy
 
-# Посмотреть логи
-make logs
+# Kafka broker only (apps stay on NATS unless KAFKA_BROKERS set)
+make deploy-heavy
+make stop-heavy
 
-# Статус контейнеров
+# Посмотреть логи / статус
+make logs
 make ps
 
-# Остановить всё
+# Остановить всё / полная очистка volumes
 make down
-
-# Полная очистка (удалить volumes)
 make clean
 
-# Собрать все образы
+# Собрать / запушить образы
 make docker-build-all
-
-# Запушить все образы
 make docker-push-all
 
-# Деплой в k3s
+# k3s / Ansible
 make deploy-k3s
-
-# Удалить из k3s
 make undeploy-k3s
-
-# Локальный деплой через Ansible
 make delivery-dev
+```
+
+### Пересборка после изменений в коде
+
+```bash
+bash scripts/rebuild-proto.sh              # protoc для gRPC-сервисов (Gateway без proto)
+bash scripts/rebuild-services.sh game analytics gateway
+bash scripts/docker-push-images.sh game analytics gateway
+docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d game analytics gateway gateway-2 gateway-3
+```
 
 ---
 
@@ -193,7 +225,7 @@ make delivery-dev
 | Сервис | Порт | Доступ |
 |--------|------|--------|
 | Prometheus | 9090 | http://localhost:9090 |
-| Grafana | 3000 | http://localhost:3000 (admin/admin) |
+| Grafana | 3000 | http://localhost:3000 (`GRAFANA_ADMIN_PASSWORD`, default admin) |
 | Jaeger | 16686 | http://localhost:16686 |
 | NATS Exporter | 7777 | http://localhost:7777/metrics |
 
@@ -250,12 +282,27 @@ make delivery-dev
 
 ## 📚 Документация
 
-- Архитектура и схемы
-- История релизов
-- Технический долг
-- FAQ
-- CHANGELOG.md
-- Delivery & Deployment
+| Тема | Путь |
+|------|------|
+| Архитектура и схемы | [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) |
+| HTTP API / RBAC | [`confluence/architecture/API_ROUTES.md`](confluence/architecture/API_ROUTES.md) |
+| HTTP status codes | [`confluence/architecture/STATUS_CODES.md`](confluence/architecture/STATUS_CODES.md) |
+| Load resilience | [`confluence/architecture/LOAD_RESILIENCE.md`](confluence/architecture/LOAD_RESILIENCE.md) |
+| Game Outbox | [`confluence/architecture/GAME_OUTBOX.md`](confluence/architecture/GAME_OUTBOX.md) |
+| Patroni HA roadmap | [`deployments/patroni/README.md`](deployments/patroni/README.md) |
+| Issues & fixes (v1.0.8) | [`confluence/history/2026-08/30.08.2026/Issues.md`](confluence/history/2026-08/30.08.2026/Issues.md) |
+| Технический долг | [`confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md`](confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md) |
+| CHANGELOG | [`CHANGELOG.md`](CHANGELOG.md) |
+
+---
+
+## 🔒 Безопасность и доверие
+
+- **Секреты не коммитятся** — скопируй [`.env.example`](.env.example) → `.env`, задай `JWT_SECRET` и `POSTGRES_PASSWORD`.
+- **JWT** — задаётся через `JWT_SECRET`; Auth предупреждает при дефолтном ключе.
+- **Пароли в compose** (`eventhorizon`, Patroni stubs) — только для локальной разработки; в k3s — Kubernetes Secrets.
+- **OpenAPI** — канонический контракт: [`docs/openapi.yaml`](docs/openapi.yaml), Swagger UI на `/docs`.
+- Вопросы по безопасности — Issue или eastwesser@gmail.com.
 
 ---
 
@@ -340,15 +387,28 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: v1.0.7 (19.08.2026)
+Текущая: **v1.0.8** (30.08.2026)
+
+### Что нового в v1.0.8
+
+- **Secrets:** `.env.example`, compose/Patroni/k3s via `${…}` (no hardcoded DB passwords in yaml)
+- **Thin deploy:** `make deploy` = NATS + obs + fulfillment/notification/analytics; Kafka → `make deploy-heavy`
+- **Purchase on NATS:** Shop publishes `purchase.paid`; fulfillment & notification consume JetStream
+- **Gateway:** response cache + `_partial` profile; gRPC InvalidArgument → 400; Boosty HMAC webhook
+- **Frontend Auth:** password min 8 (match Auth); clearer errors
+- **Ops:** game waits for healthy PG; notification `/metrics`; analytics durable names + CH readiness
+- **Tooling:** `scripts/rebuild-*.sh`, `docker-push-images.sh`, `coverage-gate.sh`
+- Issue log: [`Issues.md`](confluence/history/2026-08/30.08.2026/Issues.md)
 
 ### Что нового в v1.0.7
 
 - Payment / Authors / History / Analytics (+ ClickHouse) за Gateway
 - Circuit breaker на всех gRPC-клиентах Gateway
-- Frontend: подписка, авторы, аналитика, Ханойская башня, merch-gate
-- MCP/RAG (stdio) для Cursor
-- OpenAPI: auth refresh / whoami / logout / update-role + новые API
+- Frontend: подписка, авторы, аналитика, Ханойская башня, merch-gate (403 + `subscription_required`)
+- Game **Outbox** для `score.updated` (миграция + worker; пересобери образ `game`)
+- MCP/RAG (stdio) для Cursor · OpenAPI sync (auth refresh / whoami / logout)
+- Patroni Auth **stubs** · ClickHouse Docker-network fix · compose `--env-file .env`
+- Документация: API routes, load resilience, status codes, rebuild scripts
 
 ### Что нового в v1.0.6
 

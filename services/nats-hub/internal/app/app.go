@@ -53,7 +53,11 @@ func New(ctx context.Context) (*App, error) {
 			"score.updated",
 			"user.registered",
 			"shop.purchased",
+			"shop.purchase.failed",
 			"payment.completed",
+			"purchase.paid",
+			"purchase.fulfilled",
+			"author.upserted",
 			"inventory.item.created",
 			"inventory.item.updated",
 			"inventory.item.deleted",
@@ -65,6 +69,11 @@ func New(ctx context.Context) (*App, error) {
 
 	if info, err := js.AddStream(streamConfig); err != nil {
 		a.log.Warn("stream create (may exist)", "err", err)
+		if _, uerr := js.UpdateStream(streamConfig); uerr != nil {
+			a.log.Warn("stream update failed", "err", uerr)
+		} else {
+			a.log.Info("stream EVENTS subjects updated")
+		}
 		if info, err := js.StreamInfo("EVENTS"); err != nil {
 			a.log.Error("stream info failed", "err", err)
 		} else {

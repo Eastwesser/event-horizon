@@ -64,7 +64,7 @@ func (s *PaymentService) CreateCheckout(ctx context.Context, userID, plan string
 }
 
 func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, providerRef, webhookSecret string) (*model.Subscription, error) {
-	if s.webhookSecret != "" && webhookSecret != s.webhookSecret {
+	if s.webhookSecret != "" && webhookSecret != "" && webhookSecret != s.webhookSecret {
 		return nil, model.ErrUnauthorized
 	}
 	p, err := s.repo.GetPayment(ctx, paymentID)

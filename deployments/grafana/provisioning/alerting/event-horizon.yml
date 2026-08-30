@@ -1,0 +1,59 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: event-horizon
+    folder: Event Horizon
+    interval: 1m
+    rules:
+      - uid: eh-gateway-p95
+        title: Gateway p95 latency high
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~"gateway.*"}[5m])) by (le))
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [2] }
+                  operator: { type: and }
+                  reducer: { type: last }
+                  type: query
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Gateway p95 > 2s for 5m
+
+      - uid: eh-circuit-open
+        title: Circuit breaker open
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: max(circuit_breaker_state) by (service) == 1
+              refId: A
+          - refId: C
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  reducer: { type: last }
+                  type: query
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: A service circuit breaker is open

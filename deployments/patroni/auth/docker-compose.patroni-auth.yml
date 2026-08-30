@@ -1,5 +1,8 @@
 # Optional local Patroni pilot for Auth DB (NOT part of make deploy).
 # Uses a dedicated compose project so it does not collide with event-horizon-postgres.
+#
+# Run from repo root:
+#   docker compose --env-file .env -f deployments/patroni/auth/docker-compose.patroni-auth.yml up -d
 
 services:
   etcd:
@@ -23,13 +26,12 @@ services:
       PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-1:5432
       PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
       PATRONI_POSTGRESQL_DATA_DIR: /home/postgres/pgdata
-      PATRONI_SUPERUSER_USERNAME: postgres
-      PATRONI_SUPERUSER_PASSWORD: patroni
-      PATRONI_REPLICATION_USERNAME: replicator
-      PATRONI_REPLICATION_PASSWORD: replicator
-      # App role (stub — create DB/user on first bootstrap if image supports POST_INIT)
-      PATRONI_admin_USERNAME: eventhorizon
-      PATRONI_admin_PASSWORD: eventhorizon
+      PATRONI_SUPERUSER_USERNAME: ${PATRONI_SUPERUSER_USERNAME}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USERNAME}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
+      PATRONI_admin_USERNAME: ${PATRONI_APP_USERNAME}
+      PATRONI_admin_PASSWORD: ${PATRONI_APP_PASSWORD}
     volumes:
       - ./patroni.yml:/etc/patroni/patroni.yml:ro
     depends_on: [etcd]
@@ -48,10 +50,10 @@ services:
       PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-2:5432
       PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
       PATRONI_POSTGRESQL_DATA_DIR: /home/postgres/pgdata
-      PATRONI_SUPERUSER_USERNAME: postgres
-      PATRONI_SUPERUSER_PASSWORD: patroni
-      PATRONI_REPLICATION_USERNAME: replicator
-      PATRONI_REPLICATION_PASSWORD: replicator
+      PATRONI_SUPERUSER_USERNAME: ${PATRONI_SUPERUSER_USERNAME}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USERNAME}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - ./patroni.yml:/etc/patroni/patroni.yml:ro
     depends_on: [etcd]

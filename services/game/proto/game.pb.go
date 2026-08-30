@@ -7,6 +7,7 @@
 package game
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -24,14 +25,14 @@ const (
 type SubmitScoreRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // "hexagon" или "flappy"
-	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`                // уровень сложности (1-5)
-	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`                // добавить счет
+	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	Level         int32                  `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
+	Score         int32                  `protobuf:"varint,4,opt,name=score,proto3" json:"score,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,5,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
 	Nickname      string                 `protobuf:"bytes,6,opt,name=nickname,proto3" json:"nickname,omitempty"`
-	Seed          string                 `protobuf:"bytes,7,opt,name=seed,proto3" json:"seed,omitempty"`                                          // начальное состояние (для валидации)
-	Moves         []*Move                `protobuf:"bytes,8,rep,name=moves,proto3" json:"moves,omitempty"`                                        // все ходы игрока
-	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"` // для отладки (опционально)
+	Seed          string                 `protobuf:"bytes,7,opt,name=seed,proto3" json:"seed,omitempty"`
+	Moves         []*Move                `protobuf:"bytes,8,rep,name=moves,proto3" json:"moves,omitempty"`
+	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -135,7 +136,7 @@ type Move struct {
 	FromY         int32                  `protobuf:"varint,2,opt,name=from_y,json=fromY,proto3" json:"from_y,omitempty"`
 	ToX           int32                  `protobuf:"varint,3,opt,name=to_x,json=toX,proto3" json:"to_x,omitempty"`
 	ToY           int32                  `protobuf:"varint,4,opt,name=to_y,json=toY,proto3" json:"to_y,omitempty"`
-	Timestamp     int32                  `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // ms от начала игры
+	Timestamp     int32                  `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -206,14 +207,13 @@ func (x *Move) GetTimestamp() int32 {
 }
 
 type SubmitScoreResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	Success      bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	NewHighscore int32                  `protobuf:"varint,2,opt,name=new_highscore,json=newHighscore,proto3" json:"new_highscore,omitempty"` // новый рекорд игрока (если побит)
-	Rank         int32                  `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`                                     // место в мировом топе
-	Message      string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	// Награды
-	LampsEarned   int32 `protobuf:"varint,10,opt,name=lamps_earned,json=lampsEarned,proto3" json:"lamps_earned,omitempty"`       // лампочки за активность
-	TicketsEarned int32 `protobuf:"varint,11,opt,name=tickets_earned,json=ticketsEarned,proto3" json:"tickets_earned,omitempty"` // билетики за рекорд
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	NewHighscore  int32                  `protobuf:"varint,2,opt,name=new_highscore,json=newHighscore,proto3" json:"new_highscore,omitempty"`
+	Rank          int32                  `protobuf:"varint,3,opt,name=rank,proto3" json:"rank,omitempty"`
+	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	LampsEarned   int32                  `protobuf:"varint,10,opt,name=lamps_earned,json=lampsEarned,proto3" json:"lamps_earned,omitempty"`
+	TicketsEarned int32                  `protobuf:"varint,11,opt,name=tickets_earned,json=ticketsEarned,proto3" json:"tickets_earned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -405,7 +405,7 @@ func (x *GetGameInfoResponse) GetLevels() []*LevelInfo {
 type LevelInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Level         int32                  `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"`
-	TargetScore   int32                  `protobuf:"varint,2,opt,name=target_score,json=targetScore,proto3" json:"target_score,omitempty"` // сколько очков нужно для прохода
+	TargetScore   int32                  `protobuf:"varint,2,opt,name=target_score,json=targetScore,proto3" json:"target_score,omitempty"`
 	RewardLamps   int32                  `protobuf:"varint,3,opt,name=reward_lamps,json=rewardLamps,proto3" json:"reward_lamps,omitempty"`
 	RewardTickets int32                  `protobuf:"varint,4,opt,name=reward_tickets,json=rewardTickets,proto3" json:"reward_tickets,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -474,18 +474,18 @@ var File_proto_game_proto protoreflect.FileDescriptor
 
 const file_proto_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\"\x8a\x02\n" +
-	"\x12SubmitScoreRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x14\n" +
-	"\x05level\x18\x03 \x01(\x05R\x05level\x12\x14\n" +
-	"\x05score\x18\x04 \x01(\x05R\x05score\x12\x1d\n" +
+	"\x10proto/game.proto\x12\x04game\x1a\x17validate/validate.proto\"\xe0\x02\n" +
+	"\x12SubmitScoreRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12\"\n" +
+	"\agame_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\x12\x1f\n" +
+	"\x05level\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x18d(\x00R\x05level\x12!\n" +
+	"\x05score\x18\x04 \x01(\x05B\v\xfaB\b\x1a\x06\x18\xa0\x8d\x06(\x00R\x05score\x12'\n" +
 	"\n" +
-	"user_email\x18\x05 \x01(\tR\tuserEmail\x12\x1a\n" +
-	"\bnickname\x18\x06 \x01(\tR\bnickname\x12\x12\n" +
-	"\x04seed\x18\a \x01(\tR\x04seed\x12 \n" +
+	"user_email\x18\x05 \x01(\tB\b\xfaB\x05r\x03\x18\xfe\x01R\tuserEmail\x12#\n" +
+	"\bnickname\x18\x06 \x01(\tB\a\xfaB\x04r\x02\x18@R\bnickname\x12\x1c\n" +
+	"\x04seed\x18\a \x01(\tB\b\xfaB\x05r\x03\x18\x80\x01R\x04seed\x12+\n" +
 	"\x05moves\x18\b \x03(\v2\n" +
-	".game.MoveR\x05moves\x12%\n" +
+	".game.MoveB\t\xfaB\x06\x92\x01\x03\x10\x90NR\x05moves\x12%\n" +
 	"\x0eclient_version\x18\n" +
 	" \x01(\x05R\rclientVersion\"x\n" +
 	"\x04Move\x12\x15\n" +
@@ -501,9 +501,9 @@ const file_proto_game_proto_rawDesc = "" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12!\n" +
 	"\flamps_earned\x18\n" +
 	" \x01(\x05R\vlampsEarned\x12%\n" +
-	"\x0etickets_earned\x18\v \x01(\x05R\rticketsEarned\"-\n" +
-	"\x12GetGameInfoRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\"\x8d\x01\n" +
+	"\x0etickets_earned\x18\v \x01(\x05R\rticketsEarned\"8\n" +
+	"\x12GetGameInfoRequest\x12\"\n" +
+	"\agame_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\"\x8d\x01\n" +
 	"\x13GetGameInfoResponse\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +

@@ -1813,3 +1813,29 @@ k6 run e2e-test.js
 ---
 
 **Event Horizon — играй, соревнуйся, побеждай!** 🚀
+---
+
+## [v1.0.8] — 2026-08-30
+
+Patch release: secrets hygiene, thin NATS deploy, purchase path on JetStream, Gateway/login hardening.
+
+### Added
+- `.env.example` + env substitution across compose / Patroni / k3s secrets
+- Thin vs heavy deploy: `make deploy` (NATS + obs + fulfillment/notification/analytics); `make deploy-heavy` (Kafka profile); `make stop-heavy`
+- Shop → NATS `purchase.paid`; fulfillment & notification JetStream consumers (Kafka only if `KAFKA_BROKERS` set)
+- NATS Hub EVENTS subjects: `purchase.paid`, `purchase.fulfilled`, …
+- Gateway response cache (whoami / profile) + `_partial` fallback; Boosty HMAC webhook verify
+- Grafana alerting provisioning; rebuild/push/coverage helper scripts
+- Frontend Auth: password minLength **8** (aligned with Auth service)
+
+### Fixed
+- Empty `POSTGRES_*` / Grafana env on deploy (`${VAR:-eventhorizon}` defaults)
+- Gateway wrapped gRPC `InvalidArgument` → HTTP **400** (was 500 / “connection error”)
+- Game `depends_on` healthy Postgres (Prometheus scrape)
+- Notification `/metrics`; analytics NATS durable names (dashes); ClickHouse readiness race
+- `rebuild-all-backend.sh` no longer requires `task` CLI
+
+### Docs
+- `confluence/history/2026-08/30.08.2026/Issues.md` — full issue/fix index
+- OPTIMIZATION / DB_ISSUES / FRONTEND_STATUS / GitGuardian assessment
+

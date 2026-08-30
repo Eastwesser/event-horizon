@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: analytics.proto
+// source: proto/analytics.proto
 
 package analytics
 
@@ -216,5 +216,5 @@ var AnalyticsService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "analytics.proto",
+	Metadata: "proto/analytics.proto",
 }

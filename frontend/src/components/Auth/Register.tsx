@@ -18,13 +18,14 @@ export function Register() {
 
     try {
       const response = await register(email, password);
-      if (response.data.success) {
-        localStorage.setItem('userId', response.data.userId);
-        alert('✅ Saved userId from register: ' + response.data.userId);
+      const data = response.data;
+      if (data.success) {
+        const uid = data.user_id || data.userId;
+        if (uid) localStorage.setItem('userId', uid);
         setSuccess('Регистрация прошла успешно! Перенаправляем на вход...');
-        setTimeout(() => navigate('/login'), 2000);
+        setTimeout(() => navigate('/login'), 1500);
       } else {
-        const msg = response.data.message;
+        const msg = data.message || data.error;
         if (msg?.includes('already exists')) {
           setError('Пользователь с таким email уже существует');
         } else {
@@ -33,10 +34,13 @@ export function Register() {
       }
     } catch (err: any) {
       const status = err.response?.status;
-      if (status === 409) {
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      if (status === 409 || msg?.includes('already exists')) {
         setError('Пользователь с таким email уже существует');
+      } else if (status === 400 || msg?.includes('password') || msg?.includes('validation')) {
+        setError('Пароль должен быть от 8 до 128 символов');
       } else {
-        setError('Ошибка соединения. Попробуйте позже.');
+        setError(msg || 'Ошибка соединения. Попробуйте позже.');
       }
     } finally {
       setLoading(false);
@@ -58,14 +62,15 @@ export function Register() {
           />
         </div>
         <div>
-          <label>🔒 Пароль (мин. 6 символов):</label>
+          <label>🔒 Пароль (мин. 8 символов):</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••"
+            placeholder="••••••••"
             required
-            minLength={6}
+            minLength={8}
+            maxLength={128}
           />
         </div>
         {error && <div className="error">{error}</div>}
