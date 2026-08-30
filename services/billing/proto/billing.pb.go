@@ -7,6 +7,7 @@
 package billing
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,13 +22,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Валюты
 type CurrencyType int32
 
 const (
 	CurrencyType_CURRENCY_UNSPECIFIED CurrencyType = 0
-	CurrencyType_LAMPS                CurrencyType = 1 // за активность
-	CurrencyType_TICKETS              CurrencyType = 2 // пассивный доход с этажей
+	CurrencyType_LAMPS                CurrencyType = 1
+	CurrencyType_TICKETS              CurrencyType = 2
 )
 
 // Enum value maps for CurrencyType.
@@ -71,7 +71,6 @@ func (CurrencyType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_billing_proto_rawDescGZIP(), []int{0}
 }
 
-// Запрос баланса
 type GetBalanceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -192,7 +191,6 @@ func (x *GetBalanceResponse) GetUpdatedAt() int64 {
 	return 0
 }
 
-// Все балансы
 type GetAllBalancesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -349,14 +347,13 @@ func (x *BalanceEntry) GetUpdatedAt() int64 {
 	return 0
 }
 
-// Начисление валюты
 type AddCurrencyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Currency      CurrencyType           `protobuf:"varint,2,opt,name=currency,proto3,enum=billing.CurrencyType" json:"currency,omitempty"`
 	Amount        int32                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                              // "daily_play", "new_record", "level_up", "purchase"
-	ReferenceId   string                 `protobuf:"bytes,5,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"` // idempotency key (например, "score.event.uuid")
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	ReferenceId   string                 `protobuf:"bytes,5,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -486,15 +483,14 @@ func (x *AddCurrencyResponse) GetMessage() string {
 	return ""
 }
 
-// Списание валюты
 type SpendCurrencyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Currency      CurrencyType           `protobuf:"varint,2,opt,name=currency,proto3,enum=billing.CurrencyType" json:"currency,omitempty"`
 	Amount        int32                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                              // "hint", "reroll", "continue"
-	ReferenceId   string                 `protobuf:"bytes,5,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"` // idempotency key
-	CheckOnly     bool                   `protobuf:"varint,6,opt,name=check_only,json=checkOnly,proto3" json:"check_only,omitempty"`      // 👈 НОВОЕ ПОЛЕ в 1.0.6: если true — только проверка, без списания
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	ReferenceId   string                 `protobuf:"bytes,5,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
+	CheckOnly     bool                   `protobuf:"varint,6,opt,name=check_only,json=checkOnly,proto3" json:"check_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -631,12 +627,11 @@ func (x *SpendCurrencyResponse) GetMessage() string {
 	return ""
 }
 
-// История транзакций
 type GetTransactionHistoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Currency      CurrencyType           `protobuf:"varint,2,opt,name=currency,proto3,enum=billing.CurrencyType" json:"currency,omitempty"`
-	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"` // макс 100
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -856,18 +851,18 @@ var File_proto_billing_proto protoreflect.FileDescriptor
 
 const file_proto_billing_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/billing.proto\x12\abilling\"_\n" +
-	"\x11GetBalanceRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
-	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\"\x99\x01\n" +
+	"\x13proto/billing.proto\x12\abilling\x1a\x17validate/validate.proto\"t\n" +
+	"\x11GetBalanceRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12;\n" +
+	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeB\b\xfaB\x05\x82\x01\x02\x10\x01R\bcurrency\"\x99\x01\n" +
 	"\x12GetBalanceResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
 	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x18\n" +
 	"\abalance\x18\x03 \x01(\x05R\abalance\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x04 \x01(\x03R\tupdatedAt\"0\n" +
-	"\x15GetAllBalancesRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"d\n" +
+	"updated_at\x18\x04 \x01(\x03R\tupdatedAt\";\n" +
+	"\x15GetAllBalancesRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"d\n" +
 	"\x16GetAllBalancesResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
 	"\bbalances\x18\x02 \x03(\v2\x15.billing.BalanceEntryR\bbalances\"z\n" +
@@ -875,36 +870,36 @@ const file_proto_billing_proto_rawDesc = "" +
 	"\bcurrency\x18\x01 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x18\n" +
 	"\abalance\x18\x02 \x01(\x05R\abalance\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x03 \x01(\x03R\tupdatedAt\"\xb3\x01\n" +
-	"\x12AddCurrencyRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
-	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x16\n" +
-	"\x06amount\x18\x03 \x01(\x05R\x06amount\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\x12!\n" +
-	"\freference_id\x18\x05 \x01(\tR\vreferenceId\"j\n" +
+	"updated_at\x18\x03 \x01(\x03R\tupdatedAt\"\xe4\x01\n" +
+	"\x12AddCurrencyRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12;\n" +
+	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeB\b\xfaB\x05\x82\x01\x02\x10\x01R\bcurrency\x12\x1f\n" +
+	"\x06amount\x18\x03 \x01(\x05B\a\xfaB\x04\x1a\x02 \x00R\x06amount\x12\x1f\n" +
+	"\x06reason\x18\x04 \x01(\tB\a\xfaB\x04r\x02\x18@R\x06reason\x12+\n" +
+	"\freference_id\x18\x05 \x01(\tB\b\xfaB\x05r\x03\x18\x80\x01R\vreferenceId\"j\n" +
 	"\x13AddCurrencyResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1f\n" +
 	"\vnew_balance\x18\x02 \x01(\x05R\n" +
 	"newBalance\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\xd4\x01\n" +
-	"\x14SpendCurrencyRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
-	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x16\n" +
-	"\x06amount\x18\x03 \x01(\x05R\x06amount\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\x12!\n" +
-	"\freference_id\x18\x05 \x01(\tR\vreferenceId\x12\x1d\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x85\x02\n" +
+	"\x14SpendCurrencyRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12;\n" +
+	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeB\b\xfaB\x05\x82\x01\x02\x10\x01R\bcurrency\x12\x1f\n" +
+	"\x06amount\x18\x03 \x01(\x05B\a\xfaB\x04\x1a\x02 \x00R\x06amount\x12\x1f\n" +
+	"\x06reason\x18\x04 \x01(\tB\a\xfaB\x04r\x02\x18@R\x06reason\x12+\n" +
+	"\freference_id\x18\x05 \x01(\tB\b\xfaB\x05r\x03\x18\x80\x01R\vreferenceId\x12\x1d\n" +
 	"\n" +
 	"check_only\x18\x06 \x01(\bR\tcheckOnly\"l\n" +
 	"\x15SpendCurrencyResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1f\n" +
 	"\vnew_balance\x18\x02 \x01(\x05R\n" +
 	"newBalance\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x98\x01\n" +
-	"\x1cGetTransactionHistoryRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
-	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x04 \x01(\x05R\x06offset\"o\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xb7\x01\n" +
+	"\x1cGetTransactionHistoryRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x121\n" +
+	"\bcurrency\x18\x02 \x01(\x0e2\x15.billing.CurrencyTypeR\bcurrency\x12\x1f\n" +
+	"\x05limit\x18\x03 \x01(\x05B\t\xfaB\x06\x1a\x04\x18d(\x00R\x05limit\x12\x1f\n" +
+	"\x06offset\x18\x04 \x01(\x05B\a\xfaB\x04\x1a\x02(\x00R\x06offset\"o\n" +
 	"\x1dGetTransactionHistoryResponse\x128\n" +
 	"\ftransactions\x18\x01 \x03(\v2\x14.billing.TransactionR\ftransactions\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"\x80\x02\n" +

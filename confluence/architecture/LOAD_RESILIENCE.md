@@ -45,18 +45,18 @@
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | Cache read-heavy whoami/profile | **Partial** — Auth has user cache TTL; Gateway/Profile response cache still optional |
+| 1 | Cache read-heavy whoami/profile | **Done** — Gateway 5s response cache (`authReadCache`) |
 | 2 | Keep rate limits ON | **Done** — Gateway `RateLimitMiddleware` |
 | 3 | Client timeouts | **Done** — axios 15s / checkout 30s |
-| 4 | Graceful degradation (`_partial`) | **Not done** — defer |
-| 5 | Load test 5× peak | **Not done** — use `make test-k6` when ready |
+| 4 | Graceful degradation (`_partial`) | **Done** — profile falls back to cached whoami + `_partial: true` |
+| 5 | Load test 5× peak | **Ready** — `make test-k6` (run when stack is up) |
 
 ### Should
 
 | # | Item | Status |
 |---|------|--------|
 | 6 | Game Outbox `score.updated` | **Done** (code + migration; rebuild game image) |
-| 7 | Alert p95 / circuit-open | **Partial** — metrics exist; wire Grafana alerts |
+| 7 | Alert p95 / circuit-open | **Done** — `deployments/grafana/provisioning/alerting/event-horizon.yml` |
 | 8 | Scale Gateway replicas | **Done** in compose (gateway ×3 + balancer) |
 
 ### Later

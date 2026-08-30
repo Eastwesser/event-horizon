@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -48,6 +49,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/client"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/config"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
+	gwhook "github.com/Eastwesser/event-horizon/services/gateway/internal/webhook"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
 	historyPb "github.com/Eastwesser/event-horizon/services/history/proto"
 	inventoryPb "github.com/Eastwesser/event-horizon/services/inventory/proto"
@@ -81,6 +83,20 @@ func newServiceBreaker(name string) *circuit.Breaker {
 	})
 }
 
+// appendPartialJSON adds "_partial": true to a cached whoami JSON object.
+func appendPartialJSON(cached []byte) []byte {
+	var m map[string]any
+	if err := json.Unmarshal(cached, &m); err != nil {
+		return cached
+	}
+	m["_partial"] = true
+	b, err := json.Marshal(m)
+	if err != nil {
+		return cached
+	}
+	return b
+}
+
 // throughBreaker runs fn under the circuit breaker. On open circuit writes 503 and returns ErrOpen.
 func throughBreaker(b *circuit.Breaker, c *gin.Context, fn func() (any, error)) (any, error) {
 	out, err := b.Execute(fn)
@@ -95,8 +111,31 @@ func throughBreaker(b *circuit.Breaker, c *gin.Context, fn func() (any, error)) 
 func writeGRPCError(c *gin.Context, err error) {
 	st, ok := status.FromError(err)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		// otel / transport wrappers may lose the typed status; Convert still recovers Code when possible.
+		st = status.Convert(err)
+	}
+	if st.Code() == codes.Unknown {
+		msg := err.Error()
+		switch {
+		case strings.Contains(msg, "InvalidArgument"):
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg, "grpc_code": "InvalidArgument"})
+			return
+		case strings.Contains(msg, "AlreadyExists"):
+			c.JSON(http.StatusConflict, gin.H{"error": msg, "grpc_code": "AlreadyExists"})
+			return
+		case strings.Contains(msg, "NotFound"):
+			c.JSON(http.StatusNotFound, gin.H{"error": msg, "grpc_code": "NotFound"})
+			return
+		case strings.Contains(msg, "Unauthenticated"):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": msg, "grpc_code": "Unauthenticated"})
+			return
+		case strings.Contains(msg, "PermissionDenied"):
+			c.JSON(http.StatusForbidden, gin.H{"error": msg, "grpc_code": "PermissionDenied"})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
 	}
 	code := http.StatusInternalServerError
 	switch st.Code() {
@@ -545,8 +584,21 @@ func runGateway() {
 		})
 	})
 
+	scoreCache := cache.NewScoreCache(2 * time.Second)
+	authReadCache := cache.NewResponseCache(5 * time.Second)
+
+	cacheWhoami := func(token string, payload gin.H) {
+		if b, err := json.Marshal(payload); err == nil {
+			authReadCache.Set("whoami:"+token, b)
+		}
+	}
+
 	r.GET("/api/auth/whoami", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
+		if cached, ok := authReadCache.Get("whoami:" + token); ok {
+			c.Data(http.StatusOK, "application/json", cached)
+			return
+		}
 		out, err := throughBreaker(authCB, c, func() (any, error) {
 			return authClient.GetClient().Whoami(c.Request.Context(), &authPb.WhoamiRequest{AccessToken: token})
 		})
@@ -557,12 +609,14 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authPb.WhoamiResponse)
-		c.JSON(http.StatusOK, gin.H{
+		payload := gin.H{
 			"user_id":  resp.UserId,
 			"email":    resp.Email,
 			"role":     resp.Role,
 			"nickname": resp.Nickname,
-		})
+		}
+		cacheWhoami(token, payload)
+		c.JSON(http.StatusOK, payload)
 	})
 
 	r.POST("/api/auth/logout", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -607,37 +661,14 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"success": resp.Success, "message": resp.Message})
 	})
 
-	scoreCache := cache.NewScoreCache(2 * time.Second)
-
 	r.GET("/api/auth/user", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		userID := middleware.UserID(c)
+		if cached, ok := authReadCache.Get("user:" + userID); ok {
+			c.Data(http.StatusOK, "application/json", cached)
+			return
+		}
 		out, err := throughBreaker(authCB, c, func() (any, error) {
 			return authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{
-				UserId: middleware.UserID(c),
-			})
-		})
-		if err == circuit.ErrOpen {
-			return
-		}
-		if handleRPCError(c, err) {
-			return
-		}
-		resp := out.(*authPb.GetUserResponse)
-
-		c.JSON(http.StatusOK, gin.H{
-			"user_id":     resp.UserId,
-			"email":       resp.Email,
-			"nickname":    resp.Nickname,
-			"best_scores": resp.BestScores,
-			"total_score": resp.TotalScore,
-			"role":        resp.Role,
-		})
-	})
-
-	r.GET("/api/profile", middleware.RequireAuth(authClient), func(c *gin.Context) {
-		userID := middleware.UserID(c)
-
-		out, err := throughBreaker(profileCB, c, func() (any, error) {
-			return profileClient.GetProfile(c.Request.Context(), &profilePb.GetProfileRequest{
 				UserId: userID,
 			})
 		})
@@ -647,8 +678,57 @@ func runGateway() {
 		if handleRPCError(c, err) {
 			return
 		}
+		resp := out.(*authPb.GetUserResponse)
+		payload := gin.H{
+			"user_id":     resp.UserId,
+			"email":       resp.Email,
+			"nickname":    resp.Nickname,
+			"best_scores": resp.BestScores,
+			"total_score": resp.TotalScore,
+			"role":        resp.Role,
+		}
+		if b, err := json.Marshal(payload); err == nil {
+			authReadCache.Set("user:"+userID, b)
+		}
+		c.JSON(http.StatusOK, payload)
+	})
+
+	r.GET("/api/profile", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		userID := middleware.UserID(c)
+		token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
+
+		if cached, ok := authReadCache.Get("profile:" + userID); ok {
+			c.Data(http.StatusOK, "application/json", cached)
+			return
+		}
+
+		out, err := throughBreaker(profileCB, c, func() (any, error) {
+			return profileClient.GetProfile(c.Request.Context(), &profilePb.GetProfileRequest{
+				UserId: userID,
+			})
+		})
+		if err == circuit.ErrOpen {
+			if cached, ok := authReadCache.Get("whoami:" + token); ok {
+				c.Data(http.StatusOK, "application/json", appendPartialJSON(cached))
+				return
+			}
+			return
+		}
+		if handleRPCError(c, err) {
+			if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
+				if cached, ok := authReadCache.Get("whoami:" + token); ok {
+					c.Data(http.StatusOK, "application/json", appendPartialJSON(cached))
+					return
+				}
+			}
+			return
+		}
 		resp := out.(*profilePb.GetProfileResponse)
 
+		b, err := json.Marshal(resp)
+		if err == nil {
+			authReadCache.Set("profile:"+userID, b)
+		}
 		c.JSON(http.StatusOK, resp)
 	})
 
@@ -841,18 +921,28 @@ func runGateway() {
 	})
 
 	r.POST("/api/payment/webhook", func(c *gin.Context) {
+		raw, err := c.GetRawData()
+		if err != nil || len(raw) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "empty body"})
+			return
+		}
+		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+
+		sig := c.GetHeader("X-Boosty-Signature")
+		if sig == "" {
+			sig = c.GetHeader("X-Hub-Signature-256")
+		}
+
 		var req struct {
 			PaymentID       string `json:"payment_id"`
 			ProviderRef     string `json:"provider_ref"`
 			WebhookSecret   string `json:"webhook_secret"`
 			WebhookSecretCW string `json:"webhookSecret"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil || req.PaymentID == "" {
+		if err := json.Unmarshal(raw, &req); err != nil || req.PaymentID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "payment_id is required"})
 			return
 		}
-		// Boosty webhook payload formats can differ slightly (snake_case vs camelCase,
-		// body vs headers/query). We try multiple sources to avoid breaking the integration.
 		webhookSecret := req.WebhookSecret
 		if webhookSecret == "" {
 			webhookSecret = req.WebhookSecretCW
@@ -865,6 +955,10 @@ func runGateway() {
 		}
 		if webhookSecret == "" {
 			webhookSecret = c.Query("webhook_secret")
+		}
+		if err := gwhook.Authorize(cfg.PaymentWebhookSecret, webhookSecret, raw, sig); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
 		out, err := throughBreaker(paymentCB, c, func() (any, error) {
 			return paymentClient.ConfirmPayment(c.Request.Context(), &paymentPb.ConfirmPaymentRequest{

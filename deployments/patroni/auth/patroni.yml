@@ -1,4 +1,5 @@
-# STUB Patroni config — values overridden by env in compose where possible.
+# STUB Patroni config — passwords come from PATRONI_* env vars in compose / k8s Secrets.
+# Do not put real credentials in this file.
 scope: eh-auth
 namespace: /eventhorizon/
 name: patroni-node
@@ -19,25 +20,14 @@ bootstrap:
   initdb:
     - encoding: UTF8
     - data-checksums
-  users:
-    eventhorizon:
-      password: eventhorizon
-      options:
-        - createrole
-        - createdb
+  # App user password: PATRONI_APP_USERNAME / PATRONI_APP_PASSWORD (compose) or k8s Secret
 
 postgresql:
   listen: 0.0.0.0:5432
   connect_address: 127.0.0.1:5432
   data_dir: /home/postgres/pgdata
   pgpass: /tmp/pgpass
-  authentication:
-    replication:
-      username: replicator
-      password: replicator
-    superuser:
-      username: postgres
-      password: patroni
+  # authentication.* — overridden by PATRONI_SUPERUSER_* / PATRONI_REPLICATION_* env
   parameters:
     max_connections: 100
     shared_buffers: 128MB

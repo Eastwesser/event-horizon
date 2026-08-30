@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: history.proto
+// source: proto/history.proto
 
 package history
 
@@ -34,7 +34,7 @@ type HistoryEvent struct {
 
 func (x *HistoryEvent) Reset() {
 	*x = HistoryEvent{}
-	mi := &file_history_proto_msgTypes[0]
+	mi := &file_proto_history_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *HistoryEvent) String() string {
 func (*HistoryEvent) ProtoMessage() {}
 
 func (x *HistoryEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_history_proto_msgTypes[0]
+	mi := &file_proto_history_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *HistoryEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistoryEvent.ProtoReflect.Descriptor instead.
 func (*HistoryEvent) Descriptor() ([]byte, []int) {
-	return file_history_proto_rawDescGZIP(), []int{0}
+	return file_proto_history_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *HistoryEvent) GetId() string {
@@ -108,7 +108,7 @@ type RecordEventRequest struct {
 
 func (x *RecordEventRequest) Reset() {
 	*x = RecordEventRequest{}
-	mi := &file_history_proto_msgTypes[1]
+	mi := &file_proto_history_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -120,7 +120,7 @@ func (x *RecordEventRequest) String() string {
 func (*RecordEventRequest) ProtoMessage() {}
 
 func (x *RecordEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_history_proto_msgTypes[1]
+	mi := &file_proto_history_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -133,7 +133,7 @@ func (x *RecordEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordEventRequest.ProtoReflect.Descriptor instead.
 func (*RecordEventRequest) Descriptor() ([]byte, []int) {
-	return file_history_proto_rawDescGZIP(), []int{1}
+	return file_proto_history_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RecordEventRequest) GetUserId() string {
@@ -166,7 +166,7 @@ type RecordEventResponse struct {
 
 func (x *RecordEventResponse) Reset() {
 	*x = RecordEventResponse{}
-	mi := &file_history_proto_msgTypes[2]
+	mi := &file_proto_history_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -178,7 +178,7 @@ func (x *RecordEventResponse) String() string {
 func (*RecordEventResponse) ProtoMessage() {}
 
 func (x *RecordEventResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_history_proto_msgTypes[2]
+	mi := &file_proto_history_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -191,7 +191,7 @@ func (x *RecordEventResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordEventResponse.ProtoReflect.Descriptor instead.
 func (*RecordEventResponse) Descriptor() ([]byte, []int) {
-	return file_history_proto_rawDescGZIP(), []int{2}
+	return file_proto_history_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RecordEventResponse) GetEventId() string {
@@ -213,7 +213,7 @@ type ListEventsRequest struct {
 
 func (x *ListEventsRequest) Reset() {
 	*x = ListEventsRequest{}
-	mi := &file_history_proto_msgTypes[3]
+	mi := &file_proto_history_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -225,7 +225,7 @@ func (x *ListEventsRequest) String() string {
 func (*ListEventsRequest) ProtoMessage() {}
 
 func (x *ListEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_history_proto_msgTypes[3]
+	mi := &file_proto_history_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -238,7 +238,7 @@ func (x *ListEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEventsRequest.ProtoReflect.Descriptor instead.
 func (*ListEventsRequest) Descriptor() ([]byte, []int) {
-	return file_history_proto_rawDescGZIP(), []int{3}
+	return file_proto_history_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListEventsRequest) GetUserId() string {
@@ -279,7 +279,7 @@ type ListEventsResponse struct {
 
 func (x *ListEventsResponse) Reset() {
 	*x = ListEventsResponse{}
-	mi := &file_history_proto_msgTypes[4]
+	mi := &file_proto_history_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -291,7 +291,7 @@ func (x *ListEventsResponse) String() string {
 func (*ListEventsResponse) ProtoMessage() {}
 
 func (x *ListEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_history_proto_msgTypes[4]
+	mi := &file_proto_history_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -304,7 +304,7 @@ func (x *ListEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEventsResponse.ProtoReflect.Descriptor instead.
 func (*ListEventsResponse) Descriptor() ([]byte, []int) {
-	return file_history_proto_rawDescGZIP(), []int{4}
+	return file_proto_history_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListEventsResponse) GetEvents() []*HistoryEvent {
@@ -321,11 +321,11 @@ func (x *ListEventsResponse) GetTotal() int64 {
 	return 0
 }
 
-var File_history_proto protoreflect.FileDescriptor
+var File_proto_history_proto protoreflect.FileDescriptor
 
-const file_history_proto_rawDesc = "" +
+const file_proto_history_proto_rawDesc = "" +
 	"\n" +
-	"\rhistory.proto\x12\ahistory\"\xa1\x01\n" +
+	"\x13proto/history.proto\x12\ahistory\"\xa1\x01\n" +
 	"\fHistoryEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
@@ -355,26 +355,26 @@ const file_history_proto_rawDesc = "" +
 	"ListEvents\x12\x1a.history.ListEventsRequest\x1a\x1b.history.ListEventsResponseBDZBgithub.com/Eastwesser/event-horizon/services/history/proto;historyb\x06proto3"
 
 var (
-	file_history_proto_rawDescOnce sync.Once
-	file_history_proto_rawDescData []byte
+	file_proto_history_proto_rawDescOnce sync.Once
+	file_proto_history_proto_rawDescData []byte
 )
 
-func file_history_proto_rawDescGZIP() []byte {
-	file_history_proto_rawDescOnce.Do(func() {
-		file_history_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_history_proto_rawDesc), len(file_history_proto_rawDesc)))
+func file_proto_history_proto_rawDescGZIP() []byte {
+	file_proto_history_proto_rawDescOnce.Do(func() {
+		file_proto_history_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_history_proto_rawDesc), len(file_proto_history_proto_rawDesc)))
 	})
-	return file_history_proto_rawDescData
+	return file_proto_history_proto_rawDescData
 }
 
-var file_history_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_history_proto_goTypes = []any{
+var file_proto_history_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_proto_history_proto_goTypes = []any{
 	(*HistoryEvent)(nil),        // 0: history.HistoryEvent
 	(*RecordEventRequest)(nil),  // 1: history.RecordEventRequest
 	(*RecordEventResponse)(nil), // 2: history.RecordEventResponse
 	(*ListEventsRequest)(nil),   // 3: history.ListEventsRequest
 	(*ListEventsResponse)(nil),  // 4: history.ListEventsResponse
 }
-var file_history_proto_depIdxs = []int32{
+var file_proto_history_proto_depIdxs = []int32{
 	0, // 0: history.ListEventsResponse.events:type_name -> history.HistoryEvent
 	1, // 1: history.HistoryService.RecordEvent:input_type -> history.RecordEventRequest
 	3, // 2: history.HistoryService.ListEvents:input_type -> history.ListEventsRequest
@@ -387,26 +387,26 @@ var file_history_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_history_proto_init() }
-func file_history_proto_init() {
-	if File_history_proto != nil {
+func init() { file_proto_history_proto_init() }
+func file_proto_history_proto_init() {
+	if File_proto_history_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_history_proto_rawDesc), len(file_history_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_history_proto_rawDesc), len(file_proto_history_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_history_proto_goTypes,
-		DependencyIndexes: file_history_proto_depIdxs,
-		MessageInfos:      file_history_proto_msgTypes,
+		GoTypes:           file_proto_history_proto_goTypes,
+		DependencyIndexes: file_proto_history_proto_depIdxs,
+		MessageInfos:      file_proto_history_proto_msgTypes,
 	}.Build()
-	File_history_proto = out.File
-	file_history_proto_goTypes = nil
-	file_history_proto_depIdxs = nil
+	File_proto_history_proto = out.File
+	file_proto_history_proto_goTypes = nil
+	file_proto_history_proto_depIdxs = nil
 }

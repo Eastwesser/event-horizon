@@ -7,6 +7,7 @@
 package profile
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -281,9 +282,9 @@ var File_proto_profile_proto protoreflect.FileDescriptor
 
 const file_proto_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/profile.proto\x12\aprofile\",\n" +
-	"\x11GetProfileRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xbd\x02\n" +
+	"\x13proto/profile.proto\x12\aprofile\x1a\x17validate/validate.proto\"7\n" +
+	"\x11GetProfileRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"\xbd\x02\n" +
 	"\x12GetProfileResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -296,10 +297,10 @@ const file_proto_profile_proto_rawDesc = "" +
 	"\atickets\x18\a \x01(\x05R\atickets\x1a=\n" +
 	"\x0fBestScoresEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\x90\x02\n" +
-	"\x14UpdateProfileRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
-	"\bnickname\x18\x02 \x01(\tR\bnickname\x12$\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\xa4\x02\n" +
+	"\x14UpdateProfileRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12#\n" +
+	"\bnickname\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x18@R\bnickname\x12$\n" +
 	"\vtotal_score\x18\x03 \x01(\x05H\x00R\n" +
 	"totalScore\x88\x01\x01\x12N\n" +
 	"\vbest_scores\x18\x04 \x03(\v2-.profile.UpdateProfileRequest.BestScoresEntryR\n" +

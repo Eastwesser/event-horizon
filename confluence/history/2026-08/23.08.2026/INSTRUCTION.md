@@ -14,6 +14,8 @@ Update this if needeed: /home/denismatveev/event_horizon/deployments/patroni/aut
 
 ALso update all patroni related files and  services: /home/denismatveev/event_horizon/deployments/patroni
 
+**Status (26.08.2026):** see [`INSTRUCTION_STATUS.md`](INSTRUCTION_STATUS.md)
+
 ___
 cd services/game
 protoc --go_out=. --go_opt=paths=source_relative \
@@ -25,10 +27,7 @@ protoc --go_out=. --go_opt=paths=source_relative \
        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
        proto/analytics.proto
 
-cd services/gateway
-protoc --go_out=. --go_opt=paths=source_relative \
-       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-       proto/gateway.proto
+# Gateway has NO proto/gateway.proto — HTTP only. Use scripts/rebuild-proto.sh instead.
 
 
 Nghh, help me to rebuild protofiles and binaries, my commands may be ruined (((

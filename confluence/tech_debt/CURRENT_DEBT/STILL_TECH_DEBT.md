@@ -11,26 +11,7 @@ This file enumerates the “audit exclusions” from `TODO_FINAL_LIST.md` and ma
 See `confluence/architecture/GAME_OUTBOX.md`.
 
 ### 1) Live Boosty signature verification
-**Status:** partial (shared secret equality check), not full Boosty signature verification. Boosty treated as secondary/manual path.
-
-**What exists now**
-- `POST /api/payment/webhook` ultimately calls `PaymentService.ConfirmPayment(..., webhookSecret)` and compares it to `PAYMENT_WEBHOOK_SECRET`.
-- Evidence:
-  - `services/payment/internal/service/payment_service.go` uses:
-    - `if s.webhookSecret != "" && webhookSecret != s.webhookSecret { return nil, model.ErrUnauthorized }`
-  - gRPC handler passes the request field `webhook_secret`:
-    - `services/payment/internal/handler/grpc_handler.go` `ConfirmPayment(... req.GetWebhookSecret())`
-  - Config field:
-    - `services/payment/internal/config/config.go` `WebhookSecret`
-
-**What’s missing**
-- No HMAC/signature verification flow (e.g. validating Boosty-provided signature header(s), timestamp/replay protection, canonical payload).
-
-**Target outcome**
-- Implement Boosty’s official signature verification:
-  - verify signature using Boosty scheme (HMAC/secret + payload),
-  - validate timestamp/nonce if required,
-  - reject replayed/incorrect requests.
+**Status:** done at Gateway (26.08.2026). HMAC-SHA256 via `X-Boosty-Signature` / `X-Hub-Signature-256` or shared `webhook_secret`; constant-time compare. Payment service still accepts matching `PAYMENT_WEBHOOK_SECRET` on gRPC path.
 
 ### 2) ≥70% coverage across whole services (enforcement + remaining gaps)
 **Status:** not fully achieved / not enforced by CI.

@@ -29,9 +29,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon"
         - name: REDIS_ADDR
@@ -57,9 +63,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon_billing"
         - name: REDIS_ADDR
@@ -80,9 +92,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon_game"
 
@@ -103,9 +121,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon_leaderboard"
 
@@ -126,9 +150,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon_profile"
         - name: REDIS_ADDR
@@ -151,9 +181,15 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: DB_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: DB_NAME
           value: "eventhorizon_shop"
         - name: REDIS_ADDR
@@ -178,9 +214,15 @@ spec:
         - name: INVENTORY_PG_PORT
           value: "5432"
         - name: INVENTORY_PG_USER
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_USER
         - name: INVENTORY_PG_PASSWORD
-          value: "eventhorizon"
+          valueFrom:
+            secretKeyRef:
+              name: event-horizon-auth-secrets
+              key: POSTGRES_PASSWORD
         - name: INVENTORY_PG_DB
           value: "eventhorizon_inventory"
         - name: INVENTORY_REDIS_ADDR

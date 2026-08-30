@@ -27,9 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GameServiceClient interface {
-	// Отправка результата игры с полной валидацией
 	SubmitScore(ctx context.Context, in *SubmitScoreRequest, opts ...grpc.CallOption) (*SubmitScoreResponse, error)
-	// Получение информации об игре (уровни, правила)
 	GetGameInfo(ctx context.Context, in *GetGameInfoRequest, opts ...grpc.CallOption) (*GetGameInfoResponse, error)
 }
 
@@ -63,9 +61,7 @@ func (c *gameServiceClient) GetGameInfo(ctx context.Context, in *GetGameInfoRequ
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility
 type GameServiceServer interface {
-	// Отправка результата игры с полной валидацией
 	SubmitScore(context.Context, *SubmitScoreRequest) (*SubmitScoreResponse, error)
-	// Получение информации об игре (уровни, правила)
 	GetGameInfo(context.Context, *GetGameInfoRequest) (*GetGameInfoResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }

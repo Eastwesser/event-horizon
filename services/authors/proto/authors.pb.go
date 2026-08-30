@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: authors.proto
+// source: proto/authors.proto
 
 package authors
 
@@ -37,7 +37,7 @@ type Author struct {
 
 func (x *Author) Reset() {
 	*x = Author{}
-	mi := &file_authors_proto_msgTypes[0]
+	mi := &file_proto_authors_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -49,7 +49,7 @@ func (x *Author) String() string {
 func (*Author) ProtoMessage() {}
 
 func (x *Author) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[0]
+	mi := &file_proto_authors_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -62,7 +62,7 @@ func (x *Author) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Author.ProtoReflect.Descriptor instead.
 func (*Author) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{0}
+	return file_proto_authors_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Author) GetId() string {
@@ -133,7 +133,7 @@ type UpsertProfileRequest struct {
 
 func (x *UpsertProfileRequest) Reset() {
 	*x = UpsertProfileRequest{}
-	mi := &file_authors_proto_msgTypes[1]
+	mi := &file_proto_authors_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -145,7 +145,7 @@ func (x *UpsertProfileRequest) String() string {
 func (*UpsertProfileRequest) ProtoMessage() {}
 
 func (x *UpsertProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[1]
+	mi := &file_proto_authors_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,7 +158,7 @@ func (x *UpsertProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpsertProfileRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{1}
+	return file_proto_authors_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *UpsertProfileRequest) GetUserId() string {
@@ -198,7 +198,7 @@ type UpsertProfileResponse struct {
 
 func (x *UpsertProfileResponse) Reset() {
 	*x = UpsertProfileResponse{}
-	mi := &file_authors_proto_msgTypes[2]
+	mi := &file_proto_authors_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +210,7 @@ func (x *UpsertProfileResponse) String() string {
 func (*UpsertProfileResponse) ProtoMessage() {}
 
 func (x *UpsertProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[2]
+	mi := &file_proto_authors_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +223,7 @@ func (x *UpsertProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertProfileResponse.ProtoReflect.Descriptor instead.
 func (*UpsertProfileResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{2}
+	return file_proto_authors_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpsertProfileResponse) GetAuthor() *Author {
@@ -242,7 +242,7 @@ type GetAuthorRequest struct {
 
 func (x *GetAuthorRequest) Reset() {
 	*x = GetAuthorRequest{}
-	mi := &file_authors_proto_msgTypes[3]
+	mi := &file_proto_authors_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +254,7 @@ func (x *GetAuthorRequest) String() string {
 func (*GetAuthorRequest) ProtoMessage() {}
 
 func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[3]
+	mi := &file_proto_authors_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +267,7 @@ func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorRequest.ProtoReflect.Descriptor instead.
 func (*GetAuthorRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{3}
+	return file_proto_authors_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetAuthorRequest) GetUserId() string {
@@ -286,7 +286,7 @@ type GetAuthorResponse struct {
 
 func (x *GetAuthorResponse) Reset() {
 	*x = GetAuthorResponse{}
-	mi := &file_authors_proto_msgTypes[4]
+	mi := &file_proto_authors_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -298,7 +298,7 @@ func (x *GetAuthorResponse) String() string {
 func (*GetAuthorResponse) ProtoMessage() {}
 
 func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[4]
+	mi := &file_proto_authors_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +311,7 @@ func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorResponse.ProtoReflect.Descriptor instead.
 func (*GetAuthorResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{4}
+	return file_proto_authors_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetAuthorResponse) GetAuthor() *Author {
@@ -331,7 +331,7 @@ type ListAuthorsRequest struct {
 
 func (x *ListAuthorsRequest) Reset() {
 	*x = ListAuthorsRequest{}
-	mi := &file_authors_proto_msgTypes[5]
+	mi := &file_proto_authors_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -343,7 +343,7 @@ func (x *ListAuthorsRequest) String() string {
 func (*ListAuthorsRequest) ProtoMessage() {}
 
 func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[5]
+	mi := &file_proto_authors_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +356,7 @@ func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsRequest.ProtoReflect.Descriptor instead.
 func (*ListAuthorsRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{5}
+	return file_proto_authors_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListAuthorsRequest) GetLimit() int32 {
@@ -383,7 +383,7 @@ type ListAuthorsResponse struct {
 
 func (x *ListAuthorsResponse) Reset() {
 	*x = ListAuthorsResponse{}
-	mi := &file_authors_proto_msgTypes[6]
+	mi := &file_proto_authors_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +395,7 @@ func (x *ListAuthorsResponse) String() string {
 func (*ListAuthorsResponse) ProtoMessage() {}
 
 func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[6]
+	mi := &file_proto_authors_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +408,7 @@ func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsResponse.ProtoReflect.Descriptor instead.
 func (*ListAuthorsResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{6}
+	return file_proto_authors_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListAuthorsResponse) GetAuthors() []*Author {
@@ -425,11 +425,11 @@ func (x *ListAuthorsResponse) GetTotal() int64 {
 	return 0
 }
 
-var File_authors_proto protoreflect.FileDescriptor
+var File_proto_authors_proto protoreflect.FileDescriptor
 
-const file_authors_proto_rawDesc = "" +
+const file_proto_authors_proto_rawDesc = "" +
 	"\n" +
-	"\rauthors.proto\x12\aauthors\"\xed\x01\n" +
+	"\x13proto/authors.proto\x12\aauthors\"\xed\x01\n" +
 	"\x06Author\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12!\n" +
@@ -464,19 +464,19 @@ const file_authors_proto_rawDesc = "" +
 	"\vListAuthors\x12\x1b.authors.ListAuthorsRequest\x1a\x1c.authors.ListAuthorsResponseBDZBgithub.com/Eastwesser/event-horizon/services/authors/proto;authorsb\x06proto3"
 
 var (
-	file_authors_proto_rawDescOnce sync.Once
-	file_authors_proto_rawDescData []byte
+	file_proto_authors_proto_rawDescOnce sync.Once
+	file_proto_authors_proto_rawDescData []byte
 )
 
-func file_authors_proto_rawDescGZIP() []byte {
-	file_authors_proto_rawDescOnce.Do(func() {
-		file_authors_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authors_proto_rawDesc), len(file_authors_proto_rawDesc)))
+func file_proto_authors_proto_rawDescGZIP() []byte {
+	file_proto_authors_proto_rawDescOnce.Do(func() {
+		file_proto_authors_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_authors_proto_rawDesc), len(file_proto_authors_proto_rawDesc)))
 	})
-	return file_authors_proto_rawDescData
+	return file_proto_authors_proto_rawDescData
 }
 
-var file_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_authors_proto_goTypes = []any{
+var file_proto_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_authors_proto_goTypes = []any{
 	(*Author)(nil),                // 0: authors.Author
 	(*UpsertProfileRequest)(nil),  // 1: authors.UpsertProfileRequest
 	(*UpsertProfileResponse)(nil), // 2: authors.UpsertProfileResponse
@@ -485,7 +485,7 @@ var file_authors_proto_goTypes = []any{
 	(*ListAuthorsRequest)(nil),    // 5: authors.ListAuthorsRequest
 	(*ListAuthorsResponse)(nil),   // 6: authors.ListAuthorsResponse
 }
-var file_authors_proto_depIdxs = []int32{
+var file_proto_authors_proto_depIdxs = []int32{
 	0, // 0: authors.UpsertProfileResponse.author:type_name -> authors.Author
 	0, // 1: authors.GetAuthorResponse.author:type_name -> authors.Author
 	0, // 2: authors.ListAuthorsResponse.authors:type_name -> authors.Author
@@ -502,26 +502,26 @@ var file_authors_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_authors_proto_init() }
-func file_authors_proto_init() {
-	if File_authors_proto != nil {
+func init() { file_proto_authors_proto_init() }
+func file_proto_authors_proto_init() {
+	if File_proto_authors_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authors_proto_rawDesc), len(file_authors_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_authors_proto_rawDesc), len(file_proto_authors_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_authors_proto_goTypes,
-		DependencyIndexes: file_authors_proto_depIdxs,
-		MessageInfos:      file_authors_proto_msgTypes,
+		GoTypes:           file_proto_authors_proto_goTypes,
+		DependencyIndexes: file_proto_authors_proto_depIdxs,
+		MessageInfos:      file_proto_authors_proto_msgTypes,
 	}.Build()
-	File_authors_proto = out.File
-	file_authors_proto_goTypes = nil
-	file_authors_proto_depIdxs = nil
+	File_proto_authors_proto = out.File
+	file_proto_authors_proto_goTypes = nil
+	file_proto_authors_proto_depIdxs = nil
 }

@@ -23,6 +23,9 @@ type Config struct {
     // Infrastructure
     NATSUrl   string
     RedisAddr string
+
+    // Payment webhook (Boosty / manual confirm)
+    PaymentWebhookSecret string
 }
 
 func Load() *Config {
@@ -40,8 +43,9 @@ func Load() *Config {
         AuthorsAddr:     getEnv("AUTHORS_ADDR", "authors:50061"),
         HistoryAddr:     getEnv("HISTORY_ADDR", "history:50062"),
         AnalyticsAddr:   getEnv("ANALYTICS_ADDR", "analytics:50057"),
-        NATSUrl:         getEnv("NATS_URL", "nats://localhost:4222"),
-        RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
+        NATSUrl:              getEnv("NATS_URL", "nats://localhost:4222"),
+        RedisAddr:            getEnv("REDIS_ADDR", "localhost:6379"),
+        PaymentWebhookSecret: getEnv("PAYMENT_WEBHOOK_SECRET", ""),
     }
 }
 

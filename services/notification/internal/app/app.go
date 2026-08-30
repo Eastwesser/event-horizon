@@ -9,11 +9,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nats-io/nats.go"
+
 	"github.com/Eastwesser/event-horizon/platform/pkg/closer"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
 	"github.com/Eastwesser/event-horizon/services/notification/internal/config"
 	"github.com/Eastwesser/event-horizon/services/notification/internal/service"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type App struct {
@@ -22,6 +25,8 @@ type App struct {
 	closer   *closer.Closer
 	consumer kafka.Consumer
 	notifier *service.Notifier
+	nc       *nats.Conn
+	js       nats.JetStreamContext
 	http     *http.Server
 }
 
@@ -48,14 +53,32 @@ func New(ctx context.Context) (*App, error) {
 	a.closer.AddNamed("kafka consumer", func(context.Context) error { return a.consumer.Close() })
 	a.notifier = service.NewNotifier(log, cfg.TelegramToken, cfg.TelegramChatID)
 
+	if cfg.NATSURL != "" {
+		nc, err := nats.Connect(cfg.NATSURL)
+		if err != nil {
+			a.log.Warn("nats connect failed; Kafka-only path", "err", err)
+		} else {
+			js, err := nc.JetStream()
+			if err != nil {
+				a.log.Warn("jetstream failed", "err", err)
+				_ = nc.Drain()
+			} else {
+				a.nc = nc
+				a.js = js
+				a.closer.AddNamed("nats", func(context.Context) error { return nc.Drain() })
+				a.log.Info("nats connected", "url", cfg.NATSURL)
+			}
+		}
+	}
+
 	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "service": "notification"})
 	})
 	mux.HandleFunc("/ready", func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ready", "service": "notification"})
 	})
-	// Telegram bot /start (simple webhook/polls placeholder HTTP)
 	mux.HandleFunc("/start", func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"message": "Welcome to Event Horizon notifications bot",
@@ -76,18 +99,51 @@ func (a *App) RunUntilSignal(ctx context.Context) error {
 			a.log.Error("http error", "err", err)
 		}
 	}()
-	go func() {
-		a.log.Info("notification consuming purchase topics")
-		if err := a.consumer.Consume(runCtx, a.notifier.Handle); err != nil && runCtx.Err() == nil {
-			a.log.Error("consume stopped", "err", err)
-		}
-	}()
+
+	if a.js != nil {
+		go a.consumeNATS(runCtx)
+	}
+	if a.cfg.KafkaBrokers != "" {
+		go func() {
+			a.log.Info("notification consuming Kafka purchase topics")
+			if err := a.consumer.Consume(runCtx, a.notifier.Handle); err != nil && runCtx.Err() == nil {
+				a.log.Error("kafka consume stopped", "err", err)
+			}
+		}()
+	}
+
 	if err := a.closer.WaitSignal(ctx); err != nil {
 		cancel()
 		return fmt.Errorf("shutdown: %w", err)
 	}
 	cancel()
 	return nil
+}
+
+func (a *App) consumeNATS(ctx context.Context) {
+	subjects := []string{kafka.TopicPurchasePaid, kafka.TopicPurchaseFulfilled}
+	for _, subj := range subjects {
+		s := subj
+		durable := "notification-" + strings.ReplaceAll(s, ".", "-")
+		_, err := a.js.Subscribe(s, func(msg *nats.Msg) {
+			err := a.notifier.Handle(ctx, kafka.Message{
+				Topic: msg.Subject,
+				Value: msg.Data,
+			})
+			if err != nil {
+				a.log.Error("notify handle", "subject", msg.Subject, "err", err)
+				_ = msg.Nak()
+				return
+			}
+			_ = msg.Ack()
+		}, nats.Durable(durable), nats.ManualAck())
+		if err != nil {
+			a.log.Error("nats subscribe failed", "subject", s, "err", err)
+		} else {
+			a.log.Info("notification consuming NATS", "subject", s, "durable", durable)
+		}
+	}
+	<-ctx.Done()
 }
 
 func (a *App) Close(ctx context.Context) error { return a.closer.CloseAll(ctx) }

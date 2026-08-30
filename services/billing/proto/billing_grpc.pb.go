@@ -30,15 +30,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BillingServiceClient interface {
-	// Получить баланс пользователя по типу валюты
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
-	// Получить все балансы пользователя
 	GetAllBalances(ctx context.Context, in *GetAllBalancesRequest, opts ...grpc.CallOption) (*GetAllBalancesResponse, error)
-	// Начислить валюту (внутренний вызов)
 	AddCurrency(ctx context.Context, in *AddCurrencyRequest, opts ...grpc.CallOption) (*AddCurrencyResponse, error)
-	// Списать валюту (внутренний вызов)
 	SpendCurrency(ctx context.Context, in *SpendCurrencyRequest, opts ...grpc.CallOption) (*SpendCurrencyResponse, error)
-	// Получить историю транзакций
 	GetTransactionHistory(ctx context.Context, in *GetTransactionHistoryRequest, opts ...grpc.CallOption) (*GetTransactionHistoryResponse, error)
 }
 
@@ -99,15 +94,10 @@ func (c *billingServiceClient) GetTransactionHistory(ctx context.Context, in *Ge
 // All implementations must embed UnimplementedBillingServiceServer
 // for forward compatibility
 type BillingServiceServer interface {
-	// Получить баланс пользователя по типу валюты
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
-	// Получить все балансы пользователя
 	GetAllBalances(context.Context, *GetAllBalancesRequest) (*GetAllBalancesResponse, error)
-	// Начислить валюту (внутренний вызов)
 	AddCurrency(context.Context, *AddCurrencyRequest) (*AddCurrencyResponse, error)
-	// Списать валюту (внутренний вызов)
 	SpendCurrency(context.Context, *SpendCurrencyRequest) (*SpendCurrencyResponse, error)
-	// Получить историю транзакций
 	GetTransactionHistory(context.Context, *GetTransactionHistoryRequest) (*GetTransactionHistoryResponse, error)
 	mustEmbedUnimplementedBillingServiceServer()
 }

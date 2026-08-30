@@ -7,6 +7,7 @@
 package shop
 
 import (
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -27,12 +28,12 @@ type Item struct {
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Price         int32                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
-	Category      string                 `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`           // 'game_skin', 'merch', 'profile_theme'
-	GameId        string                 `protobuf:"bytes,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // 'flappy', 'hexagon', null для мерча
+	Category      string                 `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`
+	GameId        string                 `protobuf:"bytes,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	ImageUrl      string                 `protobuf:"bytes,7,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
 	Available     bool                   `protobuf:"varint,8,opt,name=available,proto3" json:"available,omitempty"`
-	Owned         bool                   `protobuf:"varint,9,opt,name=owned,proto3" json:"owned,omitempty"`                                // флаг, куплен ли текущим пользователем
-	PurchasedAt   string                 `protobuf:"bytes,10,opt,name=purchased_at,json=purchasedAt,proto3" json:"purchased_at,omitempty"` // дата покупки (RFC3339)
+	Owned         bool                   `protobuf:"varint,9,opt,name=owned,proto3" json:"owned,omitempty"`
+	PurchasedAt   string                 `protobuf:"bytes,10,opt,name=purchased_at,json=purchasedAt,proto3" json:"purchased_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,9 +140,9 @@ func (x *Item) GetPurchasedAt() string {
 
 type GetItemsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Category      string                 `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`           // 'all', 'game_skin', 'merch'
-	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // фильтр по игре (для кастомизации)
-	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // для проверки owned
+	Category      string                 `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -297,7 +298,7 @@ type PurchaseItemResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	NewBalance    int32                  `protobuf:"varint,3,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"` // новый баланс билетиков после покупки
+	NewBalance    int32                  `protobuf:"varint,3,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -445,7 +446,7 @@ var File_proto_shop_proto protoreflect.FileDescriptor
 
 const file_proto_shop_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/shop.proto\x12\x04shop\"\x8b\x02\n" +
+	"\x10proto/shop.proto\x12\x04shop\x1a\x17validate/validate.proto\"\x8b\x02\n" +
 	"\x04Item\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -457,24 +458,24 @@ const file_proto_shop_proto_rawDesc = "" +
 	"\tavailable\x18\b \x01(\bR\tavailable\x12\x14\n" +
 	"\x05owned\x18\t \x01(\bR\x05owned\x12!\n" +
 	"\fpurchased_at\x18\n" +
-	" \x01(\tR\vpurchasedAt\"_\n" +
-	"\x0fGetItemsRequest\x12\x1a\n" +
-	"\bcategory\x18\x01 \x01(\tR\bcategory\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\tR\x06userId\"4\n" +
+	" \x01(\tR\vpurchasedAt\"z\n" +
+	"\x0fGetItemsRequest\x12#\n" +
+	"\bcategory\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x18 R\bcategory\x12 \n" +
+	"\agame_id\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x18 R\x06gameId\x12 \n" +
+	"\auser_id\x18\x03 \x01(\tB\a\xfaB\x04r\x02\x18@R\x06userId\"4\n" +
 	"\x10GetItemsResponse\x12 \n" +
 	"\x05items\x18\x01 \x03(\v2\n" +
-	".shop.ItemR\x05items\"G\n" +
-	"\x13PurchaseItemRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
-	"\aitem_id\x18\x02 \x01(\tR\x06itemId\"k\n" +
+	".shop.ItemR\x05items\"]\n" +
+	"\x13PurchaseItemRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12\"\n" +
+	"\aitem_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06itemId\"k\n" +
 	"\x14PurchaseItemResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1f\n" +
 	"\vnew_balance\x18\x03 \x01(\x05R\n" +
-	"newBalance\".\n" +
-	"\x13GetInventoryRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"8\n" +
+	"newBalance\"9\n" +
+	"\x13GetInventoryRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"8\n" +
 	"\x14GetInventoryResponse\x12 \n" +
 	"\x05items\x18\x01 \x03(\v2\n" +
 	".shop.ItemR\x05items2\xd6\x01\n" +

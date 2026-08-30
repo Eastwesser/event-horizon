@@ -14,8 +14,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon
     ports:
       - "5460:5432"
@@ -24,7 +24,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -50,8 +50,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-game
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_game
     ports:
       - "5461:5432"
@@ -60,7 +60,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -84,8 +84,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-billing
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_billing
     ports:
       - "5462:5432"
@@ -94,7 +94,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -118,8 +118,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-leaderboard
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_leaderboard
     ports:
       - "5463:5432"
@@ -128,7 +128,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -152,8 +152,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-profile
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_profile
     ports:
       - "5464:5432"
@@ -162,7 +162,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -186,8 +186,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-shop
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_shop
     ports:
       - "5465:5432"
@@ -196,7 +196,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -220,8 +220,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-inventory
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_inventory
     ports:
       - "5466:5432"
@@ -230,7 +230,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -258,7 +258,7 @@ services:
     image: quay.io/prometheuscommunity/postgres-exporter:latest
     container_name: event-horizon-postgres-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://eventhorizon:eventhorizon@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-eventhorizon}:${POSTGRES_PASSWORD:-eventhorizon}@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
     ports:
       - "9187:9187"
     networks:
@@ -385,6 +385,7 @@ services:
   # 4. МОНИТОРИНГ (Prometheus + Grafana + Jaeger)
   # ============================================================
 
+  # --- Observability (included in thin deploy — light enough for day-to-day) ---
   prometheus:
     image: prom/prometheus:latest
     container_name: event-horizon-prometheus
@@ -406,12 +407,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
     restart: unless-stopped
     networks:
       - event-horizon-net
@@ -434,10 +436,11 @@ services:
       - event-horizon-net
 
 
-  # --- Kafka (KRaft, Week 5) ---
+  # --- Kafka (optional — profile `kafka`; default stack uses NATS JetStream) ---
   kafka:
     image: apache/kafka:3.8.1
     container_name: event-horizon-kafka
+    profiles: [kafka]
     ports:
       # Host 19092 — Game metrics already binds host 9092.
       - "19092:9092"
@@ -488,8 +491,8 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon
       - REDIS_ADDR=event-horizon-redis:6379
       - JWT_SECRET=${JWT_SECRET}
@@ -523,8 +526,8 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-billing
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_billing
       - REDIS_ADDR=event-horizon-redis-billing:6379
     restart: on-failure
@@ -551,9 +554,14 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-game
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_game
+    depends_on:
+      postgres-game:
+        condition: service_healthy
+      nats-1:
+        condition: service_healthy
     networks:
       - event-horizon-net
 
@@ -579,8 +587,8 @@ services:
       - REDIS_DB=0
       - DB_HOST=event-horizon-postgres-leaderboard
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_leaderboard
     networks:
       - event-horizon-net
@@ -617,8 +625,8 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-profile
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_profile
       - REDIS_ADDR=event-horizon-redis-profile:6379
     depends_on:
@@ -655,24 +663,24 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-shop
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_shop
       - REDIS_ADDR=event-horizon-redis-shop:6379
       - REDIS_DB=0
       - BILLING_ADDR=billing:50053
       - PAYMENT_ADDR=payment:50058
-      - KAFKA_BROKERS=kafka:9092
+      # Empty → shop kafka producer is noop; set KAFKA_BROKERS when using --profile kafka
+      - KAFKA_BROKERS=${KAFKA_BROKERS:-}
     depends_on:
       - postgres-shop
       - nats-1
       - nats-2
       - nats-3
-      - kafka
     networks:
       - event-horizon-net
 
-  # --- Fulfillment (Week 5 Assembly analogue) ---
+  # --- Fulfillment (NATS purchase.paid → purchase.fulfilled; Kafka optional) ---
   fulfillment:
     image: eastwesser/fulfillment:latest
     container_name: deployments-fulfillment-1
@@ -680,16 +688,18 @@ services:
       - "9101:9101"
     environment:
       - METRICS_PORT=9101
-      - KAFKA_BROKERS=kafka:9092
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - KAFKA_BROKERS=${KAFKA_BROKERS:-}
       - LOG_LEVEL=info
     depends_on:
-      kafka:
-        condition: service_started
+      - nats-1
+      - nats-2
+      - nats-3
     networks:
       - event-horizon-net
     restart: unless-stopped
 
-  # --- Notification (Week 5 Telegram consumer) ---
+  # --- Notification (NATS purchase.*; Kafka optional) ---
   notification:
     image: eastwesser/notification:latest
     container_name: deployments-notification-1
@@ -697,13 +707,15 @@ services:
       - "9102:9102"
     environment:
       - METRICS_PORT=9102
-      - KAFKA_BROKERS=kafka:9092
+      - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - KAFKA_BROKERS=${KAFKA_BROKERS:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
       - LOG_LEVEL=info
     depends_on:
-      kafka:
-        condition: service_started
+      - nats-1
+      - nats-2
+      - nats-3
     networks:
       - event-horizon-net
     restart: unless-stopped
@@ -727,8 +739,8 @@ services:
       - INVENTORY_DRIVER=postgres
       - INVENTORY_PG_HOST=event-horizon-postgres-inventory
       - INVENTORY_PG_PORT=5432
-      - INVENTORY_PG_USER=eventhorizon
-      - INVENTORY_PG_PASSWORD=eventhorizon
+      - INVENTORY_PG_USER=${POSTGRES_USER:-eventhorizon}
+      - INVENTORY_PG_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - INVENTORY_PG_DB=eventhorizon_inventory
       - INVENTORY_REDIS_ADDR=event-horizon-redis-inventory:6379
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
@@ -744,8 +756,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-payment
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_payment
     ports:
       - "5467:5432"
@@ -754,7 +766,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -789,8 +801,8 @@ services:
       - METRICS_PORT=9103
       - DB_HOST=event-horizon-postgres-payment
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_payment
       - REDIS_ADDR=event-horizon-redis-payment:6379
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
@@ -811,8 +823,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-authors
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_authors
     ports:
       - "5468:5432"
@@ -821,7 +833,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -856,8 +868,8 @@ services:
       - METRICS_PORT=9104
       - DB_HOST=event-horizon-postgres-authors
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_authors
       - REDIS_ADDR=event-horizon-redis-authors:6379
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
@@ -875,8 +887,8 @@ services:
     image: postgres:16-alpine
     container_name: event-horizon-postgres-history
     environment:
-      POSTGRES_USER: eventhorizon
-      POSTGRES_PASSWORD: eventhorizon
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
       POSTGRES_DB: eventhorizon_history
     ports:
       - "5469:5432"
@@ -885,7 +897,7 @@ services:
     networks:
       - event-horizon-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eventhorizon"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -907,8 +919,8 @@ services:
       - METRICS_PORT=9105
       - DB_HOST=event-horizon-postgres-history
       - DB_PORT=5432
-      - DB_USER=eventhorizon
-      - DB_PASSWORD=eventhorizon
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_history
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - RETENTION_DAYS=30
@@ -920,7 +932,7 @@ services:
       - event-horizon-net
     restart: unless-stopped
 
-  # --- Analytics (ClickHouse OLAP) ---
+  # --- Analytics + ClickHouse (thin deploy; NATS ingest) ---
   clickhouse:
     image: clickhouse/clickhouse-server:24.8-alpine
     container_name: event-horizon-clickhouse
@@ -948,6 +960,18 @@ services:
       retries: 10
       start_period: 20s
 
+  # --- Qdrant (optional — MCP Stage 2 RAG; profile qdrant) ---
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    container_name: event-horizon-qdrant
+    profiles: [qdrant]
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - event-horizon-net
+
   analytics:
     image: eastwesser/analytics:latest
     container_name: deployments-analytics-1
@@ -968,8 +992,10 @@ services:
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - LOG_LEVEL=info
     depends_on:
-      - clickhouse
-      - nats-1
+      clickhouse:
+        condition: service_healthy
+      nats-1:
+        condition: service_started
     networks:
       - event-horizon-net
     restart: unless-stopped
@@ -1000,8 +1026,9 @@ services:
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
-      - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
+      - INVENTORY_ADDR=inventory:50059
       - PAYMENT_ADDR=payment:50058
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
@@ -1037,8 +1064,9 @@ services:
       - LEADERBOARD_ADDR=leaderboard:50054
       - PROFILE_ADDR=profile:50060
       - SHOP_ADDR=shop:50055
-      - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
+      - INVENTORY_ADDR=inventory:50059
       - PAYMENT_ADDR=payment:50058
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
@@ -1076,6 +1104,7 @@ services:
       - SHOP_ADDR=shop:50055
       - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
       - PAYMENT_ADDR=payment:50058
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
@@ -1113,6 +1142,7 @@ volumes:
   postgres_leaderboard_data:
   prometheus_data:
   grafana_data:
+  qdrant_data:
   postgres_profile_data:
   postgres_shop_data:
   postgres_inventory_data:
