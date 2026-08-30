@@ -39,6 +39,7 @@ services/*/*-service-*
 kozirev_code/
 .kozirev_code
 .gomodcache/
-.unrelated/
-.unrelated
 
+# Local-only notes — never commit (repo-root folder, no leading dot)
+unrelated/
+unrelated
