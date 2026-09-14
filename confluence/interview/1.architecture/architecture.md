@@ -1,5 +1,9 @@
 🏗️ 1. АРХИТЕКТУРА И ВЫБОР ТЕХНОЛОГИЙ
 
+> **Lime e-com SD:** [`lime_ecommerce_sobes.md`](./lime_ecommerce_sobes.md) · **Вопросы к компании:** [`questions_to_company.md`](./questions_to_company.md)  
+> **Mermaid кейсы** (AdTime/Shop/Messenger/Banks…): уже в `unrelated/kata-lectors/5.system_design/sd_schemas.md`  
+> **Легенда AdTime (GIFTS + deschat):** `agents/prydwen_knowledge/8.legend_projects/01_LEGEND_ADTIME.md`
+
 ❓ Почему PostgreSQL, а не MongoDB?
     Ответ: В Event Horizon я выбрал PostgreSQL, потому что:
 

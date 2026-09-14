@@ -1,5 +1,7 @@
 🗄️ 2. БАЗЫ ДАННЫХ
 
+> **Mongo / AdTime DesChat (голосовая 2026-09-08):** отдельный банк → [`mongodb_adtime_chat.md`](./mongodb_adtime_chat.md)  
+> Prydwen: `agents/prydwen_knowledge/2.data_bases/05_DB_MONGODB.md`
 
 ❓ Какой индекс для поиска по user_id и created_at?
     Ответ: Создам составной индекс:
