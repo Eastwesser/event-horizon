@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "554bd4841b1a2344",
+    "type": "split",
+    "children": [
+      {
+        "id": "9e88317c26a7530b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e37098759f98adb9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Легенда/Первая работа Ай эм технолоджи.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Первая работа Ай эм технолоджи"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3f24ba70eaa68142",
+    "type": "split",
+    "children": [
+      {
+        "id": "bc42c5caf8781c8e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8742fde39cb6479d",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "byCreatedTimeReverse",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "88e76866d19591d6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "810784385aca1b80",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "887bfb4007f185f5",
+    "type": "split",
+    "children": [
+      {
+        "id": "899f4b4b9311e0dc",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0ad8f2e8e4f68c3c",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Озон_задачник/Един.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Един"
+            }
+          },
+          {
+            "id": "f6d7e4ce93396d4d",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "f27e008defdd04dc",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ee75702f34ca8bfc",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "e37098759f98adb9",
+  "lastOpenFiles": [
+    "ОС и прочее/Страница памяти.md",
+    "Сис дизы/Rate Limiter.md",
+    "ОС и прочее/Сисколы.md",
+    "ОС и прочее/Контейнеризация и виртуализация.md",
+    "Базы данных/Ограничения.md",
+    "Базы данных/Локи и аномалии.md",
+    "Базы данных/Кликхаус.md",
+    "Базы данных/Индексы.md",
+    "Озон_задачник/задачи/Задачи.md",
+    "Озон_задачник/Архитектурные.md",
+    "Озон_задачник/Един.md",
+    "Легенда/Вторая работа Евил мартианс.md",
+    "Легенда/Первая работа Ай эм технолоджи.md",
+    "фото/Pasted image 20250519123055.png",
+    "фото/Pasted image 20250519110445.png",
+    "фото/Pasted image 20250519110425.png",
+    "фото/Pasted image 20250519013815.png",
+    "фото/Pasted image 20250519000923.png",
+    "фото/Pasted image 20250519000913.png",
+    "фото/Pasted image 20250519000849.png",
+    "фото/Pasted image 20250519000739.png",
+    "Озон_задачник/БД/ордер.md",
+    "Kvando.md",
+    "фото/Pasted image 20250514003302.png",
+    "фото/Pasted image 20250514002651.png",
+    "Озон_задачник/задачи",
+    "Озон_задачник/БД/user, purchase,bl.md",
+    "Озон_задачник/БД/Все с задачника.md",
+    "Озон_задачник/БД",
+    "Go/Контексты.md",
+    "ОС и прочее",
+    "Go/Untitled",
+    "Go/Типы данных.md",
+    "Озон_задачник",
+    "Сис дизы",
+    "Go/GMP модель.md",
+    "Go",
+    "фото",
+    "Untitled.canvas",
+    "Легенда/Untitled.md",
+    "Базы данных",
+    "Легенда",
+    "Untitled 2.canvas",
+    "Untitled 1.canvas",
+    "Welcome.md"
+  ]
+}

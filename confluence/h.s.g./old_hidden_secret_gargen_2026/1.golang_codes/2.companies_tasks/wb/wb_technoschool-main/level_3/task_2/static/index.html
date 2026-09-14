@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .short-url {
+            font-size: 18px;
+            color: #667eea;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        .analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .analytics-table th,
+        .analytics-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .analytics-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .url-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .url-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .url-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔗 URL Shortener</h1>
+            <p>Сокращайте ссылки и отслеживайте аналитику</p>
+        </header>
+
+        <div class="card">
+            <h2>Создать короткую ссылку</h2>
+            <div id="alertContainer"></div>
+            
+            <form id="shortenForm">
+                <div class="form-group">
+                    <label for="url">URL</label>
+                    <input type="url" id="url" placeholder="https://example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="custom">Кастомное имя (опционально)</label>
+                    <input type="text" id="custom" placeholder="my-link">
+                </div>
+                <button type="submit" class="btn">Сократить</button>
+            </form>
+
+            <div id="resultContainer"></div>
+        </div>
+
+        <div class="card">
+            <h2>Аналитика</h2>
+            <div class="form-group">
+                <label for="analyticsUrl">Короткая ссылка</label>
+                <input type="text" id="analyticsUrl" placeholder="abc123 или http://localhost:8080/s/abc123">
+                <button type="button" class="btn" onclick="loadAnalytics()" style="margin-top: 10px;">Загрузить</button>
+            </div>
+            <div id="analyticsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        document.getElementById('shortenForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const url = document.getElementById('url').value;
+            const custom = document.getElementById('custom').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/shorten`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, custom })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to shorten URL');
+                }
+
+                const container = document.getElementById('resultContainer');
+                container.innerHTML = `
+                    <div class="result">
+                        <strong>Короткая ссылка:</strong>
+                        <div class="short-url">${API_BASE}/s/${data.short_url}</div>
+                        <button class="btn" onclick="navigator.clipboard.writeText('${API_BASE}/s/${data.short_url}')">Копировать</button>
+                        <button class="btn" onclick="document.getElementById('analyticsUrl').value='${data.short_url}'; loadAnalytics();" style="margin-left: 10px; background: #28a745;">Посмотреть аналитику</button>
+                    </div>
+                `;
+
+                showAlert('Ссылка успешно создана!', 'success');
+            } catch (error) {
+                showAlert(`Ошибка: ${error.message}`, 'error');
+            }
+        });
+
+        async function loadAnalytics() {
+            let shortURL = document.getElementById('analyticsUrl').value.trim();
+            if (!shortURL) {
+                showAlert('Введите короткую ссылку', 'error');
+                return;
+            }
+
+            // Извлекаем короткий URL если введен полный
+            if (shortURL.includes('/s/')) {
+                shortURL = shortURL.split('/s/').pop().split('/')[0].split('?')[0];
+            } else if (shortURL.includes(API_BASE)) {
+                shortURL = shortURL.replace(API_BASE + '/s/', '').split('/')[0].split('?')[0];
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/analytics/${shortURL}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load analytics');
+                }
+
+                const container = document.getElementById('analyticsContainer');
+                container.innerHTML = `
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.total_clicks}</div>
+                            <div>Всего переходов</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${Object.keys(data.by_day || {}).length}</div>
+                            <div>Дней</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${Object.keys(data.by_user_agent || {}).length}</div>
+                            <div>Устройств</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 20px;">По дням</h3>
+                    <table class="analytics-table">
+                        <thead>
+                            <tr>
+                                <th>День</th>
+                                <th>Переходы</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(data.by_day || {}).map(([day, count]) => `
+                                <tr>
+                                    <td>${day}</td>
+                                    <td>${count}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top: 20px;">По устройствам</h3>
+                    <table class="analytics-table">
+                        <thead>
+                            <tr>
+                                <th>User-Agent</th>
+                                <th>Переходы</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(data.by_user_agent || {}).map(([ua, count]) => `
+                                <tr>
+                                    <td>${ua.substring(0, 50)}</td>
+                                    <td>${count}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                showAlert(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

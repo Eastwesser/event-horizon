@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesTracker - Financial Transactions & Analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-secondary {
+            background: #6c757d;
+            margin-right: 10px;
+        }
+
+        .button-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button-group button {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .transactions-section {
+            grid-column: 1 / -1;
+        }
+
+        .filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .transactions-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .transactions-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .transactions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .transaction-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #218838;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .analytics-section {
+            grid-column: 1 / -1;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .category-analytics {
+            margin-top: 30px;
+        }
+
+        .category-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .category-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .category-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .category-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .edit-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .edit-form.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 SalesTracker</h1>
+            <p>Manage your transactions and track financial analytics in real-time</p>
+        </header>
+
+        <div class="content">
+            <!-- Add Transaction Form -->
+            <div class="card">
+                <h2>➕ Add Transaction</h2>
+                <div id="addMessage" class="message"></div>
+                <form id="addForm">
+                    <div class="form-group">
+                        <label for="type">Type *</label>
+                        <select id="type" required>
+                            <option value="">Select type...</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount *</label>
+                        <input type="number" id="amount" step="0.01" min="0" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category *</label>
+                        <input type="text" id="category" required placeholder="e.g., Salary, Food, Rent">
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date *</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Comment</label>
+                        <textarea id="comment" placeholder="Add notes..."></textarea>
+                    </div>
+                    <button type="submit">Add Transaction</button>
+                </form>
+            </div>
+
+            <!-- Filters -->
+            <div class="card">
+                <h2>🔍 Filters</h2>
+                <div class="filters">
+                    <div>
+                        <label for="filterFrom">From Date</label>
+                        <input type="date" id="filterFrom">
+                    </div>
+                    <div>
+                        <label for="filterTo">To Date</label>
+                        <input type="date" id="filterTo">
+                    </div>
+                    <div>
+                        <label for="filterCategory">Category</label>
+                        <input type="text" id="filterCategory" placeholder="Leave empty for all">
+                    </div>
+                    <div>
+                        <label for="filterType">Type</label>
+                        <select id="filterType">
+                            <option value="">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="button-secondary" onclick="loadTransactions()">Apply Filters</button>
+                    <button class="button-secondary" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div class="card transactions-section">
+                <h2>📋 Transactions</h2>
+                <div id="editForm" class="edit-form">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">Edit Transaction</h3>
+                    <div class="form-group">
+                        <label for="editType">Type *</label>
+                        <select id="editType" required>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAmount">Amount *</label>
+                        <input type="number" id="editAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Category *</label>
+                        <input type="text" id="editCategory" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDate">Date *</label>
+                        <input type="date" id="editDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editComment">Comment</label>
+                        <textarea id="editComment"></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" onclick="saveEdit()">Save Changes</button>
+                        <button type="button" class="button-secondary" onclick="cancelEdit()">Cancel</button>
+                    </div>
+                </div>
+                <div id="transactionsContainer">
+                    <div class="empty-state">
+                        <p>No transactions yet. Add one to get started!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div class="card analytics-section">
+                <h2>📊 Analytics</h2>
+                <div class="filters">
+                    <div>
+                        <label for="analyticsFrom">From Date</label>
+                        <input type="date" id="analyticsFrom">
+                    </div>
+                    <div>
+                        <label for="analyticsTo">To Date</label>
+                        <input type="date" id="analyticsTo">
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button onclick="loadAnalytics()">Load Analytics</button>
+                    <button class="button-secondary" onclick="downloadCSV()">📥 Download CSV</button>
+                </div>
+                <div id="analyticsContainer" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Initialize date inputs with today's date
+        function initDateInputs() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            document.getElementById('filterFrom').value = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0];
+            document.getElementById('filterTo').value = today;
+            document.getElementById('analyticsFrom').value = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0];
+            document.getElementById('analyticsTo').value = today;
+        }
+
+        // Show message
+        function showMessage(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.textContent = message;
+            container.className = `message ${type}`;
+            setTimeout(() => {
+                container.className = 'message';
+            }, 5000);
+        }
+
+        // Add transaction
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const transaction = {
+                type: document.getElementById('type').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                category: document.getElementById('category').value,
+                date: document.getElementById('date').value,
+                comment: document.getElementById('comment').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(transaction)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to add transaction');
+                }
+
+                showMessage('addMessage', 'Transaction added successfully!', 'success');
+                document.getElementById('addForm').reset();
+                initDateInputs();
+                loadTransactions();
+                loadAnalytics();
+            } catch (error) {
+                showMessage('addMessage', `Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Load transactions
+        async function loadTransactions() {
+            const from = document.getElementById('filterFrom').value;
+            const to = document.getElementById('filterTo').value;
+            const category = document.getElementById('filterCategory').value;
+            const type = document.getElementById('filterType').value;
+
+            let url = `${API_BASE}/items?`;
+            if (from) url += `from=${from}&`;
+            if (to) url += `to=${to}&`;
+            if (category) url += `category=${category}&`;
+            if (type) url += `type=${type}&`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to load transactions');
+                
+                const transactions = await response.json();
+                displayTransactions(transactions || []);
+            } catch (error) {
+                document.getElementById('transactionsContainer').innerHTML = 
+                    `<div class="empty-state"><p>Error loading transactions: ${error.message}</p></div>`;
+            }
+        }
+
+        // Display transactions
+        function displayTransactions(transactions) {
+            const container = document.getElementById('transactionsContainer');
+            
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No transactions found</p></div>';
+                return;
+            }
+
+            let html = '<table class="transactions-table"><thead><tr>' +
+                '<th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Comment</th><th>Actions</th></tr></thead><tbody>';
+
+            transactions.forEach(tx => {
+                const date = new Date(tx.date).toLocaleDateString();
+                const amountClass = tx.type === 'income' ? 'style="color: green;"' : 'style="color: red;"';
+                const sign = tx.type === 'income' ? '+' : '-';
+
+                html += `<tr>
+                    <td>${date}</td>
+                    <td>${tx.type}</td>
+                    <td ${amountClass}>${sign}$${tx.amount.toFixed(2)}</td>
+                    <td>${tx.category}</td>
+                    <td>${tx.comment}</td>
+                    <td class="transaction-actions">
+                        <button class="btn-small btn-edit" onclick="editTransaction(${tx.id})">Edit</button>
+                        <button class="btn-small btn-delete" onclick="deleteTransaction(${tx.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Edit transaction
+        let editingId = null;
+
+        async function editTransaction(id) {
+            try {
+                const response = await fetch(`${API_BASE}/items/${id}`);
+                if (!response.ok) throw new Error('Failed to load transaction');
+                
+                const tx = await response.json();
+                editingId = id;
+
+                document.getElementById('editType').value = tx.type;
+                document.getElementById('editAmount').value = tx.amount;
+                document.getElementById('editCategory').value = tx.category;
+                document.getElementById('editDate').value = tx.date.split('T')[0];
+                document.getElementById('editComment').value = tx.comment;
+
+                document.getElementById('editForm').classList.add('active');
+                document.getElementById('editForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('editForm').classList.remove('active');
+        }
+
+        async function saveEdit() {
+            const transaction = {
+                type: document.getElementById('editType').value,
+                amount: parseFloat(document.getElementById('editAmount').value),
+                category: document.getElementById('editCategory').value,
+                date: document.getElementById('editDate').value,
+                comment: document.getElementById('editComment').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/items/${editingId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(transaction)
+                });
+
+                if (!response.ok) throw new Error('Failed to update transaction');
+
+                cancelEdit();
+                loadTransactions();
+                loadAnalytics();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Delete transaction
+        async function deleteTransaction(id) {
+            if (!confirm('Are you sure?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/items/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete transaction');
+                
+                loadTransactions();
+                loadAnalytics();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            const from = document.getElementById('analyticsFrom').value;
+            const to = document.getElementById('analyticsTo').value;
+
+            if (!from || !to) {
+                document.getElementById('analyticsContainer').innerHTML = 
+                    '<div class="empty-state"><p>Select date range for analytics</p></div>';
+                return;
+            }
+
+            try {
+                const [analyticsResp, categoriesResp] = await Promise.all([
+                    fetch(`${API_BASE}/analytics?from=${from}&to=${to}`),
+                    fetch(`${API_BASE}/analytics/categories?from=${from}&to=${to}`)
+                ]);
+
+                if (!analyticsResp.ok || !categoriesResp.ok) throw new Error('Failed to load analytics');
+                
+                const analytics = await analyticsResp.json();
+                const categories = await categoriesResp.json();
+
+                displayAnalytics(analytics, categories || []);
+            } catch (error) {
+                document.getElementById('analyticsContainer').innerHTML = 
+                    `<div class="empty-state"><p>Error loading analytics: ${error.message}</p></div>`;
+            }
+        }
+
+        // Display analytics
+        function displayAnalytics(analytics, categories) {
+            let html = '<div class="analytics-grid>';
+            html += `<div class="stat-card"><div class="label">Total Sum</div><div class="value">$${analytics.sum.toFixed(2)}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Average</div><div class="value">$${analytics.avg.toFixed(2)}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Count</div><div class="value">${analytics.count}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Median</div><div class="value">$${analytics.median.toFixed(2)}</div></div>`;
+            html += `<div class="stat-card"><div class="label">90th Percentile</div><div class="value">$${analytics.p90.toFixed(2)}</div></div>`;
+            html += '</div>';
+
+            if (categories.length > 0) {
+                html += '<div class="category-analytics"><h3 style="color: #667eea; margin-bottom: 15px;">By Category</h3>';
+                html += '<table class="category-table"><thead><tr>' +
+                    '<th>Category</th><th>Sum</th><th>Count</th><th>Average</th></tr></thead><tbody>';
+                
+                categories.forEach(cat => {
+                    html += `<tr>
+                        <td>${cat.category}</td>
+                        <td>$${cat.sum.toFixed(2)}</td>
+                        <td>${cat.count}</td>
+                        <td>$${cat.avg.toFixed(2)}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            }
+
+            document.getElementById('analyticsContainer').innerHTML = html;
+        }
+
+        // Download CSV
+        async function downloadCSV() {
+            const from = document.getElementById('analyticsFrom').value;
+            const to = document.getElementById('analyticsTo').value;
+
+            if (!from || !to) {
+                alert('Select date range');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/export/csv?from=${from}&to=${to}`);
+                if (!response.ok) throw new Error('Failed to export');
+                
+                const csv = await response.text();
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sales_report_${from}_to_${to}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filterFrom').value = '';
+            document.getElementById('filterTo').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterType').value = '';
+            loadTransactions();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initDateInputs();
+            loadTransactions();
+            loadAnalytics();
+        });
+    </script>
+</body>
+</html>
+

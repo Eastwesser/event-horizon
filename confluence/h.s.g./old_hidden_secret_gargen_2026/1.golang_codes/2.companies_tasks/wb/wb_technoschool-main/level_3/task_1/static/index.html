@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DelayedNotifier - Управление уведомлениями</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .notification-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .notification-item:hover {
+            transform: translateX(5px);
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .notification-id {
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: #ffc107; color: #000; }
+        .status-scheduled { background: #17a2b8; color: white; }
+        .status-sending { background: #007bff; color: white; }
+        .status-sent { background: #28a745; color: white; }
+        .status-failed { background: #dc3545; color: white; }
+        .status-cancelled { background: #6c757d; color: white; }
+
+        .notification-details {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .notification-details strong {
+            color: #667eea;
+        }
+
+        .notification-actions {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .channel-icon {
+            margin-right: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📨 DelayedNotifier</h1>
+            <p class="subtitle">Система отложенных уведомлений</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Форма создания уведомления -->
+            <div class="card">
+                <h2>✨ Создать уведомление</h2>
+                
+                <div id="alertContainer"></div>
+
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label for="channel">Канал отправки</label>
+                        <select id="channel" required>
+                            <option value="console">🖥️ Console (тестирование)</option>
+                            <option value="email">📧 Email</option>
+                            <option value="telegram">💬 Telegram</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipient">Получатель</label>
+                        <input type="text" id="recipient" placeholder="email@example.com или Telegram chat_id" required>
+                        <div class="info-text">Для console можно указать любое значение</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">Тема (необязательно)</label>
+                        <input type="text" id="subject" placeholder="Тема уведомления">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Сообщение</label>
+                        <textarea id="message" placeholder="Текст уведомления" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduledAt">Время отправки</label>
+                        <input type="datetime-local" id="scheduledAt" required>
+                        <div class="info-text">Укажите время в будущем</div>
+                    </div>
+
+                    <button type="submit" class="btn">🚀 Запланировать уведомление</button>
+                </form>
+            </div>
+
+            <!-- Список уведомлений -->
+            <div class="card">
+                <h2>📋 Уведомления</h2>
+                <div id="notificationList" class="notification-list">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <p>Уведомлений пока нет</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadNotifications()" title="Обновить список">
+        🔄
+    </button>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Устанавливаем минимальное время для datetime-local (текущее время + 1 минута)
+        function setMinDateTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 1);
+            const formatted = now.toISOString().slice(0, 16);
+            document.getElementById('scheduledAt').min = formatted;
+            document.getElementById('scheduledAt').value = formatted;
+        }
+
+        // Показываем alert
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Создание уведомления
+        document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                channel: document.getElementById('channel').value,
+                recipient: document.getElementById('recipient').value,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value,
+                scheduled_at: new Date(document.getElementById('scheduledAt').value).toISOString()
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/notify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create notification');
+                }
+
+                const result = await response.json();
+                showAlert(`✅ Уведомление создано! ID: ${result.id}`, 'success');
+                
+                // Очищаем форму
+                document.getElementById('notificationForm').reset();
+                setMinDateTime();
+                
+                // Обновляем список
+                loadNotifications();
+            } catch (error) {
+                showAlert(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        });
+
+        // Загрузка списка уведомлений
+        async function loadNotifications() {
+            try {
+                const response = await fetch(`${API_BASE}/notify`);
+                const notifications = await response.json();
+                
+                const container = document.getElementById('notificationList');
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <p>Уведомлений пока нет</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Сортируем по дате создания (новые сверху)
+                notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                container.innerHTML = notifications.map(n => renderNotification(n)).join('');
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+            }
+        }
+
+        // Отрисовка уведомления
+        function renderNotification(notification) {
+            const channelIcons = {
+                console: '🖥️',
+                email: '📧',
+                telegram: '💬'
+            };
+
+            const scheduledTime = new Date(notification.scheduled_at).toLocaleString('ru-RU');
+            const sentTime = notification.sent_at ? new Date(notification.sent_at).toLocaleString('ru-RU') : '-';
+
+            const canCancel = notification.status === 'scheduled' || notification.status === 'pending';
+
+            return `
+                <div class="notification-item">
+                    <div class="notification-header">
+                        <span class="notification-id">${notification.id}</span>
+                        <span class="status status-${notification.status}">${notification.status}</span>
+                    </div>
+                    <div class="notification-details">
+                        <div><strong>Канал:</strong> ${channelIcons[notification.channel]} ${notification.channel}</div>
+                        <div><strong>Получатель:</strong> ${notification.recipient}</div>
+                        ${notification.subject ? `<div><strong>Тема:</strong> ${notification.subject}</div>` : ''}
+                        <div><strong>Сообщение:</strong> ${notification.message}</div>
+                        <div><strong>Запланировано:</strong> ${scheduledTime}</div>
+                        ${notification.sent_at ? `<div><strong>Отправлено:</strong> ${sentTime}</div>` : ''}
+                        ${notification.retry_count > 0 ? `<div><strong>Попыток:</strong> ${notification.retry_count}</div>` : ''}
+                        ${notification.last_error ? `<div style="color: #dc3545;"><strong>Ошибка:</strong> ${notification.last_error}</div>` : ''}
+                    </div>
+                    ${canCancel ? `
+                        <div class="notification-actions">
+                            <button class="btn btn-small" onclick="cancelNotification('${notification.id}')">❌ Отменить</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Отмена уведомления
+        async function cancelNotification(id) {
+            if (!confirm('Вы уверены, что хотите отменить это уведомление?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/notify/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to cancel notification');
+                }
+
+                showAlert('✅ Уведомление отменено', 'success');
+                loadNotifications();
+            } catch (error) {
+                showAlert(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Инициализация
+        setMinDateTime();
+        loadNotifications();
+        
+        // Автообновление каждые 5 секунд
+        setInterval(loadNotifications, 5000);
+    </script>
+</body>
+</html>
+

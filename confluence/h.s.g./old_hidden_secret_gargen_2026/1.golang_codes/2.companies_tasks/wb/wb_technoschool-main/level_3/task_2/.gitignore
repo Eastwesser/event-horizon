@@ -1,0 +1,15 @@
+*.exe
+*.dll
+*.so
+*.dylib
+/task_2
+/url-shortener
+*.test
+*.out
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+

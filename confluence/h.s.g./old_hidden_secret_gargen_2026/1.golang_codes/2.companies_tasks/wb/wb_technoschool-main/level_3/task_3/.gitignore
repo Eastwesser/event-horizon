@@ -1,0 +1,15 @@
+*.exe
+*.dll
+*.so
+*.dylib
+/task_3
+/comment-tree
+*.test
+*.out
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
