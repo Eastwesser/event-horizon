@@ -9,7 +9,7 @@ Prydwen — markdown-корпус для людей и для RAG (`search_prydw
 3. **20 мин — безопасность и HTTP:** `9.common_backend/02_STATUS_CODES.md`, `03_SECURITY.md`, `01_QUERIES.md`.
 4. **15 мин — тесты:** `6.testing/01_UNIT_TESTING.md`, `04_INTEGRATIONAL_TESTING.md`.
 5. **15 мин — AI/MCP (если спросят):** `7.ai_engineering/*`.
-6. **По желанию легенды:** `01_LEGEND_ADTIME.md`, `02_LEGEND_ROOLZ.md` — только как каркас, без выдуманных личных KPI.
+6. **По желанию легенды:** `01_LEGEND_ADTIME.md` (**GIFTS.ru + DesChat/Mongo**, не ad-tech), `02_LEGEND_ROOLZ.md` — каркас без выдуманных личных KPI. Mongo Q: `confluence/interview/2.database/mongodb_adtime_chat.md`.
 7. Прогон вслух: purchase flow (Shop→Billing→Outbox→NATS→History/Analytics) и «401 vs 403».
 
 Формат файлов: структурированная шпаргалка, в конце блок **«Типичные вопросы на собесе»** — удобно для self-check.

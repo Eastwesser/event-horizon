@@ -1,66 +1,48 @@
-# AdTime — легенда проекта для рассказа на собесе
+# AdTime — легенда проекта (GIFTS.ru / кастом мерча + DesChat)
 
-> **Честный дисклеймер:** ниже — **легенда для рассказа** (interview narrative), собранная как talking points в стиле ad-tech. Если у вас нет реального опыта именно в AdTime — не выдавайте цифры за личный прод-опыт; формулируйте как «проект/кейс, который разбираю» или опирайтесь только на то, что делали сами. Red_mad_robot ценит честность сильнее надуманных KPI.
+> **Честный дисклеймер:** это **interview narrative** вокруг реального контура GIFTS.ru (кастом одежды/мерча) + чат с дизайнерами. Не выдумывай личные KPI (RPS, «200 дизайнеров одновременно»). Говори то, что помнишь; остальное — «так мы проектировали / типичная схема».  
+> Старый черновик «ad-tech биддинг» в корпусе был **неверным якорем** — не использовать.  
+> Mermaid: `unrelated/kata-lectors/5.system_design/sd_schemas.md` §1.  
+> Mongo Q&A: `confluence/interview/2.database/mongodb_adtime_chat.md`.
 
 ## Elevator pitch (30 сек)
 
-AdTime — высоконагруженная рекламная платформа: приём событий показа/клика, realtime-биддинг или decisioning, биллинг рекламодателя, антифрод, отчёты для кабинета. Классический ad-tech контур: **ingest → enrich → decide → render/track → settle → analytics**.
+AdTime — IT-обёртка над GIFTS.ru: пользователь **генерирует принт нейросетью**, drag-and-drop накладывает на мерч (футболка / толстовка / кепка), рендерит превью → оформляет заказ → **общается с дизайнерами в чате (WebSocket)**, чтобы довести макет.
 
-## Проблематика (зачем проект сложный)
+## Сервисы (якоря)
 
-- Пики RPS на трекинг (page view / impression / click) неравномерны.
-- Жёсткие SLA на latency decision path (миллисекунды).
-- Exactly-once / at-least-once в биллинге и «не списывать дважды».
-- Фрод: боты, click stuffing, аномальные CTR.
-- Многопартнёрская интеграция (SSP/DSP, postback, pixel).
+| Сервис | Роль | Стор |
+|--------|------|------|
+| `auth` | сессии / JWT | PG / Redis |
+| `generation` | AI jobs (очередь) | Redis quota + RabbitMQ jobs + S3 артефакты |
+| `order` / `store` | заказ и каталог мерча | PostgreSQL |
+| `deschat` | чат с дизайнерами | **Mongo** (messages/chats) + Redis PubSub fanout + WS |
 
-## Стек (типичный рассказ)
+Стек вслух: Go, PG, Mongo (chat), Redis, RabbitMQ (generation), Kafka (order events), S3, Nginx, WS.
 
-- Go/Java сервисы на критичном path; Python/SQL для отчётов.
-- Kafka (или аналог) как шина кликов/показов; партиции по `campaign_id` / `user_key`.
-- Redis: бюджеты, caps, frequency capping, bloom/sets антифрода.
-- Postgres/ClickHouse: OLTP биллинг vs OLAP отчёты.
-- Feature flags / remote config для креативов и A/B.
+## DesChat — speakable (то, что чаще всего спросят)
 
-Связка с вашим EH-опытом (честный мост): «в Event Horizon те же идеи — Outbox, кеш бюджетов/баланса в Redis, ClickHouse для аналитики, идемпотентные consumers».
+1. **Коллекции:** `chats` (participants, lastMessage, updatedAt) + `messages` (chatId, userId, text, attachments, createdAt).  
+2. **Индексы:** `{chatId, createdAt:-1}` пагинация; `{chatId, userId}` фильтр; `{participants.userId, updatedAt:-1}` список чатов; **TTL** на `messages.createdAt` (в конспекте 90d).  
+3. **Отправка сообщения (TX):** session → insert message → update `lastMessage` + unread → commit (multi-doc с 4.0; образ в конспекте 7.0.5, рынок 8.x).  
+4. **Realtime:** WS + Redis PubSub (не тащить fanout через Mongo).  
+5. **Рост:** shard key ≈ `chatId`; archive / TTL; explain → составные индексы; optimistic lock на `participants` / version.  
+6. **Мост к EH:** «в Event Horizon те же идеи consistency — Postgres + Outbox; Mongo в AdTime — именно под append-чат».
 
-## Роль и задачи (шаблон STAR)
+Подробные вопросы интервьюера → файл `mongodb_adtime_chat.md`.
 
-1. **Ситуация:** потери событий трекинга при пиках / двойные списания бюджета.
-2. **Задача:** гарантировать учёт и уложиться в p99 latency.
-3. **Действие:** вынести hot path в отдельный сервис; budget check в Redis с атомарным DECR; async settle через outbox/очередь; идемпотентный key `event_id`.
-4. **Результат:** снижение duplicate charges / стабильный p99 — *называйте только реальные свои цифры*.
+## Почему Mongo для чата, а не для Lime-каталога
 
-## Масштаб — как говорить аккуратно
+- **Чат:** документ-сообщение, денорм `lastMessage`, гибкие attachments, write-append.  
+- **Магазин одежды (Lime):** атрибуты/фильтры, inventory oversell, saga payment → лучше **PG + ES**, Mongo как единственный стор — риск.
 
-Говорите порядки, если знаете: «сотни тысяч RPS на edge», «терабайты сырых логов в сутки», «сотни кампаний». Если не знаете — опишите **узкие места** (hot keys бюджета, rebalance партиций, backpressure), а не выдуманные «10M RPS».
+## Роль (STAR-шаблон без фейковых цифр)
 
-## Технические talking points
+1. **Ситуация:** нужен чат клиент↔дизайнер рядом с AI-генерацией мерча.  
+2. **Задача:** надёжная доставка сообщений, список чатов, пагинация истории, рост архива.  
+3. **Действие:** схема Mongo + индексы + TX lastMessage + WS/Redis; slow queries → explain/indexes.  
+4. **Результат:** говори честно (что помнишь); не выдумывай latency KPI.
 
-- **Idempotency key** на postback и click.
-- **Budget pacing** и daily caps.
-- **Late events** и watermark в стриминге.
-- **GDPR/consent** на идентификаторах.
-- **Circuit breaker** к внешним partner API.
-- Разделение **online decision** и **offline attribution**.
+## Связь с Event Horizon
 
-## Риски легенды (не делайте так)
-
-- Путать DSP и SSP без понимания.
-- Обещать «exactly-once в Kafka» без оговорок (обычно at-least-once + идемпотентный consumer).
-- Приписывать себе архитектуру всей платформы, если делали один сервис.
-
-## Мост к вопросам интервьюера
-
-«Могу разобрать path клика от пикселя до списания бюджета» / «сравнить Redis caps vs строка в Postgres под нагрузкой» / «как дебажить duplicate billing».
-
-## Типичные вопросы на собесе
-
-1. Как обеспечить идемпотентность учёта клика?
-2. Почему бюджеты держат в Redis, а не только в SQL?
-3. Как проектировать партиции Kafka для трекинга?
-4. Что делать с late-arriving events в отчётах?
-5. Как отличать фрод от всплеска кампании?
-6. Где ставить circuit breaker во внешних ad-API?
-7. OLTP vs OLAP в рекламной отчётности?
-8. Какие метрики SLO на decision path vs на batch-отчёты?
+EH = правда репо (Shop/Inventory/Billing на Postgres + Outbox). AdTime = narrative про Mongo-чат и AI-pipeline. Не смешивать порты/сервисы EH с DesChat без пометки «в том проекте».
