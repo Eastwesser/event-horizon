@@ -143,7 +143,27 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         ticketsEarned = req.Score / 20
         if ticketsEarned > 50 {
             ticketsEarned = 50
-        }    
+        }
+
+    case "hanoi":
+        // Score is computed client-side as 1000 - (excess moves × 20), floored at 100
+        // (same formula as Memory), so the valid range is always [100, 1000].
+        if req.Score < 100 || req.Score > 1000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
+        validatedScore = req.Score
+        lampsEarned = 5
+        ticketsEarned = 5
+        if validatedScore > 500 {
+            ticketsEarned += (validatedScore - 500) / 100
+        }
+        if ticketsEarned > 20 {
+            ticketsEarned = 20
+        }
+        if validatedScore >= 900 {
+            lampsEarned += 5
+        }
+
     default:
         return &SubmitScoreResponse{
             Success: false,
@@ -230,7 +250,7 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
     case "hexagon":
         return &GameInfo{
             GameID:      "hexagon",
-            Name:        "Никуся — Блинопёк",
+            Name:        "Блинопёк",
             Description: "Гексагональный пазл с блинами",
             Levels: []LevelInfo{
                 {Level: 1, TargetScore: 100, RewardLamps: 10, RewardTickets: 0},
@@ -272,7 +292,18 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
                 {Level: 2, TargetScore: 200, RewardLamps: 10, RewardTickets: 5},
                 {Level: 3, TargetScore: 350, RewardLamps: 15, RewardTickets: 10},
             },
-        }, nil    
+        }, nil
+    case "hanoi":
+        return &GameInfo{
+            GameID:      "hanoi",
+            Name:        "Ханойская башня",
+            Description: "Переместите все кольца на третий стержень за минимум ходов",
+            Levels: []LevelInfo{
+                {Level: 1, TargetScore: 500, RewardLamps: 5, RewardTickets: 5},
+                {Level: 2, TargetScore: 800, RewardLamps: 8, RewardTickets: 10},
+                {Level: 3, TargetScore: 1000, RewardLamps: 10, RewardTickets: 20},
+            },
+        }, nil
     default:
         return nil, fmt.Errorf("game not found: %s", gameID)
     }

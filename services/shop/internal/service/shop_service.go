@@ -171,12 +171,17 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		return 0, model.ErrAlreadyOwned
 	}
 
+	refItem := itemID
+	if len(refItem) > 8 {
+		refItem = refItem[:8]
+	}
 	spendResp, err := s.billing.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
 		UserId:      userID,
 		Currency:    billingPb.CurrencyType_TICKETS,
 		Amount:      int32(item.Price),
 		Reason:      "shop_purchase",
-		ReferenceId: fmt.Sprintf("shop-spend-%s-%s-%d", userID, itemID, time.Now().UnixNano()),
+		// billing.transactions.reference_id is varchar(100); full user+item+nano overflows → silent free purchase.
+		ReferenceId: fmt.Sprintf("shop-%s-%d", refItem, time.Now().UnixNano()),
 		CheckOnly:   false,
 	})
 	if err != nil {
@@ -184,6 +189,16 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 			return 0, model.ErrInsufficientFunds
 		}
 		return 0, fmt.Errorf("failed to spend tickets: %w", err)
+	}
+	if spendResp == nil || !spendResp.GetSuccess() {
+		msg := "spend rejected"
+		if spendResp != nil && spendResp.GetMessage() != "" {
+			msg = spendResp.GetMessage()
+		}
+		if strings.Contains(msg, "insufficient balance") {
+			return 0, model.ErrInsufficientFunds
+		}
+		return 0, fmt.Errorf("failed to spend tickets: %s", msg)
 	}
 
 	event := map[string]interface{}{
@@ -206,7 +221,7 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 			Currency:    billingPb.CurrencyType_TICKETS,
 			Amount:      int32(item.Price),
 			Reason:      "shop_purchase_refund",
-			ReferenceId: fmt.Sprintf("shop-refund-%s-%s-%d", userID, itemID, time.Now().UnixNano()),
+			ReferenceId: fmt.Sprintf("refund-%s-%d", refItem, time.Now().UnixNano()),
 		}); refundErr != nil {
 			log.Printf("CRITICAL: refund also failed for user %s, item %s: %v", userID, itemID, refundErr)
 			event := map[string]interface{}{

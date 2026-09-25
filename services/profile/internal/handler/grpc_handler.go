@@ -60,7 +60,7 @@ func (h *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
     }
 
     if err := h.profileService.UpdateProfile(ctx, profile); err != nil {
-        return &pb.UpdateProfileResponse{Success: false, Message: err.Error()}, nil
+        return nil, status.Error(codes.Internal, err.Error())
     }
 
     return &pb.UpdateProfileResponse{Success: true, Message: "profile updated"}, nil

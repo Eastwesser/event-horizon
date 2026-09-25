@@ -144,7 +144,7 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
 	}
 	defer rows.Close()
 
-	var items []Item
+	items := make([]Item, 0)
 	for rows.Next() {
 		var item Item
 		var gameID sql.NullString
