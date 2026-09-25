@@ -58,3 +58,7 @@ unrelated/
 unrelated
 services/*/*-service
 !services/*/*-service/
+
+# Local Cursor / agent tooling
+.agents/
+skills-lock.json

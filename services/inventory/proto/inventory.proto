@@ -127,8 +127,17 @@ message RestoreItemRequest {
 
 message EmptyRequest {}
 
+message TopItem {
+    string id = 1;
+    string name = 2;
+    double price = 3;
+    string author_id = 4;
+}
+
 message StatsResponse {
     int64 total_items = 1;
     map<string, int64> by_type = 2;
     map<string, int64> by_author = 3;
+    int64 total_stock = 4;
+    repeated TopItem top_expensive = 5;
 }

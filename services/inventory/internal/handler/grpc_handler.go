@@ -215,10 +215,24 @@ func (h *GRPCHandler) GetStats(ctx context.Context, req *pb.EmptyRequest) (*pb.S
         return nil, status.Errorf(codes.Internal, "failed to get stats: %v", err)
     }
 
+    top := make([]*pb.TopItem, 0, len(stats.TopExpensive))
+    for _, item := range stats.TopExpensive {
+        if item == nil {
+            continue
+        }
+        top = append(top, &pb.TopItem{
+            Id:       item.ID,
+            Name:     item.Name,
+            Price:    item.Price,
+            AuthorId: item.AuthorID,
+        })
+    }
     return &pb.StatsResponse{
-        TotalItems: stats.TotalItems,
-        ByType:     stats.ByType,
-        ByAuthor:   stats.ByAuthor,
+        TotalItems:   stats.TotalItems,
+        ByType:       stats.ByType,
+        ByAuthor:     stats.ByAuthor,
+        TotalStock:   stats.TotalStock,
+        TopExpensive: top,
     }, nil
 }
 func mapInventoryErr(err error, fallback string) error {
