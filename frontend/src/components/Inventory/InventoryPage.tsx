@@ -118,7 +118,14 @@ export const InventoryPage: React.FC = () => {
         Найдено: <strong className="text-text-primary">{total}</strong> товаров
       </p>
 
-      {loading ? <LoadingSpinner /> : <InventoryList items={items ?? []} />}
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <InventoryList
+          items={items ?? []}
+          filtered={Boolean(filters.type || filters.query || filters.priceMin || filters.priceMax)}
+        />
+      )}
 
       {showCreateModal && isAuthor && (
         <InventoryCreateModal onClose={() => setShowCreateModal(false)} />

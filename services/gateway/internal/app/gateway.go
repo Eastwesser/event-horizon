@@ -1773,10 +1773,50 @@ func runGateway() {
 		}
 		resp := out.(*inventoryPb.StatsResponse)
 
+		byType := resp.GetByType()
+		if byType == nil {
+			byType = map[string]int64{}
+		}
+		byAuthor := resp.GetByAuthor()
+		if byAuthor == nil {
+			byAuthor = map[string]int64{}
+		}
+		top := resp.GetTopExpensive()
+		if top == nil {
+			top = []*inventoryPb.TopItem{}
+		}
+
+		// Enrich author UUIDs → email (best-effort; keep UUID on miss).
+		// Call auth directly — do not use throughBreaker (it writes HTTP on open).
+		authorEmails := make(map[string]string, len(byAuthor))
+		for authorID := range byAuthor {
+			u, uErr := authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{UserId: authorID})
+			if uErr != nil || u == nil || u.GetEmail() == "" {
+				continue
+			}
+			authorEmails[authorID] = u.GetEmail()
+		}
+
+		topJSON := make([]gin.H, 0, len(top))
+		for _, item := range top {
+			if item == nil {
+				continue
+			}
+			topJSON = append(topJSON, gin.H{
+				"id":        item.GetId(),
+				"name":      item.GetName(),
+				"price":     item.GetPrice(),
+				"author_id": item.GetAuthorId(),
+			})
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"total_items": resp.TotalItems,
-			"by_type":     resp.ByType,
-			"by_author":   resp.ByAuthor,
+			"total_items":   resp.GetTotalItems(),
+			"total_stock":   resp.GetTotalStock(),
+			"by_type":       byType,
+			"by_author":     byAuthor,
+			"author_emails": authorEmails,
+			"top_expensive": topJSON,
 		})
 	})
 
