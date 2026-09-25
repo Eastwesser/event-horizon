@@ -26,10 +26,20 @@ export interface AdminUsersResponse {
   offset: number;
 }
 
+export interface TopExpensiveItem {
+  id: string;
+  name: string;
+  price: number;
+  author_id: string;
+}
+
 export interface InventoryStats {
   total_items: number;
+  total_stock: number;
   by_type: Record<string, number>;
   by_author: Record<string, number>;
+  author_emails: Record<string, string>;
+  top_expensive: TopExpensiveItem[];
 }
 
 export const adminApi = {
@@ -55,8 +65,11 @@ export const adminApi = {
     const { data } = await api.get('/inventory/stats');
     return {
       total_items: data.total_items ?? 0,
+      total_stock: data.total_stock ?? 0,
       by_type: data.by_type ?? {},
       by_author: data.by_author ?? {},
+      author_emails: data.author_emails ?? {},
+      top_expensive: Array.isArray(data.top_expensive) ? data.top_expensive : [],
     };
   },
 };

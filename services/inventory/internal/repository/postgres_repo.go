@@ -342,14 +342,16 @@ func (r *PostgresRepo) RestoreItem(ctx context.Context, id string) error {
 // GetStats — возвращает статистику по товарам.
 func (r *PostgresRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 	stats := &model.Stats{
-		ByType:   make(map[string]int64),
-		ByAuthor: make(map[string]int64),
+		ByType:       make(map[string]int64),
+		ByAuthor:     make(map[string]int64),
+		TopExpensive: []*model.TopItem{},
 	}
 
-	// Общее количество
+	// Общее количество + суммарный stock
 	err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM inventory_items WHERE deleted_at IS NULL
-	`).Scan(&stats.TotalItems)
+		SELECT COUNT(*), COALESCE(SUM(stock), 0)
+		FROM inventory_items WHERE deleted_at IS NULL
+	`).Scan(&stats.TotalItems, &stats.TotalStock)
 	if err != nil {
 		return nil, err
 	}
@@ -394,6 +396,26 @@ func (r *PostgresRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 			return nil, err
 		}
 		stats.ByAuthor[authorID] = count
+	}
+
+	// Топ-5 самых дорогих SKU
+	topRows, err := r.db.QueryContext(ctx, `
+		SELECT id, name, price, author_id FROM inventory_items
+		WHERE deleted_at IS NULL
+		ORDER BY price DESC, name ASC
+		LIMIT 5
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer topRows.Close()
+
+	for topRows.Next() {
+		item := &model.TopItem{}
+		if err := topRows.Scan(&item.ID, &item.Name, &item.Price, &item.AuthorID); err != nil {
+			return nil, err
+		}
+		stats.TopExpensive = append(stats.TopExpensive, item)
 	}
 
 	return stats, nil

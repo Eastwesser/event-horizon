@@ -9,6 +9,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { AdminInventoryStats } from './AdminInventoryStats';
+import { AdminAnalytics } from './AdminAnalytics';
 
 type Tab = 'users' | 'inventory' | 'analytics';
 
@@ -264,18 +265,7 @@ export function AdminPage() {
 
       {tab === 'inventory' && <AdminInventoryStats />}
 
-      {tab === 'analytics' && (
-        <Card className="py-12 text-center text-text-secondary">
-          Аналитика в админке — следующий шаг (2d). Пока:{' '}
-          <button
-            type="button"
-            className="text-indigo-soft underline"
-            onClick={() => navigate('/analytics')}
-          >
-            /analytics
-          </button>
-        </Card>
-      )}
+      {tab === 'analytics' && <AdminAnalytics />}
     </PageShell>
   );
 }
