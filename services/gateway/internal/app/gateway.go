@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -796,8 +797,12 @@ func runGateway() {
 			return
 		}
 		resp := out.(*shopPb.GetItemsResponse)
-
-		c.JSON(http.StatusOK, resp.Items)
+		// Never JSON-encode a nil slice as `null` — empty catalog is [].
+		items := resp.GetItems()
+		if items == nil {
+			items = []*shopPb.Item{}
+		}
+		c.JSON(http.StatusOK, items)
 	})
 
 	r.POST("/api/shop/purchase", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -839,8 +844,12 @@ func runGateway() {
 			return
 		}
 		resp := out.(*shopPb.GetInventoryResponse)
-
-		c.JSON(http.StatusOK, resp.Items)
+		// Never JSON-encode a nil slice as `null` — empty inventory is [].
+		items := resp.GetItems()
+		if items == nil {
+			items = []*shopPb.Item{}
+		}
+		c.JSON(http.StatusOK, items)
 	})
 
 	// --- Payment (Boosty subscription) ---
@@ -901,6 +910,111 @@ func runGateway() {
 			"status":          resp.Status,
 			"expires_at_unix": resp.ExpiresAtUnix,
 			"amount_rub":      resp.AmountRub,
+		})
+	})
+
+	// Admin-only user directory with billing + subscription enrichment.
+	r.GET("/api/admin/users", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		q := c.Query("q")
+		limit := int32(50)
+		if l := c.Query("limit"); l != "" {
+			if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+				limit = int32(parsed)
+			}
+		}
+		offset := int32(0)
+		if o := c.Query("offset"); o != "" {
+			if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+				offset = int32(parsed)
+			}
+		}
+
+		out, err := throughBreaker(authCB, c, func() (any, error) {
+			return authClient.GetClient().ListUsers(c.Request.Context(), &authPb.ListUsersRequest{
+				Query:  q,
+				Limit:  limit,
+				Offset: offset,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		list := out.(*authPb.ListUsersResponse)
+
+		type adminUser struct {
+			UserID       string `json:"user_id"`
+			Email        string `json:"email"`
+			Role         string `json:"role"`
+			Nickname     string `json:"nickname"`
+			CreatedAt    string `json:"created_at"`
+			Lamps        int32  `json:"lamps"`
+			Tickets      int32  `json:"tickets"`
+			Subscription gin.H  `json:"subscription"`
+		}
+
+		rows := make([]adminUser, len(list.Users))
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		sem := make(chan struct{}, 8)
+		ctx := c.Request.Context()
+
+		for i, u := range list.Users {
+			i, u := i, u
+			rows[i] = adminUser{
+				UserID:    u.GetUserId(),
+				Email:     u.GetEmail(),
+				Role:      u.GetRole(),
+				Nickname:  u.GetNickname(),
+				CreatedAt: u.GetCreatedAt(),
+				Subscription: gin.H{
+					"active": false,
+					"plan":   "",
+					"status": "none",
+				},
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				var lamps, tickets int32
+				if bal, err := billingClient.GetAllBalances(ctx, &billingPb.GetAllBalancesRequest{UserId: u.GetUserId()}); err == nil {
+					for _, b := range bal.GetBalances() {
+						switch b.GetCurrency() {
+						case billingPb.CurrencyType_LAMPS:
+							lamps = b.GetBalance()
+						case billingPb.CurrencyType_TICKETS:
+							tickets = b.GetBalance()
+						}
+					}
+				}
+				subH := gin.H{"active": false, "plan": "", "status": "none"}
+				if sub, err := paymentClient.GetSubscription(ctx, &paymentPb.GetSubscriptionRequest{UserId: u.GetUserId()}); err == nil && sub != nil {
+					subH = gin.H{
+						"active": sub.GetActive(),
+						"plan":   sub.GetPlan(),
+						"status": sub.GetStatus(),
+					}
+				}
+
+				mu.Lock()
+				rows[i].Lamps = lamps
+				rows[i].Tickets = tickets
+				rows[i].Subscription = subH
+				mu.Unlock()
+			}()
+		}
+		wg.Wait()
+
+		c.JSON(http.StatusOK, gin.H{
+			"users":  rows,
+			"total":  list.GetTotal(),
+			"limit":  limit,
+			"offset": offset,
 		})
 	})
 
@@ -1264,8 +1378,16 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.SearchItemsResponse)
-
-		c.JSON(http.StatusOK, resp)
+		// Never JSON-encode a nil/omitted slice as `null`/missing — empty list is [].
+		// Proto `items,omitempty` would drop an empty slice; gin.H keeps an explicit [].
+		items := resp.GetItems()
+		if items == nil {
+			items = []*inventoryPb.Item{}
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"items": items,
+			"total": resp.GetTotal(),
+		})
 	})
 
 	// POST /api/inventory/items — создать товар (только author/admin)

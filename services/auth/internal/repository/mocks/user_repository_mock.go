@@ -17,6 +17,7 @@ type UserRepository struct {
 	UpdateNicknameFn  func(ctx context.Context, userID, nickname string) error
 	UpdateRoleFn      func(ctx context.Context, userID, role string) error
 	GetUserScoresFn   func(ctx context.Context, userID string) (map[string]int32, int32, error)
+	ListUsersFn       func(ctx context.Context, query string, limit, offset int) ([]*model.User, int64, error)
 }
 
 func (m *UserRepository) Create(ctx context.Context, email, passwordHash, role string) (string, error) {
@@ -41,4 +42,11 @@ func (m *UserRepository) UpdateRole(ctx context.Context, userID, role string) er
 
 func (m *UserRepository) GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error) {
 	return m.GetUserScoresFn(ctx, userID)
+}
+
+func (m *UserRepository) ListUsers(ctx context.Context, query string, limit, offset int) ([]*model.User, int64, error) {
+	if m.ListUsersFn == nil {
+		return nil, 0, nil
+	}
+	return m.ListUsersFn(ctx, query, limit, offset)
 }

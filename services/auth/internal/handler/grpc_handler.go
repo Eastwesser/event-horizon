@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/mail"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"google.golang.org/grpc/codes"
@@ -35,10 +36,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	userID, role, err := h.authService.Register(ctx, req.Email, req.Password, req.Role)
 	if err != nil {
-		return &pb.RegisterResponse{
-			Success: false,
-			Message: err.Error(),
-		}, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.RegisterResponse{
@@ -132,7 +130,7 @@ func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Lo
 		return nil, status.Error(codes.InvalidArgument, "token required")
 	}
 	if err := h.authService.Logout(ctx, req.Token); err != nil {
-		return &pb.LogoutResponse{Success: false}, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.LogoutResponse{Success: true}, nil
 }
@@ -159,7 +157,7 @@ func (h *AuthHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 func (h *AuthHandler) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameRequest) (*pb.UpdateNicknameResponse, error) {
 	err := h.authService.UpdateNickname(ctx, req.UserId, req.Nickname)
 	if err != nil {
-		return &pb.UpdateNicknameResponse{Success: false, Message: err.Error()}, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.UpdateNicknameResponse{Success: true, Message: "nickname updated"}, nil
 }
@@ -170,9 +168,41 @@ func (h *AuthHandler) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest)
 		return nil, status.Error(codes.InvalidArgument, "user_id and role required")
 	}
 	if err := h.authService.UpdateRole(ctx, req.UserId, req.Role); err != nil {
-		return &pb.UpdateRoleResponse{Success: false, Message: err.Error()}, nil
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.UpdateRoleResponse{Success: true, Message: "role updated"}, nil
+}
+
+func (h *AuthHandler) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	limit := req.GetLimit()
+	if limit <= 0 {
+		limit = 50
+	}
+	offset := req.GetOffset()
+	if offset < 0 {
+		offset = 0
+	}
+
+	users, total, err := h.authService.ListUsers(ctx, req.GetQuery(), int(limit), int(offset))
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	out := make([]*pb.ListUserEntry, 0, len(users))
+	for _, u := range users {
+		created := ""
+		if !u.CreatedAt.IsZero() {
+			created = u.CreatedAt.UTC().Format(time.RFC3339)
+		}
+		out = append(out, &pb.ListUserEntry{
+			UserId:    u.ID,
+			Email:     u.Email,
+			Role:      u.Role,
+			Nickname:  u.Nickname,
+			CreatedAt: created,
+		})
+	}
+	return &pb.ListUsersResponse{Users: out, Total: total}, nil
 }
 
 // validateCredentials mirrors intended protoc-gen-validate rules for Login/Register

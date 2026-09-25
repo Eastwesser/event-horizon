@@ -93,6 +93,22 @@ func (m *UpdateRoleRequest) Validate() error {
 	return nil
 }
 
+func (m *ListUsersRequest) Validate() error {
+	if m == nil {
+		return fmt.Errorf("request is nil")
+	}
+	if utf8.RuneCountInString(m.Query) > 254 {
+		return fmt.Errorf("query too long")
+	}
+	if m.Limit != 0 && (m.Limit < 1 || m.Limit > 100) {
+		return fmt.Errorf("limit must be 1-100")
+	}
+	if m.Offset < 0 {
+		return fmt.Errorf("offset must be >= 0")
+	}
+	return nil
+}
+
 func validateEmail(email string) error {
 	email = strings.TrimSpace(email)
 	if email == "" {

@@ -19,6 +19,9 @@ service AuthService {
     // Вызывающая сторона (Gateway) обязана убедиться, что запрос делает admin,
     // прежде чем звать этот RPC — сам AuthService доверяет вызывающей стороне.
     rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+    // ListUsers returns a paginated user directory for admin UIs.
+    // Gateway must enforce admin role before calling this RPC.
+    rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 }
 
 message RegisterRequest {
@@ -128,4 +131,24 @@ message UpdateRoleRequest {
 message UpdateRoleResponse {
     bool success = 1;
     string message = 2;
+}
+
+message ListUsersRequest {
+    // Optional case-insensitive email substring filter.
+    string query = 1 [(validate.rules).string = {max_len: 254}];
+    int32 limit = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    int32 offset = 3 [(validate.rules).int32 = {gte: 0}];
+}
+
+message ListUserEntry {
+    string user_id = 1;
+    string email = 2;
+    string role = 3;
+    string nickname = 4;
+    string created_at = 5; // RFC3339
+}
+
+message ListUsersResponse {
+    repeated ListUserEntry users = 1;
+    int64 total = 2;
 }
