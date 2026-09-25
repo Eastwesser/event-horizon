@@ -1290,11 +1290,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetDAUResponse)
-		days := resp.GetDays()
-		if days == nil {
-			days = []*analyticsPb.DayCount{}
+		dauDays := resp.GetDays()
+		if dauDays == nil {
+			dauDays = []*analyticsPb.DayCount{}
 		}
-		c.JSON(http.StatusOK, gin.H{"days": days})
+		c.JSON(http.StatusOK, gin.H{"days": dauDays})
 	})
 
 	r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
