@@ -1228,7 +1228,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authorsPb.ListAuthorsResponse)
-		c.JSON(http.StatusOK, gin.H{"authors": resp.Authors, "total": resp.Total})
+		authors := resp.GetAuthors()
+		if authors == nil {
+			authors = []*authorsPb.Author{}
+		}
+		c.JSON(http.StatusOK, gin.H{"authors": authors, "total": resp.GetTotal()})
 	})
 
 	// --- History ---
@@ -1258,7 +1262,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*historyPb.ListEventsResponse)
-		c.JSON(http.StatusOK, gin.H{"events": resp.Events, "total": resp.Total})
+		events := resp.GetEvents()
+		if events == nil {
+			events = []*historyPb.HistoryEvent{}
+		}
+		c.JSON(http.StatusOK, gin.H{"events": events, "total": resp.GetTotal()})
 	})
 
 	// --- Analytics ---
@@ -1282,7 +1290,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetDAUResponse)
-		c.JSON(http.StatusOK, gin.H{"days": resp.Days})
+		days := resp.GetDays()
+		if days == nil {
+			days = []*analyticsPb.DayCount{}
+		}
+		c.JSON(http.StatusOK, gin.H{"days": days})
 	})
 
 	r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
@@ -1316,10 +1328,14 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetRetentionResponse)
+		points := resp.GetPoints()
+		if points == nil {
+			points = []*analyticsPb.RetentionPoint{}
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"cohort_day":  resp.CohortDay,
-			"cohort_size": resp.CohortSize,
-			"points":      resp.Points,
+			"cohort_day":  resp.GetCohortDay(),
+			"cohort_size": resp.GetCohortSize(),
+			"points":      points,
 		})
 	})
 
@@ -1788,8 +1804,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*leaderboardPb.GetTopScoresResponse)
-
-		c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
+		entries := resp.GetEntries()
+		if entries == nil {
+			entries = []*leaderboardPb.ScoreEntry{}
+		}
+		c.JSON(http.StatusOK, gin.H{"entries": entries})
 	})
 
 	r.POST("/api/auth/update-nickname", middleware.RequireAuth(authClient), func(c *gin.Context) {
