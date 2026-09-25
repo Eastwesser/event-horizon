@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateNickname(ctx context.Context, userID, nickname string) error
 	UpdateRole(ctx context.Context, userID, role string) error
 	GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error)
+	ListUsers(ctx context.Context, query string, limit, offset int) ([]*User, int64, error)
 }
 
 type PostgresUserRepo struct {
@@ -150,4 +151,60 @@ func (r *PostgresUserRepo) GetUserScores(ctx context.Context, userID string) (ma
 		totalScore += best
 	}
 	return bestScores, totalScore, rows.Err()
+}
+
+func (r *PostgresUserRepo) ListUsers(ctx context.Context, query string, limit, offset int) ([]*User, int64, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	q := strings.TrimSpace(query)
+	var (
+		total          int64
+		listSQL        string
+		listArgs       []any
+		countSQL       string
+		countArgs      []any
+	)
+
+	if q == "" {
+		countSQL = `SELECT COUNT(*) FROM users`
+		listSQL = `SELECT id, email, password_hash, nickname, role, created_at
+			FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`
+		listArgs = []any{limit, offset}
+	} else {
+		pattern := "%" + q + "%"
+		countSQL = `SELECT COUNT(*) FROM users WHERE email ILIKE $1`
+		countArgs = []any{pattern}
+		listSQL = `SELECT id, email, password_hash, nickname, role, created_at
+			FROM users WHERE email ILIKE $1
+			ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+		listArgs = []any{pattern, limit, offset}
+	}
+
+	if err := r.db.QueryRow(ctx, countSQL, countArgs...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx, listSQL, listArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	users := make([]*User, 0, limit)
+	for rows.Next() {
+		u := &User{}
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Nickname, &u.Role, &u.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, rows.Err()
 }

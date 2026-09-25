@@ -1096,6 +1096,195 @@ func (x *UpdateRoleResponse) GetMessage() string {
 	return ""
 }
 
+type ListUsersRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional case-insensitive email substring filter.
+	Query         string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Limit         int32  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersRequest) Reset() {
+	*x = ListUsersRequest{}
+	mi := &file_proto_auth_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersRequest) ProtoMessage() {}
+
+func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
+func (*ListUsersRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListUsersRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *ListUsersRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListUsersRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListUserEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Role          string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	Nickname      string                 `protobuf:"bytes,4,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // RFC3339
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserEntry) Reset() {
+	*x = ListUserEntry{}
+	mi := &file_proto_auth_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserEntry) ProtoMessage() {}
+
+func (x *ListUserEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserEntry.ProtoReflect.Descriptor instead.
+func (*ListUserEntry) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListUserEntry) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ListUserEntry) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *ListUserEntry) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ListUserEntry) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *ListUserEntry) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*ListUserEntry       `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersResponse) Reset() {
+	*x = ListUsersResponse{}
+	mi := &file_proto_auth_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersResponse) ProtoMessage() {}
+
+func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
+func (*ListUsersResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ListUsersResponse) GetUsers() []*ListUserEntry {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+func (x *ListUsersResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_proto_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_proto_rawDesc = "" +
@@ -1184,7 +1373,21 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\x04role\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18\x10R\x04role\"H\n" +
 	"\x12UpdateRoleResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xbb\x04\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"t\n" +
+	"\x10ListUsersRequest\x12\x1e\n" +
+	"\x05query\x18\x01 \x01(\tB\b\xfaB\x05r\x03\x18\xfe\x01R\x05query\x12\x1f\n" +
+	"\x05limit\x18\x02 \x01(\x05B\t\xfaB\x06\x1a\x04\x18d(\x01R\x05limit\x12\x1f\n" +
+	"\x06offset\x18\x03 \x01(\x05B\a\xfaB\x04\x1a\x02(\x00R\x06offset\"\x8d\x01\n" +
+	"\rListUserEntry\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12\x1a\n" +
+	"\bnickname\x18\x04 \x01(\tR\bnickname\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\"T\n" +
+	"\x11ListUsersResponse\x12)\n" +
+	"\x05users\x18\x01 \x03(\v2\x13.auth.ListUserEntryR\x05users\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total2\xf9\x04\n" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x12H\n" +
@@ -1195,7 +1398,8 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponse\x12K\n" +
 	"\x0eUpdateNickname\x12\x1b.auth.UpdateNicknameRequest\x1a\x1c.auth.UpdateNicknameResponse\x12?\n" +
 	"\n" +
-	"UpdateRole\x12\x17.auth.UpdateRoleRequest\x1a\x18.auth.UpdateRoleResponseB>Z<github.com/Eastwesser/event-horizon/services/auth/proto;authb\x06proto3"
+	"UpdateRole\x12\x17.auth.UpdateRoleRequest\x1a\x18.auth.UpdateRoleResponse\x12<\n" +
+	"\tListUsers\x12\x16.auth.ListUsersRequest\x1a\x17.auth.ListUsersResponseB>Z<github.com/Eastwesser/event-horizon/services/auth/proto;authb\x06proto3"
 
 var (
 	file_proto_auth_proto_rawDescOnce sync.Once
@@ -1209,7 +1413,7 @@ func file_proto_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_proto_rawDescData
 }
 
-var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_proto_auth_proto_goTypes = []any{
 	(*RegisterRequest)(nil),        // 0: auth.RegisterRequest
 	(*RegisterResponse)(nil),       // 1: auth.RegisterResponse
@@ -1229,33 +1433,39 @@ var file_proto_auth_proto_goTypes = []any{
 	(*UpdateNicknameResponse)(nil), // 15: auth.UpdateNicknameResponse
 	(*UpdateRoleRequest)(nil),      // 16: auth.UpdateRoleRequest
 	(*UpdateRoleResponse)(nil),     // 17: auth.UpdateRoleResponse
-	nil,                            // 18: auth.GetUserResponse.BestScoresEntry
+	(*ListUsersRequest)(nil),       // 18: auth.ListUsersRequest
+	(*ListUserEntry)(nil),          // 19: auth.ListUserEntry
+	(*ListUsersResponse)(nil),      // 20: auth.ListUsersResponse
+	nil,                            // 21: auth.GetUserResponse.BestScoresEntry
 }
 var file_proto_auth_proto_depIdxs = []int32{
-	18, // 0: auth.GetUserResponse.best_scores:type_name -> auth.GetUserResponse.BestScoresEntry
-	0,  // 1: auth.AuthService.Register:input_type -> auth.RegisterRequest
-	2,  // 2: auth.AuthService.Login:input_type -> auth.LoginRequest
-	4,  // 3: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
-	6,  // 4: auth.AuthService.RefreshToken:input_type -> auth.RefreshTokenRequest
-	8,  // 5: auth.AuthService.Whoami:input_type -> auth.WhoamiRequest
-	10, // 6: auth.AuthService.Logout:input_type -> auth.LogoutRequest
-	12, // 7: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
-	14, // 8: auth.AuthService.UpdateNickname:input_type -> auth.UpdateNicknameRequest
-	16, // 9: auth.AuthService.UpdateRole:input_type -> auth.UpdateRoleRequest
-	1,  // 10: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	3,  // 11: auth.AuthService.Login:output_type -> auth.LoginResponse
-	5,  // 12: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
-	7,  // 13: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	9,  // 14: auth.AuthService.Whoami:output_type -> auth.WhoamiResponse
-	11, // 15: auth.AuthService.Logout:output_type -> auth.LogoutResponse
-	13, // 16: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	15, // 17: auth.AuthService.UpdateNickname:output_type -> auth.UpdateNicknameResponse
-	17, // 18: auth.AuthService.UpdateRole:output_type -> auth.UpdateRoleResponse
-	10, // [10:19] is the sub-list for method output_type
-	1,  // [1:10] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	21, // 0: auth.GetUserResponse.best_scores:type_name -> auth.GetUserResponse.BestScoresEntry
+	19, // 1: auth.ListUsersResponse.users:type_name -> auth.ListUserEntry
+	0,  // 2: auth.AuthService.Register:input_type -> auth.RegisterRequest
+	2,  // 3: auth.AuthService.Login:input_type -> auth.LoginRequest
+	4,  // 4: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
+	6,  // 5: auth.AuthService.RefreshToken:input_type -> auth.RefreshTokenRequest
+	8,  // 6: auth.AuthService.Whoami:input_type -> auth.WhoamiRequest
+	10, // 7: auth.AuthService.Logout:input_type -> auth.LogoutRequest
+	12, // 8: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
+	14, // 9: auth.AuthService.UpdateNickname:input_type -> auth.UpdateNicknameRequest
+	16, // 10: auth.AuthService.UpdateRole:input_type -> auth.UpdateRoleRequest
+	18, // 11: auth.AuthService.ListUsers:input_type -> auth.ListUsersRequest
+	1,  // 12: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	3,  // 13: auth.AuthService.Login:output_type -> auth.LoginResponse
+	5,  // 14: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
+	7,  // 15: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
+	9,  // 16: auth.AuthService.Whoami:output_type -> auth.WhoamiResponse
+	11, // 17: auth.AuthService.Logout:output_type -> auth.LogoutResponse
+	13, // 18: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	15, // 19: auth.AuthService.UpdateNickname:output_type -> auth.UpdateNicknameResponse
+	17, // 20: auth.AuthService.UpdateRole:output_type -> auth.UpdateRoleResponse
+	20, // 21: auth.AuthService.ListUsers:output_type -> auth.ListUsersResponse
+	12, // [12:22] is the sub-list for method output_type
+	2,  // [2:12] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_proto_init() }
@@ -1269,7 +1479,7 @@ func file_proto_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_proto_rawDesc), len(file_proto_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

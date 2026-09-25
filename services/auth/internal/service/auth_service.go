@@ -46,6 +46,7 @@ type AuthService interface {
 	UpdateNickname(ctx context.Context, userID, nickname string) error
 	UpdateRole(ctx context.Context, userID, role string) error
 	GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error)
+	ListUsers(ctx context.Context, query string, limit, offset int) ([]*model.User, int64, error)
 }
 
 func NewAuthService(repo repository.UserRepository, cache *repository.RedisAuthRepo, tokens *jwtauth.Manager) AuthService {
@@ -250,4 +251,8 @@ func (s *authService) invalidateUserCache(ctx context.Context, userID string) {
 
 func (s *authService) GetUserScores(ctx context.Context, userID string) (map[string]int32, int32, error) {
 	return s.repo.GetUserScores(ctx, userID)
+}
+
+func (s *authService) ListUsers(ctx context.Context, query string, limit, offset int) ([]*model.User, int64, error) {
+	return s.repo.ListUsers(ctx, query, limit, offset)
 }
