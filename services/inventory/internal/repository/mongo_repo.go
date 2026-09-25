@@ -582,16 +582,36 @@ func (r *MongoRepo) GetItemWithAuthor(ctx context.Context, itemID string) (*mode
 // GetStats — возвращает статистику по товарам в MongoDB.
 func (r *MongoRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 	stats := &model.Stats{
-		ByType:   make(map[string]int64),
-		ByAuthor: make(map[string]int64),
+		ByType:       make(map[string]int64),
+		ByAuthor:     make(map[string]int64),
+		TopExpensive: []*model.TopItem{},
 	}
 
-	// 1. Общее количество
-	total, err := r.collection.CountDocuments(ctx, bson.M{"deleted_at": nil})
+	// 1. Общее количество + суммарный stock
+	pipelineTotals := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"deleted_at": nil}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "total", Value: bson.D{{Key: "$sum", Value: 1}}},
+			{Key: "stock", Value: bson.D{{Key: "$sum", Value: "$stock"}}},
+		}}},
+	}
+	curTotals, err := r.collection.Aggregate(ctx, pipelineTotals)
 	if err != nil {
 		return nil, err
 	}
-	stats.TotalItems = total
+	defer curTotals.Close(ctx)
+	var totals []struct {
+		Total int64 `bson:"total"`
+		Stock int64 `bson:"stock"`
+	}
+	if err := curTotals.All(ctx, &totals); err != nil {
+		return nil, err
+	}
+	if len(totals) > 0 {
+		stats.TotalItems = totals[0].Total
+		stats.TotalStock = totals[0].Stock
+	}
 
 	// 2. Группировка по типу
 	pipeline := mongo.Pipeline{
@@ -616,8 +636,8 @@ func (r *MongoRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 		return nil, err
 	}
 
-	for _, r := range results {
-		stats.ByType[r.ID] = r.Count
+	for _, row := range results {
+		stats.ByType[row.ID] = row.Count
 	}
 
 	// 3. Группировка по автору (топ 10)
@@ -645,8 +665,40 @@ func (r *MongoRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 		return nil, err
 	}
 
-	for _, r := range authorResults {
-		stats.ByAuthor[r.ID] = r.Count
+	for _, row := range authorResults {
+		stats.ByAuthor[row.ID] = row.Count
+	}
+
+	// 4. Топ-5 самых дорогих
+	pipelineTop := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"deleted_at": nil}}},
+		{{Key: "$sort", Value: bson.D{{Key: "price", Value: -1}, {Key: "name", Value: 1}}}},
+		{{Key: "$limit", Value: 5}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "id", Value: 1},
+			{Key: "name", Value: 1},
+			{Key: "price", Value: 1},
+			{Key: "author_id", Value: 1},
+		}}},
+	}
+	curTop, err := r.collection.Aggregate(ctx, pipelineTop)
+	if err != nil {
+		return nil, err
+	}
+	defer curTop.Close(ctx)
+	var topRows []struct {
+		ID       string  `bson:"id"`
+		Name     string  `bson:"name"`
+		Price    float64 `bson:"price"`
+		AuthorID string  `bson:"author_id"`
+	}
+	if err := curTop.All(ctx, &topRows); err != nil {
+		return nil, err
+	}
+	for _, row := range topRows {
+		stats.TopExpensive = append(stats.TopExpensive, &model.TopItem{
+			ID: row.ID, Name: row.Name, Price: row.Price, AuthorID: row.AuthorID,
+		})
 	}
 
 	return stats, nil

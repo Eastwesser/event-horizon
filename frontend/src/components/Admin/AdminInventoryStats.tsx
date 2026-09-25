@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { adminApi, type InventoryStats } from '../../services/adminApi';
+import { adminApi, type InventoryStats, type TopExpensiveItem } from '../../services/adminApi';
+import { formatRubPrice } from '../../lib/formatPrice';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -44,6 +45,32 @@ function CountList({
             </li>
           ))}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+function TopExpensiveList({ items }: { items: TopExpensiveItem[] }) {
+  return (
+    <Card className="flex flex-col gap-3 p-4">
+      <h3 className="text-sm font-medium text-text-primary">Топ-5 по цене</h3>
+      {items.length === 0 ? (
+        <p className="py-6 text-center text-sm text-text-muted">Нет данных</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {items.map((item, i) => (
+            <li
+              key={item.id || `${item.name}-${i}`}
+              className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+            >
+              <span className="min-w-0 truncate text-sm text-text-secondary">
+                <span className="mr-2 font-hud text-text-muted">{i + 1}.</span>
+                {item.name || '—'}
+              </span>
+              <Badge tone="gold">{formatRubPrice(item.price)}</Badge>
+            </li>
+          ))}
+        </ol>
       )}
     </Card>
   );
@@ -118,12 +145,13 @@ export function AdminInventoryStats() {
         <p className="py-12 text-center text-text-secondary">В инвентаре пока нет товаров</p>
       ) : stats ? (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard value={stats.total_items} label="Всего товаров" tone="indigo" />
+            <StatCard value={stats.total_stock} label="Всего stock" tone="gold" />
             <StatCard
               value={Object.keys(stats.by_type).length}
               label="Типов товаров"
-              tone="gold"
+              tone="indigo"
             />
             <StatCard
               value={Object.keys(stats.by_author).length}
@@ -132,17 +160,28 @@ export function AdminInventoryStats() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <CountList title="По типу" entries={byType} renderKey={(key) => key} />
             <CountList
               title="По автору"
               entries={byAuthor}
-              renderKey={(key) => (
-                <span className="font-hud" title={key}>
-                  {truncateId(key)}
-                </span>
-              )}
+              renderKey={(key) => {
+                const email = stats.author_emails[key];
+                if (email) {
+                  return (
+                    <span title={key}>
+                      {email}
+                    </span>
+                  );
+                }
+                return (
+                  <span className="font-hud" title={key}>
+                    {truncateId(key)}
+                  </span>
+                );
+              }}
             />
+            <TopExpensiveList items={stats.top_expensive} />
           </div>
         </>
       ) : null}

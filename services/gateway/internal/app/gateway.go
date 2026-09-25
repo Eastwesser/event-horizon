@@ -1228,7 +1228,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authorsPb.ListAuthorsResponse)
-		c.JSON(http.StatusOK, gin.H{"authors": resp.Authors, "total": resp.Total})
+		authors := resp.GetAuthors()
+		if authors == nil {
+			authors = []*authorsPb.Author{}
+		}
+		c.JSON(http.StatusOK, gin.H{"authors": authors, "total": resp.GetTotal()})
 	})
 
 	// --- History ---
@@ -1258,7 +1262,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*historyPb.ListEventsResponse)
-		c.JSON(http.StatusOK, gin.H{"events": resp.Events, "total": resp.Total})
+		events := resp.GetEvents()
+		if events == nil {
+			events = []*historyPb.HistoryEvent{}
+		}
+		c.JSON(http.StatusOK, gin.H{"events": events, "total": resp.GetTotal()})
 	})
 
 	// --- Analytics ---
@@ -1282,7 +1290,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetDAUResponse)
-		c.JSON(http.StatusOK, gin.H{"days": resp.Days})
+		dauDays := resp.GetDays()
+		if dauDays == nil {
+			dauDays = []*analyticsPb.DayCount{}
+		}
+		c.JSON(http.StatusOK, gin.H{"days": dauDays})
 	})
 
 	r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
@@ -1316,10 +1328,14 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetRetentionResponse)
+		points := resp.GetPoints()
+		if points == nil {
+			points = []*analyticsPb.RetentionPoint{}
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"cohort_day":  resp.CohortDay,
-			"cohort_size": resp.CohortSize,
-			"points":      resp.Points,
+			"cohort_day":  resp.GetCohortDay(),
+			"cohort_size": resp.GetCohortSize(),
+			"points":      points,
 		})
 	})
 
@@ -1757,10 +1773,50 @@ func runGateway() {
 		}
 		resp := out.(*inventoryPb.StatsResponse)
 
+		byType := resp.GetByType()
+		if byType == nil {
+			byType = map[string]int64{}
+		}
+		byAuthor := resp.GetByAuthor()
+		if byAuthor == nil {
+			byAuthor = map[string]int64{}
+		}
+		top := resp.GetTopExpensive()
+		if top == nil {
+			top = []*inventoryPb.TopItem{}
+		}
+
+		// Enrich author UUIDs → email (best-effort; keep UUID on miss).
+		// Call auth directly — do not use throughBreaker (it writes HTTP on open).
+		authorEmails := make(map[string]string, len(byAuthor))
+		for authorID := range byAuthor {
+			u, uErr := authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{UserId: authorID})
+			if uErr != nil || u == nil || u.GetEmail() == "" {
+				continue
+			}
+			authorEmails[authorID] = u.GetEmail()
+		}
+
+		topJSON := make([]gin.H, 0, len(top))
+		for _, item := range top {
+			if item == nil {
+				continue
+			}
+			topJSON = append(topJSON, gin.H{
+				"id":        item.GetId(),
+				"name":      item.GetName(),
+				"price":     item.GetPrice(),
+				"author_id": item.GetAuthorId(),
+			})
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"total_items": resp.TotalItems,
-			"by_type":     resp.ByType,
-			"by_author":   resp.ByAuthor,
+			"total_items":   resp.GetTotalItems(),
+			"total_stock":   resp.GetTotalStock(),
+			"by_type":       byType,
+			"by_author":     byAuthor,
+			"author_emails": authorEmails,
+			"top_expensive": topJSON,
 		})
 	})
 
@@ -1788,8 +1844,11 @@ func runGateway() {
 			return
 		}
 		resp := out.(*leaderboardPb.GetTopScoresResponse)
-
-		c.JSON(http.StatusOK, gin.H{"entries": resp.Entries})
+		entries := resp.GetEntries()
+		if entries == nil {
+			entries = []*leaderboardPb.ScoreEntry{}
+		}
+		c.JSON(http.StatusOK, gin.H{"entries": entries})
 	})
 
 	r.POST("/api/auth/update-nickname", middleware.RequireAuth(authClient), func(c *gin.Context) {
