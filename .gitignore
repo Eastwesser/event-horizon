@@ -25,9 +25,22 @@ profile.cov
 
 # Task / tool binaries
 bin/
+services/auth/auth-service
+services/billing/billing-service
+services/game/game-service
+services/gateway/gateway-service
+services/leaderboard/leaderboard-service
+services/profile/profile-service
+services/shop/shop-service
 
 # env file
 .env
+scripts/.env.seed.admin
+scripts/.env.seed.author
+scripts/.env.seed.user
+.env.seed*
+.env.local
+frontend/.env.local
 
 # Editor/IDE
 # .idea/
@@ -43,3 +56,5 @@ kozirev_code/
 # Local-only notes — never commit (repo-root folder, no leading dot)
 unrelated/
 unrelated
+services/*/*-service
+!services/*/*-service/
