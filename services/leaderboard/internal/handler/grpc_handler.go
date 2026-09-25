@@ -87,10 +87,7 @@ func (h *LeaderboardHandler) UpdateScore(ctx context.Context, req *pb.UpdateScor
     newRank, err := h.leaderboardService.UpdateScore(ctx, req.GameId, req.UserId, req.UserEmail, nickname, int(req.Score))
     if err != nil {
         log.Printf("Failed to update score: %v", err)
-        return &pb.UpdateScoreResponse{
-            Success: false,
-            Message: err.Error(),
-        }, nil
+        return nil, status.Error(codes.Internal, err.Error())
     }
 
     return &pb.UpdateScoreResponse{

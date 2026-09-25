@@ -5,7 +5,6 @@ go 1.25.7
 require (
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0-20260705204628-4da8765922fb
 	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.12.3
 	github.com/nats-io/nats.go v1.52.0
 	github.com/prometheus/client_golang v1.24.1
@@ -33,6 +32,7 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -113,7 +113,8 @@ replace github.com/Eastwesser/event-horizon/contracts/events => ../../contracts/
 require (
 	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0
+	github.com/Eastwesser/event-horizon/platform v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.37.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.55.0

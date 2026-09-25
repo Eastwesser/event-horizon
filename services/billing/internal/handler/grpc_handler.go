@@ -3,6 +3,7 @@ package handler
 import (
     "context"
     "log"
+    "strings"
 
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
@@ -76,10 +77,7 @@ func (h *BillingHandler) AddCurrency(ctx context.Context, req *pb.AddCurrencyReq
     newBalance, err := h.billingService.AddCurrency(ctx, req.UserId, currency, int(req.Amount), req.Reason, req.ReferenceId)
     if err != nil {
         log.Printf("AddCurrency error: %v", err)
-        return &pb.AddCurrencyResponse{
-            Success: false,
-            Message: err.Error(),
-        }, nil
+        return nil, status.Error(codes.Internal, err.Error())
     }
 
     return &pb.AddCurrencyResponse{
@@ -106,10 +104,10 @@ func (h *BillingHandler) SpendCurrency(ctx context.Context, req *pb.SpendCurrenc
     )
     if err != nil {
         log.Printf("SpendCurrency error: %v", err)
-        return &pb.SpendCurrencyResponse{
-            Success: false,
-            Message: err.Error(),
-        }, nil
+        if strings.Contains(err.Error(), "insufficient balance") {
+            return nil, status.Error(codes.FailedPrecondition, err.Error())
+        }
+        return nil, status.Error(codes.Internal, err.Error())
     }
 
     return &pb.SpendCurrencyResponse{

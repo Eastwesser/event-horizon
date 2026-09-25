@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 seed-admin
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -212,4 +212,24 @@ undeploy-k3s:
 	kubectl delete -f deployments/k3s/service.yml
 	kubectl delete -f deployments/k3s/ingress.yml
 	kubectl delete -f deployments/k3s/secret.yml
-	
+
+# ===== DEV SEED (roles: admin | author | user) =====
+# Credentials: scripts/.env.seed.admin (gitignored) + optional .env.seed.author / .env.seed.user
+# See scripts/.env.seed.admin.example
+.PHONY: seed-admin seed-author seed-user seed-dev
+seed-admin:
+	@test -f scripts/.env.seed.admin || { \
+	  echo "Missing scripts/.env.seed.admin — copy from scripts/.env.seed.admin.example"; \
+	  exit 1; \
+	}
+	SEED_ROLE=admin python3 scripts/seed_admin.py
+
+seed-author:
+	SEED_ROLE=author python3 scripts/seed_admin.py
+
+seed-user:
+	SEED_ROLE=user python3 scripts/seed_admin.py
+
+# Generic: make seed-dev SEED_ROLE=author SEED_EMAIL=a@x SEED_PASSWORD=secret
+seed-dev:
+	python3 scripts/seed_admin.py
