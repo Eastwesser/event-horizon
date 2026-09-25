@@ -106,6 +106,7 @@ export function MemoryGame() {
       )}
       
       <div className="memory-game-header">
+        <h1 className="memory-game-title">Memonia</h1>
         <div className="memory-stats">
           <div className="memory-stat">
             <span className="stat-label">🎴 Пары</span>
@@ -156,7 +157,18 @@ export function MemoryGame() {
         <div className="memory-game-over">
           <div className="memory-game-over__content">
             <h2>🎉 Победа! 🎉</h2>
-            <p>Вы нашли все {totalPairs} пар за {moves} ходов</p>
+            <p>
+              Вы нашли все {totalPairs} пар за{' '}
+              {(() => {
+                const n = moves;
+                const abs = Math.abs(n) % 100;
+                const d = abs % 10;
+                if (abs > 10 && abs < 20) return `${n} ходов`;
+                if (d === 1) return `${n} ход`;
+                if (d >= 2 && d <= 4) return `${n} хода`;
+                return `${n} ходов`;
+              })()}
+            </p>
             <p className="memory-game-over__score">Ваши очки: {score}</p>
             <div className="memory-game-over__formula">
               📖 Формула: 1000 - (лишние ходы × 20), минимум 100

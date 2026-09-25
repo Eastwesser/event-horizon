@@ -9,23 +9,28 @@ import { Balance } from '../../Billing/Balance';
 import { Leaderboard } from '../../Leaderboard/Leaderboard';
 import { useGameStore } from '../../../store/gameStore';
 import { useSkins } from '../../../hooks/useSkins';
+import { GameShell, ScoreChip } from '../../ui/GameShell';
+import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
+import { Spinner } from '../../ui/Spinner';
+import { cn } from '../../../lib/cn';
 
 export function HexagonGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const { skins, loading: skinsLoading } = useSkins();
   const [useSpacePancakes, setUseSpacePancakes] = useState(false);
-  
-  const { 
-    score, 
-    level, 
-    tiles, 
-    tray, 
-    initGame, 
-    addPancakeToHex, 
-    isGameOver, 
+
+  const {
+    score,
+    level,
+    tiles,
+    tray,
+    initGame,
+    addPancakeToHex,
+    isGameOver,
     finalScore,
-    setGameOver
+    setGameOver,
   } = useGameStore();
 
   // Загружаем настройки скинов из localStorage
@@ -54,84 +59,84 @@ export function HexagonGame() {
   };
 
   const handleEndGame = () => {
-    console.log('End game button clicked, current score:', score);
     if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
       setGameOver(score);
     }
   };
 
-  const handleBack = () => {
-    navigate('/');
-  };
+  const handleBack = () => navigate('/');
+
+  const activeIcon = useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞';
 
   if (skinsLoading) {
     return (
-      <div className="game-container">
-        <div className="game-header">
-          <div className="score">🥞 Загрузка...</div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-void">
+        <Spinner size={56} />
       </div>
     );
   }
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="game-container">
-        <div className="game-header">
-          <div className="score">
-            {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} Счёт: {score}
-          </div>
-          <div className="level">🍴 Уровень: {level}</div>
-          
-          {/* Кнопка переключения скина */}
-          {skins.hexagon.hasSpacePancakes && (
-            <button 
-              className={`skin-toggle-btn ${useSpacePancakes ? 'active' : ''}`}
-              onClick={toggleSpacePancakes}
-              title="Космические блины"
-            >
-              {useSpacePancakes ? '🌌' : '🥞'} Космические блины
-            </button>
-          )}
-          
-          <div className="header-buttons">
-            <button onClick={handleEndGame} className="endgame-btn">
+      <GameShell
+        title="Pancaker"
+        onBack={handleBack}
+        actions={<Balance />}
+        width="wide"
+        stats={
+          <>
+            <ScoreChip label="Счёт" value={`${activeIcon} ${score}`} className="[&_span:last-child]:text-horizon-gold" />
+            <ScoreChip label="Уровень" value={level} className="[&_span:last-child]:text-photon-cyan" />
+            {skins.hexagon.hasSpacePancakes && (
+              <button
+                onClick={toggleSpacePancakes}
+                title="Космические блины"
+                className={cn(
+                  'rounded-sm border px-3 py-1.5 text-sm transition-colors',
+                  useSpacePancakes
+                    ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
+                    : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
+                )}
+              >
+                {useSpacePancakes ? '🌌' : '🥞'} Космические блины
+              </button>
+            )}
+          </>
+        }
+        controls={
+          <>
+            <Leaderboard gameId="hexagon" />
+            <Button variant="danger" size="sm" onClick={handleEndGame}>
               ⏹️ Завершить
-            </button>
-            <button onClick={handleBack} className="back-btn">
-              ← На главную
-            </button>
-          </div>
-
-          <Balance />
-          <Leaderboard />
+            </Button>
+          </>
+        }
+      >
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 overflow-hidden">
+          <HexGrid
+            tiles={tiles}
+            onDrop={handleDrop}
+            skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
+          />
+          <Tray
+            stacks={tray}
+            skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
+          />
         </div>
-      
-        <HexGrid 
-          tiles={tiles} 
-          onDrop={handleDrop}
-          skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
-        />
-        <Tray stacks={tray} skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'} />
-      </div>
+      </GameShell>
 
-      {isGameOver && (
-        <div className="game-over-overlay">
-          <div className="game-over-modal">
-            <h2>
-              {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'} 
-              Игра окончена! 
-              {useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞'}
-            </h2>
-            <p>Вы испекли {finalScore} блинов!</p>
-            <p>Никуся-Блинопёк счастлива! 🎉</p>
-            <div className="game-over-buttons">
-              <button onClick={() => initGame()}>🔄 Новая игра</button>
-              <button onClick={handleBack}>🏠 На главную</button>
-            </div>
-          </div>
+      <Modal open={isGameOver} onClose={() => {}} title={`${activeIcon} Игра окончена! ${activeIcon}`}>
+        <p className="text-text-secondary">Вы испекли {finalScore} блинов!</p>
+        <p className="mt-1 text-text-secondary">Стопка блинов пополнилась! 🎉</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="primary" onClick={() => initGame()}>
+            🔄 Новая игра
+          </Button>
+          <Button variant="ghost" onClick={handleBack}>
+            🏠 На главную
+          </Button>
         </div>
-      )}
+      </Modal>
     </DndProvider>
   );
 }

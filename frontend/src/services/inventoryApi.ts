@@ -61,7 +61,10 @@ export const inventoryApi = {
   // Получить список товаров с фильтрами
   searchItems: async (params: SearchItemsRequest): Promise<SearchItemsResponse> => {
     const response = await api.get(BASE_URL, { params });
-    return response.data;
+    return {
+      items: response.data?.items ?? [],
+      total: response.data?.total ?? 0,
+    };
   },
 
   // Получить товар по ID
@@ -86,7 +89,7 @@ export const inventoryApi = {
     const response = await api.get(BASE_URL, {
       params: { author_id: authorId, limit: 100 }
     });
-    return response.data.items;
+    return response.data?.items ?? [];
   },
 
   // Получить товары по типу
@@ -94,6 +97,6 @@ export const inventoryApi = {
     const response = await api.get(BASE_URL, {
       params: { type, limit: 100 }
     });
-    return response.data.items;
+    return response.data?.items ?? [];
   },
 };

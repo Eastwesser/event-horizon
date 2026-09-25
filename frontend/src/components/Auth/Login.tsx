@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../services/api';
+import { setTokens } from '../../lib/auth';
+import { Button } from '../ui/Button';
+
+const inputClass =
+  'rounded-md border border-white/10 bg-void px-4 py-3 text-base text-text-primary placeholder:text-text-muted focus:border-photon-cyan/60 focus-visible:outline-none';
 
 export function Login() {
   const navigate = useNavigate();
@@ -16,39 +21,29 @@ export function Login() {
 
     try {
       const response = await login(email, password);
-      console.log('📡 Login response:', response.data);
-      
-      const { access_token, user_id } = response.data;
-      
+      const { access_token, refresh_token, user_id } = response.data;
+
       if (access_token) {
-        localStorage.setItem('accessToken', access_token);
+        setTokens(access_token, refresh_token);
         if (user_id) {
-            localStorage.setItem('userId', user_id);
-            localStorage.setItem('userEmail', email);
-            console.log('✅ Saved userId:', user_id, 'email:', email);
+          localStorage.setItem('userId', user_id);
+          localStorage.setItem('userEmail', email);
         } else {
-            // Парсим из токена
-            try {
-                const payload = JSON.parse(atob(access_token.split('.')[1]));
-                const uid = payload.user_id;
-                if (uid) {
-                    localStorage.setItem('userId', uid);
-                    console.log('🔧 Extracted userId from token:', uid);
-                }
-            } catch (e) {
-                console.error('Failed to parse token', e);
-            }
+          try {
+            const payload = JSON.parse(atob(access_token.split('.')[1]));
+            if (payload.user_id) localStorage.setItem('userId', payload.user_id);
+          } catch {
+            /* ignore parse errors */
+          }
         }
-        window.dispatchEvent(new Event('storage'));  // 👈 добавляем
         navigate('/');
-        } else {
-            setError('Не удалось получить токен');
+      } else {
+        setError('Не удалось получить токен');
       }
-      
     } catch (err: any) {
       const status = err.response?.status;
       const message = err.response?.data?.error || err.response?.data?.message;
-      
+
       if (status === 401 || message?.includes('invalid credentials')) {
         setError('Неверный email или пароль. Попробуйте ещё раз.');
       } else if (status === 400 || message?.includes('password')) {
@@ -64,37 +59,56 @@ export function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Вход в Event Horizon</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>🍳 Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@mail.com"
-            required
-          />
-        </div>
-        <div>
-          <label>🔒 Пароль:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
-        {error && <div className="error">{error}</div>}
-        <button type="submit" disabled={loading}>
-          {loading ? '🥞 Загрузка...' : '🍴 Войти'}
-        </button>
-      </form>
-      <p>
-        👋 Нет аккаунта? <a href="/register">Зарегистрироваться</a>
-      </p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-6 py-12 sm:px-8">
+      <div className="eh-glow" aria-hidden="true" />
+      <div className="eh-ring relative w-full max-w-md rounded-lg border border-white/10 bg-nebula/90 px-8 py-10 shadow-elevated backdrop-blur-sm sm:px-10">
+        <h1 className="mb-2 text-center font-display text-2xl font-semibold text-text-primary sm:text-3xl">
+          Вход в <span className="text-horizon-gold">Event Horizon</span>
+        </h1>
+        <p className="mb-8 text-center text-sm text-text-secondary">Рады видеть вас снова</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+          <label className="flex flex-col gap-2 text-left text-sm font-medium text-text-secondary">
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="example@mail.com"
+              required
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-left text-sm font-medium text-text-secondary">
+            Пароль
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className={inputClass}
+            />
+          </label>
+
+          {error && (
+            <div role="alert" className="rounded-sm border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+              {error}
+            </div>
+          )}
+
+          <Button type="submit" disabled={loading} className="mt-1 w-full">
+            {loading ? 'Загрузка…' : 'Войти'}
+          </Button>
+        </form>
+
+        <p className="mt-8 text-center text-sm text-text-secondary">
+          Нет аккаунта?{' '}
+          <Link to="/register" className="font-medium text-indigo-soft hover:underline">
+            Зарегистрироваться
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

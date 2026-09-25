@@ -78,27 +78,32 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
     return null;
   };
 
+  const clientToViewBox = (clientX: number, clientY: number): { x: number; y: number } | null => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    // CTM accounts for preserveAspectRatio="meet" letterboxing after h-dvh resize.
+    // Naive scaleX/scaleY over the full CSS box maps off-center clicks to neighbors.
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+  };
+
   const [{ isOver }, dropRef] = useDrop(() => ({
     accept: 'pancake',
     drop: (item: any, monitor) => {
       const clientOffset = monitor.getClientOffset();
-      if (!clientOffset || !svgRef.current) return;
-      
-      const rect = svgRef.current.getBoundingClientRect();
-      const svgX = clientOffset.x - rect.left;
-      const svgY = clientOffset.y - rect.top;
-      
-      const svgRect = svgRef.current.viewBox?.baseVal;
-      if (svgRect) {
-        const scaleX = svgRect.width / rect.width;
-        const scaleY = svgRect.height / rect.height;
-        const viewBoxX = svgX * scaleX + svgRect.x;
-        const viewBoxY = svgY * scaleY + svgRect.y;
-        
-        const coord = getHexAtPixel(viewBoxX, viewBoxY);
-        if (coord) {
-          onDrop(item, coord);
-        }
+      if (!clientOffset) return;
+
+      const view = clientToViewBox(clientOffset.x, clientOffset.y);
+      if (!view) return;
+
+      const coord = getHexAtPixel(view.x, view.y);
+      if (coord) {
+        onDrop(item, coord);
       }
     },
     collect: (monitor) => ({

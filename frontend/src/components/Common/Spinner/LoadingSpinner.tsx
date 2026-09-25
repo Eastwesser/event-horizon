@@ -1,14 +1,13 @@
 // src/components/common/LoadingSpinner.tsx
-import React from 'react';
-import './LoadingSpinner.scss';
+import { Spinner } from '../../ui/Spinner';
 
-const LoadingSpinner: React.FC = () => {
+function LoadingSpinner() {
   return (
-    <div className="loading-spinner">
-      <div className="spinner"></div>
-      <p>Загрузка...</p>
+    <div className="flex flex-col items-center gap-4 py-16">
+      <Spinner size={48} />
+      <p className="text-text-secondary">Загрузка...</p>
     </div>
   );
-};
+}
 
 export default LoadingSpinner;

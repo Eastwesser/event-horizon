@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getShopItems, buyShopItem, getInventory, getAllBalances } from '../services/api';
+import { invalidateBalanceCache } from '../components/Billing/Balance';
 
 export interface ShopItem {
   id: string;
@@ -71,17 +72,12 @@ export const useShopStore = create<ShopState>()(
           const response = await getShopItems();
           console.log('📦 Ответ от API /shop/items:', response.data);
           
-          // Обрабатываем разные форматы ответа
-          let itemsData = response.data;
-          if (response.data && response.data.items && Array.isArray(response.data.items)) {
-            itemsData = response.data.items;
-          } else if (Array.isArray(response.data)) {
+          // Always treat as array (getShopItems coerces null → []).
+          let itemsData: unknown[] = [];
+          if (Array.isArray(response.data)) {
             itemsData = response.data;
-          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-            itemsData = response.data.data;
-          } else {
-            console.error('❌ Неизвестный формат ответа:', response.data);
-            throw new Error('Неверный формат данных от сервера');
+          } else if (response.data && Array.isArray((response.data as { items?: unknown[] }).items)) {
+            itemsData = (response.data as { items: unknown[] }).items;
           }
           
           // Получаем инвентарь для проверки owned
@@ -226,9 +222,19 @@ export const useShopStore = create<ShopState>()(
           
           const response = await buyShopItem(itemId);
           console.log('📦 Ответ от API /shop/purchase:', response.data);
-          
-          // Принудительно обновляем баланс (force=true)
-          await get().fetchBalance(true);
+
+          invalidateBalanceCache();
+          // Prefer server-reported balance when present
+          const reported = response.data?.new_balance ?? response.data?.newBalance;
+          if (typeof reported === 'number') {
+            set({ balance: reported });
+            localStorage.setItem('shop_balance_cache', JSON.stringify({
+              balance: reported,
+              timestamp: Date.now(),
+            }));
+          } else {
+            await get().fetchBalance(true);
+          }
           
           // Обновляем инвентарь
           await get().fetchInventory();

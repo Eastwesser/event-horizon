@@ -2,13 +2,26 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { PageHeader } from '../ui/PageHeader';
+import { PageShell } from '../ui/PageShell';
+import { StatCard } from '../ui/StatCard';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
+
+const GAME_ROUTES: Record<string, string> = {
+  hexagon: '/game/hexagon',
+  memory: '/game/memory',
+  flappy: '/game/flappy',
+  towers: '/game/towers',
+  hanoi: '/game/hanoi',
+};
 
 export function Profile() {
   const navigate = useNavigate();
   const email = localStorage.getItem('userEmail') || 'unknown@example.com';
   const userId = localStorage.getItem('userId') || '';
 
-  // Ключи localStorage с привязкой к userId
   const storageKey = `gameScores_${userId}`;
   const playedKey = `gamesPlayed_${userId}`;
   const totalScoreKey = `totalScore_${userId}`;
@@ -17,14 +30,14 @@ export function Profile() {
   const [stats, setStats] = useState({
     nickname: localStorage.getItem(nicknameKey) || email.split('@')[0],
     totalScore: 0,
-    bestScores: { hexagon: 0, memory: 0, flappy: 0, towers: 0 },
-    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0, towers: 0 },
+    bestScores: { hexagon: 0, memory: 0, flappy: 0, towers: 0, hanoi: 0 },
+    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0, towers: 0, hanoi: 0 },
     achievements: [] as string[]
   });
   const [balance, setBalance] = useState({ lamps: 0, tickets: 0 });
+  const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
-    // Загружаем статистику из localStorage
     const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
     const played = JSON.parse(localStorage.getItem(playedKey) || '{}');
 
@@ -32,25 +45,26 @@ export function Profile() {
     const memoryBest = savedScores.memory || 0;
     const flappyBest = savedScores.flappy || 0;
     const towersBest = savedScores.towers || 0;
+    const hanoiBest = savedScores.hanoi || 0;
     
     const hexagonPlayed = played.hexagon || 0;
     const memoryPlayed = played.memory || 0;
     const flappyPlayed = played.flappy || 0;
     const towersPlayed = played.towers || 0;
+    const hanoiPlayed = played.hanoi || 0;
     
     const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
 
-    // Простые достижения
     const achievements: string[] = [];
     if (hexagonBest >= 100) achievements.push('🥞 100 блинов');
-    if (hexagonBest >= 500) achievements.push('👑 Мастер-блинопёк');
-    if (memoryBest >= 500) achievements.push('🎴 Мастер памяти');
-    if (towersBest >= 100) achievements.push('🗼 Мастер башен');
-    if (flappyBest >= 100) achievements.push('🐦 Мастер полёта');
-    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed >= 10) achievements.push('🎮 Заядлый игрок');
-    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed >= 50) achievements.push('🔥 Одержимый');
+    if (hexagonBest >= 500) achievements.push('👑 Master Pancaker');
+    if (memoryBest >= 500) achievements.push('🎴 Memonia Master');
+    if (towersBest >= 100) achievements.push('🗼 Builder Master');
+    if (flappyBest >= 100) achievements.push('🐦 Flappy Master');
+    if (hanoiBest >= 900) achievements.push('🪈 Hanoi Master');
+    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed + hanoiPlayed >= 10) achievements.push('🎮 10+ игр позади');
+    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed + hanoiPlayed >= 50) achievements.push('🔥 Одержимый');
 
-    // 🔥 Функция загрузки данных с бэкенда
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('accessToken');
@@ -58,41 +72,38 @@ export function Profile() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Обновляем никнейм
         if (response.data.nickname) {
           localStorage.setItem(nicknameKey, response.data.nickname);
           setStats(prev => ({ ...prev, nickname: response.data.nickname }));
         }
         
-        // 🔥 СИНХРОНИЗИРУЕМ РЕКОРДЫ ИЗ БЭКЕНДА
         if (response.data.best_scores) {
-          const userId = localStorage.getItem('userId');
-          const storageKey = `gameScores_${userId}`;
-          const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+          const uid = localStorage.getItem('userId');
+          const scoresKey = `gameScores_${uid}`;
+          const scores = JSON.parse(localStorage.getItem(scoresKey) || '{}');
           
-          // Обновляем рекорды из бэкенда
           Object.keys(response.data.best_scores).forEach(gameId => {
-            savedScores[gameId] = response.data.best_scores[gameId];
+            scores[gameId] = response.data.best_scores[gameId];
           });
           
-          localStorage.setItem(storageKey, JSON.stringify(savedScores));
+          localStorage.setItem(scoresKey, JSON.stringify(scores));
           
-          // Обновляем состояние компонента
           setStats(prev => ({
             ...prev,
             bestScores: {
-              hexagon: savedScores.hexagon || 0,
-              memory: savedScores.memory || 0,
-              flappy: savedScores.flappy || 0,
-              towers: savedScores.towers || 0,
+              hexagon: scores.hexagon || 0,
+              memory: scores.memory || 0,
+              flappy: scores.flappy || 0,
+              towers: scores.towers || 0,
+              hanoi: scores.hanoi || 0,
             }
           }));
         }
         
         if (response.data.total_score) {
-          const userId = localStorage.getItem('userId');
-          const totalScoreKey = `totalScore_${userId}`;
-          localStorage.setItem(totalScoreKey, String(response.data.total_score));
+          const uid = localStorage.getItem('userId');
+          const tKey = `totalScore_${uid}`;
+          localStorage.setItem(tKey, String(response.data.total_score));
           setStats(prev => ({ ...prev, totalScore: response.data.total_score }));
         }
         
@@ -103,7 +114,6 @@ export function Profile() {
     
     fetchUserData();
 
-    // Добавить загрузку баланса
     const fetchBalance = async () => {
         try {
           const token = localStorage.getItem('accessToken');
@@ -121,8 +131,8 @@ export function Profile() {
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,
-      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest, towers: towersBest },
-      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed, towers: towersPlayed },
+      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest, towers: towersBest, hanoi: hanoiBest },
+      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed, towers: towersPlayed, hanoi: hanoiPlayed },
       achievements
     }));
   }, [userId, storageKey, playedKey, totalScoreKey, nicknameKey]);
@@ -147,100 +157,122 @@ export function Profile() {
     }
   };
 
-  const handleResetStats = () => {
-    if (confirm('Сбросить всю статистику? Это действие необратимо.')) {
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem(playedKey);
-      localStorage.removeItem(totalScoreKey);
-      localStorage.removeItem(nicknameKey);
-      window.location.reload();
-    }
+  const confirmResetStats = () => {
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(playedKey);
+    localStorage.removeItem(totalScoreKey);
+    localStorage.removeItem(nicknameKey);
+    setShowResetModal(false);
+    window.location.reload();
   };
 
   const handleBack = () => {
     navigate('/');
   };
 
+  const bestScoreRows = [
+    { key: 'hexagon', icon: '🥞', label: 'Pancaker', value: stats.bestScores.hexagon },
+    { key: 'memory', icon: '🎴', label: 'Memonia', value: stats.bestScores.memory },
+    { key: 'flappy', icon: '🐦', label: 'Flappy Bird', value: stats.bestScores.flappy },
+    { key: 'towers', icon: '🗼', label: 'Builder', value: stats.bestScores.towers },
+    { key: 'hanoi', icon: '🪈', label: 'Hanoi', value: stats.bestScores.hanoi },
+  ];
+
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <button onClick={handleBack} className="back-btn-small" title="На главную">
-          ←
-        </button>
-        <div className="profile-avatar">
+    <PageShell width="narrow">
+      <PageHeader title="Профиль" onBack={handleBack} backLabel="На главную" />
+
+      <div className="eh-ring mb-8 flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-nebula p-6">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-3xl shadow-glow-gold">
           {stats.achievements.length >= 2 ? '👑' : '🥞'}
         </div>
-        <div className="profile-info">
-          <h2 onClick={handleSetNickname} style={{ cursor: 'pointer' }}>
+        <div className="min-w-0">
+          <button
+            onClick={handleSetNickname}
+            className="font-display text-xl font-semibold text-text-primary transition-colors hover:text-indigo-soft"
+          >
             {stats.nickname} ✏️
-          </h2>
-          <p className="profile-email">{email}</p>
-          {userId && <p className="profile-id">ID: {userId.slice(0, 8)}...</p>}
+          </button>
+          <p className="text-sm text-text-secondary">{email}</p>
+          {userId ? (
+            <details className="mt-1">
+              <summary className="cursor-pointer text-xs text-text-muted hover:text-text-secondary">
+                Показать ID
+              </summary>
+              <p className="mt-1 break-all font-hud text-xs text-text-muted">{userId}</p>
+            </details>
+          ) : null}
         </div>
       </div>
 
-      <div className="profile-stats-grid">
-        <div className="stat-card">
-          <div className="stat-value">{stats.totalScore}</div>
-          <div className="stat-label">🏆 Всего очков</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.bestScores.hexagon}</div>
-          <div className="stat-label">🥞 Блинопёк</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.bestScores.memory}</div>
-          <div className="stat-label">🎴 Мемония</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.bestScores.flappy}</div>
-          <div className="stat-label">🐦 Flappy Bird</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.bestScores.towers}</div>
-          <div className="stat-label">🗼 Башенки</div>
-        </div>
+      <div className="mb-8 grid grid-cols-2 gap-5 sm:grid-cols-3">
+        <StatCard size="md" value={stats.totalScore} label="🏆 Всего очков" />
+        <StatCard size="md" value={stats.bestScores.hexagon} label="🥞 Pancaker" />
+        <StatCard size="md" value={stats.bestScores.memory} label="🎴 Memonia" />
+        <StatCard size="md" value={stats.bestScores.flappy} label="🐦 Flappy Bird" />
+        <StatCard size="md" value={stats.bestScores.towers} label="🗼 Builder" />
+        <StatCard size="md" value={stats.bestScores.hanoi} label="🪈 Hanoi" />
       </div>
 
       {stats.achievements.length > 0 && (
-        <div className="profile-achievements">
-          <h3>🏅 Достижения</h3>
-          <div className="achievements-list">
+        <div className="mb-8">
+          <h3 className="mb-3 font-display text-lg font-semibold text-text-primary">🏅 Достижения</h3>
+          <div className="flex flex-wrap gap-2">
             {stats.achievements.map((ach, i) => (
-              <span key={i} className="achievement-badge">{ach}</span>
+              <Badge key={i} tone="gold">{ach}</Badge>
             ))}
           </div>
         </div>
       )}
 
-      <div className="profile-balance">
-        <span>💡 Лампочки: {balance.lamps}</span>
-        <span>🎫 Билетики: {balance.tickets}</span>
+      <div className="mb-8 flex flex-wrap gap-3">
+        <span className="inline-flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
+          💡 {balance.lamps} лампочек
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-3 py-1.5 font-hud text-sm tabular-nums text-photon-cyan">
+          🎫 {balance.tickets} билетиков
+        </span>
       </div>
 
-      <div className="profile-best">
-        <h3>📊 Рекорды по играм</h3>
-        <div className="best-row">
-          <span>🥞 Никуся-Блинопёк</span>
-          <span className="best-score">{stats.bestScores.hexagon} 🥞</span>
-        </div>
-        <div className="best-row">
-          <span>🎴 Мемония</span>
-          <span className="best-score">{stats.bestScores.memory} 🎴</span>
-        </div>
-        <div className="best-row">
-          <span>🐦 Flappy Bird</span>
-          <span className="best-score">{stats.bestScores.flappy} 🐦</span>
-        </div>
-        <div className="best-row">
-          <span>🗼 Башенки</span>
-          <span className="best-score">{stats.bestScores.towers} 🗼</span>
+      <div className="mb-8">
+        <h3 className="mb-3 font-display text-lg font-semibold text-text-primary">📊 Рекорды по играм</h3>
+        <div className="divide-y divide-white/10 rounded-md border border-white/10 bg-nebula">
+          {bestScoreRows.map((row) => (
+            <button
+              key={row.key}
+              type="button"
+              onClick={() => navigate(GAME_ROUTES[row.key])}
+              className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-white/5"
+            >
+              <span className="text-text-secondary">{row.icon} {row.label}</span>
+              <span className="font-hud tabular-nums text-horizon-gold">{row.value}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      <button onClick={handleResetStats} className="reset-stats-btn">
-        🗑️ Сбросить статистику
-      </button>
-    </div>
+      <Button variant="ghost" onClick={() => setShowResetModal(true)}>
+        Сбросить статистику
+      </Button>
+
+      <Modal
+        open={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        title="Сбросить статистику?"
+      >
+        <p className="text-sm leading-relaxed text-text-secondary">
+          Будут удалены локальные рекорды, счётчики игр и никнейм на этом устройстве.
+          Это действие нельзя отменить.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Button variant="ghost" onClick={() => setShowResetModal(false)}>
+            Отмена
+          </Button>
+          <Button variant="danger" onClick={confirmResetStats}>
+            Да, сбросить
+          </Button>
+        </div>
+      </Modal>
+    </PageShell>
   );
 }
