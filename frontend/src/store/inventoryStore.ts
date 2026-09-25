@@ -29,8 +29,8 @@ export const useInventoryStore = create<InventoryState>((set) => ({
     try {
       const response = await inventoryApi.searchItems(params);
       set({
-        items: response.items,
-        total: response.total,
+        items: response.items ?? [],
+        total: response.total ?? 0,
         loading: false,
       });
     } catch (error: any) {

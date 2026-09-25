@@ -1,7 +1,9 @@
 // frontend/src/components/Shop/ShopItemCard.tsx
-import React from 'react';
-import './ShopItemCard.css';
 import type { ShopItem } from '../../store/shopStore';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { formatTicketPrice } from '../../lib/formatPrice';
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -9,15 +11,6 @@ interface ShopItemCardProps {
   onBuyClick: (item: ShopItem) => void;
 }
 
-// Цвета для разных категорий
-const categoryColors: Record<string, string> = {
-  game_skin: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  merch: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-  profile_theme: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-  other: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-};
-
-// Эмодзи для категорий
 const categoryEmojis: Record<string, string> = {
   game_skin: '🎨',
   merch: '🎁',
@@ -25,7 +18,6 @@ const categoryEmojis: Record<string, string> = {
   other: '🎁',
 };
 
-// Эмодзи для конкретных игр
 const gameEmojis: Record<string, string> = {
   flappy: '🐦',
   hexagon: '🔶',
@@ -33,66 +25,57 @@ const gameEmojis: Record<string, string> = {
   memory: '🎴',
 };
 
-const ShopItemCard: React.FC<ShopItemCardProps> = ({
-  item,
-  balance,
-  onBuyClick,
-}) => {
+const categoryLabels: Record<string, string> = {
+  game_skin: 'Скин',
+  merch: 'Мерч',
+  profile_theme: 'Тема',
+};
+
+function ShopItemCard({ item, balance, onBuyClick }: ShopItemCardProps) {
   const canAfford = balance >= item.price_tickets;
   const isOwned = item.owned || false;
-  
-  // Получаем эмодзи для товара
+
   let emoji = categoryEmojis[item.category] || '🎁';
   if (item.game_id && gameEmojis[item.game_id]) {
     emoji = gameEmojis[item.game_id];
   }
-  
-  const bgColor = categoryColors[item.category] || categoryColors.other;
 
-  if (isOwned) {
-    return (
-      <div className="shop-item-card owned">
-        <div className="item-icon" style={{ background: bgColor }}>
-          <span className="item-emoji">{emoji}</span>
-          <span className="item-type-badge">{item.category === 'game_skin' ? 'Скин' : item.category === 'merch' ? 'Мерч' : 'Тема'}</span>
-          <div className="owned-badge">✅ Уже куплено</div>
-        </div>
-        <div className="item-info">
-          <h3 className="item-name">{item.name}</h3>
-          <p className="item-description">{item.description}</p>
-          <div className="item-footer">
-            <span className="item-price">🎟️ {item.price_tickets}</span>
-            <button className="buy-button owned" disabled>
-              В инвентаре
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const categoryLabel = categoryLabels[item.category] || 'Тема';
 
   return (
-    <div className={`shop-item-card ${!canAfford ? 'locked' : ''}`}>
-      <div className="item-icon" style={{ background: bgColor }}>
-        <span className="item-emoji">{emoji}</span>
-        <span className="item-type-badge">{item.category === 'game_skin' ? 'Скин' : item.category === 'merch' ? 'Мерч' : 'Тема'}</span>
+    <Card
+      interactive={!isOwned && canAfford}
+      className={`flex h-full flex-col${!canAfford && !isOwned ? ' opacity-60' : ''}`}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-4xl">{emoji}</span>
+        <Badge tone={isOwned ? 'success' : 'indigo'}>
+          {isOwned ? '✅ В инвентаре' : categoryLabel}
+        </Badge>
       </div>
-      <div className="item-info">
-        <h3 className="item-name">{item.name}</h3>
-        <p className="item-description">{item.description}</p>
-        <div className="item-footer">
-          <span className="item-price">🎟️ {item.price_tickets}</span>
-          <button
-            className={`buy-button ${canAfford ? 'active' : 'disabled'}`}
-            onClick={() => onBuyClick(item)}
+      <h3 className="font-display text-lg font-semibold text-text-primary">{item.name}</h3>
+      <p className="mt-1 text-sm text-text-secondary">{item.description}</p>
+      <div className="mt-auto flex items-center justify-between pt-4">
+        <span className="font-hud tabular-nums text-horizon-gold">
+          {formatTicketPrice(item.price_tickets)}
+        </span>
+        {isOwned ? (
+          <Button variant="ghost" size="sm" disabled>
+            В инвентаре
+          </Button>
+        ) : (
+          <Button
+            variant={canAfford ? 'primary' : 'ghost'}
+            size="sm"
             disabled={!canAfford}
+            onClick={() => onBuyClick(item)}
           >
             {canAfford ? 'Купить' : 'Не хватает'}
-          </button>
-        </div>
+          </Button>
+        )}
       </div>
-    </div>
+    </Card>
   );
-};
+}
 
 export default ShopItemCard;

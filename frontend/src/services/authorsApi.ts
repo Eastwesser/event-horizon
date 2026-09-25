@@ -22,6 +22,9 @@ export const authorsApi = {
   },
   list: async (limit = 20, offset = 0): Promise<{ authors: Author[]; total: number }> => {
     const { data } = await api.get('/authors', { params: { limit, offset } });
-    return data;
+    return {
+      authors: Array.isArray(data?.authors) ? data.authors : [],
+      total: typeof data?.total === 'number' ? data.total : 0,
+    };
   },
 };

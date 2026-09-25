@@ -17,19 +17,24 @@ import { Subscription } from './components/Payment/Subscription';
 import { AuthorsPage } from './components/Authors/AuthorsPage';
 import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
 import { HistoryPage } from './components/History/HistoryPage';
+import { AdminPage } from './components/Admin/AdminPage';
 import { useEffect, useState } from 'react';
+import { getAccessToken, hydrateAuth } from './lib/auth';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+
+hydrateAuth();
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('accessToken'));
+  const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem('accessToken'));
+      setIsAuthenticated(!!getAccessToken());
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('authChange', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authChange', handleStorageChange);
@@ -38,7 +43,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app">
+      <ErrorBoundary label="app">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -106,8 +111,12 @@ function App() {
             path="/history" 
             element={isAuthenticated ? <HistoryPage /> : <Navigate to="/login" />} 
           />
+          <Route
+            path="/admin"
+            element={isAuthenticated ? <AdminPage /> : <Navigate to="/login" />}
+          />
         </Routes>
-      </div>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

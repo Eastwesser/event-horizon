@@ -5,9 +5,12 @@ import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
 import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
-import './Shop.css';
 import { useShopStore, type ShopItem } from '../../store/shopStore';
 import { inventoryApi } from '../../services/inventoryApi';
+import { PageHeader } from '../ui/PageHeader';
+import { PageShell } from '../ui/PageShell';
+import { Spinner } from '../ui/Spinner';
+import { FilterChip } from '../ui/FilterChip';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -194,48 +197,35 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
     return (
-      <div className="shop-container">
-        <div className="shop-empty">
-          <p>🔒 Войдите в аккаунт, чтобы просматривать магазин</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-void text-text-secondary">
+        🔒 Войдите в аккаунт, чтобы просматривать магазин
       </div>
     );
   }
 
   if (loading && allItems.length === 0) {
     return (
-      <div className="shop-container">
+      <div className="min-h-screen bg-void">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="shop-container">
-      <button onClick={handleBack} className="back-btn" title="На главную">
-        ← Назад
-      </button>
+    <PageShell width="wide">
+      <PageHeader
+        title="🎁 Магазин"
+        subtitle="Тратьте билетики на крутые предметы!"
+        onBack={handleBack}
+        backLabel="На главную"
+        actions={
+          <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
+            🎟️ {balance} билетиков
+          </span>
+        }
+      />
 
-      <div className="shop-header">
-        <div className="shop-title">
-          <h1>🎁 Магазин</h1>
-          <p className="shop-subtitle">Тратьте билетики на крутые предметы!</p>
-        </div>
-        <div className="shop-balance">
-          <span className="balance-icon">🎟️</span>
-          <span className="balance-amount">{balance}</span>
-          <span className="balance-label">билетиков</span>
-        </div>
-      </div>
-
-      {error && (
-        <Notification
-          type="error"
-          message={error}
-          onClose={clearError}
-        />
-      )}
-
+      {error && <Notification type="error" message={error} onClose={clearError} />}
       {notification && (
         <Notification
           type={notification.type}
@@ -244,107 +234,108 @@ export const ShopWithInfiniteScroll: React.FC = () => {
         />
       )}
 
-      <div className="shop-tabs">
-        <button
-          className={`tab ${activeTab === 'shop' ? 'active' : ''}`}
-          onClick={() => setActiveTab('shop')}
-        >
+      <div className="mb-6 flex flex-wrap gap-2">
+        <FilterChip active={activeTab === 'shop'} onClick={() => setActiveTab('shop')}>
           🛒 Товары
-        </button>
-        <button
-          className={`tab ${activeTab === 'inventory' ? 'active' : ''}`}
+        </FilterChip>
+        <FilterChip
+          active={activeTab === 'inventory'}
           onClick={() => {
             setActiveTab('inventory');
             fetchInventory();
           }}
         >
           🎒 Мой инвентарь ({inventory.length})
-        </button>
+        </FilterChip>
       </div>
 
-      {activeTab === 'shop' ? (
-        <>
-          <div className="shop-filters">
-            {itemTypes.map(type => (
-              <button
-                key={type.value}
-                className={`filter-btn ${filterType === type.value ? 'active' : ''}`}
-                onClick={() => setFilterType(type.value)}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
+        {activeTab === 'shop' ? (
+          <>
+            <div className="mb-6 flex flex-wrap gap-2">
+              {itemTypes.map((type) => (
+                <FilterChip
+                  key={type.value}
+                  active={filterType === type.value}
+                  onClick={() => setFilterType(type.value)}
+                >
+                  {type.label}
+                </FilterChip>
+              ))}
+            </div>
 
-          <div className="shop-grid">
-            {displayedItems.length === 0 ? (
-              <div className="shop-empty">
-                <p>Нет товаров выбранного типа</p>
-              </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {displayedItems.length === 0 ? (
+                <p className="col-span-full py-16 text-center text-text-secondary">Нет товаров выбранного типа</p>
+              ) : (
+                displayedItems.map((item) => (
+                  <ShopItemCard
+                    key={item.id}
+                    item={item}
+                    balance={balance}
+                    onBuyClick={handleBuyClick}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Элемент для Intersection Observer — триггер подгрузки */}
+            <div ref={loadMoreRef} className="my-5 h-5">
+              {loadingMore && (
+                <div className="flex flex-col items-center gap-2 py-5">
+                  <Spinner size={32} />
+                  <p className="text-sm text-text-secondary">Загрузка ещё...</p>
+                </div>
+              )}
+              {!hasMore && displayedItems.length > 0 && (
+                <p className="py-5 text-center text-text-secondary">
+                  🎉 Все товары загружены ({totalItems} шт.)
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {inventory.length === 0 ? (
+              <p className="col-span-full py-16 text-center text-text-secondary">У вас пока нет купленных предметов 🎒</p>
             ) : (
-              displayedItems.map((item) => (
-                <ShopItemCard
-                  key={item.id}
-                  item={item}
-                  balance={balance}
-                  onBuyClick={handleBuyClick}
-                />
+              inventory.map((purchased) => (
+                <div key={purchased.id} className="flex items-center gap-4 rounded-md border border-white/10 bg-nebula p-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-white/5 text-3xl">
+                    {purchased.item.image_url ? (
+                      <img
+                        src={purchased.item.image_url}
+                        alt={purchased.item.name}
+                        className="h-full w-full rounded-md object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <span className={purchased.item.image_url ? 'hidden' : undefined}>🎁</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="truncate font-display text-sm font-semibold text-text-primary">{purchased.item.name}</h4>
+                    <p className="truncate text-xs text-text-secondary">{purchased.item.description}</p>
+                    <span className="text-xs text-text-muted">
+                      Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               ))
             )}
           </div>
+        )}
 
-          {/* Элемент для Intersection Observer — триггер подгрузки */}
-          <div ref={loadMoreRef} style={{ height: '20px', margin: '20px 0' }}>
-            {loadingMore && (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <LoadingSpinner />
-                <p style={{ color: '#8a94a8', marginTop: '8px' }}>Загрузка ещё...</p>
-              </div>
-            )}
-            {!hasMore && displayedItems.length > 0 && (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#8a94a8' }}>
-                🎉 Все товары загружены ({totalItems} шт.)
-              </div>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="inventory-grid">
-          {inventory.length === 0 ? (
-            <div className="shop-empty">
-              <p>У вас пока нет купленных предметов 🎒</p>
-            </div>
-          ) : (
-            inventory.map((purchased) => (
-              <div key={purchased.id} className="inventory-item">
-                <div className="item-icon">
-                  {purchased.item.image_url ? (
-                    <img src={purchased.item.image_url} alt={purchased.item.name} />
-                  ) : (
-                    <span className="item-emoji">🎁</span>
-                  )}
-                </div>
-                <div className="item-info">
-                  <h4>{purchased.item.name}</h4>
-                  <p>{purchased.item.description}</p>
-                  <span className="purchased-date">
-                    Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      <PurchaseModal
-        isOpen={showModal}
-        item={selectedItem}
-        balance={balance}
-        onConfirm={handleConfirmPurchase}
-        onClose={handleCloseModal}
-        loading={useShopStore.getState().buying}
-      />
-    </div>
+        <PurchaseModal
+          isOpen={showModal}
+          item={selectedItem}
+          balance={balance}
+          onConfirm={handleConfirmPurchase}
+          onClose={handleCloseModal}
+          loading={useShopStore.getState().buying}
+        />
+    </PageShell>
   );
 };

@@ -1,9 +1,17 @@
 // frontend/src/components/Games/Hanoi/HanoiTower.tsx
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
+import { GameShell, ScoreChip } from '../../ui/GameShell';
+import { Button } from '../../ui/Button';
+import { Modal } from '../../ui/Modal';
+import Notification from '../../Common/Notification/Notification';
 import './HanoiTower.css';
 
 type Pegs = [number[], number[], number[]];
+
+/** Board geometry always assumes this many rings (rod height + width scale). */
+const MAX_DISKS = 8;
 
 const RING_COLORS = [
   '#ff6b6b',
@@ -17,6 +25,34 @@ const RING_COLORS = [
 ];
 
 const PEG_LABELS = ['A', 'B', 'C'];
+
+const DISK_OPTIONS = [3, 4, 5, 6, 7, 8] as const;
+
+/** Absolute 1..MAX_DISKS width as % of peg.
+ *  Peg has a solid min-width so rings stay chunky (not "beads") under GameShell. */
+function ringWidthPercent(size: number): number {
+  const t = Math.min(Math.max(size, 1), MAX_DISKS) / MAX_DISKS;
+  // size 1 ≈ 42%, size 8 ≈ 92% of peg — matches previous comfortable proportions
+  return 42 + t * 50;
+}
+
+function ringWidthCss(size: number): string {
+  return `${ringWidthPercent(size)}%`;
+}
+
+/** Pixel width for the floating ring — % of viewport stretches rings during drag. */
+function ringWidthPx(size: number, pegWidth: number): number {
+  return (pegWidth * ringWidthPercent(size)) / 100;
+}
+
+function pluralMoves(n: number): string {
+  const abs = Math.abs(n) % 100;
+  const d = abs % 10;
+  if (abs > 10 && abs < 20) return `${n} ходов`;
+  if (d === 1) return `${n} ход`;
+  if (d >= 2 && d <= 4) return `${n} хода`;
+  return `${n} ходов`;
+}
 
 function createInitialPegs(diskCount: number): Pegs {
   const disks = Array.from({ length: diskCount }, (_, i) => diskCount - i);
@@ -43,6 +79,12 @@ function solveHanoi(n: number, from: number, to: number, aux: number): [number, 
   ];
 }
 
+/** Очки: 1000 - (лишние ходы × 20), минимум 100 — та же формула, что у Мемонии. */
+function calculateScore(moves: number, minMoves: number): number {
+  const excess = Math.max(0, moves - minMoves);
+  return Math.max(100, 1000 - excess * 20);
+}
+
 export function HanoiTower() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
@@ -56,6 +98,8 @@ export function HanoiTower() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [autoSolving, setAutoSolving] = useState(false);
   const [animating, setAnimating] = useState<{ disk: number; from: number; to: number } | null>(null);
+  const [scoreSaved, setScoreSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const pegRefs = useRef<(HTMLDivElement | null)[]>([]);
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -93,6 +137,7 @@ export function HanoiTower() {
     setSelectedPeg(null);
     setMoves(0);
     setWon(false);
+    setScoreSaved(false);
     setStartTime(performance.now());
     setElapsedMs(0);
   }, [diskCount]);
@@ -181,6 +226,29 @@ export function HanoiTower() {
     autoTimerRef.current = setTimeout(() => runStep(0), 500);
   };
 
+  const handleSubmitScore = async () => {
+    const score = calculateScore(moves, minMoves);
+    try {
+      const userId = localStorage.getItem('userId');
+      const userEmail = localStorage.getItem('userEmail');
+
+      await api.post('/game/submit', {
+        user_id: userId,
+        game_id: 'hanoi',
+        level: diskCount,
+        score,
+        user_email: userEmail,
+        seed: `hanoi_${diskCount}_${Date.now()}`,
+        moves: [],
+      });
+
+      setScoreSaved(true);
+      setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
+    } catch (err) {
+      setSaveMessage({ type: 'error', text: '❌ Ошибка при сохранении' });
+    }
+  };
+
   const formatTime = (ms: number) => {
     const sec = Math.floor(ms / 1000);
     const min = Math.floor(sec / 60);
@@ -189,16 +257,13 @@ export function HanoiTower() {
     return `${min}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
   };
 
-  const ringWidth = (size: number) => `${30 + size * 14}%`;
-
   const getFloatingStyle = (): CSSProperties | undefined => {
     if (!animating) return undefined;
     const toEl = pegRefs.current[animating.to];
     if (!toEl) return undefined;
     const toRect = toEl.getBoundingClientRect();
-    const width = ringWidth(animating.disk);
     return {
-      width,
+      width: `${ringWidthPx(animating.disk, toRect.width)}px`,
       left: toRect.left + toRect.width / 2,
       top: toRect.top + 40,
       transform: 'translateX(-50%)',
@@ -211,9 +276,8 @@ export function HanoiTower() {
     const fromEl = pegRefs.current[animating.from];
     if (!fromEl) return undefined;
     const fromRect = fromEl.getBoundingClientRect();
-    const width = ringWidth(animating.disk);
     return {
-      width,
+      width: `${ringWidthPx(animating.disk, fromRect.width)}px`,
       left: fromRect.left + fromRect.width / 2,
       top: fromRect.top + 40,
       transform: 'translateX(-50%)',
@@ -234,52 +298,65 @@ export function HanoiTower() {
     });
   }, [animating]);
 
-  return (
-    <div className="hanoi-container">
-      <div className="hanoi-header">
-        <div className="hanoi-title">
-          <h1>🗼 Ханойская башня</h1>
-          <p>Переместите все кольца на стержень C</p>
-        </div>
-        <div className="hanoi-stats">
-          <div className="hanoi-stat">
-            <span className="stat-label">Время</span>
-            <span className="stat-value">{formatTime(elapsedMs)}</span>
-          </div>
-          <div className="hanoi-stat">
-            <span className="stat-label">Ходы</span>
-            <span className="stat-value">{moves}</span>
-          </div>
-          <div className={`hanoi-stat hanoi-stat--moves-${moves > 0 && moves <= minMoves ? 'optimal' : moves > minMoves ? 'over' : ''}`}>
-            <span className="stat-label">Минимум</span>
-            <span className="stat-value">{minMoves}</span>
-          </div>
-        </div>
-      </div>
+  const movesToneClass =
+    moves > 0 && moves <= minMoves
+      ? 'border-success/30 [&_span:last-child]:text-success'
+      : moves > minMoves
+        ? 'border-warning/30 [&_span:last-child]:text-warning'
+        : '';
+  const finalScore = calculateScore(moves, minMoves);
 
-      <div className="hanoi-controls">
-        <label>
-          Колец:
-          <select
-            value={diskCount}
-            disabled={autoSolving || moves > 0}
-            onChange={(e) => handleDiskCountChange(Number(e.target.value))}
-          >
-            {[3, 4, 5, 6, 7, 8].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <button className="hanoi-btn hanoi-btn--reset" onClick={() => resetGame()} disabled={autoSolving}>
-          🔄 Сброс
-        </button>
-        <button className="hanoi-btn hanoi-btn--auto" onClick={runAutoSolve} disabled={autoSolving || won}>
-          {autoSolving ? '⏳ Решаю...' : '🤖 Авто-решение'}
-        </button>
-        <button className="hanoi-btn hanoi-btn--back" onClick={() => navigate('/')}>
-          ← На главную
-        </button>
-      </div>
+  return (
+    <GameShell
+      title="Hanoi"
+      onBack={() => navigate('/')}
+      width="narrow"
+      stats={
+        <>
+          <ScoreChip label="Время" value={formatTime(elapsedMs)} />
+          <ScoreChip label="Ходы" value={moves} className={movesToneClass} />
+          <ScoreChip label="Минимум" value={minMoves} />
+        </>
+      }
+      controls={
+        <>
+          <label className="flex items-center gap-2 text-sm text-text-secondary">
+            Колец:
+            <select
+              value={diskCount}
+              disabled={autoSolving || moves > 0}
+              onChange={(e) => handleDiskCountChange(Number(e.target.value))}
+              className="rounded-sm border border-horizon-gold/30 bg-black/30 px-3 py-1.5 text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-photon-cyan"
+            >
+              {DISK_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <Button variant="secondary" size="sm" onClick={() => resetGame()} disabled={autoSolving}>
+            🔄 Сброс
+          </Button>
+          <Button variant="ghost" size="sm" onClick={runAutoSolve} disabled={autoSolving || won}>
+            {autoSolving ? '⏳ Решаю...' : '🤖 Авто-решение'}
+          </Button>
+        </>
+      }
+      help={
+        <>
+          <p>🎯 Перенесите все кольца со стержня A на стержень C</p>
+          <p>🚫 Нельзя класть большее кольцо на меньшее</p>
+          <p>🏆 Очки: 1000 − (лишние ходы × 20), минимум 100</p>
+          <p>🤖 Кнопка «Авто-решение» покажет оптимальный путь</p>
+        </>
+      }
+    >
+      {saveMessage && (
+        <Notification
+          type={saveMessage.type}
+          message={saveMessage.text}
+          onClose={() => setSaveMessage(null)}
+        />
+      )}
 
       <div className="hanoi-board">
         {pegs.map((stack, pegIndex) => (
@@ -308,7 +385,7 @@ export function HanoiTower() {
                     key={`${pegIndex}-${disk}-${i}`}
                     className={`hanoi-ring ${isTop && selectedPeg === pegIndex ? 'hanoi-ring--top-selected' : ''} ${isMoving ? 'hanoi-ring--hidden' : ''}`}
                     style={{
-                      width: ringWidth(disk),
+                      width: ringWidthCss(disk),
                       background: RING_COLORS[(disk - 1) % RING_COLORS.length],
                     }}
                   >
@@ -327,24 +404,45 @@ export function HanoiTower() {
         </div>
       )}
 
-      {won && (
-        <div className="hanoi-win-overlay" onClick={() => setWon(false)}>
-          <div className="hanoi-win-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>🎉 Победа!</h2>
-            <p>Все кольца на месте!</p>
-            <p>⏱ Время: <strong>{formatTime(elapsedMs)}</strong></p>
-            <p>🎯 Ходов: <strong>{moves}</strong> (минимум {minMoves})</p>
-            <p className={moves <= minMoves ? 'win-optimal' : 'win-over'}>
-              {moves <= minMoves
-                ? '✨ Идеально! Вы уложились в оптимум!'
-                : `📈 Превышение на ${moves - minMoves} ход(ов)`}
-            </p>
-            <button className="hanoi-btn hanoi-btn--reset" onClick={() => resetGame()}>
-              🔄 Играть снова
-            </button>
-          </div>
+      <Modal open={won} onClose={() => setWon(false)} title="🎉 Победа!">
+        <p className="text-text-secondary">Все кольца на месте!</p>
+
+        <div className="mt-4 space-y-1.5 text-text-secondary">
+          <p>
+            ⏱ Время: <strong className="text-text-primary">{formatTime(elapsedMs)}</strong>
+          </p>
+          <p>
+            🎯 {pluralMoves(moves)}
+            {minMoves > 0 ? (
+              <span className="text-text-muted"> (минимум {minMoves})</span>
+            ) : null}
+          </p>
+          <p className={`text-sm font-medium ${moves <= minMoves ? 'text-success' : 'text-warning'}`}>
+            {moves <= minMoves
+              ? '✨ Идеально! Вы уложились в оптимум!'
+              : `📈 Превышение на ${pluralMoves(moves - minMoves)}`}
+          </p>
         </div>
-      )}
-    </div>
+
+        <div className="mt-5 text-center">
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Очки</p>
+          <p className="font-hud text-3xl font-bold text-horizon-gold">{finalScore}</p>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Button
+            variant="primary"
+            className="w-full min-w-0"
+            onClick={handleSubmitScore}
+            disabled={scoreSaved}
+          >
+            {scoreSaved ? '✅ Сохранено' : '📤 Сохранить рекорд'}
+          </Button>
+          <Button variant="ghost" className="w-full min-w-0" onClick={() => resetGame()}>
+            🔄 Играть снова
+          </Button>
+        </div>
+      </Modal>
+    </GameShell>
   );
 }

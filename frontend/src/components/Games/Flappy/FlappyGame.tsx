@@ -3,19 +3,23 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlappyStore } from '../../../store/flappyStore';
 import { useSkins } from '../../../hooks/useSkins';
-import './FlappyGame.css';
 import api from '../../../services/api';
+import { GameShell, ScoreChip } from '../../ui/GameShell';
+import { Button } from '../../ui/Button';
+import { Spinner } from '../../ui/Spinner';
+import Notification from '../../Common/Notification/Notification';
+import { cn } from '../../../lib/cn';
 
 export function FlappyGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { skins, loading: skinsLoading } = useSkins();
-  
+
   // Состояния для переключения скинов
   const [useRainbowPipes, setUseRainbowPipes] = useState(false);
   const [useGoldenBird, setUseGoldenBird] = useState(false);
-  
+
   const {
     birdY,
     pipes,
@@ -25,7 +29,7 @@ export function FlappyGame() {
     jump,
     resetGame,
   } = useFlappyStore();
-  
+
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 500;
   const BIRD_SIZE = 30;
@@ -50,14 +54,14 @@ export function FlappyGame() {
     setUseGoldenBird(newVal);
     localStorage.setItem('flappy_golden_bird', String(newVal));
   };
-  
+
   // Проверка авторизации
   useEffect(() => {
     if (!token) {
       navigate('/login');
     }
   }, [token, navigate]);
-  
+
   // Обработка кликов и пробела для прыжка
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -66,19 +70,19 @@ export function FlappyGame() {
         jump();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [jump]);
-  
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleManualSave = async () => {
     const { score } = useFlappyStore.getState();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const token = localStorage.getItem('accessToken');
-    
+
     try {
       const response = await api.post('/game/submit', {
         user_id: userId,
@@ -91,32 +95,30 @@ export function FlappyGame() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.status === 200) {
         const userId = localStorage.getItem('userId');
         const storageKey = `gameScores_${userId}`;
         const totalScoreKey = `totalScore_${userId}`;
-        
+
         const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
         const currentBest = savedScores.flappy || 0;
-        
+
         if (score > currentBest) {
           savedScores.flappy = score;
           localStorage.setItem(storageKey, JSON.stringify(savedScores));
         }
-        
+
         const played = parseInt(localStorage.getItem(`flappyGamesPlayed_${userId}`) || '0');
         localStorage.setItem(`flappyGamesPlayed_${userId}`, String(played + 1));
-        
+
         const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
         localStorage.setItem(totalScoreKey, String(totalScore + score));
-        
+
         setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
-        setTimeout(() => setSaveMessage(null), 3000);
       }
     } catch (err) {
       setSaveMessage({ type: 'error', text: '❌ Ошибка' });
-      setTimeout(() => setSaveMessage(null), 3000);
     }
   };
 
@@ -146,12 +148,12 @@ export function FlappyGame() {
     gradient.addColorStop(0.67, '#60A5FA');
     gradient.addColorStop(0.83, '#818CF8');
     gradient.addColorStop(1, '#C084FC');
-    
+
     // Основная труба с градиентом
     ctx.fillStyle = gradient;
     ctx.fillRect(x, y, width, height);
-    
-    // 🆕 Шляпка трубы (как у обычной)
+
+    // Шляпка трубы (как у обычной)
     ctx.fillStyle = gradient;
     if (isTop) {
       // Шляпка сверху (расширение)
@@ -160,7 +162,7 @@ export function FlappyGame() {
       // Шляпка снизу
       ctx.fillRect(x - 5, y, width + 10, 30);
     }
-    
+
     // Обводка
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.strokeRect(x, y, width, height);
@@ -170,20 +172,20 @@ export function FlappyGame() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Очищаем canvas
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    
+
     // Фон (небо)
     const gradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
     gradient.addColorStop(0, '#87CEEB');
     gradient.addColorStop(1, '#E0F6FF');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    
+
     // Рисуем облака (декор)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.beginPath();
@@ -191,24 +193,24 @@ export function FlappyGame() {
     ctx.ellipse(180, 70, 50, 35, 0, 0, Math.PI * 2);
     ctx.ellipse(120, 70, 35, 25, 0, 0, Math.PI * 2);
     ctx.fill();
-    
+
     ctx.beginPath();
     ctx.ellipse(600, 120, 45, 35, 0, 0, Math.PI * 2);
     ctx.ellipse(640, 110, 55, 40, 0, 0, Math.PI * 2);
     ctx.ellipse(570, 110, 40, 30, 0, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Рисуем трубы
     const pipeColor = getPipeColor();
     const isRainbow = pipeColor === 'rainbow';
-    
+
     pipes.forEach(pipe => {
       if (isRainbow) {
         // Верхняя труба (радужная)
         drawRainbowPipe(ctx, pipe.x, 0, pipe.topHeight, 60, true);
         // Нижняя труба (радужная)
         drawRainbowPipe(ctx, pipe.x, pipe.bottomY, GAME_HEIGHT - pipe.bottomY, 60, false);
-        
+
         // Обводка для радужных труб
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
         ctx.strokeRect(pipe.x, 0, 60, pipe.topHeight);
@@ -219,12 +221,12 @@ export function FlappyGame() {
         ctx.fillRect(pipe.x, 0, 60, pipe.topHeight);
         ctx.fillStyle = '#2E7D32';
         ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, 70, 30);
-        
+
         ctx.fillStyle = '#228B22';
         ctx.fillRect(pipe.x, pipe.bottomY, 60, GAME_HEIGHT - pipe.bottomY);
         ctx.fillStyle = '#2E7D32';
         ctx.fillRect(pipe.x - 5, pipe.bottomY, 70, 30);
-        
+
         // Детали труб
         ctx.fillStyle = '#1B5E20';
         for (let i = 0; i < 3; i++) {
@@ -235,19 +237,19 @@ export function FlappyGame() {
         }
       }
     });
-    
+
     // Рисуем птичку
     const birdColor = getBirdColor();
     ctx.save();
     ctx.shadowBlur = 10;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    
+
     // Тело
     ctx.fillStyle = birdColor;
     ctx.beginPath();
     ctx.ellipse(100, birdY + BIRD_SIZE/2, BIRD_SIZE/2, BIRD_SIZE/2, 0, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Если золотая птичка - добавляем блеск
     if (useGoldenBird && skins.flappy.hasGoldenBird) {
       ctx.shadowBlur = 20;
@@ -257,7 +259,7 @@ export function FlappyGame() {
       ctx.ellipse(95, birdY + BIRD_SIZE/2 - 8, 8, 5, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    
+
     // Глаз
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#000';
@@ -268,7 +270,7 @@ export function FlappyGame() {
     ctx.beginPath();
     ctx.arc(108, birdY + BIRD_SIZE/2 - 6, 1.5, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Клюв
     ctx.fillStyle = '#FF6347';
     ctx.beginPath();
@@ -276,22 +278,21 @@ export function FlappyGame() {
     ctx.lineTo(125, birdY + BIRD_SIZE/2);
     ctx.lineTo(115, birdY + BIRD_SIZE/2 + 3);
     ctx.fill();
-    
+
     // Крыло
-    // ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FFA500';
     ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FF8C00';
     ctx.beginPath();
     ctx.ellipse(90, birdY + BIRD_SIZE/2, 12, 8, -Math.PI / 4, 0, Math.PI * 2);
     ctx.fill();
-    
+
     ctx.restore();
-    
+
     // Счёт
     ctx.font = 'bold 36px "Press Start 2P", monospace';
     ctx.fillStyle = '#FFF';
     ctx.shadowBlur = 0;
     ctx.fillText(`${score}`, GAME_WIDTH / 2 - 20, 60);
-    
+
     // Стартовый экран
     if (!started && !gameOver) {
       ctx.font = 'bold 24px "Press Start 2P", monospace';
@@ -301,118 +302,116 @@ export function FlappyGame() {
       ctx.font = '16px monospace';
       ctx.fillText('или кликните мышкой', GAME_WIDTH / 2 - 110, GAME_HEIGHT / 2 + 50);
     }
-    
+
     // Game Over экран
     if (gameOver) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-      
+
       ctx.font = 'bold 36px "Press Start 2P", monospace';
       ctx.fillStyle = '#FF6B6B';
       ctx.fillText('GAME OVER', GAME_WIDTH / 2 - 120, GAME_HEIGHT / 2 - 40);
-      
+
       ctx.font = '24px monospace';
       ctx.fillStyle = '#FFF';
       ctx.fillText(`Счёт: ${score}`, GAME_WIDTH / 2 - 50, GAME_HEIGHT / 2 + 20);
-      
+
       ctx.font = '16px monospace';
       ctx.fillStyle = '#FFD700';
       ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 80);
     }
   }, [birdY, pipes, score, gameOver, started, GAME_WIDTH, GAME_HEIGHT, BIRD_SIZE, skins, useRainbowPipes, useGoldenBird]);
-  
+
   const handleCanvasClick = () => {
     jump();
   };
-  
+
   const handleBack = () => {
     navigate('/');
   };
-  
+
   if (skinsLoading) {
     return (
-      <div className="flappy-container">
-        <div className="flappy-header">
-          <div className="flappy-stats">
-            <div className="flappy-stat">
-              <span className="stat-label">🐦 Загрузка...</span>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-void">
+        <Spinner size={56} />
       </div>
     );
   }
-  
+
   return (
-    <div className="flappy-container">
-      {saveMessage && (
-        <div className={`flappy-toast flappy-toast--${saveMessage.type}`}>
-          {saveMessage.text}
-        </div>
-      )}
-      <div className="flappy-header">
-        <div className="flappy-stats">
-          <div className="flappy-stat">
-            <span className="stat-label">🐦 Счёт</span>
-            <span className="stat-value">{score}</span>
-          </div>
-        </div>
-        
-        {/* Кнопки переключения скинов */}
-        <div className="flappy-skin-controls">
+    <GameShell
+      title="Flappy Bird"
+      onBack={handleBack}
+      width="wide"
+      stats={
+        <>
+          <ScoreChip label="Счёт" value={score} className="[&_span:last-child]:text-horizon-gold" />
           {skins.flappy.hasGoldenBird && (
-            <button 
-              className={`flappy-skin-btn ${useGoldenBird ? 'active' : ''}`}
+            <button
+              type="button"
               onClick={toggleGoldenBird}
               title="Золотая птичка"
+              className={cn(
+                'rounded-sm border px-3 py-1.5 text-sm transition-colors',
+                useGoldenBird
+                  ? 'border-indigo/50 bg-indigo/15 text-indigo-soft'
+                  : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
+              )}
             >
               {useGoldenBird ? '⭐' : '🐦'} Птичка
             </button>
           )}
           {skins.flappy.hasRainbowPipes && (
-            <button 
-              className={`flappy-skin-btn ${useRainbowPipes ? 'active' : ''}`}
+            <button
+              type="button"
               onClick={toggleRainbowPipes}
               title="Радужные трубы"
+              className={cn(
+                'rounded-sm border px-3 py-1.5 text-sm transition-colors',
+                useRainbowPipes
+                  ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
+                  : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
+              )}
             >
               {useRainbowPipes ? '🌈' : '🟩'} Трубы
             </button>
           )}
-        </div>
-        
-        <div className="flappy-buttons">
-          <button onClick={resetGame} className="flappy-btn flappy-btn--new">
+        </>
+      }
+      controls={
+        <>
+          <Button variant="primary" size="sm" onClick={resetGame}>
             🔄 Новая игра
-          </button>
-          <button onClick={handleManualSave} className="flappy-btn flappy-btn--save">
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleManualSave}>
             💾 Сохранить рекорд
-          </button>
-          <button onClick={handleBack} className="flappy-btn flappy-btn--back">
-            ← На главную
-          </button>
-        </div>
-      </div>
-
-      <div className="flappy-canvas-wrapper">
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={500}
-          className="flappy-canvas"
-          onClick={handleCanvasClick}
-        />
-      </div>
-      
-      <div className="flappy-rules">
-        <details>
-          <summary>📖 Как играть?</summary>
+          </Button>
+        </>
+      }
+      help={
+        <>
           <p>🐦 Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
           <p>🚫 Не врезайтесь в трубы и не падайте на землю</p>
           <p>⭐ Каждая пройденная труба = 10 очков</p>
           <p>🏆 Чем дальше, тем выше счёт!</p>
           <p>💡 Чем выше счёт, тем больше билетиков получите</p>
-        </details>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {saveMessage && (
+        <Notification
+          type={saveMessage.type}
+          message={saveMessage.text}
+          onClose={() => setSaveMessage(null)}
+        />
+      )}
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={500}
+        onClick={handleCanvasClick}
+        className="mx-auto block h-auto w-full max-w-[800px] cursor-pointer rounded-md shadow-elevated"
+      />
+    </GameShell>
   );
 }

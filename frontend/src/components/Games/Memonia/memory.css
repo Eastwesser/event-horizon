@@ -5,6 +5,17 @@
   padding: 1rem;
 }
 
+
+.memory-game-title {
+  margin: 0 0 0.75rem;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #f5f2ea);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
 .memory-game-header {
   display: flex;
   justify-content: space-between;

@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { historyApi, type HistoryEvent } from '../../services/historyApi';
-import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
-import './HistoryPage.css';
+import { PageHeader } from '../ui/PageHeader';
+import { PageShell } from '../ui/PageShell';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
+import { FilterChip } from '../ui/FilterChip';
 
 const PAGE_SIZE = 50;
 
@@ -31,7 +35,6 @@ function prettyPayload(raw: string): string {
 
 export function HistoryPage() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('accessToken');
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [total, setTotal] = useState(0);
   const [eventType, setEventType] = useState('');
@@ -40,88 +43,114 @@ export function HistoryPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) navigate('/login');
-  }, [token, navigate]);
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
-  const load = async (offset = 0, append = false, type = eventType) => {
+  useEffect(() => {
+    if (!localStorage.getItem('accessToken')) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const data = await historyApi.list(PAGE_SIZE, 0, eventType);
+        if (cancelled) return;
+        setEvents(data.events ?? []);
+        setTotal(data.total ?? 0);
+      } catch {
+        if (!cancelled) setError('Не удалось загрузить историю событий');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventType]);
+
+  const loadMore = async () => {
     try {
-      if (append) setLoadingMore(true);
-      else setLoading(true);
-      setError('');
-      const data = await historyApi.list(PAGE_SIZE, offset, type);
-      setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
-      setTotal(data.total);
+      setLoadingMore(true);
+      const data = await historyApi.list(PAGE_SIZE, events.length, eventType);
+      setEvents((prev) => [...prev, ...(data.events ?? [])]);
+      setTotal(data.total ?? 0);
     } catch {
       setError('Не удалось загрузить историю событий');
     } finally {
-      setLoading(false);
       setLoadingMore(false);
     }
   };
 
-  useEffect(() => {
-    if (!token) return;
-    load(0, false, eventType);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventType, token]);
-
-  if (!token) return null;
+  if (!localStorage.getItem('accessToken')) return null;
 
   return (
-    <div className="history-container">
-      <button className="back-btn" onClick={() => navigate('/')}>
-        ← На главную
-      </button>
-      <header className="history-header">
-        <h1>📜 История</h1>
-        <p>События вашего аккаунта (окно хранения ~30 дней)</p>
-      </header>
+    <PageShell width="wide">
+      <PageHeader
+        title="📜 История"
+        subtitle="События вашего аккаунта (окно хранения ~30 дней)"
+        onBack={() => navigate('/')}
+        backLabel="На главную"
+      />
 
-      <div className="history-filters">
+      <div className="mb-6 flex flex-wrap gap-2">
         {TYPE_FILTERS.map((f) => (
-          <button
+          <FilterChip
             key={f.value || 'all'}
-            className={`history-filter ${eventType === f.value ? 'active' : ''}`}
+            active={eventType === f.value}
             onClick={() => setEventType(f.value)}
           >
             {f.label}
-          </button>
+          </FilterChip>
         ))}
       </div>
 
-      {error && <div className="history-error">{error}</div>}
+      {error && (
+        <div role="alert" className="mb-4 rounded-sm border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
 
       {loading ? (
-        <LoadingSpinner />
+        <div className="flex justify-center py-16">
+          <Spinner size={48} />
+        </div>
       ) : events.length === 0 ? (
-        <div className="history-empty">Пока нет событий</div>
+        <div className="rounded-md border border-white/10 bg-nebula py-12 text-center text-text-secondary">
+          Пока нет событий
+        </div>
       ) : (
         <>
-          <p className="history-count">Всего: {total}</p>
-          <ul className="history-list">
+          <p className="mb-3 text-sm text-text-secondary">Всего: {total}</p>
+          <ul className="flex flex-col gap-3">
             {events.map((ev) => (
-              <li key={ev.id} className="history-card">
-                <div className="history-card-top">
-                  <span className="history-type">{ev.event_type || 'event'}</span>
-                  <span className="history-time">{formatTime(ev.created_at_unix)}</span>
+              <Card key={ev.id} as="li">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="font-hud text-sm font-semibold text-indigo-soft">{ev.event_type || 'event'}</span>
+                  <span className="shrink-0 text-xs text-text-muted">{formatTime(ev.created_at_unix)}</span>
                 </div>
                 {ev.payload_json && (
-                  <pre className="history-payload">{prettyPayload(ev.payload_json)}</pre>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-sm bg-void p-3 font-hud text-xs text-text-secondary">
+                    {prettyPayload(ev.payload_json)}
+                  </pre>
                 )}
-              </li>
+              </Card>
             ))}
           </ul>
           {events.length < total && (
-            <button
-              className="history-load-more"
-              disabled={loadingMore}
-              onClick={() => load(events.length, true)}
-            >
-              {loadingMore ? 'Загрузка…' : 'Ещё'}
-            </button>
+            <div className="mt-4 flex justify-center">
+              <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
+                {loadingMore ? 'Загрузка…' : 'Ещё'}
+              </Button>
+            </div>
           )}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -18,74 +18,75 @@ export interface GameSkins {
   };
 }
 
+const EMPTY_SKINS: GameSkins = {
+  flappy: { hasRainbowPipes: false, hasGoldenBird: false },
+  hexagon: { hasSpacePancakes: false },
+  towers: { hasRainbowBlocks: false },
+  memory: { hasAnimalCards: false },
+};
+
+function normalizeInventoryPayload(data: unknown): unknown[] {
+  if (data == null) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'object' && data !== null && Array.isArray((data as { items?: unknown }).items)) {
+    return (data as { items: unknown[] }).items;
+  }
+  return [];
+}
+
 export function useSkins() {
-  const [skins, setSkins] = useState<GameSkins>({
-    flappy: { hasRainbowPipes: false, hasGoldenBird: false },
-    hexagon: { hasSpacePancakes: false },
-    towers: { hasRainbowBlocks: false },
-    memory: { hasAnimalCards: false },
-  });
+  const [skins, setSkins] = useState<GameSkins>(EMPTY_SKINS);
   const [loading, setLoading] = useState(true);
+  /** True when the user owns zero skins (empty inventory). */
+  const [empty, setEmpty] = useState(false);
 
   useEffect(() => {
     const loadSkins = async () => {
       try {
         const response = await getInventory();
-        console.log('📦 useSkins - ответ от API:', response.data);
-        
-        // response.data - это массив
-        let items = response.data;
-        
-        // Если ответ - объект с полем items
-        if (response.data && response.data.items && Array.isArray(response.data.items)) {
-          items = response.data.items;
-        }
-        // Если ответ - массив
-        else if (Array.isArray(response.data)) {
-          items = response.data;
-        }
-        // Если ничего не подошло
-        else {
-          console.warn('⚠️ Неизвестный формат инвентаря:', response.data);
-          items = [];
-        }
-        
-        console.log('📦 useSkins - items:', items);
-        
+        const items = normalizeInventoryPayload(response.data) as Array<{
+          game_id?: string;
+          name?: string;
+        }>;
+
+        setEmpty(items.length === 0);
+
         setSkins({
           flappy: {
-            hasRainbowPipes: items.some((item: any) => 
-              item.game_id === 'flappy' && item.name?.includes('Радужные трубы')
+            hasRainbowPipes: items.some(
+              (item) => item.game_id === 'flappy' && item.name?.includes('Радужные трубы'),
             ),
-            hasGoldenBird: items.some((item: any) => 
-              item.game_id === 'flappy' && item.name?.includes('Золотая птичка')
+            hasGoldenBird: items.some(
+              (item) => item.game_id === 'flappy' && item.name?.includes('Золотая птичка'),
             ),
           },
           hexagon: {
-            hasSpacePancakes: items.some((item: any) => 
-              item.game_id === 'hexagon' && item.name?.includes('Космические блины')
+            hasSpacePancakes: items.some(
+              (item) => item.game_id === 'hexagon' && item.name?.includes('Космические блины'),
             ),
           },
           towers: {
-            hasRainbowBlocks: items.some((item: any) => 
-              item.game_id === 'towers' && item.name?.includes('Радужные блоки')
+            hasRainbowBlocks: items.some(
+              (item) => item.game_id === 'towers' && item.name?.includes('Радужные блоки'),
             ),
           },
           memory: {
-            hasAnimalCards: items.some((item: any) => 
-              item.game_id === 'memory' && item.name?.includes('Карточки со зверями')
+            hasAnimalCards: items.some(
+              (item) => item.game_id === 'memory' && item.name?.includes('Карточки со зверями'),
             ),
           },
         });
       } catch (error) {
         console.error('Failed to load skins:', error);
+        setSkins(EMPTY_SKINS);
+        setEmpty(true);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadSkins();
+
+    void loadSkins();
   }, []);
 
-  return { skins, loading };
+  return { skins, loading, empty, emptyMessage: empty ? 'У вас пока нет скинов' : null };
 }
