@@ -1,0 +1,251 @@
+/* Event Horizon design tokens — indigo night sky, gold as accent.
+   Kids-safe: calm, welcoming, slightly majestic — not ominous. */
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces — deep indigo / near-black violet (identity) */
+  --color-void: #0b0e1a;
+  --color-nebula: #151b33;
+  --color-nebula-elevated: #1e2748;
+
+  /* Brand indigo — fills/borders only (#5b6cff fails AA text on nebula) */
+  --color-indigo: #5b6cff;
+  /* Text-safe indigo — use for links, labels, active tab text (AA+) */
+  --color-indigo-soft: #8b95ff;
+  /* Secondary support */
+  --color-violet: #a78bfa;
+
+  /* Gold accent — used sparingly (flagship, primary CTA, wonder) */
+  --color-horizon-gold-hot: #ffe9b8;
+  --color-horizon-gold: #e8b84a;
+  --color-horizon-ember: #d4894a;
+
+  /* Photon-cyan — focus rings + info (kept distinct from indigo hover) */
+  --color-photon-cyan: #6ec9e8;
+
+  /* Text — warm off-white on indigo */
+  --color-text-primary: #e8eaf6;
+  --color-text-secondary: #9aa3c0;
+  --color-text-muted: #6b7394;
+
+  /* Status — subtle, kids-safe. Warning is distinct from gold (#e8b84a).
+     Warning UI must also carry a non-color signal (icon/label). */
+  --color-success: #3dba8a;
+  --color-error: #e86a6c;
+  --color-warning: #c9911f;
+
+  /* Typography roles */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-hud: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Spacing scale (4/8/12/16/24/32/48/64) */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+
+  /* Radius — tied to hierarchy */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Shadows — indigo default for interactive; gold reserved for accent */
+  --shadow-glow-indigo: 0 0 0 1px rgba(91, 108, 255, 0.28), 0 8px 32px -8px rgba(91, 108, 255, 0.32);
+  --shadow-glow-gold: 0 0 0 1px rgba(232, 184, 74, 0.22), 0 8px 32px -8px rgba(232, 184, 74, 0.28);
+  --shadow-glow-cyan: 0 0 0 1px rgba(110, 201, 232, 0.25), 0 8px 32px -8px rgba(110, 201, 232, 0.28);
+  --shadow-elevated: 0 20px 60px -20px rgba(0, 0, 0, 0.55), 0 8px 24px -8px rgba(0, 0, 0, 0.4);
+
+  /* Motion */
+  --ease-warp: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* ---------- Signature motif: the "event horizon" glow ----------
+   Soft indigo ambient wash (identity). Gold stays on the disk itself. */
+.eh-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(720px, 90vw);
+  height: min(720px, 90vw);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-indigo-soft) 55%, transparent) 0%,
+    color-mix(in srgb, var(--color-indigo) 40%, transparent) 28%,
+    transparent 65%
+  );
+  filter: blur(50px);
+  opacity: 0.55;
+}
+
+.eh-ring {
+  position: relative;
+  isolation: isolate;
+}
+
+.eh-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 180deg,
+    transparent 0%,
+    var(--color-indigo-soft) 15%,
+    var(--color-indigo) 22%,
+    transparent 40%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---------- Hero centerpiece: the event horizon itself ----------
+   Structure unchanged — only gold/ember tones softened to match palette. */
+.eh-disk {
+  position: relative;
+  width: min(420px, 82vw);
+  aspect-ratio: 1;
+}
+
+.eh-disk-rings {
+  position: absolute;
+  inset: 0;
+  animation: eh-disk-spin 140s linear infinite;
+}
+
+.eh-disk-ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 50%;
+}
+
+.eh-disk-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.eh-disk-ring--main {
+  transform: scaleY(0.3) rotate(-8deg);
+}
+.eh-disk-ring--main::before {
+  background: conic-gradient(
+    from 200deg,
+    var(--color-horizon-gold-hot) 0deg,
+    var(--color-horizon-gold) 70deg,
+    var(--color-horizon-ember) 150deg,
+    color-mix(in srgb, var(--color-horizon-ember) 22%, transparent) 210deg,
+    color-mix(in srgb, var(--color-horizon-ember) 8%, transparent) 300deg,
+    var(--color-horizon-gold-hot) 360deg
+  );
+  opacity: 0.78;
+}
+
+.eh-disk-ring--lensed {
+  transform: scaleY(0.94) rotate(83deg);
+}
+.eh-disk-ring--lensed::before {
+  background: conic-gradient(
+    from 90deg,
+    color-mix(in srgb, var(--color-photon-cyan) 55%, transparent) 0deg,
+    transparent 40deg,
+    transparent 320deg,
+    color-mix(in srgb, var(--color-photon-cyan) 55%, transparent) 360deg
+  );
+  opacity: 0.45;
+}
+
+.eh-disk-ring--mid {
+  transform: scaleY(0.55) rotate(32deg);
+}
+.eh-disk-ring--mid::before {
+  background: conic-gradient(
+    from 150deg,
+    var(--color-horizon-gold) 0deg,
+    transparent 50deg,
+    transparent 310deg,
+    var(--color-horizon-gold) 360deg
+  );
+  opacity: 0.28;
+}
+
+.eh-disk-core {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 34%;
+  height: 34%;
+  border-radius: 50%;
+  background: var(--color-void);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--color-horizon-gold-hot) 80%, transparent),
+    0 0 28px 5px color-mix(in srgb, var(--color-horizon-gold) 55%, transparent),
+    0 0 80px 22px color-mix(in srgb, var(--color-horizon-gold) 22%, transparent);
+}
+
+@keyframes eh-disk-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- One orchestrated entrance moment ---------- */
+@keyframes eh-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eh-stagger-in {
+  animation: eh-rise-in 0.6s var(--ease-warp) both;
+}
+
+/* ---------- Accessibility floor ----------
+   Focus rings stay photon-cyan so they never collide with indigo hover/active.
+   Hover = indigo, focus = cyan — two distinct channels. */
+:focus-visible {
+  outline: 2px solid var(--color-photon-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Prefer reduced motion for UI chrome — but do NOT blanket-kill transitions
+   on game mechanics (Memory flip, Hanoi ring move). Those are intentional
+   feedback for player actions. */
+@media (prefers-reduced-motion: reduce) {
+  .eh-disk-rings,
+  .eh-stagger-in,
+  .eh-glow {
+    animation: none !important;
+  }
+
+  .eh-stagger-in {
+    opacity: 1;
+    transform: none;
+  }
+}
