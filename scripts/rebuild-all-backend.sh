@@ -7,6 +7,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Prefer a writable module cache (sandbox / CI often lack GOPATH access).
+export GOMODCACHE="${GOMODCACHE:-${HOME}/go/pkg/mod}"
+mkdir -p "$GOMODCACHE" 2>/dev/null || true
+
 echo "== 1/3 proto =="
 bash scripts/rebuild-proto.sh
 
@@ -30,3 +34,7 @@ echo "✅ All backend images built locally."
 echo "Push to Docker Hub:"
 echo "  make docker-push-all"
 echo "  # or: bash scripts/docker-push-images.sh --all"
+echo
+echo "If docker push fails with DNS (UDP :53) but ping works:"
+echo "  bash scripts/dns-check.sh"
+echo "  # then: sudo resolvectl dns docker0 1.1.1.1 8.8.8.8   # or fix /etc/resolv.conf"

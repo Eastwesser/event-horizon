@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 type Config struct {
     // HTTP
@@ -26,6 +29,10 @@ type Config struct {
 
     // Payment webhook (Boosty / manual confirm)
     PaymentWebhookSecret string
+
+    // Local disk uploads (inventory images); served at GET /uploads/*
+    UploadDir      string
+    UploadMaxBytes int64
 }
 
 func Load() *Config {
@@ -46,12 +53,23 @@ func Load() *Config {
         NATSUrl:              getEnv("NATS_URL", "nats://localhost:4222"),
         RedisAddr:            getEnv("REDIS_ADDR", "localhost:6379"),
         PaymentWebhookSecret: getEnv("PAYMENT_WEBHOOK_SECRET", ""),
+        UploadDir:            getEnv("UPLOAD_DIR", "./data/uploads"),
+        UploadMaxBytes:       getEnvInt64("UPLOAD_MAX_BYTES", 2<<20), // 2 MiB
     }
 }
 
 func getEnv(key, defaultValue string) string {
     if value := os.Getenv(key); value != "" {
         return value
+    }
+    return defaultValue
+}
+
+func getEnvInt64(key string, defaultValue int64) int64 {
+    if value := os.Getenv(key); value != "" {
+        if n, err := strconv.ParseInt(value, 10, 64); err == nil && n > 0 {
+            return n
+        }
     }
     return defaultValue
 }

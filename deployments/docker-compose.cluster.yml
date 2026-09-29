@@ -1032,6 +1032,12 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      # Inventory image uploads (POST /api/uploads). Named volume — not a bind mount;
+      # files live in Docker volume `gateway_uploads`, never in the git tree.
+      # Local/dev default without compose: UPLOAD_DIR=./data/uploads (gitignored).
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      - gateway_uploads:/data/uploads
     depends_on:
       - nats-1
       - nats-2
@@ -1070,6 +1076,9 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      - gateway_uploads:/data/uploads
     depends_on:
       - nats-1
       - nats-2
@@ -1108,6 +1117,9 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      - gateway_uploads:/data/uploads
     depends_on:
       - nats-1
       - nats-2
@@ -1150,6 +1162,9 @@ volumes:
   postgres_authors_data:
   postgres_history_data:
   clickhouse_data:
+  # Shared across gateway / gateway-2 / gateway-3 so uploads survive recreate
+  # and any replica can serve GET /uploads/*. Not a host bind path → not in git.
+  gateway_uploads:
 
 
 # ============================================================

@@ -6,6 +6,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Prefer a writable module cache (avoids sandbox GOMODCACHE hang / permission errors).
+export GOMODCACHE="${GOMODCACHE:-${HOME}/go/pkg/mod}"
+mkdir -p "$GOMODCACHE" 2>/dev/null || true
+
 if [[ $# -eq 0 ]]; then
   echo "Usage: $0 <service> [service ...]"
   echo "Example: $0 game analytics gateway"
@@ -23,5 +27,7 @@ for svc in "$@"; do
 done
 
 echo
-echo "✅ Done. Push with: bash scripts/docker-push-images.sh $*"
-echo "   Recreate: docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d $*"
+echo "✅ Local images tagged eastwesser/<svc>:latest (no Hub required for this host)."
+echo "   Recreate: docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d --force-recreate $*"
+echo "   Optional Hub push (needs working DNS — see scripts/dns-check.sh):"
+echo "     bash scripts/docker-push-images.sh $*"

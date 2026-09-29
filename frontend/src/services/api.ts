@@ -30,6 +30,12 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // FormData must keep browser-set multipart boundary (not application/json).
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers && 'Content-Type' in config.headers) {
+      delete config.headers['Content-Type'];
+    }
+  }
   console.log('📡 API Request:', config.method, config.url, config.data);
   console.log('📡 Headers:', config.headers);
   return config;
