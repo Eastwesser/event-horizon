@@ -12,6 +12,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path,
       },
+      '/uploads': {
+        target: 'http://localhost:8079',
+        changeOrigin: true,
+      },
       '/ws': {
         target: 'ws://localhost:8079',
         ws: true,

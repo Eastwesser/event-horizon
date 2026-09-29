@@ -589,6 +589,44 @@ paths:
         '401':
           description: Unauthorized
 
+  # ===== UPLOADS (inventory images) =====
+  /api/uploads:
+    post:
+      summary: Upload an inventory image (author/admin)
+      description: Multipart field `file`. Returns a public URL under `/uploads/...`.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: /uploads/a1b2c3d4.png
+                  size:
+                    type: integer
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (author/admin only)
+
   # ===== INVENTORY =====
   /api/inventory/items:
     get:

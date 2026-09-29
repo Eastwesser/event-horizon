@@ -49,6 +49,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/circuit"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/client"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/config"
+	"github.com/Eastwesser/event-horizon/services/gateway/internal/dto"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
 	gwhook "github.com/Eastwesser/event-horizon/services/gateway/internal/webhook"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
@@ -452,6 +453,8 @@ func runGateway() {
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ready", "service": "gateway"})
 	})
+
+	registerUploadRoutes(r, cfg, authClient)
 
 	// Week-1: expose OpenAPI + Swagger UI (canonical HTTP contract)
 	r.GET("/openapi.yaml", func(c *gin.Context) {
@@ -1394,14 +1397,9 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.SearchItemsResponse)
-		// Never JSON-encode a nil/omitted slice as `null`/missing — empty list is [].
-		// Proto `items,omitempty` would drop an empty slice; gin.H keeps an explicit [].
-		items := resp.GetItems()
-		if items == nil {
-			items = []*inventoryPb.Item{}
-		}
+		// Map via dto so price:0 / stock:0 / images:[] survive proto3 omitempty.
 		c.JSON(http.StatusOK, gin.H{
-			"items": items,
+			"items": dto.InventoryItems(resp.GetItems()),
 			"total": resp.GetTotal(),
 		})
 	})
@@ -1449,8 +1447,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.ItemResponse)
-
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, dto.InventoryItemResponse(resp))
 	})
 
 	// POST /api/inventory/items/bulk — массовое создание (author/admin)
@@ -1533,8 +1530,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.ItemResponse)
-
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, dto.InventoryItemResponse(resp))
 	})
 
 	// PUT /api/inventory/items/:id — обновить товар (author владелец или admin)
@@ -1610,8 +1606,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.ItemResponse)
-
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, dto.InventoryItemResponse(resp))
 	})
 
 	// DELETE /api/inventory/items/:id — удалить товар (author владелец или admin)

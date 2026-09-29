@@ -62,3 +62,10 @@ services/*/*-service
 # Local Cursor / agent tooling
 .agents/
 skills-lock.json
+
+# Gateway local uploads (inventory images)
+# Compose uses named volume `gateway_uploads` (never in the repo).
+# These paths cover local/dev runs with UPLOAD_DIR=./data/uploads.
+data/uploads/
+**/data/uploads/
+services/gateway/data/

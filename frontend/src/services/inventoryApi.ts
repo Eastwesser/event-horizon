@@ -100,3 +100,17 @@ export const inventoryApi = {
     return response.data?.items ?? [];
   },
 };
+
+/** Upload image for inventory item; returns public URL path (e.g. /uploads/….png). */
+export async function uploadInventoryImage(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post<{ url: string }>('/uploads', form, {
+    timeout: 60000,
+  });
+  const url = response.data?.url;
+  if (!url) {
+    throw new Error('Сервер не вернул URL');
+  }
+  return url;
+}
