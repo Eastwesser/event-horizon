@@ -30,8 +30,26 @@ export function Profile() {
   const [stats, setStats] = useState({
     nickname: localStorage.getItem(nicknameKey) || email.split('@')[0],
     totalScore: 0,
-    bestScores: { hexagon: 0, memory: 0, flappy: 0, towers: 0, hanoi: 0 },
-    gamesPlayed: { hexagon: 0, memory: 0, flappy: 0, towers: 0, hanoi: 0 },
+    bestScores: {
+      hexagon: 0,
+      memory: 0,
+      flappy: 0,
+      towers: 0,
+      hanoi: 0,
+      twenty48: 0,
+      gears: 0,
+      companion: 0,
+    },
+    gamesPlayed: {
+      hexagon: 0,
+      memory: 0,
+      flappy: 0,
+      towers: 0,
+      hanoi: 0,
+      twenty48: 0,
+      gears: 0,
+      companion: 0,
+    },
     achievements: [] as string[]
   });
   const [balance, setBalance] = useState({ lamps: 0, tickets: 0 });
@@ -46,14 +64,29 @@ export function Profile() {
     const flappyBest = savedScores.flappy || 0;
     const towersBest = savedScores.towers || 0;
     const hanoiBest = savedScores.hanoi || 0;
+    const twenty48Best = savedScores.twenty48 || 0;
+    const gearsBest = savedScores.gears || 0;
+    const companionBest = savedScores.companion || 0;
     
     const hexagonPlayed = played.hexagon || 0;
     const memoryPlayed = played.memory || 0;
     const flappyPlayed = played.flappy || 0;
     const towersPlayed = played.towers || 0;
     const hanoiPlayed = played.hanoi || 0;
+    const twenty48Played = played.twenty48 || 0;
+    const gearsPlayed = played.gears || 0;
+    const companionPlayed = played.companion || 0;
     
     const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+    const gamesTotal =
+      hexagonPlayed +
+      memoryPlayed +
+      flappyPlayed +
+      towersPlayed +
+      hanoiPlayed +
+      twenty48Played +
+      gearsPlayed +
+      companionPlayed;
 
     const achievements: string[] = [];
     if (hexagonBest >= 100) achievements.push('🥞 100 блинов');
@@ -62,8 +95,11 @@ export function Profile() {
     if (towersBest >= 100) achievements.push('🗼 Builder Master');
     if (flappyBest >= 100) achievements.push('🐦 Flappy Master');
     if (hanoiBest >= 900) achievements.push('🪈 Hanoi Master');
-    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed + hanoiPlayed >= 10) achievements.push('🎮 10+ игр позади');
-    if (hexagonPlayed + memoryPlayed + flappyPlayed + towersPlayed + hanoiPlayed >= 50) achievements.push('🔥 Одержимый');
+    if (twenty48Best >= 2048) achievements.push('🔢 Горизонт 2048');
+    if (gearsBest >= 200) achievements.push('⚙️ Орбита VIII');
+    if (companionBest >= 100) achievements.push('⭐ Заботливый');
+    if (gamesTotal >= 10) achievements.push('🎮 10+ игр позади');
+    if (gamesTotal >= 50) achievements.push('🔥 Одержимый');
 
     const fetchUserData = async () => {
       try {
@@ -131,8 +167,26 @@ export function Profile() {
     setStats(prev => ({
       ...prev,
       totalScore: totalScore,
-      bestScores: { hexagon: hexagonBest, memory: memoryBest, flappy: flappyBest, towers: towersBest, hanoi: hanoiBest },
-      gamesPlayed: { hexagon: hexagonPlayed, memory: memoryPlayed, flappy: flappyPlayed, towers: towersPlayed, hanoi: hanoiPlayed },
+      bestScores: {
+        hexagon: hexagonBest,
+        memory: memoryBest,
+        flappy: flappyBest,
+        towers: towersBest,
+        hanoi: hanoiBest,
+        twenty48: twenty48Best,
+        gears: gearsBest,
+        companion: companionBest,
+      },
+      gamesPlayed: {
+        hexagon: hexagonPlayed,
+        memory: memoryPlayed,
+        flappy: flappyPlayed,
+        towers: towersPlayed,
+        hanoi: hanoiPlayed,
+        twenty48: twenty48Played,
+        gears: gearsPlayed,
+        companion: companionPlayed,
+      },
       achievements
     }));
   }, [userId, storageKey, playedKey, totalScoreKey, nicknameKey]);
@@ -176,6 +230,9 @@ export function Profile() {
     { key: 'flappy', icon: '🐦', label: 'Flappy Bird', value: stats.bestScores.flappy },
     { key: 'towers', icon: '🗼', label: 'Builder', value: stats.bestScores.towers },
     { key: 'hanoi', icon: '🪈', label: 'Hanoi', value: stats.bestScores.hanoi },
+    { key: 'twenty48', icon: '🔢', label: '2048', value: stats.bestScores.twenty48 },
+    { key: 'gears', icon: '⚙️', label: 'Орбиты', value: stats.bestScores.gears },
+    { key: 'companion', icon: '⭐', label: 'Компаньон', value: stats.bestScores.companion },
   ];
 
   return (
@@ -212,6 +269,9 @@ export function Profile() {
         <StatCard size="md" value={stats.bestScores.flappy} label="🐦 Flappy Bird" />
         <StatCard size="md" value={stats.bestScores.towers} label="🗼 Builder" />
         <StatCard size="md" value={stats.bestScores.hanoi} label="🪈 Hanoi" />
+        <StatCard size="md" value={stats.bestScores.twenty48} label="🔢 2048" />
+        <StatCard size="md" value={stats.bestScores.gears} label="⚙️ Орбиты" />
+        <StatCard size="md" value={stats.bestScores.companion} label="⭐ Компаньон" />
       </div>
 
       {stats.achievements.length > 0 && (

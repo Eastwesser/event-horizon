@@ -1,49 +1,24 @@
 Что я держу в карте
-Закрыто (в main):
+Закрыто (в main / эта волна):
 
-✅ Wave A: дизайн-система + миграция страниц
+✅ Wave A–C, twins nil→[], empty state, image URL, deferred wave
 
-✅ Wave B: proto3 null-safety, shop incident
+✅ Burger separators
 
-✅ Wave C: admin analytics (2d), inventory stats v2 (2c v2)
+✅ Full gin.H DTO для twin list endpoints
 
-✅ Twin nil→[] (5 эндпоинтов)
+✅ 3 новые игры → пул 8: twenty48, gears, companion
 
-✅ Empty state по фильтру
-
-✅ Image URL
-
-В работе (feat/deferred-wave-finish):
-
-🟧 gin.H DTO (inventory)
-
-🟧 Navbar extraction
-
-🟧 Uploads (file picker)
-
-🟧 DNS/rebuild infra
-
-🟧 3 pre-commit вопроса — закрыты
-
-🟧 TODO_2 прочищен
-
-🟧 Отчёт по сентябрю — готов
+✅ Goods: тип «карточка» + атрибуты ККИ / pricing hint
 
 Ждёт:
 
-⏸ Smoke 5 пунктов
+⏸ Rebuild gateway + game + frontend smoke
 
 ⏸ Commit
 
-⏸ Push + PR
+Отложено:
 
-Отложено (реально):
+🟧 Массовый сид ~150–300 карт Берсерк (фото → каталог)
 
-🟧 Burger separators
-
-🟧 Full DTO для twin'ов (опционально)
-
-Планы на будущее:
-
-🟧 3 новые игры (было 5, план — 8)
-
+🟧 Глубокий тамагочи / physics polish орбит (MVP есть)

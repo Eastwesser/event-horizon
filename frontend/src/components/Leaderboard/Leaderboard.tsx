@@ -12,7 +12,7 @@ interface LeaderboardEntry {
   score: number;
 }
 
-type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi';
+type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi' | 'twenty48' | 'gears' | 'companion';
 
 const GAME_TABS: { id: GameId; label: string }[] = [
   { id: 'hexagon', label: '🥞 Pancaker' },
@@ -20,6 +20,9 @@ const GAME_TABS: { id: GameId; label: string }[] = [
   { id: 'flappy', label: '🐦 Flappy Bird' },
   { id: 'towers', label: '🗼 Builder' },
   { id: 'hanoi', label: '🪈 Hanoi' },
+  { id: 'twenty48', label: '🔢 2048' },
+  { id: 'gears', label: '⚙️ Орбиты' },
+  { id: 'companion', label: '⭐ Компаньон' },
 ];
 
 interface LeaderboardProps {

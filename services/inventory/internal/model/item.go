@@ -8,7 +8,7 @@ import (
 type Item struct {
     ID          string                 `json:"id"`
     AuthorID    string                 `json:"author_id"`
-    Type        string                 `json:"type"`        // "брелок", "картина", "фенечка"
+    Type        string                 `json:"type"`        // "брелок", "картина", "фенечка", "карточка"
     Name        string                 `json:"name"`
     Description string                 `json:"description"`
     Price       float64                `json:"price"`

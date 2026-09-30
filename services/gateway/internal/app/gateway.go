@@ -1231,11 +1231,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authorsPb.ListAuthorsResponse)
-		authors := resp.GetAuthors()
-		if authors == nil {
-			authors = []*authorsPb.Author{}
-		}
-		c.JSON(http.StatusOK, gin.H{"authors": authors, "total": resp.GetTotal()})
+		c.JSON(http.StatusOK, gin.H{"authors": dto.Authors(resp.GetAuthors()), "total": resp.GetTotal()})
 	})
 
 	// --- History ---
@@ -1265,11 +1261,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*historyPb.ListEventsResponse)
-		events := resp.GetEvents()
-		if events == nil {
-			events = []*historyPb.HistoryEvent{}
-		}
-		c.JSON(http.StatusOK, gin.H{"events": events, "total": resp.GetTotal()})
+		c.JSON(http.StatusOK, gin.H{"events": dto.HistoryEvents(resp.GetEvents()), "total": resp.GetTotal()})
 	})
 
 	// --- Analytics ---
@@ -1293,11 +1285,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetDAUResponse)
-		dauDays := resp.GetDays()
-		if dauDays == nil {
-			dauDays = []*analyticsPb.DayCount{}
-		}
-		c.JSON(http.StatusOK, gin.H{"days": dauDays})
+		c.JSON(http.StatusOK, gin.H{"days": dto.DayCounts(resp.GetDays())})
 	})
 
 	r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
@@ -1331,14 +1319,10 @@ func runGateway() {
 			return
 		}
 		resp := out.(*analyticsPb.GetRetentionResponse)
-		points := resp.GetPoints()
-		if points == nil {
-			points = []*analyticsPb.RetentionPoint{}
-		}
 		c.JSON(http.StatusOK, gin.H{
 			"cohort_day":  resp.GetCohortDay(),
 			"cohort_size": resp.GetCohortSize(),
-			"points":      points,
+			"points":      dto.RetentionPoints(resp.GetPoints()),
 		})
 	})
 
@@ -1839,11 +1823,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*leaderboardPb.GetTopScoresResponse)
-		entries := resp.GetEntries()
-		if entries == nil {
-			entries = []*leaderboardPb.ScoreEntry{}
-		}
-		c.JSON(http.StatusOK, gin.H{"entries": entries})
+		c.JSON(http.StatusOK, gin.H{"entries": dto.ScoreEntries(resp.GetEntries())})
 	})
 
 	r.POST("/api/auth/update-nickname", middleware.RequireAuth(authClient), func(c *gin.Context) {

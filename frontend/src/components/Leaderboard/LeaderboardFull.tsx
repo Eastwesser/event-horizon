@@ -17,7 +17,7 @@ interface LeaderboardEntry {
   game_id?: string;
 }
 
-type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi';
+type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi' | 'twenty48' | 'gears' | 'companion';
 
 const GAME_TABS: { id: GameId; label: string; icon: string }[] = [
   { id: 'hexagon', label: 'Pancaker', icon: '🥞' },
@@ -25,6 +25,9 @@ const GAME_TABS: { id: GameId; label: string; icon: string }[] = [
   { id: 'memory', label: 'Memonia', icon: '🎴' },
   { id: 'towers', label: 'Builder', icon: '🗼' },
   { id: 'hanoi', label: 'Hanoi', icon: '🪈' },
+  { id: 'twenty48', label: '2048', icon: '🔢' },
+  { id: 'gears', label: 'Орбиты', icon: '⚙️' },
+  { id: 'companion', label: 'Компаньон', icon: '⭐' },
 ];
 
 const RANK_TONE: Record<number, string> = {

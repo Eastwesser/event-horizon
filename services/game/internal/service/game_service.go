@@ -164,6 +164,39 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
             lampsEarned += 5
         }
 
+    case "twenty48":
+        if req.Score < 0 || req.Score > 100000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
+        validatedScore = req.Score
+        lampsEarned = 5
+        ticketsEarned = req.Score / 200
+        if ticketsEarned > 80 {
+            ticketsEarned = 80
+        }
+
+    case "gears":
+        if req.Score < 0 || req.Score > 50000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
+        validatedScore = req.Score
+        lampsEarned = 5
+        ticketsEarned = req.Score / 50
+        if ticketsEarned > 60 {
+            ticketsEarned = 60
+        }
+
+    case "companion":
+        if req.Score < 0 || req.Score > 10000 {
+            return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
+        }
+        validatedScore = req.Score
+        lampsEarned = 3
+        ticketsEarned = req.Score / 100
+        if ticketsEarned > 30 {
+            ticketsEarned = 30
+        }
+
     default:
         return &SubmitScoreResponse{
             Success: false,
@@ -302,6 +335,39 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
                 {Level: 1, TargetScore: 500, RewardLamps: 5, RewardTickets: 5},
                 {Level: 2, TargetScore: 800, RewardLamps: 8, RewardTickets: 10},
                 {Level: 3, TargetScore: 1000, RewardLamps: 10, RewardTickets: 20},
+            },
+        }, nil
+    case "twenty48":
+        return &GameInfo{
+            GameID:      "twenty48",
+            Name:        "Горизонт 2048",
+            Description: "Сдвигай плитки, собери 2048",
+            Levels: []LevelInfo{
+                {Level: 1, TargetScore: 500, RewardLamps: 5, RewardTickets: 5},
+                {Level: 2, TargetScore: 2000, RewardLamps: 10, RewardTickets: 15},
+                {Level: 3, TargetScore: 5000, RewardLamps: 15, RewardTickets: 30},
+            },
+        }, nil
+    case "gears":
+        return &GameInfo{
+            GameID:      "gears",
+            Name:        "Орбиты",
+            Description: "Сливай шестерёнки до восьмой",
+            Levels: []LevelInfo{
+                {Level: 1, TargetScore: 80, RewardLamps: 5, RewardTickets: 5},
+                {Level: 2, TargetScore: 200, RewardLamps: 10, RewardTickets: 15},
+                {Level: 3, TargetScore: 400, RewardLamps: 15, RewardTickets: 25},
+            },
+        }, nil
+    case "companion":
+        return &GameInfo{
+            GameID:      "companion",
+            Name:        "Компаньон",
+            Description: "Мягкий тамагочи без FOMO-смерти",
+            Levels: []LevelInfo{
+                {Level: 1, TargetScore: 50, RewardLamps: 3, RewardTickets: 3},
+                {Level: 2, TargetScore: 150, RewardLamps: 5, RewardTickets: 8},
+                {Level: 3, TargetScore: 400, RewardLamps: 8, RewardTickets: 15},
             },
         }, nil
     default:
