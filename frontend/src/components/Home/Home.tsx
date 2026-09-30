@@ -46,6 +46,30 @@ const games = [
     path: '/game/memory',
     available: true,
   },
+  {
+    id: 'twenty48',
+    name: 'Горизонт 2048',
+    description: 'Сдвинь плитки — собери 2048',
+    icon: '🔢',
+    path: '/game/twenty48',
+    available: true,
+  },
+  {
+    id: 'gears',
+    name: 'Орбиты',
+    description: 'Сливай шестерёнки до восьмой',
+    icon: '⚙️',
+    path: '/game/gears',
+    available: true,
+  },
+  {
+    id: 'companion',
+    name: 'Компаньон',
+    description: 'Мягкий тамагочи без FOMO-смерти',
+    icon: '⭐',
+    path: '/game/companion',
+    available: true,
+  },
 ];
 
 export function Home() {
@@ -99,7 +123,7 @@ export function Home() {
 
         <section id="games" className="scroll-mt-24 pb-16 pt-4">
           <h2 className="mb-6 font-display text-xl font-semibold text-text-primary">Игры</h2>
-          <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {games.map((game, i) => (
               <Card
                 key={game.id}

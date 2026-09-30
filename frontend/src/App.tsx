@@ -8,6 +8,9 @@ import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 import { FlappyGame } from './components/Games/Flappy/FlappyGame';
 import { TowerGame } from './components/Games/Towers/TowerGame';
 import { HanoiTower } from './components/Games/Hanoi/HanoiTower';
+import { Twenty48Game } from './components/Games/Twenty48/Twenty48Game';
+import { GearsGame } from './components/Games/Gears/GearsGame';
+import { CompanionGame } from './components/Games/Companion/CompanionGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { Shop } from './components/Shop/Shop';
@@ -70,6 +73,18 @@ function App() {
           <Route 
             path="/game/hanoi" 
             element={isAuthenticated ? <HanoiTower /> : <Navigate to="/login" />} 
+          />
+          <Route
+            path="/game/twenty48"
+            element={isAuthenticated ? <Twenty48Game /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/game/gears"
+            element={isAuthenticated ? <GearsGame /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/game/companion"
+            element={isAuthenticated ? <CompanionGame /> : <Navigate to="/login" />}
           />
           <Route 
             path="/leaderboard" 

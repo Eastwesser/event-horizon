@@ -127,36 +127,38 @@ export function AppNavbar() {
                     </button>
                   ))}
                 </div>
-                {moreNav.map((link) => (
-                  <button
-                    key={link.path}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => go(link.path)}
-                    className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
-                  >
-                    {link.label}
-                  </button>
-                ))}
+                <div className="py-1">
+                  {moreNav.map((link) => (
+                    <button
+                      key={link.path}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => go(link.path)}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
+                    >
+                      {link.label}
+                    </button>
+                  ))}
+                </div>
                 {isAdmin && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => go('/admin')}
-                    className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
-                  >
-                    🛠 Админ-панель
-                  </button>
-                )}
-                {isAdmin && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => go('/analytics')}
-                    className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
-                  >
-                    📊 Аналитика
-                  </button>
+                  <div className="border-t border-white/10 py-1">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => go('/admin')}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
+                    >
+                      🛠 Админ-панель
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => go('/analytics')}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
+                    >
+                      📊 Аналитика
+                    </button>
+                  </div>
                 )}
               </div>
             )}

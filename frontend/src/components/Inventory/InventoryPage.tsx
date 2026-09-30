@@ -15,6 +15,7 @@ const TYPE_FILTERS = [
   { value: 'брелок', label: 'Брелок' },
   { value: 'картина', label: 'Картина' },
   { value: 'фенечка', label: 'Фенечка' },
+  { value: 'карточка', label: 'Карточка' },
 ];
 
 export const InventoryPage: React.FC = () => {
