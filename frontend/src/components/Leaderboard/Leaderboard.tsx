@@ -40,15 +40,17 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<GameId>(gameId ?? 'hexagon');
+  const [selectedLevel, setSelectedLevel] = useState(1);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (gameId) setSelectedGame(gameId);
   }, [gameId]);
 
-  const fetchLeaderboard = async (gid: GameId = selectedGame) => {
+  const fetchLeaderboard = async (gid: GameId = selectedGame, level = selectedLevel) => {
     try {
-      const { data } = await getLeaderboard(gid, 10);
+      const lv = gid === 'flappy' ? level : 1;
+      const { data } = await getLeaderboard(gid, 10, lv);
       const raw = data?.entries;
       setEntries(Array.isArray(raw) ? raw.filter(Boolean) : []);
     } catch (err) {
@@ -90,8 +92,8 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
   }, [selectedGame, isOpen]);
 
   useEffect(() => {
-    if (isOpen) void fetchLeaderboard(selectedGame);
-  }, [selectedGame, isOpen]);
+    if (isOpen) void fetchLeaderboard(selectedGame, selectedLevel);
+  }, [selectedGame, selectedLevel, isOpen]);
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -124,6 +126,25 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
               </FilterChip>
             ))}
           </div>
+        )}
+
+        {selectedGame === 'flappy' && (
+          <label className="mb-3 flex items-center gap-2 text-sm text-text-primary">
+            Уровень
+            <select
+              className="rounded-sm border border-white/15 bg-void px-2 py-1"
+              value={selectedLevel}
+              onChange={(e) =>
+                setSelectedLevel(Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)))
+              }
+            >
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
 
         {entries.length === 0 ? (

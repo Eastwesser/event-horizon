@@ -43,6 +43,7 @@ type ScoreEvent struct {
 	UserEmail string `json:"user_email"`
 	Nickname  string `json:"nickname"`
 	Score     int    `json:"score"`
+	Level     int    `json:"level"`
 }
 
 type diContainer struct {
@@ -161,13 +162,17 @@ func (a *App) initRedis(ctx context.Context) error {
 	redisRepo := repository.NewRedisLeaderboardRepo(a.cfg.RedisAddr, a.cfg.RedisDB, a.di.dbpool)
 	a.di.repo = redisRepo
 
-	games := []string{"hexagon", "flappy", "memory", "towers"}
+	games := []string{"hexagon", "flappy", "memory", "towers", "hanoi", "twenty48", "gears", "companion"}
 	for _, gameID := range games {
-		a.log.Info("restoring leaderboard", "game", gameID)
-		if err := redisRepo.RestoreFromPostgres(ctx, gameID); err != nil {
-			a.log.Warn("failed to restore leaderboard", "game", gameID, "err", err)
-		} else {
-			a.log.Info("restored leaderboard", "game", gameID)
+		maxLevel := 1
+		if gameID == "flappy" {
+			maxLevel = 10
+		}
+		for level := 1; level <= maxLevel; level++ {
+			a.log.Info("restoring leaderboard", "game", gameID, "level", level)
+			if err := redisRepo.RestoreFromPostgres(ctx, gameID, level); err != nil {
+				a.log.Warn("failed to restore leaderboard", "game", gameID, "level", level, "err", err)
+			}
 		}
 	}
 	return nil
@@ -248,19 +253,24 @@ func (a *App) initNATS(_ context.Context) error {
 			a.log.Error("failed to unmarshal score event", "err", err)
 			return
 		}
+		level := event.Level
+		if level < 1 {
+			level = 1
+		}
 		a.log.Info("received score",
 			"game", event.GameID,
 			"user", event.UserID,
 			"score", event.Score,
+			"level", level,
 		)
 
 		msgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if err := svc.SaveUserInfo(msgCtx, event.GameID, event.UserID, event.UserEmail, event.Nickname); err != nil {
+		if err := svc.SaveUserInfo(msgCtx, event.GameID, event.UserID, event.UserEmail, event.Nickname, level); err != nil {
 			a.log.Error("failed to save user info", "err", err)
 		}
-		if err := svc.UpdateScoreOnly(msgCtx, event.GameID, event.UserID, event.UserEmail, event.Score); err != nil {
+		if err := svc.UpdateScoreOnly(msgCtx, event.GameID, event.UserID, event.UserEmail, event.Score, level); err != nil {
 			a.log.Error("failed to update score", "err", err)
 		}
 		ackChan <- msg

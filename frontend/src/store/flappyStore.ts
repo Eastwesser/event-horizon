@@ -12,7 +12,24 @@ export interface Pipe {
 
 const BASE_PIPE_SPEED = 3;
 const BASE_GRAVITY = 0.3;
+const BASE_PIPE_GAP = 150;
+const BASE_PIPE_SPACING = 300;
 const BOOST_DURATION_MS = 5000;
+
+function clampLevel(level: number): number {
+  if (!Number.isFinite(level)) return 1;
+  return Math.min(10, Math.max(1, Math.round(level)));
+}
+
+function physicsForLevel(level: number) {
+  const lv = clampLevel(level);
+  return {
+    PIPE_SPEED: BASE_PIPE_SPEED + (lv - 1) * 0.25,
+    PIPE_GAP: Math.max(100, BASE_PIPE_GAP - (lv - 1) * 5),
+    PIPE_SPACING: Math.max(200, BASE_PIPE_SPACING - (lv - 1) * 10),
+    GRAVITY: BASE_GRAVITY,
+  };
+}
 
 interface FlappyState {
   birdY: number;
@@ -21,6 +38,7 @@ interface FlappyState {
   score: number;
   gameOver: boolean;
   started: boolean;
+  level: number;
 
   GRAVITY: number;
   JUMP_FORCE: number;
@@ -34,7 +52,8 @@ interface FlappyState {
   lastSubmitRanked: boolean | null;
   lastSubmitMessage: string | null;
 
-  startGame: (opts?: { boostId?: string | null; boosted?: boolean }) => void;
+  setLevel: (level: number) => void;
+  startGame: (opts?: { boostId?: string | null; boosted?: boolean; level?: number }) => void;
   jump: () => void;
   updateGame: () => void;
   resetGame: () => void;
@@ -55,12 +74,13 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   score: 0,
   gameOver: false,
   started: false,
+  level: 1,
 
   GRAVITY: BASE_GRAVITY,
   JUMP_FORCE: -6.5,
   PIPE_WIDTH: 60,
-  PIPE_GAP: 150,
-  PIPE_SPACING: 300,
+  PIPE_GAP: BASE_PIPE_GAP,
+  PIPE_SPACING: BASE_PIPE_SPACING,
   PIPE_SPEED: BASE_PIPE_SPEED,
 
   boostId: null,
@@ -68,12 +88,18 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   lastSubmitRanked: null,
   lastSubmitMessage: null,
 
+  setLevel: (level) => {
+    const lv = clampLevel(level);
+    set({ level: lv, ...physicsForLevel(lv) });
+  },
+
   clearBoost: () => {
+    const phys = physicsForLevel(get().level);
     set({
       boostId: null,
       boosted: false,
-      PIPE_SPEED: BASE_PIPE_SPEED,
-      GRAVITY: BASE_GRAVITY,
+      PIPE_SPEED: phys.PIPE_SPEED,
+      GRAVITY: phys.GRAVITY,
     });
   },
 
@@ -87,6 +113,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
 
     const boosted = Boolean(opts?.boosted);
     const boostId = opts?.boostId ?? null;
+    const level = clampLevel(opts?.level ?? get().level);
+    const phys = physicsForLevel(level);
 
     set({
       started: true,
@@ -95,12 +123,15 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       birdVelocity: 0,
       pipes: [],
       score: 0,
+      level,
       boostId,
       boosted,
       lastSubmitRanked: null,
       lastSubmitMessage: null,
-      PIPE_SPEED: boosted ? BASE_PIPE_SPEED / 2 : BASE_PIPE_SPEED,
-      GRAVITY: boosted ? BASE_GRAVITY / 2 : BASE_GRAVITY,
+      PIPE_GAP: phys.PIPE_GAP,
+      PIPE_SPACING: phys.PIPE_SPACING,
+      PIPE_SPEED: boosted ? phys.PIPE_SPEED / 2 : phys.PIPE_SPEED,
+      GRAVITY: boosted ? phys.GRAVITY / 2 : phys.GRAVITY,
     });
 
     const firstPipe = get().generatePipe();
@@ -108,7 +139,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
 
     if (boosted) {
       const boostTimer = setTimeout(() => {
-        set({ PIPE_SPEED: BASE_PIPE_SPEED, GRAVITY: BASE_GRAVITY });
+        const p = physicsForLevel(get().level);
+        set({ PIPE_SPEED: p.PIPE_SPEED, GRAVITY: p.GRAVITY });
       }, BOOST_DURATION_MS);
       (get() as any).boostTimer = boostTimer;
     }
@@ -186,6 +218,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       clearTimeout((get() as any).boostTimer);
     }
     get().clearBoost();
+    const phys = physicsForLevel(get().level);
     set({
       started: false,
       gameOver: false,
@@ -195,6 +228,10 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       score: 0,
       lastSubmitRanked: null,
       lastSubmitMessage: null,
+      PIPE_GAP: phys.PIPE_GAP,
+      PIPE_SPACING: phys.PIPE_SPACING,
+      PIPE_SPEED: phys.PIPE_SPEED,
+      GRAVITY: phys.GRAVITY,
     });
   },
 
@@ -231,7 +268,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   },
 
   submitScore: async () => {
-    const { score, boostId, boosted } = get();
+    const { score, boostId, boosted, level } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
@@ -242,7 +279,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       const body: Record<string, unknown> = {
         user_id: userId,
         game_id: 'flappy',
-        level: 1,
+        level: clampLevel(level),
         score: score,
         user_email: userEmail,
         nickname: nickname,
@@ -255,7 +292,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
 
       const response = await api.post('/game/submit', body);
 
-        if (response.status >= 200 && response.status < 300) {
+      if (response.status >= 200 && response.status < 300) {
         const ranked =
           response.data?.ranked === true &&
           !boosted &&
@@ -264,17 +301,18 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
           lastSubmitRanked: ranked,
           lastSubmitMessage: response.data?.message || null,
         });
-        console.log(`✅ Flappy score submitted: ${score} ranked=${ranked}`);
+        console.log(`✅ Flappy score submitted: ${score} L${level} ranked=${ranked}`);
 
         const storageKey = `gameScores_${userId}`;
         const totalScoreKey = `totalScore_${userId}`;
         const playedKey = `flappyGamesPlayed_${userId}`;
 
         const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-        const currentBest = savedScores.flappy || 0;
+        const bestKey = `flappy_L${clampLevel(level)}`;
+        const currentBest = savedScores[bestKey] || 0;
 
         if (ranked && score > currentBest) {
-          savedScores.flappy = score;
+          savedScores[bestKey] = score;
           localStorage.setItem(storageKey, JSON.stringify(savedScores));
         }
 

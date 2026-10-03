@@ -156,9 +156,12 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         if req.Score < 0 || req.Score > 10000 {
             return &SubmitScoreResponse{Success: false, Message: "score out of allowed range"}, nil
         }
+        if req.Level < 1 || req.Level > 10 {
+            return &SubmitScoreResponse{Success: false, Message: "flappy level must be 1-10"}, nil
+        }
         validatedScore = req.Score
-        lampsEarned = 5
-        ticketsEarned = req.Score / 10
+        lampsEarned = 5 + (req.Level - 1)
+        ticketsEarned = req.Score/10 + (req.Level-1)*5
         if ticketsEarned > 100 {
             ticketsEarned = 100
         }
@@ -269,16 +272,21 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         }, nil
     }
 
-    // Получаем текущий рекорд
-    currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID)
+    level := req.Level
+    if level < 1 {
+        level = 1
+    }
+
+    // Получаем текущий рекорд (per-level)
+    currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID, level)
     if err != nil {
         log.Printf("Failed to get highscore: %v", err)
     }
 
     isNewRecord := validatedScore > currentHighscore
 
-    log.Printf("🎯 isNewRecord=%v, validatedScore=%d, lamps=%d, tickets=%d",
-        isNewRecord, validatedScore, lampsEarned, ticketsEarned)
+    log.Printf("🎯 isNewRecord=%v, validatedScore=%d, level=%d, lamps=%d, tickets=%d",
+        isNewRecord, validatedScore, level, lampsEarned, ticketsEarned)
 
     // Event for Leaderboard / Billing (same payload shape as before).
     event := map[string]interface{}{
@@ -288,7 +296,7 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         "nickname":        req.Nickname,
         "score":           validatedScore,
         "is_record":       isNewRecord,
-        "level":           req.Level,
+        "level":           level,
         "lamps_earned":    lampsEarned,
         "tickets_earned":  ticketsEarned,
         "timestamp":       time.Now().Unix(),
@@ -298,21 +306,21 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     // Prefer transactional outbox (reliable). Fall back to legacy direct NATS publish
     // if outbox insert fails (e.g. migration not yet applied).
     if isNewRecord {
-        if err := s.repo.SaveHighscoreAndEnqueueOutbox(ctx, req.UserID, req.GameID, validatedScore, "score.updated", eventData); err != nil {
+        if err := s.repo.SaveHighscoreAndEnqueueOutbox(ctx, req.UserID, req.GameID, validatedScore, level, "score.updated", eventData); err != nil {
             log.Printf("outbox+highscore failed, falling back to SaveHighscore+Publish: %v", err)
-            if saveErr := s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore); saveErr != nil {
+            if saveErr := s.repo.SaveHighscore(ctx, req.UserID, req.GameID, validatedScore, level); saveErr != nil {
                 log.Printf("Failed to save highscore: %v", saveErr)
             }
             s.publishScoreUpdatedDirect(eventData, req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
         } else {
-            log.Printf("📬 Enqueued score.updated (with highscore): user=%s game=%s score=%d", req.UserID, req.GameID, validatedScore)
+            log.Printf("📬 Enqueued score.updated (with highscore): user=%s game=%s level=%d score=%d", req.UserID, req.GameID, level, validatedScore)
         }
     } else {
         if err := s.repo.EnqueueOutbox(ctx, "score.updated", eventData); err != nil {
             log.Printf("outbox enqueue failed, falling back to direct Publish: %v", err)
             s.publishScoreUpdatedDirect(eventData, req.UserID, req.GameID, validatedScore, isNewRecord, lampsEarned, ticketsEarned)
         } else {
-            log.Printf("📬 Enqueued score.updated: user=%s game=%s score=%d", req.UserID, req.GameID, validatedScore)
+            log.Printf("📬 Enqueued score.updated: user=%s game=%s level=%d score=%d", req.UserID, req.GameID, level, validatedScore)
         }
     }
 
@@ -440,15 +448,20 @@ func (s *gameService) GetGameInfo(ctx context.Context, gameID string) (*GameInfo
             },
         }, nil
     case "flappy":
+        flappyLevels := make([]LevelInfo, 0, 10)
+        for lv := 1; lv <= 10; lv++ {
+            flappyLevels = append(flappyLevels, LevelInfo{
+                Level:         lv,
+                TargetScore:   10 * lv,
+                RewardLamps:   5 + (lv - 1),
+                RewardTickets: (lv - 1) * 5,
+            })
+        }
         return &GameInfo{
             GameID:      "flappy",
             Name:        "Flappy Bird",
             Description: "Трубы, птичка, полёт",
-            Levels: []LevelInfo{
-                {Level: 1, TargetScore: 10, RewardLamps: 5, RewardTickets: 0},
-                {Level: 2, TargetScore: 20, RewardLamps: 10, RewardTickets: 5},
-                {Level: 3, TargetScore: 35, RewardLamps: 15, RewardTickets: 10},
-            },
+            Levels:      flappyLevels,
         }, nil
     case "towers":
         return &GameInfo{

@@ -1889,6 +1889,7 @@ func runGateway() {
 	r.GET("/api/leaderboard", func(c *gin.Context) {
 		gameID := c.Query("game_id")
 		limit := c.Query("limit")
+		levelQ := c.Query("level")
 
 		var limitInt int32 = 10
 		if limit != "" {
@@ -1896,11 +1897,18 @@ func runGateway() {
 				limitInt = int32(l)
 			}
 		}
+		var levelInt int32 = 1
+		if levelQ != "" {
+			if l, err := strconv.Atoi(levelQ); err == nil && l >= 1 {
+				levelInt = int32(l)
+			}
+		}
 
 		out, err := throughBreaker(leaderboardCB, c, func() (any, error) {
 			return leaderboardClient.GetTopScores(c.Request.Context(), &leaderboardPb.GetTopScoresRequest{
 				GameId: gameID,
 				Limit:  limitInt,
+				Level:  levelInt,
 			})
 		})
 		if err == circuit.ErrOpen {

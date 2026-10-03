@@ -7,12 +7,12 @@ import (
 )
 
 type GameRepository interface {
-	GetHighscore(ctx context.Context, userID, gameID string) (int, error)
-	SaveHighscore(ctx context.Context, userID, gameID string, score int) error
+	GetHighscore(ctx context.Context, userID, gameID string, level int) (int, error)
+	SaveHighscore(ctx context.Context, userID, gameID string, score, level int) error
 	// EnqueueOutbox inserts a NATS event for the outbox worker (no highscore change).
 	EnqueueOutbox(ctx context.Context, eventType string, payload []byte) error
 	// SaveHighscoreAndEnqueueOutbox writes highscore + outbox row in one transaction.
-	SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score int, eventType string, payload []byte) error
+	SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score, level int, eventType string, payload []byte) error
 
 	CreateRunBoost(ctx context.Context, id, userID, gameID string) error
 	GetActiveRunBoost(ctx context.Context, userID, gameID string) (id string, ok bool, err error)
@@ -35,11 +35,19 @@ func NewPostgresGameRepo(db *sql.DB) *PostgresGameRepo {
 	return &PostgresGameRepo{db: db}
 }
 
-func (r *PostgresGameRepo) GetHighscore(ctx context.Context, userID, gameID string) (int, error) {
+func normalizeHighscoreLevel(level int) int {
+	if level < 1 {
+		return 1
+	}
+	return level
+}
+
+func (r *PostgresGameRepo) GetHighscore(ctx context.Context, userID, gameID string, level int) (int, error) {
+	level = normalizeHighscoreLevel(level)
 	var score int
 	err := r.db.QueryRowContext(ctx,
-		"SELECT COALESCE(score, 0) FROM highscores WHERE user_id = $1 AND game_id = $2",
-		userID, gameID,
+		"SELECT COALESCE(score, 0) FROM highscores WHERE user_id = $1 AND game_id = $2 AND level = $3",
+		userID, gameID, level,
 	).Scan(&score)
 	if err == sql.ErrNoRows {
 		return 0, nil
@@ -47,13 +55,14 @@ func (r *PostgresGameRepo) GetHighscore(ctx context.Context, userID, gameID stri
 	return score, err
 }
 
-func (r *PostgresGameRepo) SaveHighscore(ctx context.Context, userID, gameID string, score int) error {
+func (r *PostgresGameRepo) SaveHighscore(ctx context.Context, userID, gameID string, score, level int) error {
+	level = normalizeHighscoreLevel(level)
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO highscores (user_id, game_id, score, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (user_id, game_id) DO UPDATE
+		`INSERT INTO highscores (user_id, game_id, level, score, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (user_id, game_id, level) DO UPDATE
          SET score = EXCLUDED.score, updated_at = NOW()`,
-		userID, gameID, score,
+		userID, gameID, level, score,
 	)
 	return err
 }
@@ -66,7 +75,8 @@ func (r *PostgresGameRepo) EnqueueOutbox(ctx context.Context, eventType string, 
 	return err
 }
 
-func (r *PostgresGameRepo) SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score int, eventType string, payload []byte) error {
+func (r *PostgresGameRepo) SaveHighscoreAndEnqueueOutbox(ctx context.Context, userID, gameID string, score, level int, eventType string, payload []byte) error {
+	level = normalizeHighscoreLevel(level)
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -74,11 +84,11 @@ func (r *PostgresGameRepo) SaveHighscoreAndEnqueueOutbox(ctx context.Context, us
 	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO highscores (user_id, game_id, score, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (user_id, game_id) DO UPDATE
+		`INSERT INTO highscores (user_id, game_id, level, score, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (user_id, game_id, level) DO UPDATE
          SET score = EXCLUDED.score, updated_at = NOW()`,
-		userID, gameID, score,
+		userID, gameID, level, score,
 	); err != nil {
 		return err
 	}

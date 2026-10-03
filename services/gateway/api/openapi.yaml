@@ -429,6 +429,14 @@ paths:
           schema:
             type: string
             enum: [hexagon, flappy, memory, towers]
+        - name: level
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 1
+          description: Difficulty level board (Flappy 1–10)
         - name: limit
           in: query
           schema:

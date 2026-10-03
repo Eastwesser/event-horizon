@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/leaderboard.proto
+// source: leaderboard.proto
 
 package leaderboard
 
@@ -179,5 +179,5 @@ var LeaderboardService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/leaderboard.proto",
+	Metadata: "leaderboard.proto",
 }
