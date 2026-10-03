@@ -814,12 +814,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*shopPb.GetItemsResponse)
-		// Never JSON-encode a nil slice as `null` — empty catalog is [].
-		items := resp.GetItems()
-		if items == nil {
-			items = []*shopPb.Item{}
-		}
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, dto.ShopItemsCatalog(resp.GetItems()))
 	})
 
 	r.POST("/api/shop/purchase", middleware.RequireAuth(authClient), func(c *gin.Context) {
