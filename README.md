@@ -293,6 +293,7 @@ docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d g
 | Game Outbox | [`confluence/architecture/GAME_OUTBOX.md`](confluence/architecture/GAME_OUTBOX.md) |
 | Patroni HA roadmap | [`deployments/patroni/README.md`](deployments/patroni/README.md) |
 | Issues & fixes (v1.0.8) | [`confluence/history/2026-08/30.08.2026/Issues.md`](confluence/history/2026-08/30.08.2026/Issues.md) |
+| Pre-prod debt checklist | [`confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md`](confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md) |
 | Технический долг | [`confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md`](confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md) |
 | CHANGELOG | [`CHANGELOG.md`](CHANGELOG.md) |
 
@@ -340,42 +341,278 @@ k6 run loadtest.js
 
 ## 🔮 Планы на следующие спринты
 
-### 🔥 Ближайшие задачи (1–2 недели)
+**Чеклист (tick boxes):** [`confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md`](confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md)
 
-- [ ] Нагрузочное тестирование (k6) — прогнать все сценарии, замерить RPS, latency
-- [ ] Оптимизация индексов в БД всех сервисов
-- [ ] Rate Limiter — настроить лимиты (100/сек на пользователя)
-- [ ] Документация API — OpenAPI/Swagger для всех сервисов
-- [ ] Юнит-тесты — покрытие ≥70%
+Классификация — 3 оси
+Для каждой задачи:
 
-### ⚙️ DevOps (1–2 недели)
+Сложность: XS / S / M / L / XL.
 
-- [X] CI/CD — GitHub Actions: сборка → Docker Hub
-- [X] Ansible — автоматизация деплоя
-- [X] k3s (Kubernetes) — установлен и настроен
-- [ ] Helm-чарты — для управления деплоем
-- [ ] Service Discovery — Consul
+Риск: низкий / средний / высокий (что может сломаться).
 
-### 🧩 Payment / Notification / Analytics (уже в стеке)
+Зависимость: что должно быть до.
 
-| Сервис | Статус | Порт (gRPC) |
-|--------|--------|-------------|
-| Payment | ✅ реализовано (hardening: Boosty signature verification) | 50058 |
-| Notification | ✅ реализовано (consumer; Telegram optional) | — |
-| Analytics | ✅ реализовано (ClickHouse ingest + admin APIs) | 50057 |
+🟢 Быстрые победы (XS–S, 1–3 дня)
+Здесь и сейчас, минимальный риск.
 
-### 🎮 Игровой контент
+#	Задача	Сложность	Риск	Зачем
+1	PUT 403 investigation	XS	низкий	30 минут. Выяснить причину.
+2	Emoji → SVG / PNG в UI	S	низкий	1-2 дня. Заменить ~20 эмодзи в навигации / кнопках / флагах.
+3	Rate Limiter (100/сек per user)	S	низкий	Стандартный middleware.
+4	Retry с джиттером в gateway	S	низкий	gRPC-клиенты. 1 день.
+5	Alerts в Telegram (Alertmanager)	S	низкий	Готовый Alertmanager. 1 день.
+6	Circuit Breaker + Bulkhead	S	низкий	У тебя уже есть circuit breaker. Bulkhead — добавить.
+Итого: ~5-7 дней, низкий риск, каждая задача закрывается отдельно.
 
-- [ ] Лампочки как бусты в играх (замедление, подсказки)
-- [ ] Уровни сложности (1–20)
-- [ ] Достижения (achievements)
+🟡 Средние (M, 1 неделя)
+Требуют плана, но предсказуемы.
 
-### 🧠 Устойчивость
+#	Задача	Сложность	Риск	Зависимость
+7	/shop/items thin DTO	M	низкий	—
+8	Bottleneck fix — server-side page	M	средний	Нужен bottleneck если 1000+
+9	Laмпочки как бусты в играх	M	средний	Game service + UI
+10	Уровни сложности (1–20)	M	средний	Game service
+11	Достижения (achievements)	M	средний	Новая фича, БД
+12	Юнит-тесты ≥70%	M	низкий	Долгая задача, но параллельно
+13	OpenAPI/Swagger для всех сервисов	M	низкий	Docs, но нужно по всем сервисам
+14	Service Discovery (Consul)	M	средний	Инфраструктура
+15	Helm-чарты для k3s	M	средний	DevOps
+Итого: ~2-3 недели, средний риск, часть — параллельно.
 
-- [ ] Circuit Breaker + Bulkhead
-- [ ] Retry с джиттером
-- [X] Graceful shutdown
-- [ ] Алерты в Telegram (Alertmanager)
+🔴 Крупные (L–XL)
+Требуют декомпозиции на под-волны.
+
+🟠 C. Author registration (XL)
+Разбить на 4 под-волны:
+
+C1. Заявка (S).
+
+Route /register-author (auth user).
+
+Форма: имя, портфолио, причина.
+
+POST /api/authors/apply.
+
+Запись в БД: pending.
+
+C2. Admin approval (M).
+
+/admin → вкладка «Заявки».
+
+Список pending, кнопки approve / reject.
+
+Approve → role=author, отправка уведомления.
+
+C3. Author dashboard (L).
+
+/author/dashboard.
+
+Мои карты (list + filter).
+
+Создать карту (уже есть /inventory, но только свои).
+
+Продажи (из shop).
+
+C4. Payouts / analytics (L).
+
+Сколько заработал (лампочки / билетики).
+
+Выплаты.
+
+Требует обсуждения модели монетизации — что автор получает? % от продаж?
+
+Итого: 3-4 недели, высокий риск (новые эндпоинты, БД, роли, монетизация).
+
+🟠 Bottleneck (L)
+Зависимость: сделать до того, как каталог вырастет до 1000+.
+
+Server-side pagination / filter / sort на /inventory/items.
+
+Клиент запрашивает по странице, не весь каталог.
+
+Плюс: меньший DTO.
+
+Минус: сложнее UI (URL state).
+
+Итого: 1-2 недели.
+
+🟠 Реальные товары (M)
+Заменить placeholder (Ключница Дракон → Берсерк ККИ).
+
+Удалить старые тестовые items.
+
+Оставить только карточки ККИ.
+
+Плюс: Cursor может сделать SQL/script.
+
+Минус: ручное решение — какие товары оставить, какие удалить.
+
+Итого: 2-3 дня.
+
+🟠 Полиш игр (M-L per game)
+5 игр, каждую — отдельно.
+
+Flappy — текстуры, звук?
+
+Towers — анимации, GAME OVER.
+
+Hanoi — детали drag.
+
+Memory — флип, скины.
+
+Hexagon — геймплей.
+
+Итого: ~1 неделя на все 5, если делать параллельно.
+
+🟠 Deploy / k3s / Ansible (L)
+Уже частично сделано:
+
+✅ CI/CD GitHub Actions.
+
+✅ Ansible.
+
+✅ k3s.
+
+🟧 Helm-чарты.
+
+🟧 Service Discovery.
+
+Итого: 2-3 недели на полный prod-ready.
+
+🟠 Нагрузочное тестирование + оптимизация БД (M-L)
+k6 + индексы.
+
+Прогнать сценарии под нагрузкой.
+
+Замерить RPS / latency.
+
+Оптимизировать индексы.
+
+Итого: 1-2 недели.
+
+📋 Единый план — по приоритетам
+Волна 1 — Быстрые победы (1-2 недели, XS–S)
+Начать сразу, минимум риска.
+
+PUT 403 investigation (XS).
+
+Emoji → SVG (S).
+
+Retry + jitter (S).
+
+Alerts в Telegram (S).
+
+Circuit Breaker + Bulkhead (S).
+
+Rate Limiter (S).
+
+Итого: ~5-7 дней, каждая независима.
+
+Волна 2 — Техдолг + контент (2-3 недели, M)
+/shop/items thin DTO (M).
+
+Реальные товары — placeholder → Берсерк (M).
+
+Полиш игр (M).
+
+Laмпочки, уровни (M).
+
+Волна 3 — Крупная фича (3-4 недели, L-XL)
+C. Author registration — разбить на под-волны:
+
+C1. Заявка.
+
+C2. Admin approval.
+
+C3. Dashboard.
+
+C4. Payouts / monetization.
+
+Перед C — обсудить монетизацию — что автор получает?
+
+Волна 4 — Инфраструктура (параллельно)
+Helm-чарты, Service Discovery (M).
+
+k6 нагрузка + оптимизация БД (M-L).
+
+Юнит-тесты ≥70% (M) — параллельно всему.
+
+Волна 5 — Долгосрочное
+Bottleneck fix — перед 1000+ картами.
+
+Observability — уже работает, добавить алерты.
+
+NATS cluster — работает.
+
+🎯 Что я рекомендую начать с
+Три задачи — как «разогрев»:
+
+PUT 403 investigation (30 минут).
+
+Emoji → SVG (1-2 дня).
+
+Retry + jitter (1 день).
+
+Почему:
+
+PUT 403 — быстрый вопрос, ты знаешь ответ сразу.
+
+Emoji → SVG — визуально заметно, контент.
+
+Retry + jitter — стабилизирует gateway.
+
+Потом — /shop/items thin DTO + реальные товары — логическое завершение v1.0.9.
+
+Потом — C. Author registration (большая фича).
+
+Что я держу в карте
+Закрыто (v1.0.9 на GitHub):
+
+См. предыдущий разбор.
+
+Backlog — единый план:
+
+Волна 1 — XS-S:
+
+🟧 PUT 403 investigation (XS)
+
+🟧 Emoji → SVG (S)
+
+🟧 Retry + jitter (S)
+
+🟧 Alerts Telegram (S)
+
+🟧 Circuit Breaker + Bulkhead (S)
+
+🟧 Rate Limiter (S)
+
+Волна 2 — M:
+
+🟧 /shop/items thin DTO
+
+🟧 Реальные товары
+
+🟧 Полиш игр
+
+🟧 Laмпочки / уровни
+
+Волна 3 — L-XL:
+
+🟧 C. Author registration (4 под-волны)
+
+Волна 4 — инфра:
+
+🟧 Helm, Consul
+
+🟧 k6, индексы
+
+🟧 Юнит-тесты
+
+Волна 5 — долгосрочное:
+
+🟧 Bottleneck fix (перед 1000+)
+
+🟧 Observability alerts
 
 ---
 
