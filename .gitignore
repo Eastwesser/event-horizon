@@ -69,3 +69,8 @@ skills-lock.json
 data/uploads/
 **/data/uploads/
 services/gateway/data/
+
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+*$py.class
