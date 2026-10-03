@@ -377,3 +377,13 @@ JSON рядом с картинкой — строго, но менее чита
 CSV — если хочешь массово в Excel / Google Sheets.
 
 All cards listed here: /home/denismatveev/event_horizon/services/inventory/internal/seed
+
+The instructions how to read a card : /home/denismatveev/event_horizon/confluence/history/2026-09/30.09.2026/BERSERK_HOW_TO_READ.md
+I have described the icons into text: /home/denismatveev/event_horizon/confluence/history/2026-09/30.09.2026/BERSERK_ICONS.md
+I also have a rulebook: /home/denismatveev/event_horizon/confluence/history/2026-09/30.09.2026/BERSERK_RULES.md
+Prompt Ideas are listed here: /home/denismatveev/event_horizon/confluence/history/2026-09/30.09.2026/PROMPT_IDEAS.md
+But we can start with this current (/home/denismatveev/event_horizon/confluence/history/2026-09/30.09.2026/CCG_IDEAS.md), then prompt ideas.
+
+Это должно выглядеть как у нас на сайте, будто бы к нам заходили авторы (художники), и создавали карты, чтобы в Event Horizon их можно было бы отдать за очки. Rarely, but still, 1 card can have 2 authors. Like a reprint.
+
+/home/denismatveev/event_horizon/services/inventory/internal/seed/berserk_cards
