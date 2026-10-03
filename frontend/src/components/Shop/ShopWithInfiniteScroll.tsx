@@ -7,6 +7,7 @@ import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import { useShopStore, type ShopItem } from '../../store/shopStore';
 import { inventoryApi } from '../../services/inventoryApi';
+import { inventoryToShopItem } from '../../lib/shopItemMap';
 import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
 import { Spinner } from '../ui/Spinner';
@@ -32,7 +33,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'shop' | 'inventory'>('shop');
   const [filterType, setFilterType] = useState<string>('all');
@@ -47,29 +48,21 @@ export const ShopWithInfiniteScroll: React.FC = () => {
 
   const itemTypes = [
     { value: 'all', label: 'Все' },
+    { value: 'карточка', label: '🃏 Карточки' },
     { value: 'game_skin', label: '🎨 Скины' },
     { value: 'profile_theme', label: '🎨 Темы' },
     { value: 'merch', label: '🎁 Мерч' },
   ];
 
-  // Загрузка всех товаров
+  // Загрузка всех товаров из inventory (карточки + мерч)
   useEffect(() => {
     const loadItems = async () => {
       try {
-        const response = await inventoryApi.searchItems({ limit: 1000 });
-        const shopItems: ShopItem[] = response.items.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          price_tickets: item.price || 0,
-          icon_url: item.images?.[0] || '',
-          type: item.type || 'other',
-          category: item.type || 'other',
-          game_id: undefined,
-          image_url: item.images?.[0] || '',
-          available: true,
-          owned: false,
-        }));
+        const ownedIds = new Set(inventory.map((p) => p.item_id));
+        const response = await inventoryApi.searchAllItems();
+        const shopItems: ShopItem[] = (response.items ?? []).map((item) =>
+          inventoryToShopItem(item, ownedIds.has(item.id))
+        );
         setAllItems(shopItems);
         setTotalItems(response.total);
         setItems(shopItems);
@@ -80,7 +73,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
       }
     };
     loadItems();
-  }, []);
+  }, [inventory]);
 
   // Загрузка инвентаря и баланса
   useEffect(() => {

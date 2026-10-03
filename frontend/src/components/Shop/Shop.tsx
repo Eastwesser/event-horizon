@@ -1,34 +1,66 @@
 // frontend/src/components/Shop/Shop.tsx
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
+import CancelPurchaseModal from './CancelPurchaseModal';
 import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import { paymentApi } from '../../services/paymentApi';
-import { useShopStore, type ShopItem } from '../../store/shopStore';
+import { inventoryApi } from '../../services/inventoryApi';
+import { useShopStore, type ShopItem, type PurchasedItem } from '../../store/shopStore';
+import { inventoryToShopItem } from '../../lib/shopItemMap';
+import { formatTicketPrice } from '../../lib/formatPrice';
+import {
+  CATALOG_PAGE_SIZE,
+  CATALOG_SORT_OPTIONS,
+  FILTER_URL_KEYS,
+  type CatalogSort,
+  collectCatalogFacets,
+  filterCatalogItems,
+  paginateItems,
+  parseCatalogFilters,
+  parseCatalogPage,
+  parseCatalogSort,
+  sortCatalogItems,
+} from '../../lib/catalogQuery';
+import { saveCatalogNav } from '../../lib/catalogNav';
 import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
+import { CatalogPager } from '../ui/CatalogPager';
+import { CardImage } from '../ui/CardImage';
+import { CatalogFiltersPanel } from './CatalogFiltersPanel';
 
 function isMerchItem(item: ShopItem): boolean {
   const cat = (item.category || '').toLowerCase();
   const type = (item.type || '').toLowerCase();
-  return cat.includes('merch') || type.includes('merch');
+  return (
+    cat.includes('merch') ||
+    type.includes('merch') ||
+    type === 'карточка' ||
+    type === 'брелок' ||
+    type === 'картина' ||
+    type === 'фенечка'
+  );
 }
 
 const itemTypes = [
   { value: 'all', label: 'Все' },
+  { value: 'карточка', label: '🃏 Карточки' },
   { value: 'game_skin', label: '🎨 Скины' },
   { value: 'profile_theme', label: '🎨 Темы' },
   { value: 'merch', label: '🎁 Мерч' },
+  { value: 'брелок', label: 'Брелок' },
+  { value: 'картина', label: 'Картина' },
+  { value: 'фенечка', label: 'Фенечка' },
 ];
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
-    items,
     inventory,
     balance,
     loading,
@@ -37,12 +69,23 @@ export const Shop: React.FC = () => {
     fetchInventory,
     fetchBalance,
     clearError,
+    catalogPatches,
+    cancelPurchase,
+    cancelling,
   } = useShopStore();
 
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [catalog, setCatalog] = useState<ShopItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<PurchasedItem | null>(null);
   const [activeTab, setActiveTab] = useState<'shop' | 'inventory'>('shop');
-  const [filterType, setFilterType] = useState<string>('all');
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'inventory') {
+      setActiveTab('inventory');
+    }
+  }, [searchParams]);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error' | 'info';
     message: string;
@@ -51,14 +94,142 @@ export const Shop: React.FC = () => {
   const [merchAllowed, setMerchAllowed] = useState<boolean | null>(null);
   const [merchBlockReason, setMerchBlockReason] = useState('');
 
+  const filterType = searchParams.get('type') || 'all';
+  const sort = parseCatalogSort(searchParams.get('sort'));
+  const page = parseCatalogPage(searchParams.get('page'));
+  const catalogFilters = useMemo(
+    () => parseCatalogFilters(searchParams),
+    [searchParams]
+  );
+  const [qDraft, setQDraft] = useState(catalogFilters.query || '');
+
+  useEffect(() => {
+    setQDraft(catalogFilters.query || '');
+  }, [catalogFilters.query]);
+
+  const setQuery = (patch: Record<string, string | null>, replace = false) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [k, v] of Object.entries(patch)) {
+      if (
+        v === null ||
+        v === '' ||
+        (k === 'page' && v === '1') ||
+        (k === 'sort' && v === 'newest') ||
+        (k === 'type' && v === 'all')
+      ) {
+        if (k === 'type' && v === 'all') next.delete('type');
+        else if (k === 'sort' && v === 'newest') next.delete('sort');
+        else if (k === 'page' && (v === '1' || v === null)) next.delete('page');
+        else if (v === null || v === '') next.delete(k);
+        else next.set(k, v);
+      } else {
+        next.set(k, v);
+      }
+    }
+    setSearchParams(next, { replace });
+  };
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = qDraft.trim();
+      if (next === (catalogFilters.query || '').trim()) return;
+      setQuery({ q: next || null, page: '1' }, true);
+    }, 300);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDraft]);
+
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      fetchItems();
-      fetchBalance();
-      fetchInventory();
-    }
+    if (!token) return;
+    fetchItems();
+    fetchBalance();
+    fetchInventory();
   }, [fetchItems, fetchBalance, fetchInventory]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setCatalogLoading(true);
+      try {
+        const ownedIds = new Set(inventory.map((p) => p.item_id));
+        const response = await inventoryApi.searchAllItems();
+        if (cancelled) return;
+        const patches = useShopStore.getState().catalogPatches;
+        const mapped = (response.items ?? []).map((item) => {
+          const base = inventoryToShopItem(item, ownedIds.has(item.id));
+          const patch = patches[item.id];
+          if (!patch) return base;
+          const stock =
+            patch.stock !== undefined ? patch.stock : base.stock;
+          return {
+            ...base,
+            owned: patch.owned ?? base.owned,
+            stock,
+            available: (stock ?? 1) > 0,
+          };
+        });
+        setCatalog(mapped);
+      } catch (e) {
+        console.error('Failed to load inventory catalog for shop', e);
+        if (!cancelled) setCatalog([]);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [inventory]);
+
+  const facets = useMemo(() => collectCatalogFacets(catalog), [catalog]);
+
+  const filteredSorted = useMemo(() => {
+    const patched = catalog.map((item) => {
+      const patch = catalogPatches[item.id];
+      if (!patch) return item;
+      const stock = patch.stock !== undefined ? patch.stock : item.stock;
+      return {
+        ...item,
+        owned: patch.owned ?? item.owned,
+        stock,
+        available: (stock ?? 1) > 0,
+      };
+    });
+    const byType = patched.filter(
+      (item) => filterType === 'all' || item.category === filterType || item.type === filterType
+    );
+    const filtered = filterCatalogItems(byType, catalogFilters);
+    return sortCatalogItems(filtered, sort);
+  }, [catalog, catalogPatches, filterType, sort, catalogFilters]);
+
+  const resetFilters = () => {
+    const next = new URLSearchParams(searchParams);
+    for (const key of FILTER_URL_KEYS) next.delete(key);
+    next.delete('page');
+    setSearchParams(next);
+  };
+
+  const { page: safePage, pageCount, slice } = useMemo(
+    () => paginateItems(filteredSorted, page, CATALOG_PAGE_SIZE),
+    [filteredSorted, page]
+  );
+
+  useEffect(() => {
+    if (safePage !== page) {
+      setQuery({ page: String(safePage) }, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safePage, page]);
+
+  useEffect(() => {
+    const qs = searchParams.toString();
+    saveCatalogNav({
+      ids: filteredSorted.map((it) => it.id),
+      listPath: qs ? `/shop?${qs}` : '/shop',
+    });
+  }, [filteredSorted, searchParams]);
 
   const handleBuyClick = async (item: ShopItem) => {
     if (isMerchItem(item)) {
@@ -93,9 +264,30 @@ export const Shop: React.FC = () => {
 
   const handleConfirmPurchase = async () => {
     if (!selectedItem) return;
+    const boughtId = selectedItem.id;
 
     try {
-      await useShopStore.getState().buyItem(selectedItem.id);
+      const result: any = await useShopStore.getState().buyItem(boughtId);
+      const remaining =
+        typeof result?.remaining_stock === 'number'
+          ? result.remaining_stock
+          : typeof result?.remainingStock === 'number'
+            ? result.remainingStock
+            : null;
+
+      setCatalog((prev) =>
+        prev.map((it) => {
+          if (it.id !== boughtId) return it;
+          const nextStock =
+            remaining !== null
+              ? remaining
+              : typeof it.stock === 'number'
+                ? Math.max(0, it.stock - 1)
+                : it.stock;
+          return { ...it, owned: true, stock: nextStock, available: (nextStock ?? 1) > 0 };
+        })
+      );
+
       setNotification({
         type: 'success',
         message: `✅ ${selectedItem.name} успешно куплен!`,
@@ -110,12 +302,49 @@ export const Shop: React.FC = () => {
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedItem(null);
-  };
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    const itemId = cancelTarget.item_id;
+    const name = cancelTarget.item.name;
+    try {
+      const result: any = await cancelPurchase(itemId);
+      const remaining =
+        typeof result?.remaining_stock === 'number'
+          ? result.remaining_stock
+          : typeof result?.remainingStock === 'number'
+            ? result.remainingStock
+            : null;
+      const refunded =
+        result?.refunded_amount ??
+        result?.refundedAmount ??
+        cancelTarget.purchase_price ??
+        cancelTarget.item.price_tickets;
 
-  const handleBack = () => navigate('/');
+      setCatalog((prev) =>
+        prev.map((it) => {
+          if (it.id !== itemId) return it;
+          const nextStock =
+            remaining !== null
+              ? remaining
+              : typeof it.stock === 'number'
+                ? it.stock + 1
+                : it.stock;
+          return { ...it, owned: false, stock: nextStock, available: true };
+        })
+      );
+
+      setNotification({
+        type: 'success',
+        message: `✅ ${name}: возвращено ${formatTicketPrice(refunded)}.`,
+      });
+      setCancelTarget(null);
+    } catch (error: any) {
+      setNotification({
+        type: 'error',
+        message: error.message || '❌ Ошибка при отмене покупки',
+      });
+    }
+  };
 
   const token = localStorage.getItem('accessToken');
 
@@ -127,7 +356,7 @@ export const Shop: React.FC = () => {
     );
   }
 
-  if (loading && items.length === 0) {
+  if ((loading || catalogLoading) && catalog.length === 0) {
     return (
       <div className="min-h-screen bg-void">
         <LoadingSpinner />
@@ -135,27 +364,12 @@ export const Shop: React.FC = () => {
     );
   }
 
-  // Группируем товары по имени и объединяем статус owned
-  const uniqueItems = items.reduce((acc, item) => {
-    const existing = acc.find(i => i.name === item.name);
-    if (existing) {
-      existing.owned = existing.owned || item.owned;
-      return acc;
-    }
-    acc.push({ ...item });
-    return acc;
-  }, [] as ShopItem[]);
-
-  const filteredItems = uniqueItems.filter(item =>
-    filterType === 'all' || item.category === filterType
-  );
-
   return (
     <PageShell width="wide">
       <PageHeader
         title="🎁 Магазин"
         subtitle="Тратьте билетики на крутые предметы!"
-        onBack={handleBack}
+        onBack={() => navigate('/')}
         backLabel="На главную"
         actions={
           <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
@@ -205,81 +419,149 @@ export const Shop: React.FC = () => {
         </FilterChip>
       </div>
 
-        {activeTab === 'shop' ? (
-          <>
-            <div className="mb-6 flex flex-wrap gap-2">
-              {itemTypes.map((type) => (
-                <FilterChip
-                  key={type.value}
-                  active={filterType === type.value}
-                  onClick={() => setFilterType(type.value)}
-                >
-                  {type.label}
-                </FilterChip>
-              ))}
-            </div>
+      {activeTab === 'shop' ? (
+        <>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {itemTypes.map((type) => (
+              <FilterChip
+                key={type.value}
+                active={filterType === type.value}
+                onClick={() => setQuery({ type: type.value, page: '1' })}
+              >
+                {type.label}
+              </FilterChip>
+            ))}
+            <label className="ml-auto flex items-center gap-2 text-sm text-text-secondary">
+              <span className="text-text-muted">Сортировка</span>
+              <select
+                className="rounded-sm border border-white/10 bg-nebula px-2 py-1.5 text-sm text-text-primary"
+                value={sort}
+                onChange={(e) =>
+                  setQuery({ sort: e.target.value as CatalogSort, page: '1' })
+                }
+              >
+                {CATALOG_SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredItems.length === 0 ? (
-                <p className="col-span-full py-16 text-center text-text-secondary">Нет товаров выбранного типа</p>
-              ) : (
-                filteredItems.map((item) => (
-                  <ShopItemCard
-                    key={item.id}
-                    item={item}
-                    balance={balance}
-                    onBuyClick={handleBuyClick}
-                  />
-                ))
-              )}
-            </div>
-          </>
-        ) : (
+          <CatalogFiltersPanel
+            filters={catalogFilters}
+            facets={facets}
+            onChange={(patch) => setQuery(patch)}
+            onReset={resetFilters}
+            queryDraft={qDraft}
+            onQueryDraftChange={setQDraft}
+          />
+
+          <p className="mb-4 text-sm text-text-muted">
+            Показано {slice.length} · отфильтровано {filteredSorted.length} из {catalog.length}
+          </p>
+
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {inventory.length === 0 ? (
-              <p className="col-span-full py-16 text-center text-text-secondary">У вас пока нет купленных предметов 🎒</p>
+            {slice.length === 0 ? (
+              <p className="col-span-full py-16 text-center text-text-secondary">
+                Нет товаров по текущим фильтрам
+              </p>
             ) : (
-              inventory.map((purchased) => (
-                <div key={purchased.id} className="flex items-center gap-4 rounded-md border border-white/10 bg-nebula p-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-white/5 text-3xl">
-                    {purchased.item.image_url ? (
-                      <img
-                        src={purchased.item.image_url}
-                        alt={purchased.item.name}
-                        className="h-full w-full rounded-md object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <span className={purchased.item.image_url ? 'hidden' : undefined}>🎁</span>
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="truncate font-display text-sm font-semibold text-text-primary">{purchased.item.name}</h4>
-                    <p className="truncate text-xs text-text-secondary">{purchased.item.description}</p>
-                    <span className="text-xs text-text-muted">
-                      Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
+              slice.map((item) => (
+                <ShopItemCard
+                  key={item.id}
+                  item={item}
+                  balance={balance}
+                  onBuyClick={handleBuyClick}
+                />
               ))
             )}
           </div>
-        )}
 
-        <PurchaseModal
-          isOpen={showModal}
-          item={selectedItem}
-          balance={balance}
-          onConfirm={handleConfirmPurchase}
-          onClose={handleCloseModal}
-          loading={useShopStore.getState().buying}
-          merchAllowed={selectedItem && isMerchItem(selectedItem) ? merchAllowed : true}
-          merchBlockReason={merchBlockReason}
-          onGoSubscription={() => navigate('/subscription')}
-        />
+          <CatalogPager
+            page={safePage}
+            pageCount={pageCount}
+            total={filteredSorted.length}
+            disabled={catalogLoading}
+            onPageChange={(p) => setQuery({ page: String(p) })}
+          />
+        </>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {inventory.length === 0 ? (
+            <p className="col-span-full py-16 text-center text-text-secondary">
+              У вас пока нет купленных предметов 🎒
+            </p>
+          ) : (
+            inventory.map((purchased) => (
+              <div
+                key={purchased.id}
+                className="flex items-center gap-4 rounded-md border border-white/10 bg-nebula p-4"
+              >
+                <button
+                  type="button"
+                  className="shrink-0"
+                  onClick={() => navigate(`/shop/item/${purchased.item_id}`)}
+                >
+                  <CardImage
+                    src={purchased.item.image_url}
+                    alt={purchased.item.name}
+                    className="w-16"
+                    fit="cover"
+                    fallback={<span>🎁</span>}
+                  />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <h4 className="truncate font-display text-sm font-semibold text-text-primary">
+                    {purchased.item.name}
+                  </h4>
+                  <p className="truncate text-xs text-text-secondary">
+                    {purchased.item.description}
+                  </p>
+                  <span className="text-xs text-text-muted">
+                    Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={cancelling}
+                  onClick={() => setCancelTarget(purchased)}
+                >
+                  Отменить
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <PurchaseModal
+        isOpen={showModal}
+        item={selectedItem}
+        balance={balance}
+        onConfirm={handleConfirmPurchase}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedItem(null);
+        }}
+        loading={useShopStore.getState().buying}
+        merchAllowed={selectedItem && isMerchItem(selectedItem) ? merchAllowed : true}
+        merchBlockReason={merchBlockReason}
+        onGoSubscription={() => navigate('/subscription')}
+      />
+
+      <CancelPurchaseModal
+        isOpen={!!cancelTarget}
+        item={cancelTarget?.item ?? null}
+        refundAmount={
+          cancelTarget?.purchase_price || cancelTarget?.item.price_tickets || 0
+        }
+        loading={cancelling}
+        onConfirm={() => void handleConfirmCancel()}
+        onClose={() => setCancelTarget(null)}
+      />
     </PageShell>
   );
 };

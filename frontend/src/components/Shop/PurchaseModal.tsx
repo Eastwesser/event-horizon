@@ -2,7 +2,9 @@
 import type { ShopItem } from '../../store/shopStore';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { CardImage } from '../ui/CardImage';
 import { formatTicketPrice } from '../../lib/formatPrice';
+import { CardPurchaseSummary } from './cardAttributes';
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -31,19 +33,25 @@ function PurchaseModal({
 
   const canAfford = balance >= item.price_tickets;
   const merchBlocked = merchAllowed === false;
+  const isCard = (item.type || item.category) === 'карточка';
 
   return (
     <Modal open={isOpen} onClose={onClose} title="Подтверждение покупки">
       <div className="flex flex-col items-center text-center">
-        <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-3xl">
-          {item.icon_url ? (
-            <img src={item.icon_url} alt={item.name} className="h-full w-full rounded-full object-cover" />
-          ) : (
-            <span>🎁</span>
-          )}
-        </div>
+        <CardImage
+          src={item.image_url || item.images?.[0] || item.icon_url}
+          alt={item.name}
+          className="mb-4 w-[240px]"
+          fit="cover"
+          fallback={<span className="text-4xl">🎁</span>}
+        />
         <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
-        <p className="mt-1 text-sm text-text-secondary">{item.description}</p>
+
+        {isCard ? (
+          <CardPurchaseSummary attrs={item.attributes} />
+        ) : item.description ? (
+          <p className="mt-1 line-clamp-3 text-sm text-text-secondary">{item.description}</p>
+        ) : null}
 
         <div className="mt-4 flex w-full justify-between rounded-sm border border-white/10 bg-nebula px-4 py-3 font-hud text-sm tabular-nums">
           <span className="text-text-secondary">Цена</span>
