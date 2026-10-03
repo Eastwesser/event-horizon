@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { uploadInventoryImage } from '../../services/inventoryApi';
 
 const inputClass =
@@ -88,9 +89,7 @@ export const InventoryImageUrlField: React.FC<InventoryImageUrlFieldProps> = ({
       {trimmed ? (
         <div className="mt-2 flex h-24 w-24 items-center justify-center overflow-hidden rounded-sm border border-white/10 bg-white/5">
           {imgFailed ? (
-            <span className="text-3xl" aria-hidden>
-              📦
-            </span>
+            <Icon name="package" className="h-8 w-8 text-text-muted" />
           ) : (
             <img
               src={trimmed}

@@ -7,6 +7,7 @@ import { PageShell } from '../ui/PageShell';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
+import { Icon } from '../ui/Icon';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { stockLabel } from '../../lib/shopItemMap';
 import { loadCatalogNav, navNeighbors } from '../../lib/catalogNav';
@@ -126,7 +127,7 @@ export const InventoryItemDetail: React.FC = () => {
               className="mx-auto max-h-[32rem] w-full max-w-sm bg-nebula"
               fit="contain"
               fixedAspect={false}
-              fallback={<span className="text-6xl">📦</span>}
+              fallback={<Icon name="package" className="h-16 w-16 text-text-muted" />}
             />
           </div>
         ) : null}

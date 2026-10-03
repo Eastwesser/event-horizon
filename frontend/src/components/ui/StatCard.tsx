@@ -6,7 +6,7 @@ type Size = 'md' | 'sm';
 
 interface StatCardProps {
   value: ReactNode;
-  label: string;
+  label: ReactNode;
   sub?: string;
   /** Value color — defaults to indigo-soft (brand). Use gold for reward/score highlights. */
   tone?: Tone;

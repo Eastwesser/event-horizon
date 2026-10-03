@@ -65,7 +65,7 @@ export function GameShell({
 
       {help && (
         <details className="mt-1.5 shrink-0 rounded-md border border-white/10 bg-nebula p-2.5 text-sm text-text-secondary">
-          <summary className="cursor-pointer font-semibold text-indigo-soft">📖 Как играть?</summary>
+          <summary className="cursor-pointer font-semibold text-indigo-soft">Как играть?</summary>
           <div className="mt-2 max-h-24 space-y-1 overflow-y-auto">{help}</div>
         </details>
       )}

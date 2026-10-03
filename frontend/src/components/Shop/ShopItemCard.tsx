@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { stockLabel } from '../../lib/shopItemMap';
 import { cardFlagBadges } from './cardAttributes';
@@ -16,22 +17,22 @@ interface ShopItemCardProps {
   detailTo?: string;
 }
 
-const categoryEmojis: Record<string, string> = {
-  game_skin: '🎨',
-  merch: '🎁',
-  profile_theme: '🎨',
-  карточка: '🃏',
-  брелок: '🔑',
-  картина: '🖼',
-  фенечка: '💫',
-  other: '🎁',
+const categoryIcons: Record<string, IconName> = {
+  game_skin: 'palette',
+  merch: 'gift',
+  profile_theme: 'palette',
+  карточка: 'cards',
+  брелок: 'key',
+  картина: 'frame',
+  фенечка: 'sparkle',
+  other: 'gift',
 };
 
-const gameEmojis: Record<string, string> = {
-  flappy: '🐦',
-  hexagon: '🔶',
-  towers: '🗼',
-  memory: '🎴',
+const gameIcons: Record<string, IconName> = {
+  flappy: 'bird',
+  hexagon: 'hex',
+  towers: 'tower',
+  memory: 'cards',
 };
 
 const categoryLabels: Record<string, string> = {
@@ -44,9 +45,9 @@ const categoryLabels: Record<string, string> = {
   фенечка: 'Фенечка',
 };
 
-function fallbackEmoji(item: ShopItem): string {
-  if (item.game_id && gameEmojis[item.game_id]) return gameEmojis[item.game_id];
-  return categoryEmojis[item.category] || categoryEmojis[item.type] || '🎁';
+function fallbackIcon(item: ShopItem): IconName {
+  if (item.game_id && gameIcons[item.game_id]) return gameIcons[item.game_id];
+  return categoryIcons[item.category] || categoryIcons[item.type] || 'gift';
 }
 
 function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps) {
@@ -56,7 +57,7 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
   const categoryLabel = categoryLabels[item.category] || categoryLabels[item.type] || 'Товар';
-  const emoji = fallbackEmoji(item);
+  const icon = fallbackIcon(item);
   const flagBadges = item.attributes ? cardFlagBadges(item.attributes) : [];
   const to = detailTo || `/shop/item/${item.id}`;
 
@@ -72,9 +73,7 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
           className="w-full shrink-0"
           fit="cover"
           fallback={
-            <span className="text-4xl" aria-hidden>
-              {emoji}
-            </span>
+            <Icon name={icon} className="h-12 w-12 text-text-muted" />
           }
         />
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
@@ -83,7 +82,13 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
               {item.name}
             </h3>
             <Badge tone={isOwned ? 'success' : 'indigo'}>
-              {isOwned ? '✅ В инвентаре' : categoryLabel}
+              {isOwned ? (
+                <IconLabel name="check" iconClassName="h-3 w-3">
+                  В инвентаре
+                </IconLabel>
+              ) : (
+                categoryLabel
+              )}
             </Badge>
           </div>
           {flagBadges.length > 0 ? (
@@ -110,7 +115,8 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
       </Link>
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
-        <span className="font-hud tabular-nums text-horizon-gold">
+        <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
+          <Icon name="ticket" className="h-3.5 w-3.5" />
           {formatTicketPrice(item.price_tickets)}
         </span>
         {isOwned ? (
