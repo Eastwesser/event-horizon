@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 seed-admin
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 seed-admin fe-build fe-preview
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -186,6 +186,18 @@ status:
 	$(COMPOSE) ps
 	@echo "---"
 	@$(COMPOSE) $(COMPOSE_HEAVY) ps 2>/dev/null || true
+
+# ===== FRONTEND =====
+# Production build of React SPA (output: frontend/dist).
+fe-build:
+	@echo "Building frontend..."
+	cd frontend && npm run build
+	@echo "frontend/dist ready"
+
+# Serve production build with API proxy -> balancer :8079 (http://localhost:4173).
+fe-preview: fe-build
+	@echo "Preview: http://localhost:4173  (API -> :8079)"
+	cd frontend && npm run preview -- --host 127.0.0.1 --port 4173
 
 # ===== DELIVERY =====
 delivery-dev:
