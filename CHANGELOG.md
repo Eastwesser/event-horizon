@@ -2282,20 +2282,30 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 Event Horizon — играй, соревнуйся, побеждай! 🚀
 
-## [v1.0.9] — 03.10.2026
+## [v1.0.9] — 2026-10-03
 
 ### Added
-- Berserk CCG card seed (280 cards, ~5 sets)
-- Attribute filters panel
-- Noiz reviews UI block
-- Refund / cancel purchase flow
-- Artist pages
+- Berserk CCG card seed: 280 cards across sets 4–8
+- Attribute filters panel (element, rarity, class, flags, stats with operators, icons multi-select, artist autocomplete)
+- Sort controls (name, rarity, price, artist, set, element)
+- Pagination with URL state (100 per page)
+- Artist pages (/authors + /authors/:id)
+- Prev/next navigation on card detail
+- Noiz reviews UI block on 8th-set cards (127 rows)
+- Cancel purchase (refund at purchase price, idempotent)
+- Slim inventory list DTO (InventoryItemsCatalog)
 
 ### Fixed
-- Element normalization (56 cards)
-- Purchase-path RBAC (Reserve/Release)
-- List DTO slim (-26% bytes)
+- Element normalization: леса → woods (56 cards)
+- Purchase-path RBAC: user allowed on ReserveItem/ReleaseItem
+- Data typos: Анная → Анна, Индарри → Индарра
+- Detail hero white corners
+- Shop card layout (drop description)
 
 ### Docs
-- REVIEW_RESULT.md (full)
-- Berserk history (rules, icons, how-to-read, pricing)
+- REVIEW_RESULT.md (full batch review)
+- Berserk history: rules, icons, how-to-read, pricing
+- NOIZ source comments
+
+### Files
+- See REVIEW_RESULT.md for full file list.

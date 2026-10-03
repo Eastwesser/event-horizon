@@ -5,7 +5,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.0.8-brightgreen.svg)](https://github.com/Eastwesser/event-horizon/releases)
+[![Status](https://img.shields.io/badge/Release-v1.0.9-brightgreen.svg)](https://github.com/Eastwesser/event-horizon/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
 **Event Horizon** — production-style microservices platform: gRPC mesh, NATS events, OpenAPI gateway, observability, and a React game client. Designed for learning and as a reference implementation you can deploy locally in one command.
@@ -19,7 +19,7 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.0.8, 30.08.2026)
+## 📦 Архитектура (актуально v1.0.9, 03.10.2026)
 
 Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Mermaid: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md` · Miro legacy: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
 
@@ -45,7 +45,8 @@
 └───────────────┴───────────────────────────────────────────────────────────────┘
 ```
 
-**Deploy profiles (v1.0.8):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`.
+**Deploy profiles (v1.0.9):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`.
+
 ---
 
 ## 🚀 Быстрый старт
@@ -93,6 +94,7 @@ make deploy-k3s
 | GET | /api/leaderboard | Топ-10 (публичный) |
 | GET | /api/shop/items | Список товаров |
 | POST | /api/shop/purchase | Купить товар (списание билетиков) |
+| POST | /api/shop/purchase/:id/cancel | Отменить покупку (refund по цене покупки) |
 | GET | /api/shop/inventory | Инвентарь пользователя |
 | GET | /api/profile | Полный профиль пользователя (агрегированный) |
 | GET/POST | /api/payment/… | Подписка / CanPurchaseMerch |
@@ -387,7 +389,16 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.0.8** (30.08.2026)
+Текущая: **v1.0.9** (03.10.2026)
+
+### Что нового в v1.0.9
+
+- **Berserk CCG catalog:** 280 карт засеяно (5 сетов, 4–8), attribute filters (element / rarity / class / flags / stats / icons / artist), URL-shareable state, sort (name / rarity / price / artist / set / element), pagination
+- **Purchase + refund:** cancel purchase (`POST /api/shop/purchase/:id/cancel`), refund по цене покупки, idempotent, restore stock, RBAC fix (user allowed on Reserve/Release)
+- **Noiz reviews:** «Мнение Noiz» блок на картах 8-го сета (127 rows), `attributes.noiz_review` `{text, rating, verdict, author}`
+- **UI polish:** CardImage (5/7, cover/contain), CatalogPager, artist pages + per-artist grid, prev/next navigation, attribute grouping in detail, cancel modal
+- **Data:** element normalization (`леса` → `woods`, 56 cards), slim list DTO `InventoryItemsCatalog` (−26% payload)
+- **Full review:** [`REVIEW_RESULT.md`](confluence/history/2026-10/03.10.2026/REVIEW_RESULT.md)
 
 ### Что нового в v1.0.8
 
