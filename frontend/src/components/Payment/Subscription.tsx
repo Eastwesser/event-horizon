@@ -8,23 +8,34 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { IconLabel, type IconName } from '../ui/Icon';
 
-const PLANS = [
+const PLANS: {
+  id: 'present' | 'future';
+  name: string;
+  title: string;
+  icon: IconName;
+  description: string;
+  titleClass: string;
+  buttonVariant: 'primary' | 'secondary';
+}[] = [
   {
-    id: 'present' as const,
+    id: 'present',
     name: 'Текущий',
-    title: '🎁 Текущий план',
+    title: 'Текущий план',
+    icon: 'gift',
     description: 'Подписка на Boosty — доступ к мерчу и бонусам сообщества.',
     titleClass: 'text-horizon-gold',
-    buttonVariant: 'primary' as const,
+    buttonVariant: 'primary',
   },
   {
-    id: 'future' as const,
+    id: 'future',
     name: 'Будущий',
-    title: '🚀 Будущий план',
+    title: 'Будущий план',
+    icon: 'sparkle',
     description: 'Расширенная подписка с дополнительными привилегиями (когда будет доступна).',
     titleClass: 'text-indigo-soft',
-    buttonVariant: 'secondary' as const,
+    buttonVariant: 'secondary',
   },
 ];
 
@@ -122,7 +133,7 @@ export function Subscription() {
   return (
     <PageShell width="narrow">
       <PageHeader
-        title="💳 Подписка"
+        title={<IconLabel name="credit-card" iconClassName="h-7 w-7 text-horizon-gold">Подписка</IconLabel>}
         subtitle="Оформите подписку Boosty для доступа к мерчу и эксклюзивным возможностям"
         onBack={() => navigate('/')}
         backLabel="На главную"
@@ -186,7 +197,9 @@ export function Subscription() {
                   return (
                     <Card key={plan.id} interactive className="flex h-full flex-col">
                       <h3 className={`mb-2 font-display text-base font-semibold ${plan.titleClass}`}>
-                        {plan.title}
+                        <IconLabel name={plan.icon} iconClassName="h-4 w-4">
+                          {plan.title}
+                        </IconLabel>
                         {isCurrent ? (
                           <span className="ml-2 text-xs font-normal text-success">· активен</span>
                         ) : null}
@@ -223,7 +236,9 @@ export function Subscription() {
                 {PLANS.map((plan) => (
                   <Card key={plan.id} interactive className="flex h-full flex-col">
                     <h3 className={`mb-2 font-display text-base font-semibold ${plan.titleClass}`}>
-                      {plan.title}
+                      <IconLabel name={plan.icon} iconClassName="h-4 w-4">
+                        {plan.title}
+                      </IconLabel>
                     </h3>
                     <p className="mb-4 flex-1 text-sm leading-relaxed text-text-secondary">
                       {plan.description}
@@ -244,7 +259,7 @@ export function Subscription() {
 
           {!isActive && (
             <div className="mt-8 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-4 py-3 text-sm text-photon-cyan">
-              ℹ️ Для покупки мерча в магазине нужна активная подписка. После оплаты вернитесь в магазин.
+              Для покупки мерча в магазине нужна активная подписка. После оплаты вернитесь в магазин.
             </div>
           )}
         </>

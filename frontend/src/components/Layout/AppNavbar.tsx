@@ -3,20 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '../../hooks/useUserRole';
 import { clearAuth, getAccessToken } from '../../lib/auth';
 import { Button } from '../ui/Button';
+import { IconLabel, type IconName } from '../ui/Icon';
 
 /** Always visible — kids-safe primary destinations. */
-const primaryNav = [
-  { label: '👤 Профиль', path: '/profile' },
-  { label: '🏆 Лидерборд', path: '/leaderboard' },
-  { label: '🛒 Магазин', path: '/shop' },
+const primaryNav: { label: string; path: string; icon: IconName }[] = [
+  { label: 'Профиль', path: '/profile', icon: 'user' },
+  { label: 'Лидерборд', path: '/leaderboard', icon: 'trophy' },
+  { label: 'Магазин', path: '/shop', icon: 'cart' },
 ];
 
 /** Secondary — burger menu (fewer labels on the bar). */
-const moreNav = [
-  { label: '📦 Инвентарь', path: '/inventory' },
-  { label: '📜 История', path: '/history' },
-  { label: '✍️ Авторы', path: '/authors' },
-  { label: '💳 Подписка', path: '/subscription' },
+const moreNav: { label: string; path: string; icon: IconName }[] = [
+  { label: 'Инвентарь', path: '/inventory', icon: 'package' },
+  { label: 'История', path: '/history', icon: 'scroll' },
+  { label: 'Авторы', path: '/authors', icon: 'pen' },
+  { label: 'Подписка', path: '/subscription', icon: 'credit-card' },
 ];
 
 /** Shared with Home footer — keep padding in sync with PageShell. */
@@ -86,7 +87,7 @@ export function AppNavbar() {
               onClick={() => navigate(link.path)}
               className="shrink-0 whitespace-nowrap transition-colors hover:text-indigo-soft"
             >
-              {link.label}
+              <IconLabel name={link.icon}>{link.label}</IconLabel>
             </button>
           ))}
         </nav>
@@ -123,7 +124,7 @@ export function AppNavbar() {
                       onClick={() => go(link.path)}
                       className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
                     >
-                      {link.label}
+                      <IconLabel name={link.icon}>{link.label}</IconLabel>
                     </button>
                   ))}
                 </div>
@@ -136,7 +137,7 @@ export function AppNavbar() {
                       onClick={() => go(link.path)}
                       className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
                     >
-                      {link.label}
+                      <IconLabel name={link.icon}>{link.label}</IconLabel>
                     </button>
                   ))}
                 </div>
@@ -148,7 +149,7 @@ export function AppNavbar() {
                       onClick={() => go('/admin')}
                       className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
                     >
-                      🛠 Админ-панель
+                      <IconLabel name="wrench">Админ-панель</IconLabel>
                     </button>
                     <button
                       type="button"
@@ -156,7 +157,7 @@ export function AppNavbar() {
                       onClick={() => go('/analytics')}
                       className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
                     >
-                      📊 Аналитика
+                      <IconLabel name="chart">Аналитика</IconLabel>
                     </button>
                   </div>
                 )}

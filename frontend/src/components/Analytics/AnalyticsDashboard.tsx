@@ -8,6 +8,7 @@ import { PageShell } from '../ui/PageShell';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { IconLabel } from '../ui/Icon';
 
 export function AnalyticsDashboard() {
   const navigate = useNavigate();
@@ -76,9 +77,15 @@ export function AnalyticsDashboard() {
   if (!roleLoading && !isAdmin) {
     return (
       <PageShell width="wide">
-        <PageHeader title="📊 Аналитика" subtitle="DAU, MAU и удержание пользователей (admin)" onBack={() => navigate('/')} />
+        <PageHeader
+          title={<IconLabel name="chart" iconClassName="h-7 w-7 text-horizon-gold">Аналитика</IconLabel>}
+          subtitle="DAU, MAU и удержание пользователей (admin)"
+          onBack={() => navigate('/')}
+        />
         <div className="rounded-md border border-error/30 bg-error/10 py-16 text-center">
-          <h1 className="mb-2 font-display text-xl font-semibold text-error">🔒 Доступ запрещён</h1>
+          <h1 className="mb-2 font-display text-xl font-semibold text-error">
+            <IconLabel name="lock">Доступ запрещён</IconLabel>
+          </h1>
           <p className="text-sm text-text-secondary">Аналитика доступна только администраторам</p>
         </div>
       </PageShell>
@@ -87,7 +94,11 @@ export function AnalyticsDashboard() {
 
   return (
     <PageShell width="wide">
-      <PageHeader title="📊 Аналитика" subtitle="DAU, MAU и удержание пользователей (admin)" onBack={() => navigate('/')} />
+      <PageHeader
+        title={<IconLabel name="chart" iconClassName="h-7 w-7 text-horizon-gold">Аналитика</IconLabel>}
+        subtitle="DAU, MAU и удержание пользователей (admin)"
+        onBack={() => navigate('/')}
+      />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm text-text-secondary">
@@ -105,7 +116,7 @@ export function AnalyticsDashboard() {
           </select>
         </label>
         <Button variant="secondary" size="sm" onClick={loadAnalytics} disabled={loading}>
-          🔄 Обновить
+          Обновить
         </Button>
       </div>
 

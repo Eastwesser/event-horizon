@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
 interface PageHeaderProps {
-  title: string;
+  title: ReactNode;
   /** Optional line of muted copy shown under the title, inside the same header block. */
   subtitle?: ReactNode;
   /** Renders a round back button that navigates here (or calls the given handler). */

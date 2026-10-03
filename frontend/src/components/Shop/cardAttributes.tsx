@@ -1,30 +1,31 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '../ui/Badge';
+import { Icon, type IconName } from '../ui/Icon';
 
 export type CardIcon = { type?: string; value?: number | null };
 
-/** Berserk icon chips — emoji stand-ins until SVG assets land. */
-const ICON_META: Record<string, { label: string; emoji: string }> = {
-  armor: { label: 'Доспех', emoji: '🛡' },
-  counter: { label: 'Фишка', emoji: '●' },
-  uchr: { label: 'Удар через ряд', emoji: '⚔' },
-  tap: { label: 'Поворот', emoji: '↻' },
-  strike: { label: 'Атака', emoji: '🗡' },
-  instant: { label: 'Мгновенно', emoji: '⏳' },
-  zov: { label: 'Защита от выстрелов', emoji: '🏹' },
-  zoz: { label: 'Защита от заклинаний', emoji: '📜' },
-  zot: { label: 'Защита от метаний', emoji: '🪓' },
-  zor: { label: 'Защита от разрядов', emoji: '⚡' },
-  zoal: { label: 'Защита от летающих', emoji: '🪽' },
-  zom: { label: 'Защита от магии', emoji: '☯' },
-  zoo: { label: 'Защита от отравления', emoji: '💧' },
-  regen: { label: 'Регенерация', emoji: '🦀' },
-  stamina: { label: 'Стойкость', emoji: '💪' },
-  direct: { label: 'Направленный удар', emoji: '◎' },
-  ova: { label: 'Опыт в атаке', emoji: '⚔' },
-  ovz: { label: 'Опыт в защите', emoji: '🛡' },
-  ovs: { label: 'Опыт в стрельбе', emoji: '🎯' },
+/** Berserk icon chips — SVG glyphs (Wave 1 Emoji → SVG). */
+const ICON_META: Record<string, { label: string; icon: IconName }> = {
+  armor: { label: 'Доспех', icon: 'armor' },
+  counter: { label: 'Фишка', icon: 'counter' },
+  uchr: { label: 'Удар через ряд', icon: 'uchr' },
+  tap: { label: 'Поворот', icon: 'tap' },
+  strike: { label: 'Атака', icon: 'strike' },
+  instant: { label: 'Мгновенно', icon: 'instant' },
+  zov: { label: 'Защита от выстрелов', icon: 'zov' },
+  zoz: { label: 'Защита от заклинаний', icon: 'zoz' },
+  zot: { label: 'Защита от метаний', icon: 'zot' },
+  zor: { label: 'Защита от разрядов', icon: 'zor' },
+  zoal: { label: 'Защита от летающих', icon: 'zoal' },
+  zom: { label: 'Защита от магии', icon: 'zom' },
+  zoo: { label: 'Защита от отравления', icon: 'zoo' },
+  regen: { label: 'Регенерация', icon: 'regen' },
+  stamina: { label: 'Стойкость', icon: 'stamina' },
+  direct: { label: 'Направленный удар', icon: 'direct' },
+  ova: { label: 'Опыт в атаке', icon: 'ova' },
+  ovz: { label: 'Опыт в защите', icon: 'ovz' },
+  ovs: { label: 'Опыт в стрельбе', icon: 'ovs' },
 };
 
 const ELEMENT_RU: Record<string, string> = {
@@ -90,7 +91,7 @@ export function CardIconChips({ icons }: { icons: CardIcon[] }) {
       {icons.map((icon, i) => {
         const meta = ICON_META[icon.type || ''] || {
           label: icon.type || 'icon',
-          emoji: '◆',
+          icon: 'diamond' as IconName,
         };
         const text =
           icon.value != null ? `${meta.label} ${icon.value}` : meta.label;
@@ -100,7 +101,7 @@ export function CardIconChips({ icons }: { icons: CardIcon[] }) {
             title={text}
             className="inline-flex items-center gap-1 rounded-sm border border-white/15 bg-white/5 px-2 py-1 text-xs text-text-secondary"
           >
-            <span aria-hidden>{meta.emoji}</span>
+            <Icon name={meta.icon} className="h-3.5 w-3.5 text-horizon-gold" title={meta.label} />
             <span className="font-medium text-text-primary">
               {icon.type}
               {icon.value != null ? `:${icon.value}` : ''}
@@ -122,7 +123,7 @@ export function cardFlagBadges(attrs: Record<string, unknown>): FlagBadge[] {
   const flags: FlagBadge[] = [];
   if (asBool(attrs.foil)) flags.push({ key: 'foil', label: '✦ ФОЙЛ', tone: 'gold' });
   if (asBool(attrs.noir)) flags.push({ key: 'noir', label: '◐ НУАР', tone: 'neutral' });
-  if (asBool(attrs.flying)) flags.push({ key: 'flying', label: '🕊 ЛЕТАЮЩИЙ', tone: 'cyan' });
+  if (asBool(attrs.flying)) flags.push({ key: 'flying', label: 'ЛЕТАЮЩИЙ', tone: 'cyan' });
   if (asBool(attrs.companion)) flags.push({ key: 'companion', label: 'C Компаньон', tone: 'success' });
   if (asBool(attrs.unique)) flags.push({ key: 'unique', label: '♛ УНИКАЛЬНАЯ', tone: 'warning' });
   if (asBool(attrs.symbiont)) flags.push({ key: 'symbiont', label: 'Симбионт', tone: 'indigo' });

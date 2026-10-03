@@ -11,6 +11,7 @@ import { PageShell } from '../ui/PageShell';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { Icon, IconLabel } from '../ui/Icon';
 
 const PAGE_SIZE = 20;
 const TOP_N = 24;
@@ -123,7 +124,7 @@ export function AuthorsPage() {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="✍️ Авторы"
+        title={<IconLabel name="pen" iconClassName="h-7 w-7 text-horizon-gold">Авторы</IconLabel>}
         subtitle="Художники карт и авторы сообщества Event Horizon"
         onBack={() => navigate('/')}
       />
@@ -240,7 +241,7 @@ export function AuthorsPage() {
               />
             </label>
             <Button type="submit" disabled={saving} className="self-start">
-              {saving ? 'Сохранение…' : '💾 Сохранить профиль'}
+              {saving ? 'Сохранение…' : 'Сохранить профиль'}
             </Button>
           </form>
         </Card>
@@ -273,7 +274,7 @@ export function AuthorsPage() {
                         decoding="async"
                       />
                     ) : (
-                      '✍️'
+                      <Icon name="pen" className="h-6 w-6 text-indigo-soft" />
                     )}
                   </div>
                   <div className="min-w-0">
@@ -286,7 +287,7 @@ export function AuthorsPage() {
                       </p>
                     )}
                     <div className="mt-1.5 text-xs text-text-muted">
-                      {author.active ? '🟢 Активен' : '⚫ Неактивен'}
+                      {author.active ? 'Активен' : 'Неактивен'}
                       {' · '}
                       Обновлён:{' '}
                       {new Date(author.updated_at_unix * 1000).toLocaleDateString('ru-RU')}

@@ -4,6 +4,8 @@ import { getLeaderboard } from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
+import { gameIcon } from '../../lib/gameIcons';
 
 interface LeaderboardEntry {
   rank: number;
@@ -14,15 +16,15 @@ interface LeaderboardEntry {
 
 type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi' | 'twenty48' | 'gears' | 'companion';
 
-const GAME_TABS: { id: GameId; label: string }[] = [
-  { id: 'hexagon', label: '🥞 Pancaker' },
-  { id: 'memory', label: '🎴 Memonia' },
-  { id: 'flappy', label: '🐦 Flappy Bird' },
-  { id: 'towers', label: '🗼 Builder' },
-  { id: 'hanoi', label: '🪈 Hanoi' },
-  { id: 'twenty48', label: '🔢 2048' },
-  { id: 'gears', label: '⚙️ Орбиты' },
-  { id: 'companion', label: '⭐ Компаньон' },
+const GAME_TABS: { id: GameId; label: string; icon: IconName }[] = [
+  { id: 'hexagon', label: 'Pancaker', icon: gameIcon('hexagon') },
+  { id: 'memory', label: 'Memonia', icon: gameIcon('memory') },
+  { id: 'flappy', label: 'Flappy Bird', icon: gameIcon('flappy') },
+  { id: 'towers', label: 'Builder', icon: gameIcon('towers') },
+  { id: 'hanoi', label: 'Hanoi', icon: gameIcon('hanoi') },
+  { id: 'twenty48', label: '2048', icon: gameIcon('twenty48') },
+  { id: 'gears', label: 'Орбиты', icon: gameIcon('gears') },
+  { id: 'companion', label: 'Компаньон', icon: gameIcon('companion') },
 ];
 
 interface LeaderboardProps {
@@ -95,21 +97,14 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
     setIsOpen(true);
   };
 
-  const getMedal = (rank: number) => {
-    switch (rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return null;
-    }
-  };
-
   const titleGame = GAME_TABS.find((t) => t.id === selectedGame)?.label ?? 'Игра';
 
   return (
     <>
       <Button variant="secondary" size="sm" onClick={handleOpen}>
-        🏆 Топ-10
+        <IconLabel name="trophy" iconClassName="h-3.5 w-3.5">
+          Топ-10
+        </IconLabel>
       </Button>
 
       <Modal
@@ -125,7 +120,7 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
                 active={selectedGame === tab.id}
                 onClick={() => setSelectedGame(tab.id)}
               >
-                {tab.label}
+                <IconLabel name={tab.icon}>{tab.label}</IconLabel>
               </FilterChip>
             ))}
           </div>
@@ -138,7 +133,6 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
             {entries.map((entry, idx) => {
               if (!entry) return null;
               const rank = entry.rank ?? idx + 1;
-              const medal = getMedal(rank);
               const score =
                 typeof entry.score === 'number' && Number.isFinite(entry.score)
                   ? entry.score
@@ -149,8 +143,9 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
                   key={entry.userId || idx}
                   className="flex items-center gap-3 rounded-sm border border-white/10 bg-nebula-elevated/40 px-3 py-2"
                 >
-                  <div className="w-6 text-center font-hud text-sm text-text-secondary">
-                    {medal || rank}
+                  <div className="flex w-8 items-center justify-center gap-0.5 font-hud text-sm text-text-secondary">
+                    {rank <= 3 ? <Icon name="medal" className="h-3.5 w-3.5 text-horizon-gold" /> : null}
+                    {rank}
                   </div>
                   <div className="flex flex-1 items-center gap-2 overflow-hidden">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-xs font-semibold text-void">

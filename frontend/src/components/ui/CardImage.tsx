@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
+import { Icon } from './Icon';
 
 interface CardImageProps {
   src?: string | null;
@@ -27,7 +28,7 @@ export function CardImage({
   src,
   alt,
   className,
-  fallback = <span className="text-4xl">🃏</span>,
+  fallback = <Icon name="cards" className="h-12 w-12 text-text-muted" />,
   fit = 'cover',
   fixedAspect = true,
 }: CardImageProps) {

@@ -7,6 +7,8 @@ import { PageShell } from '../ui/PageShell';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
 import { cn } from '../../lib/cn';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
+import { gameIcon } from '../../lib/gameIcons';
 
 interface LeaderboardEntry {
   rank: number;
@@ -19,15 +21,15 @@ interface LeaderboardEntry {
 
 type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi' | 'twenty48' | 'gears' | 'companion';
 
-const GAME_TABS: { id: GameId; label: string; icon: string }[] = [
-  { id: 'hexagon', label: 'Pancaker', icon: '🥞' },
-  { id: 'flappy', label: 'Flappy Bird', icon: '🐦' },
-  { id: 'memory', label: 'Memonia', icon: '🎴' },
-  { id: 'towers', label: 'Builder', icon: '🗼' },
-  { id: 'hanoi', label: 'Hanoi', icon: '🪈' },
-  { id: 'twenty48', label: '2048', icon: '🔢' },
-  { id: 'gears', label: 'Орбиты', icon: '⚙️' },
-  { id: 'companion', label: 'Компаньон', icon: '⭐' },
+const GAME_TABS: { id: GameId; label: string; icon: IconName }[] = [
+  { id: 'hexagon', label: 'Pancaker', icon: gameIcon('hexagon') },
+  { id: 'flappy', label: 'Flappy Bird', icon: gameIcon('flappy') },
+  { id: 'memory', label: 'Memonia', icon: gameIcon('memory') },
+  { id: 'towers', label: 'Builder', icon: gameIcon('towers') },
+  { id: 'hanoi', label: 'Hanoi', icon: gameIcon('hanoi') },
+  { id: 'twenty48', label: '2048', icon: gameIcon('twenty48') },
+  { id: 'gears', label: 'Орбиты', icon: gameIcon('gears') },
+  { id: 'companion', label: 'Компаньон', icon: gameIcon('companion') },
 ];
 
 const RANK_TONE: Record<number, string> = {
@@ -59,27 +61,26 @@ export function LeaderboardFull() {
         );
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to fetch leaderboard:', err);
         setLoading(false);
       });
   }, [selectedGame]);
 
-  const getMedal = (rank: number) => {
-    switch (rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return null;
-    }
-  };
-
-  const activeIcon = GAME_TABS.find((t) => t.id === selectedGame)?.icon;
+  const activeIcon = GAME_TABS.find((t) => t.id === selectedGame)?.icon || 'trophy';
   const handleBack = () => navigate('/');
 
   return (
     <PageShell width="narrow">
-      <PageHeader title="🏆 Лидерборд" onBack={handleBack} backLabel="На главную" />
+      <PageHeader
+        title={
+          <IconLabel name="trophy" iconClassName="h-7 w-7 text-horizon-gold">
+            Лидерборд
+          </IconLabel>
+        }
+        onBack={handleBack}
+        backLabel="На главную"
+      />
 
       <div className="mb-6 flex flex-wrap gap-2">
         {GAME_TABS.map((tab) => (
@@ -88,7 +89,7 @@ export function LeaderboardFull() {
             active={selectedGame === tab.id}
             onClick={() => setSelectedGame(tab.id)}
           >
-            {tab.icon} {tab.label}
+            <IconLabel name={tab.icon}>{tab.label}</IconLabel>
           </FilterChip>
         ))}
       </div>
@@ -100,7 +101,7 @@ export function LeaderboardFull() {
         </div>
       ) : entries.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-20 text-center">
-          <p className="text-text-secondary">😢 Пока нет рекордов в этой игре</p>
+          <p className="text-text-secondary">Пока нет рекордов в этой игре</p>
           <p className="text-text-muted">Стань первым!</p>
         </div>
       ) : (
@@ -116,17 +117,29 @@ export function LeaderboardFull() {
             <tbody className="divide-y divide-white/5">
               {entries.map((entry, idx) => {
                 const rank = idx + 1;
-                const medal = getMedal(rank);
-
                 return (
                   <tr key={entry.userId || `row-${idx}`} className="hover:bg-white/5">
-                    <td className={cn('px-4 py-3 font-hud tabular-nums', RANK_TONE[rank] || 'text-text-secondary')}>
-                      {medal || rank}
+                    <td
+                      className={cn(
+                        'px-4 py-3 font-hud tabular-nums',
+                        RANK_TONE[rank] || 'text-text-secondary',
+                      )}
+                    >
+                      {rank <= 3 ? (
+                        <Icon name="medal" className="inline h-4 w-4" title={`${rank}`} />
+                      ) : (
+                        rank
+                      )}
+                      {rank <= 3 ? (
+                        <span className="ml-1 align-middle">{rank}</span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-sm font-semibold text-void">
-                          {entry.nickname?.charAt(0).toUpperCase() || entry.user_email?.charAt(0).toUpperCase() || '?'}
+                          {entry.nickname?.charAt(0).toUpperCase() ||
+                            entry.user_email?.charAt(0).toUpperCase() ||
+                            '?'}
                         </div>
                         <span className="truncate text-text-primary">
                           {entry.nickname || entry.user_email?.split('@')[0] || 'Аноним'}
@@ -134,7 +147,10 @@ export function LeaderboardFull() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right font-hud tabular-nums text-horizon-gold">
-                      {(entry.score ?? 0).toLocaleString()} {activeIcon}
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {(entry.score ?? 0).toLocaleString()}
+                        <Icon name={activeIcon} className="h-3.5 w-3.5" />
+                      </span>
                     </td>
                   </tr>
                 );

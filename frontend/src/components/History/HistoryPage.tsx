@@ -7,6 +7,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
+import { IconLabel } from '../ui/Icon';
 
 const PAGE_SIZE = 50;
 
@@ -92,7 +93,7 @@ export function HistoryPage() {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="📜 История"
+        title={<IconLabel name="scroll" iconClassName="h-7 w-7 text-horizon-gold">История</IconLabel>}
         subtitle="События вашего аккаунта (окно хранения ~30 дней)"
         onBack={() => navigate('/')}
         backLabel="На главную"

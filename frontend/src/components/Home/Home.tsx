@@ -3,14 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { AppFooter, AppNavbar, shellInner } from '../Layout/AppNavbar';
+import { gameIcon } from '../../lib/gameIcons';
 
-const games = [
+const games: {
+  id: string;
+  name: string;
+  description: string;
+  icon: IconName;
+  path: string;
+  available: boolean;
+}[] = [
   {
     id: 'hexagon',
     name: 'Pancaker',
     description: 'Гексагональный пазл с блинчиками',
-    icon: '🥞',
+    icon: gameIcon('hexagon'),
     path: '/game/hexagon',
     available: true,
   },
@@ -18,7 +27,7 @@ const games = [
     id: 'flappy',
     name: 'Flappy Bird',
     description: 'Лети и не врезайся в трубы',
-    icon: '🐦',
+    icon: gameIcon('flappy'),
     path: '/game/flappy',
     available: true,
   },
@@ -26,7 +35,7 @@ const games = [
     id: 'towers',
     name: 'Builder',
     description: 'Строй башню из падающих блоков',
-    icon: '🗼',
+    icon: gameIcon('towers'),
     path: '/game/towers',
     available: true,
   },
@@ -34,7 +43,7 @@ const games = [
     id: 'hanoi',
     name: 'Hanoi',
     description: 'Классическая головоломка с кольцами',
-    icon: '🪈',
+    icon: gameIcon('hanoi'),
     path: '/game/hanoi',
     available: true,
   },
@@ -42,7 +51,7 @@ const games = [
     id: 'memory',
     name: 'Memonia',
     description: 'Найди пары фруктов',
-    icon: '🎴',
+    icon: gameIcon('memory'),
     path: '/game/memory',
     available: true,
   },
@@ -50,7 +59,7 @@ const games = [
     id: 'twenty48',
     name: 'Горизонт 2048',
     description: 'Сдвинь плитки — собери 2048',
-    icon: '🔢',
+    icon: gameIcon('twenty48'),
     path: '/game/twenty48',
     available: true,
   },
@@ -58,7 +67,7 @@ const games = [
     id: 'gears',
     name: 'Орбиты',
     description: 'Сливай шестерёнки до восьмой',
-    icon: '⚙️',
+    icon: gameIcon('gears'),
     path: '/game/gears',
     available: true,
   },
@@ -66,7 +75,7 @@ const games = [
     id: 'companion',
     name: 'Компаньон',
     description: 'Мягкий тамагочи без FOMO-смерти',
-    icon: '⭐',
+    icon: gameIcon('companion'),
     path: '/game/companion',
     available: true,
   },
@@ -97,7 +106,9 @@ export function Home() {
                   Все игры
                 </Button>
                 <Button variant="ghost" size="md" onClick={() => navigate('/leaderboard')}>
-                  🏆 Лидерборд
+                  <IconLabel name="trophy" iconClassName="h-4 w-4">
+                    Лидерборд
+                  </IconLabel>
                 </Button>
               </div>
             </div>
@@ -132,7 +143,7 @@ export function Home() {
                 style={{ animationDelay: `${i * 70}ms` }}
                 onClick={() => game.available && navigate(game.path)}
               >
-                <div className="text-5xl">{game.icon}</div>
+                <Icon name={game.icon} className="h-12 w-12 text-horizon-gold" />
                 <h3 className="font-display text-lg font-semibold text-text-primary">{game.name}</h3>
                 <p className="min-h-[2.5rem] flex-1 text-sm text-text-secondary">{game.description}</p>
                 <Badge
