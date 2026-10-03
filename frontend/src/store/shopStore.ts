@@ -190,11 +190,16 @@ export const useShopStore = create<ShopState>()(
                 name: item.name || item.Name || 'Без названия',
                 description: item.description || item.Description || '',
                 price_tickets: currentPrice,
-                icon_url: item.image_url || item.ImageUrl || '',
+                icon_url: item.image_url || item.ImageUrl || item.images?.[0] || '',
                 type: item.category || item.Category || 'other',
                 category: item.category || item.Category || 'other',
                 game_id: item.game_id || item.GameId || undefined,
-                image_url: item.image_url || item.ImageUrl || '',
+                image_url: item.image_url || item.ImageUrl || item.images?.[0] || '',
+                images: Array.isArray(item.images)
+                  ? item.images
+                  : Array.isArray(item.Images)
+                    ? item.Images
+                    : undefined,
                 available:
                   item.available !== undefined
                     ? item.available

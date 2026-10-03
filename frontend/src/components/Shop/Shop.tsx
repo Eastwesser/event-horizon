@@ -10,7 +10,8 @@ import { paymentApi } from '../../services/paymentApi';
 import { inventoryApi } from '../../services/inventoryApi';
 import { useShopStore, type ShopItem, type PurchasedItem } from '../../store/shopStore';
 import { inventoryToShopItem } from '../../lib/shopItemMap';
-import { formatTicketPrice } from '../../lib/formatPrice';
+import { formatTicketAmount } from '../../lib/formatPrice';
+import { Card } from '../ui/Card';
 import {
   CATALOG_PAGE_SIZE,
   CATALOG_SORT_OPTIONS,
@@ -32,6 +33,7 @@ import { FilterChip } from '../ui/FilterChip';
 import { CatalogPager } from '../ui/CatalogPager';
 import { CardImage } from '../ui/CardImage';
 import { CatalogFiltersPanel } from './CatalogFiltersPanel';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
 
 function isMerchItem(item: ShopItem): boolean {
   const cat = (item.category || '').toLowerCase();
@@ -46,15 +48,15 @@ function isMerchItem(item: ShopItem): boolean {
   );
 }
 
-const itemTypes = [
+const itemTypes: { value: string; label: string; icon?: IconName }[] = [
   { value: 'all', label: 'Все' },
-  { value: 'карточка', label: '🃏 Карточки' },
-  { value: 'game_skin', label: '🎨 Скины' },
-  { value: 'profile_theme', label: '🎨 Темы' },
-  { value: 'merch', label: '🎁 Мерч' },
-  { value: 'брелок', label: 'Брелок' },
-  { value: 'картина', label: 'Картина' },
-  { value: 'фенечка', label: 'Фенечка' },
+  { value: 'карточка', label: 'Карточки', icon: 'cards' },
+  { value: 'game_skin', label: 'Скины', icon: 'palette' },
+  { value: 'profile_theme', label: 'Темы', icon: 'palette' },
+  { value: 'merch', label: 'Мерч', icon: 'gift' },
+  { value: 'брелок', label: 'Брелок', icon: 'key' },
+  { value: 'картина', label: 'Картина', icon: 'frame' },
+  { value: 'фенечка', label: 'Фенечка', icon: 'sparkle' },
 ];
 
 export const Shop: React.FC = () => {
@@ -185,6 +187,13 @@ export const Shop: React.FC = () => {
 
   const facets = useMemo(() => collectCatalogFacets(catalog), [catalog]);
 
+  /** Enrich shop inventory rows with catalog images (inventory svc), shop.image_url is often empty. */
+  const catalogById = useMemo(() => {
+    const m = new Map<string, ShopItem>();
+    for (const it of catalog) m.set(it.id, it);
+    return m;
+  }, [catalog]);
+
   const filteredSorted = useMemo(() => {
     const patched = catalog.map((item) => {
       const patch = catalogPatches[item.id];
@@ -240,7 +249,7 @@ export const Shop: React.FC = () => {
           setMerchBlockReason(reason || 'Покупка мерча недоступна без активной подписки');
           setNotification({
             type: 'error',
-            message: `❌ ${reason || 'Покупка мерча недоступна'}. Оформите подписку.`,
+            message: `${reason || 'Покупка мерча недоступна'}. Оформите подписку.`,
             link: { label: 'Перейти к подписке', path: '/subscription' },
           });
           return;
@@ -250,7 +259,7 @@ export const Shop: React.FC = () => {
         setMerchBlockReason('Не удалось проверить доступ к мерчу');
         setNotification({
           type: 'error',
-          message: '❌ Не удалось проверить доступ к покупке мерча',
+          message: 'Не удалось проверить доступ к покупке мерча',
         });
         return;
       }
@@ -290,14 +299,14 @@ export const Shop: React.FC = () => {
 
       setNotification({
         type: 'success',
-        message: `✅ ${selectedItem.name} успешно куплен!`,
+        message: `${selectedItem.name} успешно куплен!`,
       });
       setShowModal(false);
       setSelectedItem(null);
     } catch (error: any) {
       setNotification({
         type: 'error',
-        message: error.message || '❌ Ошибка при покупке',
+        message: error.message || 'Ошибка при покупке',
       });
     }
   };
@@ -335,13 +344,13 @@ export const Shop: React.FC = () => {
 
       setNotification({
         type: 'success',
-        message: `✅ ${name}: возвращено ${formatTicketPrice(refunded)}.`,
+        message: `${name}: возвращено ${formatTicketAmount(refunded)}.`,
       });
       setCancelTarget(null);
     } catch (error: any) {
       setNotification({
         type: 'error',
-        message: error.message || '❌ Ошибка при отмене покупки',
+        message: error.message || 'Ошибка при отмене покупки',
       });
     }
   };
@@ -351,7 +360,9 @@ export const Shop: React.FC = () => {
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-void text-text-secondary">
-        🔒 Войдите в аккаунт, чтобы просматривать магазин
+        <IconLabel name="lock" iconClassName="h-4 w-4">
+          Войдите в аккаунт, чтобы просматривать магазин
+        </IconLabel>
       </div>
     );
   }
@@ -367,13 +378,18 @@ export const Shop: React.FC = () => {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="🎁 Магазин"
+        title={
+          <IconLabel name="gift" iconClassName="h-7 w-7 text-horizon-gold">
+            Магазин
+          </IconLabel>
+        }
         subtitle="Тратьте билетики на крутые предметы!"
         onBack={() => navigate('/')}
         backLabel="На главную"
         actions={
           <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
-            🎟️ {balance} билетиков
+            <Icon name="ticket" className="h-4 w-4" />
+            {balance}
           </span>
         }
       />
@@ -406,7 +422,7 @@ export const Shop: React.FC = () => {
 
       <div className="mb-6 flex flex-wrap gap-2">
         <FilterChip active={activeTab === 'shop'} onClick={() => setActiveTab('shop')}>
-          🛒 Товары
+          <IconLabel name="cart">Товары</IconLabel>
         </FilterChip>
         <FilterChip
           active={activeTab === 'inventory'}
@@ -415,7 +431,7 @@ export const Shop: React.FC = () => {
             fetchInventory();
           }}
         >
-          🎒 Мой инвентарь ({inventory.length})
+          <IconLabel name="backpack">Мой инвентарь ({inventory.length})</IconLabel>
         </FilterChip>
       </div>
 
@@ -428,7 +444,11 @@ export const Shop: React.FC = () => {
                 active={filterType === type.value}
                 onClick={() => setQuery({ type: type.value, page: '1' })}
               >
-                {type.label}
+                {type.icon ? (
+                  <IconLabel name={type.icon}>{type.label}</IconLabel>
+                ) : (
+                  type.label
+                )}
               </FilterChip>
             ))}
             <label className="ml-auto flex items-center gap-2 text-sm text-text-secondary">
@@ -490,49 +510,63 @@ export const Shop: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {inventory.length === 0 ? (
-            <p className="col-span-full py-16 text-center text-text-secondary">
-              У вас пока нет купленных предметов 🎒
+            <p className="col-span-full flex items-center justify-center gap-2 py-16 text-text-secondary">
+              <Icon name="backpack" className="h-5 w-5" />
+              У вас пока нет купленных предметов
             </p>
           ) : (
-            inventory.map((purchased) => (
-              <div
-                key={purchased.id}
-                className="flex items-center gap-4 rounded-md border border-white/10 bg-nebula p-4"
-              >
-                <button
-                  type="button"
-                  className="shrink-0"
-                  onClick={() => navigate(`/shop/item/${purchased.item_id}`)}
-                >
-                  <CardImage
-                    src={purchased.item.image_url}
-                    alt={purchased.item.name}
-                    className="w-16"
-                    fit="cover"
-                    fallback={<span>🎁</span>}
-                  />
-                </button>
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate font-display text-sm font-semibold text-text-primary">
-                    {purchased.item.name}
-                  </h4>
-                  <p className="truncate text-xs text-text-secondary">
-                    {purchased.item.description}
-                  </p>
-                  <span className="text-xs text-text-muted">
-                    Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={cancelling}
-                  onClick={() => setCancelTarget(purchased)}
-                >
-                  Отменить
-                </Button>
-              </div>
-            ))
+            inventory.map((purchased) => {
+              // Shop /inventory often has empty image_url; catalog (inventory svc) has images[].
+              const fromCatalog = catalogById.get(purchased.item_id);
+              const img =
+                purchased.item.image_url ||
+                purchased.item.images?.[0] ||
+                purchased.item.icon_url ||
+                fromCatalog?.image_url ||
+                fromCatalog?.images?.[0] ||
+                fromCatalog?.icon_url ||
+                '';
+              const title = purchased.item.name || fromCatalog?.name || 'Товар';
+              return (
+                <Card key={purchased.id} className="flex h-full flex-col">
+                  <button
+                    type="button"
+                    className="flex min-h-0 flex-1 flex-col text-left text-inherit"
+                    onClick={() => navigate(`/shop/item/${purchased.item_id}`)}
+                  >
+                    <CardImage
+                      src={img}
+                      alt={title}
+                      className="w-full shrink-0"
+                      fit="cover"
+                      fallback={<Icon name="gift" className="h-12 w-12 text-text-muted" />}
+                    />
+                    <div className="mt-4 min-w-0 flex-1">
+                      <h4 className="font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2">
+                        {title}
+                      </h4>
+                      <p className="mt-1 text-xs text-text-muted">
+                        Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="mt-3 flex justify-end border-t border-white/5 pt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 gap-1.5 px-2"
+                      disabled={cancelling}
+                      title="Отменить покупку"
+                      aria-label={`Отменить покупку ${title}`}
+                      onClick={() => setCancelTarget(purchased)}
+                    >
+                      <Icon name="undo" className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Отменить</span>
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })
           )}
         </div>
       )}

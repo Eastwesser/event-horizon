@@ -7,6 +7,7 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
+import { Icon, IconLabel } from '../ui/Icon';
 import type { InventoryItem } from '../../services/inventoryApi';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { stockLabel } from '../../lib/shopItemMap';
@@ -46,7 +47,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
             alt={item.name}
             className="w-full shrink-0"
             fit="cover"
-            fallback={<span className="text-4xl">📦</span>}
+            fallback={<Icon name="package" className="h-12 w-12 text-text-muted" />}
           />
           <div className="mt-4 flex min-h-0 flex-1 flex-col">
             <h3 className="font-display text-base font-semibold leading-snug text-text-primary">
@@ -55,7 +56,8 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
             <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{item.description}</p>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-sm">
               <Badge tone="indigo">{item.type}</Badge>
-              <span className="font-hud tabular-nums text-horizon-gold">
+              <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
+                <Icon name="ticket" className="h-3.5 w-3.5" />
                 {formatTicketPrice(item.price)}
               </span>
               {stockText !== null && (
@@ -72,7 +74,11 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
               className="w-full min-w-0 px-2"
               onClick={() => setShowEditModal(true)}
             >
-              <span className="block truncate">✏️ Ред.</span>
+              <span className="block truncate">
+                <IconLabel name="pen" iconClassName="h-3 w-3">
+                  Ред.
+                </IconLabel>
+              </span>
             </Button>
             <Button
               variant="danger"
@@ -81,7 +87,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? '...' : '🗑️ Удалить'}
+              {isDeleting ? '...' : 'Удалить'}
             </Button>
           </div>
         )}

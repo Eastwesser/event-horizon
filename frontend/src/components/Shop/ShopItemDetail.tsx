@@ -11,7 +11,8 @@ import { PageShell } from '../ui/PageShell';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
-import { formatTicketPrice } from '../../lib/formatPrice';
+import { Icon } from '../ui/Icon';
+import { formatTicketAmount, formatTicketPrice } from '../../lib/formatPrice';
 import { stockLabel } from '../../lib/shopItemMap';
 import { loadCatalogNav, navNeighbors } from '../../lib/catalogNav';
 import { CardAttributesView, CardFlagBadges } from './cardAttributes';
@@ -112,7 +113,7 @@ export function ShopItemDetail() {
         setMerchBlockReason(reason || 'Покупка мерча недоступна без активной подписки');
         setNotice({
           type: 'error',
-          message: `❌ ${reason || 'Покупка недоступна'}. Оформите подписку.`,
+          message: `${reason || 'Покупка недоступна'}. Оформите подписку.`,
         });
         return;
       }
@@ -146,11 +147,11 @@ export function ShopItemDetail() {
       );
       setOwned(true);
       setShowModal(false);
-      setNotice({ type: 'success', message: `✅ ${item.name} куплен!` });
+      setNotice({ type: 'success', message: `${item.name} куплен!` });
     } catch (e: any) {
       setNotice({
         type: 'error',
-        message: e.message || '❌ Ошибка при покупке',
+        message: e.message || 'Ошибка при покупке',
       });
     }
   };
@@ -182,12 +183,12 @@ export function ShopItemDetail() {
         result?.refunded_amount ?? result?.refundedAmount ?? refundAmount;
       setNotice({
         type: 'success',
-        message: `✅ Покупка отменена. Возвращено ${formatTicketPrice(refunded)}.`,
+        message: `Покупка отменена. Возвращено ${formatTicketAmount(refunded)}.`,
       });
     } catch (e: any) {
       setNotice({
         type: 'error',
-        message: e.message || '❌ Ошибка при отмене покупки',
+        message: e.message || 'Ошибка при отмене покупки',
       });
     }
   };
@@ -313,7 +314,7 @@ export function ShopItemDetail() {
             className="mx-auto max-h-[32rem] w-full max-w-sm bg-nebula"
             fit="contain"
             fixedAspect={false}
-            fallback={<span className="text-6xl">🃏</span>}
+            fallback={<Icon name="cards" className="h-16 w-16 text-text-muted" />}
           />
         </div>
 
@@ -342,7 +343,8 @@ export function ShopItemDetail() {
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <Badge tone="cyan">{item.type}</Badge>
             {element ? <Badge tone="indigo">{element}</Badge> : null}
-            <span className="font-hud tabular-nums text-horizon-gold">
+            <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
+              <Icon name="ticket" className="h-3.5 w-3.5" />
               {formatTicketPrice(item.price)}
             </span>
             {stockText !== null && (
@@ -393,8 +395,10 @@ export function ShopItemDetail() {
                       size="sm"
                       disabled={cancelling}
                       onClick={() => setShowCancelModal(true)}
+                      className="gap-1.5"
                     >
-                      Отменить покупку
+                      <Icon name="undo" className="h-3.5 w-3.5" />
+                      Отменить
                     </Button>
                     <Link
                       to="/shop?tab=inventory"
