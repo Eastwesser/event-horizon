@@ -7,6 +7,7 @@ type ConfigProvider interface {
 	PostgresConfig() PostgresConfig
 	NATSConfig() NATSConfig
 	LoggerConfig() LoggerConfig
+	BillingAddr() string
 }
 
 type GRPCConfig interface {
@@ -89,4 +90,8 @@ func (c *Config) NATSConfig() NATSConfig {
 
 func (c *Config) LoggerConfig() LoggerConfig {
 	return loggerView{level: getEnv("LOG_LEVEL", "info"), format: getEnv("LOG_FORMAT", "text")}
+}
+
+func (c *Config) BillingAddr() string {
+	return c.BillingGRPCAddr
 }

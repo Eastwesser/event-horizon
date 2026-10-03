@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: proto/game.proto
+// source: game.proto
 
 package game
 
@@ -33,13 +33,15 @@ type SubmitScoreRequest struct {
 	Seed          string                 `protobuf:"bytes,7,opt,name=seed,proto3" json:"seed,omitempty"`
 	Moves         []*Move                `protobuf:"bytes,8,rep,name=moves,proto3" json:"moves,omitempty"`
 	ClientVersion int32                  `protobuf:"varint,10,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
+	// Optional boost id from StartBoost; server also checks unconsumed run_boosts.
+	BoostId       string `protobuf:"bytes,11,opt,name=boost_id,json=boostId,proto3" json:"boost_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitScoreRequest) Reset() {
 	*x = SubmitScoreRequest{}
-	mi := &file_proto_game_proto_msgTypes[0]
+	mi := &file_game_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +53,7 @@ func (x *SubmitScoreRequest) String() string {
 func (*SubmitScoreRequest) ProtoMessage() {}
 
 func (x *SubmitScoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[0]
+	mi := &file_game_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +66,7 @@ func (x *SubmitScoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitScoreRequest.ProtoReflect.Descriptor instead.
 func (*SubmitScoreRequest) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{0}
+	return file_game_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SubmitScoreRequest) GetUserId() string {
@@ -130,6 +132,13 @@ func (x *SubmitScoreRequest) GetClientVersion() int32 {
 	return 0
 }
 
+func (x *SubmitScoreRequest) GetBoostId() string {
+	if x != nil {
+		return x.BoostId
+	}
+	return ""
+}
+
 type Move struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FromX         int32                  `protobuf:"varint,1,opt,name=from_x,json=fromX,proto3" json:"from_x,omitempty"`
@@ -143,7 +152,7 @@ type Move struct {
 
 func (x *Move) Reset() {
 	*x = Move{}
-	mi := &file_proto_game_proto_msgTypes[1]
+	mi := &file_game_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -155,7 +164,7 @@ func (x *Move) String() string {
 func (*Move) ProtoMessage() {}
 
 func (x *Move) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[1]
+	mi := &file_game_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -168,7 +177,7 @@ func (x *Move) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Move.ProtoReflect.Descriptor instead.
 func (*Move) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{1}
+	return file_game_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Move) GetFromX() int32 {
@@ -214,13 +223,15 @@ type SubmitScoreResponse struct {
 	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	LampsEarned   int32                  `protobuf:"varint,10,opt,name=lamps_earned,json=lampsEarned,proto3" json:"lamps_earned,omitempty"`
 	TicketsEarned int32                  `protobuf:"varint,11,opt,name=tickets_earned,json=ticketsEarned,proto3" json:"tickets_earned,omitempty"`
+	// false when a lamp boost was active for this run (kids-safe: not ranked).
+	Ranked        bool `protobuf:"varint,12,opt,name=ranked,proto3" json:"ranked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitScoreResponse) Reset() {
 	*x = SubmitScoreResponse{}
-	mi := &file_proto_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +243,7 @@ func (x *SubmitScoreResponse) String() string {
 func (*SubmitScoreResponse) ProtoMessage() {}
 
 func (x *SubmitScoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[2]
+	mi := &file_game_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +256,7 @@ func (x *SubmitScoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitScoreResponse.ProtoReflect.Descriptor instead.
 func (*SubmitScoreResponse) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{2}
+	return file_game_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SubmitScoreResponse) GetSuccess() bool {
@@ -290,6 +301,13 @@ func (x *SubmitScoreResponse) GetTicketsEarned() int32 {
 	return 0
 }
 
+func (x *SubmitScoreResponse) GetRanked() bool {
+	if x != nil {
+		return x.Ranked
+	}
+	return false
+}
+
 type GetGameInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
@@ -299,7 +317,7 @@ type GetGameInfoRequest struct {
 
 func (x *GetGameInfoRequest) Reset() {
 	*x = GetGameInfoRequest{}
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -311,7 +329,7 @@ func (x *GetGameInfoRequest) String() string {
 func (*GetGameInfoRequest) ProtoMessage() {}
 
 func (x *GetGameInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[3]
+	mi := &file_game_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -324,7 +342,7 @@ func (x *GetGameInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGameInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetGameInfoRequest) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{3}
+	return file_game_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetGameInfoRequest) GetGameId() string {
@@ -346,7 +364,7 @@ type GetGameInfoResponse struct {
 
 func (x *GetGameInfoResponse) Reset() {
 	*x = GetGameInfoResponse{}
-	mi := &file_proto_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +376,7 @@ func (x *GetGameInfoResponse) String() string {
 func (*GetGameInfoResponse) ProtoMessage() {}
 
 func (x *GetGameInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[4]
+	mi := &file_game_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +389,7 @@ func (x *GetGameInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGameInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetGameInfoResponse) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{4}
+	return file_game_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetGameInfoResponse) GetGameId() string {
@@ -414,7 +432,7 @@ type LevelInfo struct {
 
 func (x *LevelInfo) Reset() {
 	*x = LevelInfo{}
-	mi := &file_proto_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -426,7 +444,7 @@ func (x *LevelInfo) String() string {
 func (*LevelInfo) ProtoMessage() {}
 
 func (x *LevelInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_game_proto_msgTypes[5]
+	mi := &file_game_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -439,7 +457,7 @@ func (x *LevelInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LevelInfo.ProtoReflect.Descriptor instead.
 func (*LevelInfo) Descriptor() ([]byte, []int) {
-	return file_proto_game_proto_rawDescGZIP(), []int{5}
+	return file_game_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LevelInfo) GetLevel() int32 {
@@ -470,11 +488,140 @@ func (x *LevelInfo) GetRewardTickets() int32 {
 	return 0
 }
 
-var File_proto_game_proto protoreflect.FileDescriptor
+type StartBoostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_proto_game_proto_rawDesc = "" +
+func (x *StartBoostRequest) Reset() {
+	*x = StartBoostRequest{}
+	mi := &file_game_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartBoostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartBoostRequest) ProtoMessage() {}
+
+func (x *StartBoostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartBoostRequest.ProtoReflect.Descriptor instead.
+func (*StartBoostRequest) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *StartBoostRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *StartBoostRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+type StartBoostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BoostId       string                 `protobuf:"bytes,1,opt,name=boost_id,json=boostId,proto3" json:"boost_id,omitempty"`
+	Boosted       bool                   `protobuf:"varint,2,opt,name=boosted,proto3" json:"boosted,omitempty"`
+	Cost          int32                  `protobuf:"varint,3,opt,name=cost,proto3" json:"cost,omitempty"`
+	NewBalance    int32                  `protobuf:"varint,4,opt,name=new_balance,json=newBalance,proto3" json:"new_balance,omitempty"`
+	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartBoostResponse) Reset() {
+	*x = StartBoostResponse{}
+	mi := &file_game_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartBoostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartBoostResponse) ProtoMessage() {}
+
+func (x *StartBoostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartBoostResponse.ProtoReflect.Descriptor instead.
+func (*StartBoostResponse) Descriptor() ([]byte, []int) {
+	return file_game_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StartBoostResponse) GetBoostId() string {
+	if x != nil {
+		return x.BoostId
+	}
+	return ""
+}
+
+func (x *StartBoostResponse) GetBoosted() bool {
+	if x != nil {
+		return x.Boosted
+	}
+	return false
+}
+
+func (x *StartBoostResponse) GetCost() int32 {
+	if x != nil {
+		return x.Cost
+	}
+	return 0
+}
+
+func (x *StartBoostResponse) GetNewBalance() int32 {
+	if x != nil {
+		return x.NewBalance
+	}
+	return 0
+}
+
+func (x *StartBoostResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+var File_game_proto protoreflect.FileDescriptor
+
+const file_game_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/game.proto\x12\x04game\x1a\x17validate/validate.proto\"\xe0\x02\n" +
+	"\n" +
+	"game.proto\x12\x04game\x1a\x17validate/validate.proto\"\x84\x03\n" +
 	"\x12SubmitScoreRequest\x12\"\n" +
 	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12\"\n" +
 	"\agame_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\x12\x1f\n" +
@@ -487,13 +634,14 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x05moves\x18\b \x03(\v2\n" +
 	".game.MoveB\t\xfaB\x06\x92\x01\x03\x10\x90NR\x05moves\x12%\n" +
 	"\x0eclient_version\x18\n" +
-	" \x01(\x05R\rclientVersion\"x\n" +
+	" \x01(\x05R\rclientVersion\x12\"\n" +
+	"\bboost_id\x18\v \x01(\tB\a\xfaB\x04r\x02\x18@R\aboostId\"x\n" +
 	"\x04Move\x12\x15\n" +
 	"\x06from_x\x18\x01 \x01(\x05R\x05fromX\x12\x15\n" +
 	"\x06from_y\x18\x02 \x01(\x05R\x05fromY\x12\x11\n" +
 	"\x04to_x\x18\x03 \x01(\x05R\x03toX\x12\x11\n" +
 	"\x04to_y\x18\x04 \x01(\x05R\x03toY\x12\x1c\n" +
-	"\ttimestamp\x18\x05 \x01(\x05R\ttimestamp\"\xcc\x01\n" +
+	"\ttimestamp\x18\x05 \x01(\x05R\ttimestamp\"\xe4\x01\n" +
 	"\x13SubmitScoreResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
 	"\rnew_highscore\x18\x02 \x01(\x05R\fnewHighscore\x12\x12\n" +
@@ -501,7 +649,8 @@ const file_proto_game_proto_rawDesc = "" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12!\n" +
 	"\flamps_earned\x18\n" +
 	" \x01(\x05R\vlampsEarned\x12%\n" +
-	"\x0etickets_earned\x18\v \x01(\x05R\rticketsEarned\"8\n" +
+	"\x0etickets_earned\x18\v \x01(\x05R\rticketsEarned\x12\x16\n" +
+	"\x06ranked\x18\f \x01(\bR\x06ranked\"8\n" +
 	"\x12GetGameInfoRequest\x12\"\n" +
 	"\agame_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\"\x8d\x01\n" +
 	"\x13GetGameInfoResponse\x12\x17\n" +
@@ -513,66 +662,82 @@ const file_proto_game_proto_rawDesc = "" +
 	"\x05level\x18\x01 \x01(\x05R\x05level\x12!\n" +
 	"\ftarget_score\x18\x02 \x01(\x05R\vtargetScore\x12!\n" +
 	"\freward_lamps\x18\x03 \x01(\x05R\vrewardLamps\x12%\n" +
-	"\x0ereward_tickets\x18\x04 \x01(\x05R\rrewardTickets2\x95\x01\n" +
+	"\x0ereward_tickets\x18\x04 \x01(\x05R\rrewardTickets\"[\n" +
+	"\x11StartBoostRequest\x12\"\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\x12\"\n" +
+	"\agame_id\x18\x02 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18 R\x06gameId\"\x98\x01\n" +
+	"\x12StartBoostResponse\x12\x19\n" +
+	"\bboost_id\x18\x01 \x01(\tR\aboostId\x12\x18\n" +
+	"\aboosted\x18\x02 \x01(\bR\aboosted\x12\x12\n" +
+	"\x04cost\x18\x03 \x01(\x05R\x04cost\x12\x1f\n" +
+	"\vnew_balance\x18\x04 \x01(\x05R\n" +
+	"newBalance\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage2\xd6\x01\n" +
 	"\vGameService\x12B\n" +
 	"\vSubmitScore\x12\x18.game.SubmitScoreRequest\x1a\x19.game.SubmitScoreResponse\x12B\n" +
-	"\vGetGameInfo\x12\x18.game.GetGameInfoRequest\x1a\x19.game.GetGameInfoResponseB(Z&event_horizon/services/game/proto;gameb\x06proto3"
+	"\vGetGameInfo\x12\x18.game.GetGameInfoRequest\x1a\x19.game.GetGameInfoResponse\x12?\n" +
+	"\n" +
+	"StartBoost\x12\x17.game.StartBoostRequest\x1a\x18.game.StartBoostResponseB(Z&event_horizon/services/game/proto;gameb\x06proto3"
 
 var (
-	file_proto_game_proto_rawDescOnce sync.Once
-	file_proto_game_proto_rawDescData []byte
+	file_game_proto_rawDescOnce sync.Once
+	file_game_proto_rawDescData []byte
 )
 
-func file_proto_game_proto_rawDescGZIP() []byte {
-	file_proto_game_proto_rawDescOnce.Do(func() {
-		file_proto_game_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)))
+func file_game_proto_rawDescGZIP() []byte {
+	file_game_proto_rawDescOnce.Do(func() {
+		file_game_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_game_proto_rawDesc), len(file_game_proto_rawDesc)))
 	})
-	return file_proto_game_proto_rawDescData
+	return file_game_proto_rawDescData
 }
 
-var file_proto_game_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_game_proto_goTypes = []any{
+var file_game_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_game_proto_goTypes = []any{
 	(*SubmitScoreRequest)(nil),  // 0: game.SubmitScoreRequest
 	(*Move)(nil),                // 1: game.Move
 	(*SubmitScoreResponse)(nil), // 2: game.SubmitScoreResponse
 	(*GetGameInfoRequest)(nil),  // 3: game.GetGameInfoRequest
 	(*GetGameInfoResponse)(nil), // 4: game.GetGameInfoResponse
 	(*LevelInfo)(nil),           // 5: game.LevelInfo
+	(*StartBoostRequest)(nil),   // 6: game.StartBoostRequest
+	(*StartBoostResponse)(nil),  // 7: game.StartBoostResponse
 }
-var file_proto_game_proto_depIdxs = []int32{
+var file_game_proto_depIdxs = []int32{
 	1, // 0: game.SubmitScoreRequest.moves:type_name -> game.Move
 	5, // 1: game.GetGameInfoResponse.levels:type_name -> game.LevelInfo
 	0, // 2: game.GameService.SubmitScore:input_type -> game.SubmitScoreRequest
 	3, // 3: game.GameService.GetGameInfo:input_type -> game.GetGameInfoRequest
-	2, // 4: game.GameService.SubmitScore:output_type -> game.SubmitScoreResponse
-	4, // 5: game.GameService.GetGameInfo:output_type -> game.GetGameInfoResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
+	6, // 4: game.GameService.StartBoost:input_type -> game.StartBoostRequest
+	2, // 5: game.GameService.SubmitScore:output_type -> game.SubmitScoreResponse
+	4, // 6: game.GameService.GetGameInfo:output_type -> game.GetGameInfoResponse
+	7, // 7: game.GameService.StartBoost:output_type -> game.StartBoostResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_proto_game_proto_init() }
-func file_proto_game_proto_init() {
-	if File_proto_game_proto != nil {
+func init() { file_game_proto_init() }
+func file_game_proto_init() {
+	if File_game_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_proto_rawDesc), len(file_proto_game_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_proto_rawDesc), len(file_game_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_game_proto_goTypes,
-		DependencyIndexes: file_proto_game_proto_depIdxs,
-		MessageInfos:      file_proto_game_proto_msgTypes,
+		GoTypes:           file_game_proto_goTypes,
+		DependencyIndexes: file_game_proto_depIdxs,
+		MessageInfos:      file_game_proto_msgTypes,
 	}.Build()
-	File_proto_game_proto = out.File
-	file_proto_game_proto_goTypes = nil
-	file_proto_game_proto_depIdxs = nil
+	File_game_proto = out.File
+	file_game_proto_goTypes = nil
+	file_game_proto_depIdxs = nil
 }

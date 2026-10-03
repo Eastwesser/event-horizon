@@ -26,7 +26,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/klauspost/compress v1.19.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -51,7 +50,10 @@ require (
 
 replace github.com/Eastwesser/event-horizon/services/game/proto => ./proto
 
+replace github.com/Eastwesser/event-horizon/services/billing/proto => ../billing/proto
+
 require (
+	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.12.3
 )
@@ -63,4 +65,5 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/platform v0.0.0
+	github.com/google/uuid v1.6.0
 )

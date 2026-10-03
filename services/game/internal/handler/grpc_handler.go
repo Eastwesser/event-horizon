@@ -72,14 +72,17 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
         Level:     int(req.Level),
         Score:     int(req.Score),
         UserEmail: req.UserEmail,
+        Nickname:  req.Nickname,
         Seed:      req.Seed,
         Moves:     moves,
+        BoostID:   req.BoostId,
     })
     if err != nil {
         log.Printf("SubmitScore error: %v", err)
         return &pb.SubmitScoreResponse{
             Success: false,
             Message: err.Error(),
+            Ranked:  false,
         }, nil
     }
 
@@ -92,12 +95,33 @@ func (h *GameHandler) SubmitScore(ctx context.Context, req *pb.SubmitScoreReques
     }
 
     return &pb.SubmitScoreResponse{
-        Success:        resp.Success,
-        NewHighscore:   int32(resp.NewHighscore),
-        Rank:           int32(resp.Rank),
-        Message:        resp.Message,
-        LampsEarned:    int32(resp.LampsEarned),
-        TicketsEarned:  int32(resp.TicketsEarned),
+        Success:       resp.Success,
+        NewHighscore:  int32(resp.NewHighscore),
+        Rank:          int32(resp.Rank),
+        Message:       resp.Message,
+        LampsEarned:   int32(resp.LampsEarned),
+        TicketsEarned: int32(resp.TicketsEarned),
+        Ranked:        resp.Ranked,
+    }, nil
+}
+
+func (h *GameHandler) StartBoost(ctx context.Context, req *pb.StartBoostRequest) (*pb.StartBoostResponse, error) {
+    if req == nil || req.UserId == "" || req.GameId == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id and game_id are required")
+    }
+    resp, err := h.gameService.StartBoost(ctx, &service.StartBoostRequest{
+        UserID: req.UserId,
+        GameID: req.GameId,
+    })
+    if err != nil {
+        return nil, err
+    }
+    return &pb.StartBoostResponse{
+        BoostId:    resp.BoostID,
+        Boosted:    resp.Boosted,
+        Cost:       int32(resp.Cost),
+        NewBalance: int32(resp.NewBalance),
+        Message:    resp.Message,
     }, nil
 }
 

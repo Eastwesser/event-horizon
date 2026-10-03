@@ -14,18 +14,20 @@ type Config struct {
     DBPassword  string
     DBName      string
     NATSUrl     string
+    BillingGRPCAddr string
 }
 
 func Load() *Config {
     return &Config{
-        GRPCPort:    getEnv("GRPC_PORT", "50052"),
-        MetricsPort: getEnv("METRICS_PORT", "9092"),
-        DBHost:      getEnv("DB_HOST", "localhost"),
-        DBPort:      getEnv("DB_PORT", "5461"),
-        DBUser:      getEnv("DB_USER", "eventhorizon"),
-        DBPassword:  getEnv("DB_PASSWORD", "eventhorizon"),
-        DBName:      getEnv("DB_NAME", "eventhorizon_game"),
-        NATSUrl:     getEnv("NATS_URL", "nats://localhost:4222"),
+        GRPCPort:        getEnv("GRPC_PORT", "50052"),
+        MetricsPort:     getEnv("METRICS_PORT", "9092"),
+        DBHost:          getEnv("DB_HOST", "localhost"),
+        DBPort:          getEnv("DB_PORT", "5461"),
+        DBUser:          getEnv("DB_USER", "eventhorizon"),
+        DBPassword:      getEnv("DB_PASSWORD", "eventhorizon"),
+        DBName:          getEnv("DB_NAME", "eventhorizon_game"),
+        NATSUrl:         getEnv("NATS_URL", "nats://localhost:4222"),
+        BillingGRPCAddr: getEnv("BILLING_ADDR", "billing:50053"),
     }
 }
 

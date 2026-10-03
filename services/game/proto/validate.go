@@ -24,12 +24,34 @@ func (m *SubmitScoreRequest) Validate() error {
 	if len(m.Moves) > 10000 {
 		return fmt.Errorf("too many moves")
 	}
+	if len(m.BoostId) > 64 {
+		return fmt.Errorf("boost_id too long")
+	}
 	return nil
 }
 
 func (m *GetGameInfoRequest) Validate() error {
 	if m == nil || strings.TrimSpace(m.GameId) == "" {
 		return fmt.Errorf("game_id is required")
+	}
+	return nil
+}
+
+func (m *StartBoostRequest) Validate() error {
+	if m == nil {
+		return fmt.Errorf("request is nil")
+	}
+	if strings.TrimSpace(m.UserId) == "" {
+		return fmt.Errorf("user_id is required")
+	}
+	if strings.TrimSpace(m.GameId) == "" {
+		return fmt.Errorf("game_id is required")
+	}
+	if len(m.UserId) > 64 {
+		return fmt.Errorf("user_id too long")
+	}
+	if len(m.GameId) > 32 {
+		return fmt.Errorf("game_id too long")
 	}
 	return nil
 }

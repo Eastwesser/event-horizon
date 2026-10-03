@@ -8,7 +8,10 @@ import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
 import Notification from '../../Common/Notification/Notification';
+import { Balance, invalidateBalanceCache } from '../../Billing/Balance';
 import { cn } from '../../../lib/cn';
+
+const BOOST_COST = 10;
 
 export function FlappyGame() {
   const navigate = useNavigate();
@@ -19,6 +22,8 @@ export function FlappyGame() {
   // Состояния для переключения скинов
   const [useRainbowPipes, setUseRainbowPipes] = useState(false);
   const [useGoldenBird, setUseGoldenBird] = useState(false);
+  const [useBoost, setUseBoost] = useState(false);
+  const [boostBusy, setBoostBusy] = useState(false);
 
   const {
     birdY,
@@ -28,6 +33,10 @@ export function FlappyGame() {
     started,
     jump,
     resetGame,
+    startGame,
+    boosted,
+    lastSubmitRanked,
+    lastSubmitMessage,
   } = useFlappyStore();
 
   const GAME_WIDTH = 800;
@@ -62,29 +71,72 @@ export function FlappyGame() {
     }
   }, [token, navigate]);
 
-  // Обработка кликов и пробела для прыжка
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const beginRun = async () => {
+    if (boostBusy || started) return;
+    if (!useBoost) {
+      startGame({ boosted: false, boostId: null });
+      return;
+    }
+    setBoostBusy(true);
+    try {
+      const response = await api.post('/game/boost/start', { game_id: 'flappy' });
+      const boostId = response.data?.boost_id as string | undefined;
+      if (!boostId) {
+        throw new Error(response.data?.message || 'boost_id missing');
+      }
+      invalidateBalanceCache();
+      startGame({ boosted: true, boostId });
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        e?.message ||
+        'Недостаточно лампочек для boost';
+      setSaveMessage({ type: 'error', text: String(msg) });
+    } finally {
+      setBoostBusy(false);
+    }
+  };
+
+  // Обработка кликов и пробела для прыжка / старта
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
+        const { started: isStarted, gameOver: isOver } = useFlappyStore.getState();
+        if (!isStarted && !isOver) {
+          void beginRun();
+          return;
+        }
         jump();
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [jump]);
+  }, [jump, useBoost, boostBusy, started]);
 
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    if (lastSubmitMessage == null || lastSubmitRanked == null) return;
+    if (lastSubmitRanked === false) {
+      setSaveMessage({
+        type: 'success',
+        text: 'Забег с boost — не попал в лидерборд',
+      });
+    }
+  }, [lastSubmitMessage, lastSubmitRanked]);
 
   const handleManualSave = async () => {
-    const { score } = useFlappyStore.getState();
+    const state = useFlappyStore.getState();
+    const { score, boostId, boosted: runBoosted } = state;
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const token = localStorage.getItem('accessToken');
 
     try {
-      const response = await api.post('/game/submit', {
+      const body: Record<string, unknown> = {
         user_id: userId,
         game_id: 'flappy',
         level: 1,
@@ -92,33 +144,39 @@ export function FlappyGame() {
         user_email: userEmail,
         seed: `flappy_manual_${Date.now()}`,
         moves: [],
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      };
+      if (runBoosted && boostId) {
+        body.boost_id = boostId;
+      }
+      const response = await api.post('/game/submit', body, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.status === 200) {
-        const userId = localStorage.getItem('userId');
-        const storageKey = `gameScores_${userId}`;
-        const totalScoreKey = `totalScore_${userId}`;
-
-        const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-        const currentBest = savedScores.flappy || 0;
-
-        if (score > currentBest) {
-          savedScores.flappy = score;
-          localStorage.setItem(storageKey, JSON.stringify(savedScores));
+        const ranked =
+          response.data?.ranked === true &&
+          !runBoosted &&
+          !String(response.data?.message || '').includes('not ranked');
+        if (ranked) {
+          const storageKey = `gameScores_${userId}`;
+          const totalScoreKey = `totalScore_${userId}`;
+          const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+          const currentBest = savedScores.flappy || 0;
+          if (score > currentBest) {
+            savedScores.flappy = score;
+            localStorage.setItem(storageKey, JSON.stringify(savedScores));
+          }
+          const played = parseInt(localStorage.getItem(`flappyGamesPlayed_${userId}`) || '0');
+          localStorage.setItem(`flappyGamesPlayed_${userId}`, String(played + 1));
+          const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
+          localStorage.setItem(totalScoreKey, String(totalScore + score));
+          setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
+        } else {
+          setSaveMessage({ type: 'success', text: 'Забег с boost — не попал в лидерборд' });
         }
-
-        const played = parseInt(localStorage.getItem(`flappyGamesPlayed_${userId}`) || '0');
-        localStorage.setItem(`flappyGamesPlayed_${userId}`, String(played + 1));
-
-        const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
-        localStorage.setItem(totalScoreKey, String(totalScore + score));
-
-        setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
       }
     } catch (err) {
-      setSaveMessage({ type: 'error', text: '❌ Ошибка' });
+      setSaveMessage({ type: 'error', text: 'Ошибка сохранения' });
     }
   };
 
@@ -323,6 +381,11 @@ export function FlappyGame() {
   }, [birdY, pipes, score, gameOver, started, GAME_WIDTH, GAME_HEIGHT, BIRD_SIZE, skins, useRainbowPipes, useGoldenBird]);
 
   const handleCanvasClick = () => {
+    const { started: isStarted, gameOver: isOver } = useFlappyStore.getState();
+    if (!isStarted && !isOver) {
+      void beginRun();
+      return;
+    }
     jump();
   };
 
@@ -343,9 +406,15 @@ export function FlappyGame() {
       title="Flappy Bird"
       onBack={handleBack}
       width="wide"
+      actions={<Balance />}
       stats={
         <>
           <ScoreChip label="Счёт" value={score} className="[&_span:last-child]:text-horizon-gold" />
+          {boosted && (
+            <span className="rounded-sm border border-horizon-gold/40 bg-horizon-gold/10 px-3 py-1.5 text-sm text-horizon-gold">
+              Boost 5с
+            </span>
+          )}
           {skins.flappy.hasGoldenBird && (
             <button
               type="button"
@@ -380,21 +449,44 @@ export function FlappyGame() {
       }
       controls={
         <>
-          <Button variant="primary" size="sm" onClick={resetGame}>
-            🔄 Новая игра
+          {!started && (
+            <label className="flex max-w-md cursor-pointer flex-col gap-1 text-sm text-text-secondary">
+              <span className="inline-flex items-center gap-2 text-text-primary">
+                <input
+                  type="checkbox"
+                  checked={useBoost}
+                  disabled={boostBusy}
+                  onChange={(e) => setUseBoost(e.target.checked)}
+                />
+                Использовать boost ({BOOST_COST} лампочек)
+              </span>
+              {useBoost && (
+                <span className="text-xs text-horizon-gold/90">
+                  Этот забег не попадёт в лидерборд — boost считается нечестным преимуществом
+                </span>
+              )}
+            </label>
+          )}
+          <Button variant="primary" size="sm" onClick={() => { resetGame(); }} disabled={boostBusy}>
+            Новая игра
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleManualSave}>
-            💾 Сохранить рекорд
+          {!started && (
+            <Button variant="secondary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
+              {boostBusy ? 'Старт…' : 'Старт'}
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={handleManualSave} disabled={!gameOver && !started}>
+            Сохранить рекорд
           </Button>
         </>
       }
       help={
         <>
-          <p>🐦 Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
-          <p>🚫 Не врезайтесь в трубы и не падайте на землю</p>
-          <p>⭐ Каждая пройденная труба = 10 очков</p>
-          <p>🏆 Чем дальше, тем выше счёт!</p>
-          <p>💡 Чем выше счёт, тем больше билетиков получите</p>
+          <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
+          <p>Не врезайтесь в трубы и не падайте на землю</p>
+          <p>Каждая пройденная труба = 10 очков</p>
+          <p>Boost (10 лампочек): 5 сек slow-mo в начале; забег не в лидерборд</p>
+          <p>Чем выше счёт, тем больше билетиков (без boost)</p>
         </>
       }
     >
