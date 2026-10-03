@@ -361,6 +361,26 @@ func (r *MongoRepo) GetByType(ctx context.Context, itemType string) ([]*model.It
 
 // ---------------------- Дополнительные методы для MongoDB ----------------------
 
+// ReleaseItem — возвращает quantity на склад (обратная операция к ReserveItem).
+func (r *MongoRepo) ReleaseItem(ctx context.Context, itemID string, quantity int) (int, error) {
+	res, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"id": itemID, "deleted_at": nil},
+		bson.M{"$inc": bson.M{"stock": quantity}},
+	)
+	if err != nil {
+		return 0, err
+	}
+	if res.MatchedCount == 0 {
+		return 0, model.ErrItemNotFound
+	}
+	var updated bson.M
+	if err := r.collection.FindOne(ctx, bson.M{"id": itemID}).Decode(&updated); err != nil {
+		return 0, err
+	}
+	return getInt(updated, "stock"), nil
+}
+
 // ReserveItem — пример использования транзакций в MongoDB.
 // Бронирует товар: проверяет остаток, уменьшает stock и создает запись в истории.
 // Возвращает новый остаток.

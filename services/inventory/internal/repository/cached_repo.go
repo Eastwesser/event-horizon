@@ -122,6 +122,16 @@ func (c *CachedRepository) ReserveItem(ctx context.Context, id string, quantity 
 	return remaining, nil
 }
 
+func (c *CachedRepository) ReleaseItem(ctx context.Context, id string, quantity int) (int, error) {
+	remaining, err := c.next.ReleaseItem(ctx, id, quantity)
+	if err != nil {
+		return 0, err
+	}
+	_ = c.cache.DeleteItem(ctx, id)
+	c.invalidateSearch(ctx)
+	return remaining, nil
+}
+
 func (c *CachedRepository) SoftDeleteItem(ctx context.Context, id string) error {
 	if err := c.next.SoftDeleteItem(ctx, id); err != nil {
 		return err

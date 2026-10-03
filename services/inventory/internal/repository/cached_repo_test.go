@@ -35,6 +35,9 @@ func (s *stubRepo) BulkCreateItems(context.Context, []*model.Item) error { retur
 func (s *stubRepo) ReserveItem(context.Context, string, int) (int, error) {
 	return 0, nil
 }
+func (s *stubRepo) ReleaseItem(context.Context, string, int) (int, error) {
+	return 0, nil
+}
 func (s *stubRepo) SoftDeleteItem(context.Context, string) error { return nil }
 func (s *stubRepo) RestoreItem(context.Context, string) error    { return nil }
 func (s *stubRepo) GetStats(context.Context) (*model.Stats, error) {

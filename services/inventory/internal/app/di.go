@@ -229,8 +229,13 @@ func (a *App) initGRPC(_ context.Context) error {
 				[]string{"author", "admin"},
 				[]string{
 					"/CreateItem", "/CreateItems", "/UpdateItem", "/DeleteItem",
-					"/ReserveItem", "/SoftDeleteItem", "/RestoreItem", "/GetStats",
+					"/SoftDeleteItem", "/RestoreItem", "/GetStats",
 				},
+			),
+			// Shop purchase/cancel stock sync — any authenticated role.
+			interceptor.RequireRoles(
+				[]string{"user", "author", "admin"},
+				[]string{"/ReserveItem", "/ReleaseItem"},
 			),
 			metrics.UnaryServerInterceptor("inventory"),
 		),

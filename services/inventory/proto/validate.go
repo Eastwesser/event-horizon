@@ -115,6 +115,16 @@ func (m *ReserveItemRequest) Validate() error {
 	return nil
 }
 
+func (m *ReleaseItemRequest) Validate() error {
+	if m == nil || strings.TrimSpace(m.Id) == "" {
+		return fmt.Errorf("id is required")
+	}
+	if m.Quantity <= 0 {
+		return fmt.Errorf("quantity must be > 0")
+	}
+	return nil
+}
+
 func (m *SoftDeleteItemRequest) Validate() error {
 	if m == nil || strings.TrimSpace(m.Id) == "" {
 		return fmt.Errorf("id is required")

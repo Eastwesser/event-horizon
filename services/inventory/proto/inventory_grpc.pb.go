@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/inventory.proto
+// source: inventory.proto
 
 package inventory
 
@@ -28,6 +28,7 @@ const (
 	InventoryService_GetByType_FullMethodName       = "/inventory.InventoryService/GetByType"
 	InventoryService_BulkCreateItems_FullMethodName = "/inventory.InventoryService/BulkCreateItems"
 	InventoryService_ReserveItem_FullMethodName     = "/inventory.InventoryService/ReserveItem"
+	InventoryService_ReleaseItem_FullMethodName     = "/inventory.InventoryService/ReleaseItem"
 	InventoryService_SoftDeleteItem_FullMethodName  = "/inventory.InventoryService/SoftDeleteItem"
 	InventoryService_RestoreItem_FullMethodName     = "/inventory.InventoryService/RestoreItem"
 	InventoryService_GetStats_FullMethodName        = "/inventory.InventoryService/GetStats"
@@ -46,6 +47,7 @@ type InventoryServiceClient interface {
 	GetByType(ctx context.Context, in *GetByTypeRequest, opts ...grpc.CallOption) (*SearchItemsResponse, error)
 	BulkCreateItems(ctx context.Context, in *BulkCreateItemsRequest, opts ...grpc.CallOption) (*BulkCreateItemsResponse, error)
 	ReserveItem(ctx context.Context, in *ReserveItemRequest, opts ...grpc.CallOption) (*ReserveItemResponse, error)
+	ReleaseItem(ctx context.Context, in *ReleaseItemRequest, opts ...grpc.CallOption) (*ReleaseItemResponse, error)
 	SoftDeleteItem(ctx context.Context, in *SoftDeleteItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	RestoreItem(ctx context.Context, in *RestoreItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	GetStats(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*StatsResponse, error)
@@ -140,6 +142,15 @@ func (c *inventoryServiceClient) ReserveItem(ctx context.Context, in *ReserveIte
 	return out, nil
 }
 
+func (c *inventoryServiceClient) ReleaseItem(ctx context.Context, in *ReleaseItemRequest, opts ...grpc.CallOption) (*ReleaseItemResponse, error) {
+	out := new(ReleaseItemResponse)
+	err := c.cc.Invoke(ctx, InventoryService_ReleaseItem_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *inventoryServiceClient) SoftDeleteItem(ctx context.Context, in *SoftDeleteItemRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, InventoryService_SoftDeleteItem_FullMethodName, in, out, opts...)
@@ -180,6 +191,7 @@ type InventoryServiceServer interface {
 	GetByType(context.Context, *GetByTypeRequest) (*SearchItemsResponse, error)
 	BulkCreateItems(context.Context, *BulkCreateItemsRequest) (*BulkCreateItemsResponse, error)
 	ReserveItem(context.Context, *ReserveItemRequest) (*ReserveItemResponse, error)
+	ReleaseItem(context.Context, *ReleaseItemRequest) (*ReleaseItemResponse, error)
 	SoftDeleteItem(context.Context, *SoftDeleteItemRequest) (*EmptyResponse, error)
 	RestoreItem(context.Context, *RestoreItemRequest) (*EmptyResponse, error)
 	GetStats(context.Context, *EmptyRequest) (*StatsResponse, error)
@@ -216,6 +228,9 @@ func (UnimplementedInventoryServiceServer) BulkCreateItems(context.Context, *Bul
 }
 func (UnimplementedInventoryServiceServer) ReserveItem(context.Context, *ReserveItemRequest) (*ReserveItemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReserveItem not implemented")
+}
+func (UnimplementedInventoryServiceServer) ReleaseItem(context.Context, *ReleaseItemRequest) (*ReleaseItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseItem not implemented")
 }
 func (UnimplementedInventoryServiceServer) SoftDeleteItem(context.Context, *SoftDeleteItemRequest) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SoftDeleteItem not implemented")
@@ -401,6 +416,24 @@ func _InventoryService_ReserveItem_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InventoryService_ReleaseItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).ReleaseItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_ReleaseItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).ReleaseItem(ctx, req.(*ReleaseItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _InventoryService_SoftDeleteItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SoftDeleteItemRequest)
 	if err := dec(in); err != nil {
@@ -499,6 +532,10 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _InventoryService_ReserveItem_Handler,
 		},
 		{
+			MethodName: "ReleaseItem",
+			Handler:    _InventoryService_ReleaseItem_Handler,
+		},
+		{
 			MethodName: "SoftDeleteItem",
 			Handler:    _InventoryService_SoftDeleteItem_Handler,
 		},
@@ -512,5 +549,5 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/inventory.proto",
+	Metadata: "inventory.proto",
 }

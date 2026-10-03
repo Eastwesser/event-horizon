@@ -186,6 +186,22 @@ func (h *GRPCHandler) ReserveItem(ctx context.Context, req *pb.ReserveItemReques
     }, nil
 }
 
+// ReleaseItem - возврат товара на склад (refund / cancel)
+func (h *GRPCHandler) ReleaseItem(ctx context.Context, req *pb.ReleaseItemRequest) (*pb.ReleaseItemResponse, error) {
+    remaining, err := h.service.ReleaseItem(ctx, req.Id, int(req.Quantity))
+    if err != nil {
+        if err == model.ErrItemNotFound {
+            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+        }
+        return nil, status.Errorf(codes.Internal, "failed to release item: %v", err)
+    }
+
+    return &pb.ReleaseItemResponse{
+        Success:        true,
+        RemainingStock: int32(remaining),
+    }, nil
+}
+
 // SoftDeleteItem - мягкое удаление
 func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItemRequest) (*pb.EmptyResponse, error) {
     if err := h.service.SoftDeleteItem(ctx, req.Id); err != nil {
