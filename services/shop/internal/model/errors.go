@@ -8,4 +8,5 @@ var (
 	ErrAlreadyOwned           = errors.New("item already owned")
 	ErrItemUnavailable        = errors.New("item unavailable")
 	ErrSubscriptionRequired   = errors.New("subscription_required")
+	ErrPurchaseNotFound       = errors.New("purchase not found")
 )

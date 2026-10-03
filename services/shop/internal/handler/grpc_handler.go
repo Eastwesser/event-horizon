@@ -71,6 +71,25 @@ func (h *ShopHandler) PurchaseItem(ctx context.Context, req *pb.PurchaseItemRequ
     }, nil
 }
 
+func (h *ShopHandler) CancelPurchase(ctx context.Context, req *pb.CancelPurchaseRequest) (*pb.CancelPurchaseResponse, error) {
+    result, err := h.shopService.CancelPurchase(ctx, req.UserId, req.ItemId)
+    if err != nil {
+        return nil, mapShopErr(err)
+    }
+
+    msg := "Purchase cancelled"
+    if result.AlreadyRefunded {
+        msg = "Already refunded"
+    }
+    return &pb.CancelPurchaseResponse{
+        Success:         true,
+        Message:         msg,
+        NewBalance:      result.NewBalance,
+        RefundedAmount:  result.RefundedAmount,
+        AlreadyRefunded: result.AlreadyRefunded,
+    }, nil
+}
+
 func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequest) (*pb.GetInventoryResponse, error) {
     items, err := h.shopService.GetInventory(ctx, req.UserId)
     if err != nil {
@@ -91,16 +110,18 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
         }
         
         pbItems[i] = &pb.Item{
-            Id:          item.ID,
-            Name:        item.Name,
-            Description: item.Description,
-            Price:       int32(item.Price),
-            Category:    item.Category,
-            GameId:      gameID,
-            ImageUrl:    item.ImageURL,
-            Available:   item.Available,
-            Owned:       item.Owned,
-            PurchasedAt: purchasedAt,
+            Id:            item.ID,
+            Name:          item.Name,
+            Description:   item.Description,
+            Price:         int32(item.Price),
+            Category:      item.Category,
+            GameId:        gameID,
+            ImageUrl:      item.ImageURL,
+            Available:     item.Available,
+            Owned:         item.Owned,
+            PurchasedAt:   purchasedAt,
+            PurchasePrice: int32(item.PurchasePrice),
+            PurchaseId:    item.PurchaseID,
         }
     }
 
@@ -111,7 +132,7 @@ func mapShopErr(err error) error {
     switch {
     case errors.Is(err, model.ErrSubscriptionRequired):
         return status.Error(codes.PermissionDenied, "subscription_required")
-    case errors.Is(err, model.ErrItemNotFound):
+    case errors.Is(err, model.ErrItemNotFound), errors.Is(err, model.ErrPurchaseNotFound):
         return status.Error(codes.NotFound, err.Error())
     case errors.Is(err, model.ErrAlreadyOwned):
         return status.Error(codes.AlreadyExists, err.Error())

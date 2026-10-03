@@ -9,6 +9,7 @@ import "validate/validate.proto";
 service ShopService {
     rpc GetItems(GetItemsRequest) returns (GetItemsResponse);
     rpc PurchaseItem(PurchaseItemRequest) returns (PurchaseItemResponse);
+    rpc CancelPurchase(CancelPurchaseRequest) returns (CancelPurchaseResponse);
     rpc GetInventory(GetInventoryRequest) returns (GetInventoryResponse);
 }
 
@@ -23,6 +24,9 @@ message Item {
     bool available = 8;
     bool owned = 9;
     string purchased_at = 10;
+    // Price paid at purchase time (inventory list); 0 if unknown.
+    int32 purchase_price = 11;
+    string purchase_id = 12;
 }
 
 message GetItemsRequest {
@@ -44,6 +48,20 @@ message PurchaseItemResponse {
     bool success = 1;
     string message = 2;
     int32 new_balance = 3;
+}
+
+message CancelPurchaseRequest {
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    // Catalog / shop item id (same id used at purchase).
+    string item_id = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
+}
+
+message CancelPurchaseResponse {
+    bool success = 1;
+    string message = 2;
+    int32 new_balance = 3;
+    int32 refunded_amount = 4;
+    bool already_refunded = 5;
 }
 
 message GetInventoryRequest {

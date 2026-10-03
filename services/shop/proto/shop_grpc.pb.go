@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/shop.proto
+// source: shop.proto
 
 package shop
 
@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ShopService_GetItems_FullMethodName     = "/shop.ShopService/GetItems"
-	ShopService_PurchaseItem_FullMethodName = "/shop.ShopService/PurchaseItem"
-	ShopService_GetInventory_FullMethodName = "/shop.ShopService/GetInventory"
+	ShopService_GetItems_FullMethodName       = "/shop.ShopService/GetItems"
+	ShopService_PurchaseItem_FullMethodName   = "/shop.ShopService/PurchaseItem"
+	ShopService_CancelPurchase_FullMethodName = "/shop.ShopService/CancelPurchase"
+	ShopService_GetInventory_FullMethodName   = "/shop.ShopService/GetInventory"
 )
 
 // ShopServiceClient is the client API for ShopService service.
@@ -30,6 +31,7 @@ const (
 type ShopServiceClient interface {
 	GetItems(ctx context.Context, in *GetItemsRequest, opts ...grpc.CallOption) (*GetItemsResponse, error)
 	PurchaseItem(ctx context.Context, in *PurchaseItemRequest, opts ...grpc.CallOption) (*PurchaseItemResponse, error)
+	CancelPurchase(ctx context.Context, in *CancelPurchaseRequest, opts ...grpc.CallOption) (*CancelPurchaseResponse, error)
 	GetInventory(ctx context.Context, in *GetInventoryRequest, opts ...grpc.CallOption) (*GetInventoryResponse, error)
 }
 
@@ -59,6 +61,15 @@ func (c *shopServiceClient) PurchaseItem(ctx context.Context, in *PurchaseItemRe
 	return out, nil
 }
 
+func (c *shopServiceClient) CancelPurchase(ctx context.Context, in *CancelPurchaseRequest, opts ...grpc.CallOption) (*CancelPurchaseResponse, error) {
+	out := new(CancelPurchaseResponse)
+	err := c.cc.Invoke(ctx, ShopService_CancelPurchase_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *shopServiceClient) GetInventory(ctx context.Context, in *GetInventoryRequest, opts ...grpc.CallOption) (*GetInventoryResponse, error) {
 	out := new(GetInventoryResponse)
 	err := c.cc.Invoke(ctx, ShopService_GetInventory_FullMethodName, in, out, opts...)
@@ -74,6 +85,7 @@ func (c *shopServiceClient) GetInventory(ctx context.Context, in *GetInventoryRe
 type ShopServiceServer interface {
 	GetItems(context.Context, *GetItemsRequest) (*GetItemsResponse, error)
 	PurchaseItem(context.Context, *PurchaseItemRequest) (*PurchaseItemResponse, error)
+	CancelPurchase(context.Context, *CancelPurchaseRequest) (*CancelPurchaseResponse, error)
 	GetInventory(context.Context, *GetInventoryRequest) (*GetInventoryResponse, error)
 	mustEmbedUnimplementedShopServiceServer()
 }
@@ -87,6 +99,9 @@ func (UnimplementedShopServiceServer) GetItems(context.Context, *GetItemsRequest
 }
 func (UnimplementedShopServiceServer) PurchaseItem(context.Context, *PurchaseItemRequest) (*PurchaseItemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PurchaseItem not implemented")
+}
+func (UnimplementedShopServiceServer) CancelPurchase(context.Context, *CancelPurchaseRequest) (*CancelPurchaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelPurchase not implemented")
 }
 func (UnimplementedShopServiceServer) GetInventory(context.Context, *GetInventoryRequest) (*GetInventoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInventory not implemented")
@@ -140,6 +155,24 @@ func _ShopService_PurchaseItem_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShopService_CancelPurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelPurchaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShopServiceServer).CancelPurchase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShopService_CancelPurchase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShopServiceServer).CancelPurchase(ctx, req.(*CancelPurchaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ShopService_GetInventory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetInventoryRequest)
 	if err := dec(in); err != nil {
@@ -174,10 +207,14 @@ var ShopService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ShopService_PurchaseItem_Handler,
 		},
 		{
+			MethodName: "CancelPurchase",
+			Handler:    _ShopService_CancelPurchase_Handler,
+		},
+		{
 			MethodName: "GetInventory",
 			Handler:    _ShopService_GetInventory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/shop.proto",
+	Metadata: "shop.proto",
 }
