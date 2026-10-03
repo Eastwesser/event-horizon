@@ -115,6 +115,10 @@ func ScoreEntry(e *leaderboardPb.ScoreEntry) gin.H {
 	if e == nil {
 		return nil
 	}
+	level := e.GetLevel()
+	if level < 1 {
+		level = 1
+	}
 	return gin.H{
 		"rank":       e.GetRank(),
 		"user_id":    e.GetUserId(),
@@ -122,6 +126,7 @@ func ScoreEntry(e *leaderboardPb.ScoreEntry) gin.H {
 		"nickname":   e.GetNickname(),
 		"score":      e.GetScore(),
 		"updated_at": e.GetUpdatedAt(),
+		"level":      level,
 	}
 }
 

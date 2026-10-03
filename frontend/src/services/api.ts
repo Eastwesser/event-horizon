@@ -114,8 +114,8 @@ export const login = (email: string, password: string) =>
 export const submitScore = (userId: string, gameId: string, level: number, seed: string, moves: any[]) =>
   api.post('/game/submit', { user_id: userId, game_id: gameId, level, seed, moves });
 
-export const getLeaderboard = (gameId: string, limit = 10) =>
-  api.get('/leaderboard', { params: { game_id: gameId, limit } });
+export const getLeaderboard = (gameId: string, limit = 10, level = 1) =>
+  api.get('/leaderboard', { params: { game_id: gameId, limit, level } });
 
 export const getBalance = (userId: string, currency: 'lamps' | 'tickets') =>
   api.get('/billing/balance', { params: { user_id: userId, currency } });

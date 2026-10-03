@@ -43,10 +43,12 @@ export function LeaderboardFull() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<GameId>('hexagon');
+  const [selectedLevel, setSelectedLevel] = useState(1);
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(selectedGame, 50)
+    const level = selectedGame === 'flappy' ? selectedLevel : 1;
+    getLeaderboard(selectedGame, 50, level)
       .then(({ data }) => {
         const raw = Array.isArray(data?.entries) ? data.entries : [];
         setEntries(
@@ -65,7 +67,7 @@ export function LeaderboardFull() {
         console.error('Failed to fetch leaderboard:', err);
         setLoading(false);
       });
-  }, [selectedGame]);
+  }, [selectedGame, selectedLevel]);
 
   const activeIcon = GAME_TABS.find((t) => t.id === selectedGame)?.icon || 'trophy';
   const handleBack = () => navigate('/');
@@ -93,6 +95,23 @@ export function LeaderboardFull() {
           </FilterChip>
         ))}
       </div>
+
+      {selectedGame === 'flappy' && (
+        <label className="mb-4 flex items-center gap-2 text-sm text-text-primary">
+          Уровень
+          <select
+            className="rounded-sm border border-white/15 bg-void px-2 py-1"
+            value={selectedLevel}
+            onChange={(e) => setSelectedLevel(Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+          >
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+              <option key={lv} value={lv}>
+                {lv}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center gap-4 py-20">

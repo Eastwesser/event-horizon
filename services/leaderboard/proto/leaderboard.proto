@@ -15,6 +15,7 @@ service LeaderboardService {
 message GetTopScoresRequest {
     string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
     int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 100}];
+    int32 level = 3 [(validate.rules).int32 = {gte: 0, lte: 100}];
 }
 
 message GetTopScoresResponse {
@@ -24,6 +25,7 @@ message GetTopScoresResponse {
 message GetPlayerRankRequest {
     string game_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
     string user_id = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    int32 level = 3 [(validate.rules).int32 = {gte: 0, lte: 100}];
 }
 
 message GetPlayerRankResponse {
@@ -37,6 +39,7 @@ message UpdateScoreRequest {
     string user_email = 3 [(validate.rules).string = {max_len: 254}];
     string nickname = 4 [(validate.rules).string = {max_len: 64}];
     int32 score = 5 [(validate.rules).int32 = {gte: 0, lte: 100000}];
+    int32 level = 6 [(validate.rules).int32 = {gte: 0, lte: 100}];
 }
 
 message UpdateScoreResponse {
@@ -52,4 +55,5 @@ message ScoreEntry {
     string nickname = 4;
     int32 score = 5;
     int64 updated_at = 6;
+    int32 level = 7;
 }

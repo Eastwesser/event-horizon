@@ -24,6 +24,7 @@ export function FlappyGame() {
   const [useGoldenBird, setUseGoldenBird] = useState(false);
   const [useBoost, setUseBoost] = useState(false);
   const [boostBusy, setBoostBusy] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState(1);
 
   const {
     birdY,
@@ -34,7 +35,9 @@ export function FlappyGame() {
     jump,
     resetGame,
     startGame,
+    setLevel,
     boosted,
+    level,
     lastSubmitRanked,
     lastSubmitMessage,
   } = useFlappyStore();
@@ -43,13 +46,17 @@ export function FlappyGame() {
   const GAME_HEIGHT = 500;
   const BIRD_SIZE = 30;
 
-  // Загружаем настройки скинов из localStorage
+  // Загружаем настройки скинов / уровня из localStorage
   useEffect(() => {
     const savedPipes = localStorage.getItem('flappy_rainbow_pipes');
     const savedBird = localStorage.getItem('flappy_golden_bird');
     if (savedPipes !== null) setUseRainbowPipes(savedPipes === 'true');
     if (savedBird !== null) setUseGoldenBird(savedBird === 'true');
-  }, []);
+    const savedLevel = parseInt(localStorage.getItem('flappy_level') || '1', 10);
+    const lv = Number.isFinite(savedLevel) ? Math.min(10, Math.max(1, savedLevel)) : 1;
+    setSelectedLevel(lv);
+    setLevel(lv);
+  }, [setLevel]);
 
   // Сохраняем настройки скинов
   const toggleRainbowPipes = () => {
@@ -75,8 +82,11 @@ export function FlappyGame() {
 
   const beginRun = async () => {
     if (boostBusy || started) return;
+    const lv = Math.min(10, Math.max(1, selectedLevel));
+    localStorage.setItem('flappy_level', String(lv));
+    setLevel(lv);
     if (!useBoost) {
-      startGame({ boosted: false, boostId: null });
+      startGame({ boosted: false, boostId: null, level: lv });
       return;
     }
     setBoostBusy(true);
@@ -87,7 +97,7 @@ export function FlappyGame() {
         throw new Error(response.data?.message || 'boost_id missing');
       }
       invalidateBalanceCache();
-      startGame({ boosted: true, boostId });
+      startGame({ boosted: true, boostId, level: lv });
     } catch (e: any) {
       const msg =
         e?.response?.data?.error ||
@@ -130,7 +140,7 @@ export function FlappyGame() {
 
   const handleManualSave = async () => {
     const state = useFlappyStore.getState();
-    const { score, boostId, boosted: runBoosted } = state;
+    const { score, boostId, boosted: runBoosted, level: runLevel } = state;
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const token = localStorage.getItem('accessToken');
@@ -139,7 +149,7 @@ export function FlappyGame() {
       const body: Record<string, unknown> = {
         user_id: userId,
         game_id: 'flappy',
-        level: 1,
+        level: runLevel || selectedLevel || 1,
         score: score,
         user_email: userEmail,
         seed: `flappy_manual_${Date.now()}`,
@@ -410,6 +420,7 @@ export function FlappyGame() {
       stats={
         <>
           <ScoreChip label="Счёт" value={score} className="[&_span:last-child]:text-horizon-gold" />
+          <ScoreChip label="Уровень" value={started || gameOver ? level : selectedLevel} />
           {boosted && (
             <span className="rounded-sm border border-horizon-gold/40 bg-horizon-gold/10 px-3 py-1.5 text-sm text-horizon-gold">
               Boost 5с
@@ -450,6 +461,28 @@ export function FlappyGame() {
       controls={
         <>
           {!started && (
+            <label className="flex items-center gap-2 text-sm text-text-primary">
+              Уровень
+              <select
+                className="rounded-sm border border-white/15 bg-void px-2 py-1 text-text-primary"
+                value={selectedLevel}
+                disabled={boostBusy}
+                onChange={(e) => {
+                  const lv = Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1));
+                  setSelectedLevel(lv);
+                  setLevel(lv);
+                  localStorage.setItem('flappy_level', String(lv));
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {!started && (
             <label className="flex max-w-md cursor-pointer flex-col gap-1 text-sm text-text-secondary">
               <span className="inline-flex items-center gap-2 text-text-primary">
                 <input
@@ -484,9 +517,9 @@ export function FlappyGame() {
         <>
           <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
           <p>Не врезайтесь в трубы и не падайте на землю</p>
-          <p>Каждая пройденная труба = 10 очков</p>
+          <p>Уровни 1–10: выше уровень — уже щель и быстрее трубы</p>
           <p>Boost (10 лампочек): 5 сек slow-mo в начале; забег не в лидерборд</p>
-          <p>Чем выше счёт, тем больше билетиков (без boost)</p>
+          <p>Лидерборд отдельный на каждый уровень</p>
         </>
       }
     >

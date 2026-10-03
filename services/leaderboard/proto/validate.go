@@ -12,6 +12,9 @@ func (m *GetTopScoresRequest) Validate() error {
 	if m.Limit < 0 || m.Limit > 100 {
 		return fmt.Errorf("limit must be 0-100")
 	}
+	if m.Level < 0 || m.Level > 100 {
+		return fmt.Errorf("level must be 0-100")
+	}
 	return nil
 }
 
@@ -21,6 +24,9 @@ func (m *GetPlayerRankRequest) Validate() error {
 	}
 	if strings.TrimSpace(m.UserId) == "" {
 		return fmt.Errorf("user_id is required")
+	}
+	if m.Level < 0 || m.Level > 100 {
+		return fmt.Errorf("level must be 0-100")
 	}
 	return nil
 }
@@ -34,6 +40,9 @@ func (m *UpdateScoreRequest) Validate() error {
 	}
 	if m.Score < 0 || m.Score > 100000 {
 		return fmt.Errorf("score must be 0-100000")
+	}
+	if m.Level < 0 || m.Level > 100 {
+		return fmt.Errorf("level must be 0-100")
 	}
 	return nil
 }
