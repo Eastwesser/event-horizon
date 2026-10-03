@@ -10,6 +10,7 @@ import { CardImage } from '../ui/CardImage';
 import { Icon, IconLabel } from '../ui/Icon';
 import type { InventoryItem } from '../../services/inventoryApi';
 import { formatTicketPrice } from '../../lib/formatPrice';
+import { itemFallbackIcon } from '../../lib/itemIcons';
 import { stockLabel } from '../../lib/shopItemMap';
 
 interface InventoryItemCardProps {
@@ -47,7 +48,12 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
             alt={item.name}
             className="w-full shrink-0"
             fit="cover"
-            fallback={<Icon name="package" className="h-12 w-12 text-text-muted" />}
+            fallback={
+              <Icon
+                name={itemFallbackIcon({ type: item.type, category: item.type })}
+                className="h-12 w-12 text-horizon-gold"
+              />
+            }
           />
           <div className="mt-4 flex min-h-0 flex-1 flex-col">
             <h3 className="font-display text-base font-semibold leading-snug text-text-primary">

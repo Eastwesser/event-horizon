@@ -5,8 +5,9 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
-import { Icon, IconLabel, type IconName } from '../ui/Icon';
+import { Icon, IconLabel } from '../ui/Icon';
 import { formatTicketPrice } from '../../lib/formatPrice';
+import { itemFallbackIcon } from '../../lib/itemIcons';
 import { stockLabel } from '../../lib/shopItemMap';
 import { cardFlagBadges } from './cardAttributes';
 
@@ -16,24 +17,6 @@ interface ShopItemCardProps {
   onBuyClick: (item: ShopItem) => void;
   detailTo?: string;
 }
-
-const categoryIcons: Record<string, IconName> = {
-  game_skin: 'palette',
-  merch: 'gift',
-  profile_theme: 'palette',
-  карточка: 'cards',
-  брелок: 'key',
-  картина: 'frame',
-  фенечка: 'sparkle',
-  other: 'gift',
-};
-
-const gameIcons: Record<string, IconName> = {
-  flappy: 'bird',
-  hexagon: 'hex',
-  towers: 'tower',
-  memory: 'cards',
-};
 
 const categoryLabels: Record<string, string> = {
   game_skin: 'Скин',
@@ -45,11 +28,6 @@ const categoryLabels: Record<string, string> = {
   фенечка: 'Фенечка',
 };
 
-function fallbackIcon(item: ShopItem): IconName {
-  if (item.game_id && gameIcons[item.game_id]) return gameIcons[item.game_id];
-  return categoryIcons[item.category] || categoryIcons[item.type] || 'gift';
-}
-
 function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps) {
   const imageSrc = item.image_url || item.images?.[0] || item.icon_url || '';
   const canAfford = balance >= item.price_tickets;
@@ -57,7 +35,7 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
   const categoryLabel = categoryLabels[item.category] || categoryLabels[item.type] || 'Товар';
-  const icon = fallbackIcon(item);
+  const icon = itemFallbackIcon(item);
   const flagBadges = item.attributes ? cardFlagBadges(item.attributes) : [];
   const to = detailTo || `/shop/item/${item.id}`;
 

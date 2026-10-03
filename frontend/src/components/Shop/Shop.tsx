@@ -34,6 +34,7 @@ import { CatalogPager } from '../ui/CatalogPager';
 import { CardImage } from '../ui/CardImage';
 import { CatalogFiltersPanel } from './CatalogFiltersPanel';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
+import { itemFallbackIcon } from '../../lib/itemIcons';
 
 function isMerchItem(item: ShopItem): boolean {
   const cat = (item.category || '').toLowerCase();
@@ -527,6 +528,11 @@ export const Shop: React.FC = () => {
                 fromCatalog?.icon_url ||
                 '';
               const title = purchased.item.name || fromCatalog?.name || 'Товар';
+              const fallbackIcon = itemFallbackIcon({
+                category: purchased.item.category || fromCatalog?.category,
+                type: purchased.item.type || fromCatalog?.type,
+                game_id: purchased.item.game_id || fromCatalog?.game_id,
+              });
               return (
                 <Card key={purchased.id} className="flex h-full flex-col">
                   <button
@@ -539,7 +545,9 @@ export const Shop: React.FC = () => {
                       alt={title}
                       className="w-full shrink-0"
                       fit="cover"
-                      fallback={<Icon name="gift" className="h-12 w-12 text-text-muted" />}
+                      fallback={
+                        <Icon name={fallbackIcon} className="h-12 w-12 text-horizon-gold" />
+                      }
                     />
                     <div className="mt-4 min-w-0 flex-1">
                       <h4 className="font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2">

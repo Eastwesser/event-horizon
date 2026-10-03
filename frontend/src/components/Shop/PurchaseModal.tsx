@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { Icon } from '../ui/Icon';
+import { itemFallbackIcon } from '../../lib/itemIcons';
 import { CardPurchaseSummary } from './cardAttributes';
 
 interface PurchaseModalProps {
@@ -44,7 +45,9 @@ function PurchaseModal({
           alt={item.name}
           className="mb-4 w-[240px]"
           fit="cover"
-          fallback={<Icon name="gift" className="h-12 w-12 text-text-muted" />}
+          fallback={
+            <Icon name={itemFallbackIcon(item)} className="h-12 w-12 text-horizon-gold" />
+          }
         />
         <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
 
