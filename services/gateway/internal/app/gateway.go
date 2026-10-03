@@ -32,9 +32,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -76,9 +74,10 @@ func withUserRole(ctx context.Context, c *gin.Context) context.Context {
 
 func newServiceBreaker(name string) *circuit.Breaker {
 	return circuit.New(circuit.Settings{
-		Name:        name,
-		MaxRequests: 3,
-		Timeout:     10 * time.Second,
+		Name:          name,
+		MaxRequests:   3,
+		Timeout:       10 * time.Second,
+		MaxConcurrent: 32, // bulkhead: cap in-flight calls per downstream
 		ReadyToTrip: func(counts circuit.Counts) bool {
 			return counts.ConsecutiveFailures >= 5
 		},
@@ -99,11 +98,16 @@ func appendPartialJSON(cached []byte) []byte {
 	return b
 }
 
-// throughBreaker runs fn under the circuit breaker. On open circuit writes 503 and returns ErrOpen.
+// throughBreaker runs fn under the circuit breaker + bulkhead.
+// On open circuit or full bulkhead writes 503 and returns the sentinel error.
 func throughBreaker(b *circuit.Breaker, c *gin.Context, fn func() (any, error)) (any, error) {
 	out, err := b.Execute(fn)
 	if err == circuit.ErrOpen {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service temporarily unavailable", "circuit": b.Name()})
+		return nil, err
+	}
+	if err == circuit.ErrBulkheadFull {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service overloaded", "bulkhead": b.Name()})
 		return nil, err
 	}
 	return out, err
@@ -339,7 +343,7 @@ func runGateway() {
 	defer authClient.Close()
 	authCB := newServiceBreaker("auth")
 
-	gameConn, err := grpc.NewClient(cfg.GameAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	gameConn, err := client.Dial(cfg.GameAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to game: %v", err)
 	}
@@ -347,7 +351,7 @@ func runGateway() {
 	gameClient := gamePb.NewGameServiceClient(gameConn)
 	gameCB := newServiceBreaker("game")
 
-	profileConn, err := grpc.NewClient(cfg.ProfileAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	profileConn, err := client.Dial(cfg.ProfileAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to profile: %v", err)
 	}
@@ -355,7 +359,7 @@ func runGateway() {
 	profileClient := profilePb.NewProfileServiceClient(profileConn)
 	profileCB := newServiceBreaker("profile")
 
-	leaderboardConn, err := grpc.NewClient(cfg.LeaderboardAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	leaderboardConn, err := client.Dial(cfg.LeaderboardAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to leaderboard: %v", err)
 	}
@@ -736,7 +740,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, resp)
 	})
 
-	billingConn, err := grpc.NewClient(cfg.BillingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	billingConn, err := client.Dial(cfg.BillingAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to billing: %v", err)
 	}
@@ -775,7 +779,7 @@ func runGateway() {
 
 	// Inventory client is needed by shop purchase (decrement catalog stock) and
 	// by /api/inventory/* routes below — create once, reuse.
-	inventoryConn, err := grpc.NewClient(cfg.InventoryAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	inventoryConn, err := client.Dial(cfg.InventoryAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to inventory: %v", err)
 	}
@@ -783,7 +787,7 @@ func runGateway() {
 	inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
 	inventoryCB := newServiceBreaker("inventory")
 
-	shopConn, err := grpc.NewClient(cfg.ShopAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	shopConn, err := client.Dial(cfg.ShopAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to shop: %v", err)
 	}
@@ -951,7 +955,7 @@ func runGateway() {
 	})
 
 	// --- Payment (Boosty subscription) ---
-	paymentConn, err := grpc.NewClient(cfg.PaymentAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	paymentConn, err := client.Dial(cfg.PaymentAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to payment: %v", err)
 	}
@@ -1258,7 +1262,7 @@ func runGateway() {
 	})
 
 	// --- Authors ---
-	authorsConn, err := grpc.NewClient(cfg.AuthorsAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	authorsConn, err := client.Dial(cfg.AuthorsAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to authors: %v", err)
 	}
@@ -1330,7 +1334,7 @@ func runGateway() {
 	})
 
 	// --- History ---
-	historyConn, err := grpc.NewClient(cfg.HistoryAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	historyConn, err := client.Dial(cfg.HistoryAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to history: %v", err)
 	}
@@ -1360,7 +1364,7 @@ func runGateway() {
 	})
 
 	// --- Analytics ---
-	analyticsConn, err := grpc.NewClient(cfg.AnalyticsAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	analyticsConn, err := client.Dial(cfg.AnalyticsAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to analytics: %v", err)
 	}
