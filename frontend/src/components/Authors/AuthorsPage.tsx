@@ -1,7 +1,10 @@
 // frontend/src/components/Authors/AuthorsPage.tsx
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authorsApi, type Author } from '../../services/authorsApi';
+import { inventoryApi } from '../../services/inventoryApi';
+import { collectCardArtists, type CardArtist } from '../../lib/cardArtists';
+import { pluralCards } from '../../lib/pluralize';
 import { useUserRole } from '../../hooks/useUserRole';
 import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
@@ -10,6 +13,7 @@ import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 
 const PAGE_SIZE = 20;
+const TOP_N = 24;
 
 export function AuthorsPage() {
   const navigate = useNavigate();
@@ -18,10 +22,14 @@ export function AuthorsPage() {
 
   const [authors, setAuthors] = useState<Author[]>([]);
   const [total, setTotal] = useState(0);
+  const [cardArtists, setCardArtists] = useState<CardArtist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cardsLoading, setCardsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [artistQuery, setArtistQuery] = useState('');
+  const [showAllArtists, setShowAllArtists] = useState(false);
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -53,6 +61,35 @@ export function AuthorsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setCardsLoading(true);
+      try {
+        const res = await inventoryApi.searchAllItems({ type: 'карточка' });
+        if (!cancelled) setCardArtists(collectCardArtists(res.items ?? []));
+      } catch {
+        if (!cancelled) setCardArtists([]);
+      } finally {
+        if (!cancelled) setCardsLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredArtists = useMemo(() => {
+    const q = artistQuery.trim().toLowerCase();
+    if (!q) return cardArtists;
+    return cardArtists.filter((a) => a.display_name.toLowerCase().includes(q));
+  }, [cardArtists, artistQuery]);
+
+  const visibleArtists = showAllArtists
+    ? filteredArtists
+    : filteredArtists.slice(0, TOP_N);
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) return;
@@ -70,8 +107,8 @@ export function AuthorsPage() {
       loadAuthors();
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { error?: string }; status?: number } })?.response?.data?.error ||
-        'Ошибка сохранения профиля';
+        (err as { response?: { data?: { error?: string }; status?: number } })?.response?.data
+          ?.error || 'Ошибка сохранения профиля';
       setError(msg);
     } finally {
       setSaving(false);
@@ -87,24 +124,91 @@ export function AuthorsPage() {
     <PageShell width="wide">
       <PageHeader
         title="✍️ Авторы"
-        subtitle="Авторы контента и сообщества Event Horizon"
+        subtitle="Художники карт и авторы сообщества Event Horizon"
         onBack={() => navigate('/')}
       />
 
       {error && (
-        <div role="alert" className="mb-4 rounded-sm border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
+        <div
+          role="alert"
+          className="mb-4 rounded-sm border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
+        >
           {error}
         </div>
       )}
       {success && (
-        <div role="status" className="mb-4 rounded-sm border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+        <div
+          role="status"
+          className="mb-4 rounded-sm border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
+        >
           {success}
         </div>
       )}
 
+      <section className="mb-10">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold text-text-primary">
+            Художники карт ({cardArtists.length})
+          </h2>
+          <input
+            type="search"
+            placeholder="Поиск по имени…"
+            value={artistQuery}
+            onChange={(e) => {
+              setArtistQuery(e.target.value);
+              setShowAllArtists(false);
+            }}
+            className="w-full max-w-xs rounded-sm border border-white/10 bg-nebula px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-photon-cyan/50"
+          />
+        </div>
+        <p className="mb-3 text-xs text-text-muted">
+          Соавторы на одной карте: ссылка ведёт на первого artist_id, в названии —
+          полное display-имя (временно, до multi-author страниц).
+        </p>
+        {cardsLoading ? (
+          <div className="flex justify-center py-12">
+            <Spinner size={40} />
+          </div>
+        ) : filteredArtists.length === 0 ? (
+          <div className="rounded-md border border-white/10 bg-nebula py-10 text-center text-text-secondary">
+            {artistQuery.trim() ? 'Никого не найдено' : 'Пока нет карт с художниками'}
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              {visibleArtists.map((a) => (
+                <Link
+                  key={a.artist_id}
+                  to={`/authors/${encodeURIComponent(a.artist_id)}`}
+                  className="block rounded-md border border-white/10 bg-nebula px-4 py-3 text-inherit no-underline transition hover:border-photon-cyan/40"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-display font-semibold text-text-primary">
+                      {a.display_name}
+                    </span>
+                    <span className="font-hud text-sm tabular-nums text-text-muted">
+                      {pluralCards(a.count)}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            {!showAllArtists && filteredArtists.length > TOP_N ? (
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" onClick={() => setShowAllArtists(true)}>
+                  Показать всех ({filteredArtists.length})
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
+
       {!roleLoading && isAuthor && (
         <Card glow className="mb-8">
-          <h2 className="mb-4 font-display text-lg font-semibold text-text-primary">Мой профиль автора</h2>
+          <h2 className="mb-4 font-display text-lg font-semibold text-text-primary">
+            Мой профиль автора
+          </h2>
           <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
             <label className="text-sm font-medium text-text-secondary">
               Отображаемое имя *
@@ -143,7 +247,9 @@ export function AuthorsPage() {
       )}
 
       <div>
-        <h2 className="mb-4 font-display text-lg font-semibold text-text-primary">Авторы ({total})</h2>
+        <h2 className="mb-4 font-display text-lg font-semibold text-text-primary">
+          Авторы сообщества ({total})
+        </h2>
         {loading ? (
           <div className="flex justify-center py-16">
             <Spinner size={48} />
@@ -159,18 +265,31 @@ export function AuthorsPage() {
                 <Card key={author.id} className="flex gap-4 p-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo/15 text-2xl">
                     {author.avatar_url ? (
-                      <img src={author.avatar_url} alt={author.display_name} className="h-full w-full object-cover" />
+                      <img
+                        src={author.avatar_url}
+                        alt={author.display_name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
                       '✍️'
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-display text-base font-semibold text-text-primary">{author.display_name}</h3>
-                    {author.bio && <p className="mt-1 text-sm leading-relaxed text-text-secondary">{author.bio}</p>}
+                    <h3 className="font-display text-base font-semibold text-text-primary">
+                      {author.display_name}
+                    </h3>
+                    {author.bio && (
+                      <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                        {author.bio}
+                      </p>
+                    )}
                     <div className="mt-1.5 text-xs text-text-muted">
                       {author.active ? '🟢 Активен' : '⚫ Неактивен'}
                       {' · '}
-                      Обновлён: {new Date(author.updated_at_unix * 1000).toLocaleDateString('ru-RU')}
+                      Обновлён:{' '}
+                      {new Date(author.updated_at_unix * 1000).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
                 </Card>
@@ -178,7 +297,11 @@ export function AuthorsPage() {
             </div>
             {authors.length < total && (
               <div className="mt-4 flex justify-center">
-                <Button variant="ghost" disabled={loadingMore} onClick={() => loadAuthors(authors.length, true)}>
+                <Button
+                  variant="ghost"
+                  disabled={loadingMore}
+                  onClick={() => loadAuthors(authors.length, true)}
+                >
                   {loadingMore ? 'Загрузка…' : 'Загрузить ещё'}
                 </Button>
               </div>

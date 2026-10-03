@@ -127,11 +127,15 @@ export function Profile() {
           setStats(prev => ({
             ...prev,
             bestScores: {
+              ...prev.bestScores,
               hexagon: scores.hexagon || 0,
               memory: scores.memory || 0,
               flappy: scores.flappy || 0,
               towers: scores.towers || 0,
               hanoi: scores.hanoi || 0,
+              twenty48: scores.twenty48 || prev.bestScores.twenty48 || 0,
+              gears: scores.gears || prev.bestScores.gears || 0,
+              companion: scores.companion || prev.bestScores.companion || 0,
             }
           }));
         }

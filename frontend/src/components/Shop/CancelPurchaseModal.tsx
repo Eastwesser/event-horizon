@@ -1,0 +1,62 @@
+import type { ShopItem } from '../../store/shopStore';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { CardImage } from '../ui/CardImage';
+import { formatTicketPrice } from '../../lib/formatPrice';
+
+interface CancelPurchaseModalProps {
+  isOpen: boolean;
+  item: ShopItem | null;
+  refundAmount: number;
+  loading: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
+export function CancelPurchaseModal({
+  isOpen,
+  item,
+  refundAmount,
+  loading,
+  onConfirm,
+  onClose,
+}: CancelPurchaseModalProps) {
+  if (!item) return null;
+
+  const amount = refundAmount > 0 ? refundAmount : item.price_tickets;
+
+  return (
+    <Modal open={isOpen} onClose={onClose} title="Отменить покупку">
+      <div className="flex flex-col items-center text-center">
+        <CardImage
+          src={item.image_url || item.images?.[0] || item.icon_url}
+          alt={item.name}
+          className="mb-4 w-[200px]"
+          fit="cover"
+          fallback={<span className="text-4xl">🃏</span>}
+        />
+        <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
+        <p className="mt-3 text-sm text-text-secondary">
+          Вернуть {formatTicketPrice(amount)}? Карта уйдёт из инвентаря, товар снова
+          станет доступен.
+        </p>
+
+        <div className="mt-6 flex w-full gap-3">
+          <Button variant="ghost" className="flex-1" onClick={onClose} disabled={loading}>
+            Нет
+          </Button>
+          <Button
+            variant="primary"
+            className="flex-1"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? 'Отмена...' : 'Да, вернуть'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export default CancelPurchaseModal;

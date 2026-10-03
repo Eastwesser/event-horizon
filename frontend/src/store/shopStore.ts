@@ -1,7 +1,13 @@
 // frontend/src/store/shopStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getShopItems, buyShopItem, getInventory, getAllBalances } from '../services/api';
+import {
+  getShopItems,
+  buyShopItem,
+  cancelShopPurchase,
+  getInventory,
+  getAllBalances,
+} from '../services/api';
 import { invalidateBalanceCache } from '../components/Billing/Balance';
 
 export interface ShopItem {
@@ -14,14 +20,23 @@ export interface ShopItem {
   category: string;
   game_id?: string;
   image_url?: string;
+  /** All image URLs when sourced from inventory. */
+  images?: string[];
   available: boolean;
   owned: boolean;
+  /** Inventory stock; null/undefined → hide stock line. */
+  stock?: number | null;
+  attributes?: Record<string, unknown>;
+  created_at?: string;
 }
 
 export interface PurchasedItem {
   id: string;
   item_id: string;
   purchased_at: string;
+  /** Price paid at purchase time (for refund UI). */
+  purchase_price?: number;
+  purchase_id?: string;
   item: ShopItem;
 }
 
@@ -31,13 +46,21 @@ interface ShopState {
   balance: number;
   loading: boolean;
   buying: boolean;
+  cancelling: boolean;
   error: string | null;
   lastFetch: number;
   
   fetchItems: (force?: boolean) => Promise<void>;
   fetchInventory: () => Promise<void>;
   fetchBalance: (force?: boolean) => Promise<void>;
-  buyItem: (itemId: string) => Promise<void>;
+  buyItem: (itemId: string) => Promise<any>;
+  cancelPurchase: (itemId: string) => Promise<any>;
+  /** Local stock/owned patches for inventory-backed shop grid. */
+  catalogPatches: Record<string, { owned?: boolean; stock?: number | null }>;
+  patchCatalogItem: (
+    id: string,
+    patch: { owned?: boolean; stock?: number | null }
+  ) => void;
   clearError: () => void;
 }
 
@@ -51,8 +74,19 @@ export const useShopStore = create<ShopState>()(
       balance: 0,
       loading: false,
       buying: false,
+      cancelling: false,
       error: null,
       lastFetch: 0,
+      catalogPatches: {},
+
+      patchCatalogItem: (id, patch) => {
+        set((state) => ({
+          catalogPatches: {
+            ...state.catalogPatches,
+            [id]: { ...state.catalogPatches[id], ...patch },
+          },
+        }));
+      },
 
       fetchItems: async (force = false) => {
         const { lastFetch, items } = get();
@@ -137,25 +171,40 @@ export const useShopStore = create<ShopState>()(
             inventoryData = [];
           }
           
-          const inventoryItems: PurchasedItem[] = inventoryData.map((item: any) => ({
-            id: item.id || item.Id || crypto.randomUUID(),
-            item_id: item.id || item.Id || '',
-            // purchased_at: item.purchased_at || item.PurchasedAt || new Date().toISOString(),
-            purchased_at: item.purchased_at || item.created_at || item.PurchasedAt || new Date().toISOString(),
-            item: {
-              id: item.id || item.Id || '',
-              name: item.name || item.Name || 'Без названия',
-              description: item.description || item.Description || '',
-              price_tickets: item.price || item.Price || 0,
-              icon_url: item.image_url || item.ImageUrl || '',
-              type: item.category || item.Category || 'other',
-              category: item.category || item.Category || 'other',
-              game_id: item.game_id || item.GameId || undefined,
-              image_url: item.image_url || item.ImageUrl || '',
-              available: item.available !== undefined ? item.available : (item.Available !== undefined ? item.Available : true),
-              owned: true,
-            }
-          }));
+          const inventoryItems: PurchasedItem[] = inventoryData.map((item: any) => {
+            const purchasePrice =
+              item.purchase_price ?? item.purchasePrice ?? item.PurchasePrice ?? 0;
+            const currentPrice = item.price || item.Price || 0;
+            return {
+              id: item.purchase_id || item.purchaseId || item.id || item.Id || crypto.randomUUID(),
+              item_id: item.id || item.Id || '',
+              purchased_at:
+                item.purchased_at ||
+                item.created_at ||
+                item.PurchasedAt ||
+                new Date().toISOString(),
+              purchase_price: purchasePrice || currentPrice,
+              purchase_id: item.purchase_id || item.purchaseId || item.PurchaseId || '',
+              item: {
+                id: item.id || item.Id || '',
+                name: item.name || item.Name || 'Без названия',
+                description: item.description || item.Description || '',
+                price_tickets: currentPrice,
+                icon_url: item.image_url || item.ImageUrl || '',
+                type: item.category || item.Category || 'other',
+                category: item.category || item.Category || 'other',
+                game_id: item.game_id || item.GameId || undefined,
+                image_url: item.image_url || item.ImageUrl || '',
+                available:
+                  item.available !== undefined
+                    ? item.available
+                    : item.Available !== undefined
+                      ? item.Available
+                      : true,
+                owned: true,
+              },
+            };
+          });
           
           console.log('✅ Загружено предметов в инвентаре:', inventoryItems.length);
           
@@ -241,6 +290,13 @@ export const useShopStore = create<ShopState>()(
           
           // Обновляем список товаров (чтобы обновить статус owned)
           await get().fetchItems(true);
+
+          const remaining =
+            response.data?.remaining_stock ?? response.data?.remainingStock;
+          get().patchCatalogItem(itemId, {
+            owned: true,
+            stock: typeof remaining === 'number' ? remaining : undefined,
+          });
           
           set({ buying: false });
           return response.data;
@@ -255,6 +311,51 @@ export const useShopStore = create<ShopState>()(
         }
       },
 
+      cancelPurchase: async (itemId: string) => {
+        set({ cancelling: true, error: null });
+        try {
+          const userId = localStorage.getItem('userId');
+          if (!userId) throw new Error('Пользователь не авторизован');
+
+          const response = await cancelShopPurchase(itemId);
+          console.log('📦 Ответ от API /shop/purchase/cancel:', response.data);
+
+          invalidateBalanceCache();
+          const reported = response.data?.new_balance ?? response.data?.newBalance;
+          if (typeof reported === 'number') {
+            set({ balance: reported });
+            localStorage.setItem(
+              'shop_balance_cache',
+              JSON.stringify({ balance: reported, timestamp: Date.now() })
+            );
+          } else {
+            await get().fetchBalance(true);
+          }
+
+          await get().fetchInventory();
+          await get().fetchItems(true);
+
+          const remaining =
+            response.data?.remaining_stock ?? response.data?.remainingStock;
+          get().patchCatalogItem(itemId, {
+            owned: false,
+            stock: typeof remaining === 'number' ? remaining : undefined,
+          });
+
+          set({ cancelling: false });
+          return response.data;
+        } catch (error: any) {
+          const errorMessage =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            'Ошибка при отмене покупки';
+          console.error('❌ Ошибка отмены покупки:', error);
+          set({ error: errorMessage, cancelling: false });
+          throw new Error(errorMessage);
+        }
+      },
+
       clearError: () => set({ error: null }),
     }),
     {
@@ -262,6 +363,7 @@ export const useShopStore = create<ShopState>()(
       partialize: (state) => ({
         items: state.items,
         lastFetch: state.lastFetch,
+        catalogPatches: state.catalogPatches,
         // Не сохраняем баланс, т.к. он должен быть актуальным
       }),
     }

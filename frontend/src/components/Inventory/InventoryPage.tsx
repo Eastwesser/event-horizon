@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useInventory } from '../../hooks/useInventory';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { inventoryApi, type InventoryItem } from '../../services/inventoryApi';
 import { useUserRole } from '../../hooks/useUserRole';
 import { InventoryList } from './InventoryList';
 import { InventoryCreateModal } from './InventoryCreateModal';
@@ -9,6 +9,19 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
+import { CatalogPager } from '../ui/CatalogPager';
+import {
+  CATALOG_PAGE_SIZE,
+  CATALOG_SORT_OPTIONS,
+  type CatalogSort,
+  filterCatalogItems,
+  paginateItems,
+  parseCatalogPage,
+  parseCatalogSort,
+  parseFlag,
+  sortCatalogItems,
+} from '../../lib/catalogQuery';
+import { saveCatalogNav } from '../../lib/catalogNav';
 
 const TYPE_FILTERS = [
   { value: '', label: 'Все типы' },
@@ -20,38 +33,123 @@ const TYPE_FILTERS = [
 
 export const InventoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthor } = useUserRole();
-  const { items, total, loading, fetchItems } = useInventory();
+  const [allItems, setAllItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [filters, setFilters] = useState({
-    type: '',
-    query: '',
-    priceMin: '',
-    priceMax: '',
-  });
+
+  const type = searchParams.get('type') || '';
+  const q = searchParams.get('q') || '';
+  const priceMin = searchParams.get('price_min') || '';
+  const priceMax = searchParams.get('price_max') || '';
+  const sort = parseCatalogSort(searchParams.get('sort'));
+  const page = parseCatalogPage(searchParams.get('page'));
+  const inStock = parseFlag(searchParams.get('in_stock'));
+  const foil = parseFlag(searchParams.get('foil'));
+  const noir = parseFlag(searchParams.get('noir'));
+  const flying = parseFlag(searchParams.get('flying'));
+
+  const [queryDraft, setQueryDraft] = useState(q);
+  const [priceMinDraft, setPriceMinDraft] = useState(priceMin);
+  const [priceMaxDraft, setPriceMaxDraft] = useState(priceMax);
 
   useEffect(() => {
-    fetchItems({ limit: 20 });
-  }, []);
+    setQueryDraft(q);
+  }, [q]);
 
-  const handleSearch = (overrideType?: string) => {
-    const type = overrideType !== undefined ? overrideType : filters.type;
-    const params: Record<string, string | number> = { limit: 20 };
-    if (type) params.type = type;
-    if (filters.query) params.query = filters.query;
-    if (filters.priceMin) params.price_min = parseFloat(filters.priceMin);
-    if (filters.priceMax) params.price_max = parseFloat(filters.priceMax);
-    fetchItems(params);
+  const setQuery = (patch: Record<string, string | null>, replace = false) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === '') next.delete(k);
+      else if (k === 'page' && v === '1') next.delete('page');
+      else if (k === 'sort' && v === 'newest') next.delete('sort');
+      else next.set(k, v);
+    }
+    setSearchParams(next, { replace });
   };
 
-  const handleTypeFilter = (type: string) => {
-    setFilters((prev) => ({ ...prev, type }));
-    handleSearch(type);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = queryDraft.trim();
+      if (next === q) return;
+      setQuery({ q: next || null, page: '1' }, true);
+    }, 300);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryDraft]);
+
+  const reload = async () => {
+    setLoading(true);
+    try {
+      const res = await inventoryApi.searchAllItems({
+        type: type || undefined,
+        price_min: priceMin ? Number(priceMin) : undefined,
+        price_max: priceMax ? Number(priceMax) : undefined,
+      });
+      setAllItems(res.items ?? []);
+    } catch {
+      setAllItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleClearFilters = () => {
-    setFilters({ type: '', query: '', priceMin: '', priceMax: '' });
-    fetchItems({ limit: 20 });
+  useEffect(() => {
+    void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, priceMin, priceMax]);
+
+  const sorted = useMemo(() => {
+    const mapped = allItems.map((it) => ({
+      ...it,
+      price_tickets: it.price,
+    }));
+    const filtered = filterCatalogItems(mapped, {
+      query: q,
+      inStock,
+      foil,
+      noir,
+      flying,
+    });
+    return sortCatalogItems(filtered, sort);
+  }, [allItems, sort, q, inStock, foil, noir, flying]);
+
+  const { page: safePage, pageCount, slice } = useMemo(
+    () => paginateItems(sorted, page, CATALOG_PAGE_SIZE),
+    [sorted, page]
+  );
+
+  useEffect(() => {
+    if (safePage !== page) setQuery({ page: String(safePage) }, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safePage, page]);
+
+  useEffect(() => {
+    const qs = searchParams.toString();
+    saveCatalogNav({
+      ids: sorted.map((it) => it.id),
+      listPath: qs ? `/inventory?${qs}` : '/inventory',
+    });
+  }, [sorted, searchParams]);
+
+  const toggleFlag = (key: string, on: boolean) => {
+    setQuery({ [key]: on ? null : '1', page: '1' });
+  };
+
+  const handlePriceApply = () => {
+    setQuery({
+      price_min: priceMinDraft.trim() || null,
+      price_max: priceMaxDraft.trim() || null,
+      page: '1',
+    });
+  };
+
+  const handleClear = () => {
+    setQueryDraft('');
+    setPriceMinDraft('');
+    setPriceMaxDraft('');
+    setSearchParams(new URLSearchParams(), { replace: false });
   };
 
   const inputClass =
@@ -72,64 +170,107 @@ export const InventoryPage: React.FC = () => {
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         {TYPE_FILTERS.map((f) => (
           <FilterChip
             key={f.value || 'all'}
-            active={filters.type === f.value}
-            onClick={() => handleTypeFilter(f.value)}
+            active={type === f.value}
+            onClick={() => setQuery({ type: f.value || null, page: '1' })}
           >
             {f.label}
           </FilterChip>
         ))}
+        <label className="ml-auto flex items-center gap-2 text-sm text-text-secondary">
+          <span className="text-text-muted">Сортировка</span>
+          <select
+            className="rounded-sm border border-white/10 bg-nebula px-2 py-1.5 text-sm text-text-primary"
+            value={sort}
+            onChange={(e) =>
+              setQuery({ sort: e.target.value as CatalogSort, page: '1' })
+            }
+          >
+            {CATALOG_SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <FilterChip active={inStock} onClick={() => toggleFlag('in_stock', inStock)}>
+          В наличии
+        </FilterChip>
+        <FilterChip active={foil} onClick={() => toggleFlag('foil', foil)}>
+          Фойл
+        </FilterChip>
+        <FilterChip active={noir} onClick={() => toggleFlag('noir', noir)}>
+          Нуар
+        </FilterChip>
+        <FilterChip active={flying} onClick={() => toggleFlag('flying', flying)}>
+          Летающие
+        </FilterChip>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
         <input
-          type="text"
+          type="search"
           placeholder="Поиск по названию..."
-          value={filters.query}
-          onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          value={queryDraft}
+          onChange={(e) => setQueryDraft(e.target.value)}
           className={`${inputClass} min-w-[180px] flex-1`}
         />
         <input
           type="number"
           placeholder="Цена от"
-          value={filters.priceMin}
-          onChange={(e) => setFilters({ ...filters, priceMin: e.target.value })}
+          value={priceMinDraft}
+          onChange={(e) => setPriceMinDraft(e.target.value)}
           className={`${inputClass} w-28`}
         />
         <input
           type="number"
           placeholder="Цена до"
-          value={filters.priceMax}
-          onChange={(e) => setFilters({ ...filters, priceMax: e.target.value })}
+          value={priceMaxDraft}
+          onChange={(e) => setPriceMaxDraft(e.target.value)}
           className={`${inputClass} w-28`}
         />
-        <Button variant="secondary" size="sm" onClick={() => handleSearch()}>
-          Найти
+        <Button variant="secondary" size="sm" onClick={handlePriceApply}>
+          Цены
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+        <Button variant="ghost" size="sm" onClick={handleClear}>
           Сбросить
         </Button>
       </div>
 
       <p className="mb-6 text-sm text-text-secondary">
-        Найдено: <strong className="text-text-primary">{total}</strong> товаров
+        Найдено: <strong className="text-text-primary">{sorted.length}</strong> товаров
       </p>
 
       {loading ? (
         <LoadingSpinner />
       ) : (
         <InventoryList
-          items={items ?? []}
-          filtered={Boolean(filters.type || filters.query || filters.priceMin || filters.priceMax)}
+          items={slice}
+          filtered={Boolean(type || q || priceMin || priceMax || inStock || foil || noir || flying)}
         />
       )}
 
+      <CatalogPager
+        page={safePage}
+        pageCount={pageCount}
+        total={sorted.length}
+        disabled={loading}
+        onPageChange={(p) => setQuery({ page: String(p) })}
+      />
+
       {showCreateModal && isAuthor && (
-        <InventoryCreateModal onClose={() => setShowCreateModal(false)} />
+        <InventoryCreateModal
+          onClose={() => {
+            setShowCreateModal(false);
+            void reload();
+          }}
+        />
       )}
     </PageShell>
   );

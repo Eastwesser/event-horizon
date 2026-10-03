@@ -20,9 +20,9 @@ const CARD_RARITIES = [
   { value: 'ultra', label: 'Ультра' },
 ] as const;
 
-/** Rough EH tickets from ~₽ market × 2000 (10₽ → 20_000 tickets). Foil ×2. */
+/** EH tickets from ₽ market × 1000 (CARDS_PRICING: 10₽ → 10_000 tickets). Foil ×2. */
 function suggestTickets(rubles: number, foil: boolean): number {
-  const base = Math.max(0, Math.round(rubles * 2000));
+  const base = Math.max(0, Math.round(rubles * 1000));
   return foil ? base * 2 : base;
 }
 
@@ -123,7 +123,7 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
         {formData.type === 'карточка' ? (
           <div className="space-y-3 rounded-sm border border-white/10 bg-void/40 p-3">
             <p className="text-xs text-text-muted">
-              Берсерк / ККИ: цена в билетиках ≈ ₽×2000 (фойл ×2). Пример: 10₽ → 20 000.
+              Берсерк / ККИ: цена в билетиках = ₽×1000 (фойл ×2). Пример: 10₽ → 10 000.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -51,6 +51,9 @@ export interface SearchItemsResponse {
 
 const BASE_URL = '/inventory/items';
 
+/** Backend validates limit ∈ [0, 100]. */
+export const INVENTORY_PAGE_SIZE = 100;
+
 export const inventoryApi = {
   // Создать товар
   createItem: async (data: CreateItemRequest): Promise<InventoryItem> => {
@@ -65,6 +68,36 @@ export const inventoryApi = {
       items: response.data?.items ?? [],
       total: response.data?.total ?? 0,
     };
+  },
+
+  /**
+   * Fetch all matching items by paging with limit≤100.
+   * Caps page size at INVENTORY_PAGE_SIZE even if caller asks for more.
+   */
+  searchAllItems: async (
+    params: Omit<SearchItemsRequest, 'limit' | 'offset'> = {}
+  ): Promise<SearchItemsResponse> => {
+    const pageSize = INVENTORY_PAGE_SIZE;
+    const first = await inventoryApi.searchItems({
+      ...params,
+      limit: pageSize,
+      offset: 0,
+    });
+    const total = first.total ?? 0;
+    const items = [...(first.items ?? [])];
+    let offset = items.length;
+    while (offset < total) {
+      const page = await inventoryApi.searchItems({
+        ...params,
+        limit: pageSize,
+        offset,
+      });
+      const batch = page.items ?? [];
+      if (batch.length === 0) break;
+      items.push(...batch);
+      offset += batch.length;
+    }
+    return { items, total };
   },
 
   // Получить товар по ID
@@ -86,18 +119,14 @@ export const inventoryApi = {
 
   // Получить товары автора
   getByAuthor: async (authorId: string): Promise<InventoryItem[]> => {
-    const response = await api.get(BASE_URL, {
-      params: { author_id: authorId, limit: 100 }
-    });
-    return response.data?.items ?? [];
+    const response = await inventoryApi.searchAllItems({ author_id: authorId });
+    return response.items;
   },
 
   // Получить товары по типу
   getByType: async (type: string): Promise<InventoryItem[]> => {
-    const response = await api.get(BASE_URL, {
-      params: { type, limit: 100 }
-    });
-    return response.data?.items ?? [];
+    const response = await inventoryApi.searchAllItems({ type });
+    return response.items;
   },
 };
 

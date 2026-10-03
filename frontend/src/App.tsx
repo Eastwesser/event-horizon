@@ -14,10 +14,12 @@ import { CompanionGame } from './components/Games/Companion/CompanionGame';
 import { LeaderboardFull } from './components/Leaderboard/LeaderboardFull';
 import { Profile } from './components/Profile/Profile';
 import { Shop } from './components/Shop/Shop';
+import { ShopItemDetail } from './components/Shop/ShopItemDetail';
 import { InventoryPage, InventoryItemDetail } from './components/Inventory';
 import { ShopWithInfiniteScroll } from './components/Shop/ShopWithInfiniteScroll';
 import { Subscription } from './components/Payment/Subscription';
 import { AuthorsPage } from './components/Authors/AuthorsPage';
+import { CardArtistPage } from './components/Authors/CardArtistPage';
 import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
 import { HistoryPage } from './components/History/HistoryPage';
 import { AdminPage } from './components/Admin/AdminPage';
@@ -98,6 +100,10 @@ function App() {
             path="/shop" 
             element={isAuthenticated ? <Shop /> : <Navigate to="/login" />} 
           />
+          <Route
+            path="/shop/item/:id"
+            element={isAuthenticated ? <ShopItemDetail /> : <Navigate to="/login" />}
+          />
           <Route 
             path="/infiniteshop" 
             element={isAuthenticated ? <ShopWithInfiniteScroll /> : <Navigate to="/login" />} 
@@ -117,6 +123,10 @@ function App() {
           <Route 
             path="/authors" 
             element={isAuthenticated ? <AuthorsPage /> : <Navigate to="/login" />} 
+          />
+          <Route
+            path="/authors/:artistId"
+            element={isAuthenticated ? <CardArtistPage /> : <Navigate to="/login" />}
           />
           <Route 
             path="/analytics" 

@@ -142,6 +142,9 @@ export const getShopItems = async () => {
 export const buyShopItem = (itemId: string) =>
   api.post('/shop/purchase', { item_id: itemId });
 
+export const cancelShopPurchase = (itemId: string) =>
+  api.post(`/shop/purchase/${encodeURIComponent(itemId)}/cancel`);
+
 export const getInventory = () => api.get('/shop/inventory');
 
 export const getProfile = () => api.get('/profile');
