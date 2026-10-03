@@ -26,7 +26,7 @@ Start here. Low risk, each item independent.
 ## Wave 2 — Tech debt + content (M, ~2–3 weeks)
 
 - [x] **/shop/items thin DTO** — M · low · — Logical wrap-up of v1.0.9 catalog work. *(Inventory list DTO already shipped; this is the shop-side twin.)*
-- [ ] **Реальные товары** — M · low · 2–3 days. Drop placeholders (Ключница Дракон…); keep Berserk CCG cards. Needs manual keep/delete list + SQL/script.
+- [x] **Реальные товары** — M · low · 2–3 days. Drop placeholders (Ключница Дракон…); keep Berserk CCG cards. Needs manual keep/delete list + SQL/script.
 - [ ] **Полиш игр** — M–L per game · med · ~1 week total. **One game per PR, sequentially** (not 5 games in parallel).
   - [ ] Flappy — textures
   - [ ] Towers — animations / GAME OVER
@@ -108,7 +108,7 @@ Update this table when you tick boxes above.
 | Wave | Done / Total |
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
-| 2 Content + debt | 1 / 6 (+ 0 / 5 games) |
+| 2 Content + debt | 2 / 6 (+ 0 / 5 games) |
 | 3 Author reg | 0 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
