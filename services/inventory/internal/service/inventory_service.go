@@ -157,6 +157,17 @@ func (s *InventoryService) ReserveItem(ctx context.Context, id string, quantity 
 	return s.repo.ReserveItem(ctx, id, quantity)
 }
 
+// ReleaseItem - возврат товара на склад (увеличение stock)
+func (s *InventoryService) ReleaseItem(ctx context.Context, id string, quantity int) (int, error) {
+	if id == "" {
+		return 0, fmt.Errorf("id is required")
+	}
+	if quantity <= 0 {
+		return 0, fmt.Errorf("quantity must be positive")
+	}
+	return s.repo.ReleaseItem(ctx, id, quantity)
+}
+
 // SoftDeleteItem - мягкое удаление
 func (s *InventoryService) SoftDeleteItem(ctx context.Context, id string) error {
 	if id == "" {

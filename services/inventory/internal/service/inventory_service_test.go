@@ -46,6 +46,7 @@ func (m *memRepo) GetByType(context.Context, string) ([]*model.Item, int64, erro
 }
 func (m *memRepo) BulkCreateItems(context.Context, []*model.Item) error { return nil }
 func (m *memRepo) ReserveItem(context.Context, string, int) (int, error)  { return 0, nil }
+func (m *memRepo) ReleaseItem(context.Context, string, int) (int, error)  { return 0, nil }
 func (m *memRepo) SoftDeleteItem(context.Context, string) error            { return nil }
 func (m *memRepo) RestoreItem(context.Context, string) error               { return nil }
 func (m *memRepo) GetStats(context.Context) (*model.Stats, error)          { return &model.Stats{}, nil }

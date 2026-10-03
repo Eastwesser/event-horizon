@@ -318,6 +318,24 @@ func (r *PostgresRepo) ReserveItem(ctx context.Context, id string, quantity int)
 	return remaining, nil
 }
 
+// ReleaseItem — atomic stock increment (cancel / refund path).
+func (r *PostgresRepo) ReleaseItem(ctx context.Context, id string, quantity int) (int, error) {
+	var remaining int
+	err := r.db.QueryRowContext(ctx, `
+		UPDATE inventory_items
+		SET stock = stock + $1, version = version + 1, updated_at = NOW()
+		WHERE id = $2 AND deleted_at IS NULL
+		RETURNING stock
+	`, quantity, id).Scan(&remaining)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, model.ErrItemNotFound
+		}
+		return 0, err
+	}
+	return remaining, nil
+}
+
 // RestoreItem — восстанавливает мягко удаленный товар.
 func (r *PostgresRepo) RestoreItem(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, `

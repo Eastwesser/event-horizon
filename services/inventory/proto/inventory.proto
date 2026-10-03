@@ -17,6 +17,7 @@ service InventoryService {
     rpc GetByType(GetByTypeRequest) returns (SearchItemsResponse);
     rpc BulkCreateItems(BulkCreateItemsRequest) returns (BulkCreateItemsResponse);
     rpc ReserveItem(ReserveItemRequest) returns (ReserveItemResponse);
+    rpc ReleaseItem(ReleaseItemRequest) returns (ReleaseItemResponse);
     rpc SoftDeleteItem(SoftDeleteItemRequest) returns (EmptyResponse);
     rpc RestoreItem(RestoreItemRequest) returns (EmptyResponse);
     rpc GetStats(EmptyRequest) returns (StatsResponse);
@@ -113,6 +114,16 @@ message ReserveItemRequest {
 }
 
 message ReserveItemResponse {
+    bool success = 1;
+    int32 remaining_stock = 2;
+}
+
+message ReleaseItemRequest {
+    string id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    int32 quantity = 2 [(validate.rules).int32 = {gt: 0}];
+}
+
+message ReleaseItemResponse {
     bool success = 1;
     int32 remaining_stock = 2;
 }
