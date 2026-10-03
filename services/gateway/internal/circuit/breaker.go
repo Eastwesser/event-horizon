@@ -9,13 +9,17 @@ import (
 // ErrOpen is returned when the breaker is open (fail-fast).
 var ErrOpen = errors.New("circuit breaker open")
 
+// ErrBulkheadFull is returned when MaxConcurrent in-flight calls are already running.
+var ErrBulkheadFull = errors.New("bulkhead full")
+
 // Settings mirrors sony/gobreaker-style knobs used by the gateway.
 type Settings struct {
-	Name        string
-	MaxRequests uint32        // half-open probes
-	Timeout     time.Duration // how long to stay open
-	Interval    time.Duration // clear consecutive failures in closed state
-	ReadyToTrip func(counts Counts) bool
+	Name          string
+	MaxRequests   uint32        // half-open probes
+	Timeout       time.Duration // how long to stay open
+	Interval      time.Duration // clear consecutive failures in closed state
+	MaxConcurrent uint32        // bulkhead slots; 0 = unlimited
+	ReadyToTrip   func(counts Counts) bool
 }
 
 type Counts struct {
@@ -34,19 +38,20 @@ const (
 	stateHalfOpen
 )
 
-// Breaker is a minimal circuit breaker (no external deps — offline-friendly).
+// Breaker is a minimal circuit breaker + optional bulkhead (no external deps).
 type Breaker struct {
-	name        string
-	maxRequests uint32
-	timeout     time.Duration
-	interval    time.Duration
-	readyToTrip func(Counts) bool
+	name          string
+	maxRequests   uint32
+	timeout       time.Duration
+	interval      time.Duration
+	readyToTrip   func(Counts) bool
+	sem           chan struct{} // bulkhead; nil = unlimited
 
-	mu          sync.Mutex
-	state       state
-	generation  uint64
-	counts      Counts
-	expiry      time.Time
+	mu         sync.Mutex
+	state      state
+	generation uint64
+	counts     Counts
+	expiry     time.Time
 }
 
 func New(s Settings) *Breaker {
@@ -59,18 +64,31 @@ func New(s Settings) *Breaker {
 	if s.ReadyToTrip == nil {
 		s.ReadyToTrip = func(c Counts) bool { return c.ConsecutiveFailures >= 5 }
 	}
-	return &Breaker{
+	b := &Breaker{
 		name:        s.Name,
 		maxRequests: s.MaxRequests,
 		timeout:     s.Timeout,
 		interval:    s.Interval,
 		readyToTrip: s.ReadyToTrip,
 	}
+	if s.MaxConcurrent > 0 {
+		b.sem = make(chan struct{}, s.MaxConcurrent)
+	}
+	return b
 }
 
 func (b *Breaker) Name() string { return b.name }
 
 func (b *Breaker) Execute(fn func() (any, error)) (any, error) {
+	if b.sem != nil {
+		select {
+		case b.sem <- struct{}{}:
+			defer func() { <-b.sem }()
+		default:
+			return nil, ErrBulkheadFull
+		}
+	}
+
 	generation, err := b.beforeRequest()
 	if err != nil {
 		return nil, err

@@ -64,6 +64,28 @@ func TestBreaker_ClosedSuccessResetsFailures(t *testing.T) {
 	}
 }
 
+func TestBreaker_BulkheadRejectsWhenFull(t *testing.T) {
+	b := New(Settings{
+		Name:          "shop",
+		MaxConcurrent: 1,
+	})
+	started := make(chan struct{})
+	release := make(chan struct{})
+	go func() {
+		_, _ = b.Execute(func() (any, error) {
+			close(started)
+			<-release
+			return nil, nil
+		})
+	}()
+	<-started
+	_, err := b.Execute(func() (any, error) { return "nope", nil })
+	if !errors.Is(err, ErrBulkheadFull) {
+		t.Fatalf("want ErrBulkheadFull, got %v", err)
+	}
+	close(release)
+}
+
 func TestBreaker_HalfOpenProbeLimit(t *testing.T) {
 	b := New(Settings{
 		Name:        "auth",
