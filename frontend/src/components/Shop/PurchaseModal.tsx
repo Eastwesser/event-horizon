@@ -4,6 +4,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
 import { formatTicketPrice } from '../../lib/formatPrice';
+import { Icon } from '../ui/Icon';
 import { CardPurchaseSummary } from './cardAttributes';
 
 interface PurchaseModalProps {
@@ -43,7 +44,7 @@ function PurchaseModal({
           alt={item.name}
           className="mb-4 w-[240px]"
           fit="cover"
-          fallback={<span className="text-4xl">🎁</span>}
+          fallback={<Icon name="gift" className="h-12 w-12 text-text-muted" />}
         />
         <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
 
@@ -55,16 +56,22 @@ function PurchaseModal({
 
         <div className="mt-4 flex w-full justify-between rounded-sm border border-white/10 bg-nebula px-4 py-3 font-hud text-sm tabular-nums">
           <span className="text-text-secondary">Цена</span>
-          <span className="text-horizon-gold">{formatTicketPrice(item.price_tickets)}</span>
+          <span className="inline-flex items-center gap-1.5 text-horizon-gold">
+            <Icon name="ticket" className="h-4 w-4" />
+            {formatTicketPrice(item.price_tickets)}
+          </span>
         </div>
         <div className="mt-2 flex w-full justify-between rounded-sm border border-white/10 bg-nebula px-4 py-3 font-hud text-sm tabular-nums">
           <span className="text-text-secondary">Ваш баланс</span>
-          <span className="text-photon-cyan">🎟️ {balance}</span>
+          <span className="inline-flex items-center gap-1.5 text-photon-cyan">
+            <Icon name="ticket" className="h-4 w-4" />
+            {balance}
+          </span>
         </div>
 
         {merchBlocked && (
           <div className="mt-4 w-full rounded-sm border border-error/40 bg-error/10 p-3 text-sm text-error">
-            ❌ {merchBlockReason || 'Покупка мерча недоступна без подписки'}
+            {merchBlockReason || 'Покупка мерча недоступна без подписки'}
             {onGoSubscription && (
               <button
                 type="button"
@@ -78,7 +85,7 @@ function PurchaseModal({
         )}
         {!canAfford && !merchBlocked && (
           <div className="mt-4 w-full rounded-sm border border-error/40 bg-error/10 p-3 text-sm text-error">
-            ❌ Недостаточно билетиков!
+            Недостаточно билетиков!
           </div>
         )}
 

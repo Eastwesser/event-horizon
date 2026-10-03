@@ -2,7 +2,8 @@ import type { ShopItem } from '../../store/shopStore';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
-import { formatTicketPrice } from '../../lib/formatPrice';
+import { formatTicketAmount } from '../../lib/formatPrice';
+import { Icon } from '../ui/Icon';
 
 interface CancelPurchaseModalProps {
   isOpen: boolean;
@@ -33,11 +34,11 @@ export function CancelPurchaseModal({
           alt={item.name}
           className="mb-4 w-[200px]"
           fit="cover"
-          fallback={<span className="text-4xl">🃏</span>}
+          fallback={<Icon name="cards" className="h-12 w-12 text-text-muted" />}
         />
         <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
         <p className="mt-3 text-sm text-text-secondary">
-          Вернуть {formatTicketPrice(amount)}? Карта уйдёт из инвентаря, товар снова
+          Вернуть {formatTicketAmount(amount)}? Карта уйдёт из инвентаря, товар снова
           станет доступен.
         </p>
 

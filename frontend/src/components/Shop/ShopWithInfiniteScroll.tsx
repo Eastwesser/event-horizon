@@ -12,6 +12,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
+import { Icon, IconLabel, type IconName } from '../ui/Icon';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -46,12 +47,12 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const itemTypes = [
+  const itemTypes: { value: string; label: string; icon?: IconName }[] = [
     { value: 'all', label: 'Все' },
-    { value: 'карточка', label: '🃏 Карточки' },
-    { value: 'game_skin', label: '🎨 Скины' },
-    { value: 'profile_theme', label: '🎨 Темы' },
-    { value: 'merch', label: '🎁 Мерч' },
+    { value: 'карточка', label: 'Карточки', icon: 'cards' },
+    { value: 'game_skin', label: 'Скины', icon: 'palette' },
+    { value: 'profile_theme', label: 'Темы', icon: 'palette' },
+    { value: 'merch', label: 'Мерч', icon: 'gift' },
   ];
 
   // Загрузка всех товаров из inventory (карточки + мерч)
@@ -163,7 +164,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
       await useShopStore.getState().buyItem(selectedItem.id);
       setNotification({
         type: 'success',
-        message: `✅ ${selectedItem.name} успешно куплен!`,
+        message: `${selectedItem.name} успешно куплен!`,
       });
       setShowModal(false);
       setSelectedItem(null);
@@ -173,7 +174,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     } catch (error: any) {
       setNotification({
         type: 'error',
-        message: error.message || '❌ Ошибка при покупке',
+        message: error.message || 'Ошибка при покупке',
       });
     }
   };
@@ -191,7 +192,9 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-void text-text-secondary">
-        🔒 Войдите в аккаунт, чтобы просматривать магазин
+        <IconLabel name="lock" iconClassName="h-4 w-4">
+          Войдите в аккаунт, чтобы просматривать магазин
+        </IconLabel>
       </div>
     );
   }
@@ -207,13 +210,18 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="🎁 Магазин"
+        title={
+          <IconLabel name="gift" iconClassName="h-7 w-7 text-horizon-gold">
+            Магазин
+          </IconLabel>
+        }
         subtitle="Тратьте билетики на крутые предметы!"
         onBack={handleBack}
         backLabel="На главную"
         actions={
           <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
-            🎟️ {balance} билетиков
+            <Icon name="ticket" className="h-4 w-4" />
+            {balance}
           </span>
         }
       />
@@ -229,7 +237,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
 
       <div className="mb-6 flex flex-wrap gap-2">
         <FilterChip active={activeTab === 'shop'} onClick={() => setActiveTab('shop')}>
-          🛒 Товары
+          <IconLabel name="cart">Товары</IconLabel>
         </FilterChip>
         <FilterChip
           active={activeTab === 'inventory'}
@@ -238,7 +246,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
             fetchInventory();
           }}
         >
-          🎒 Мой инвентарь ({inventory.length})
+          <IconLabel name="backpack">Мой инвентарь ({inventory.length})</IconLabel>
         </FilterChip>
       </div>
 
@@ -251,7 +259,11 @@ export const ShopWithInfiniteScroll: React.FC = () => {
                   active={filterType === type.value}
                   onClick={() => setFilterType(type.value)}
                 >
-                  {type.label}
+                  {type.icon ? (
+                    <IconLabel name={type.icon}>{type.label}</IconLabel>
+                  ) : (
+                    type.label
+                  )}
                 </FilterChip>
               ))}
             </div>
@@ -281,7 +293,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
               )}
               {!hasMore && displayedItems.length > 0 && (
                 <p className="py-5 text-center text-text-secondary">
-                  🎉 Все товары загружены ({totalItems} шт.)
+                  Все товары загружены ({totalItems} шт.)
                 </p>
               )}
             </div>
@@ -289,11 +301,14 @@ export const ShopWithInfiniteScroll: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {inventory.length === 0 ? (
-              <p className="col-span-full py-16 text-center text-text-secondary">У вас пока нет купленных предметов 🎒</p>
+              <p className="col-span-full flex items-center justify-center gap-2 py-16 text-text-secondary">
+                <Icon name="backpack" className="h-5 w-5" />
+                У вас пока нет купленных предметов
+              </p>
             ) : (
               inventory.map((purchased) => (
                 <div key={purchased.id} className="flex items-center gap-4 rounded-md border border-white/10 bg-nebula p-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-white/5 text-3xl">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-white/5">
                     {purchased.item.image_url ? (
                       <img
                         src={purchased.item.image_url}
@@ -306,7 +321,10 @@ export const ShopWithInfiniteScroll: React.FC = () => {
                         }}
                       />
                     ) : null}
-                    <span className={purchased.item.image_url ? 'hidden' : undefined}>🎁</span>
+                    <Icon
+                      name="gift"
+                      className={`h-8 w-8 text-text-muted${purchased.item.image_url ? ' hidden' : ''}`}
+                    />
                   </div>
                   <div className="min-w-0">
                     <h4 className="truncate font-display text-sm font-semibold text-text-primary">{purchased.item.name}</h4>
