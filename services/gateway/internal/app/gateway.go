@@ -773,6 +773,16 @@ func runGateway() {
 		})
 	})
 
+	// Inventory client is needed by shop purchase (decrement catalog stock) and
+	// by /api/inventory/* routes below — create once, reuse.
+	inventoryConn, err := grpc.NewClient(cfg.InventoryAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to inventory: %v", err)
+	}
+	defer inventoryConn.Close()
+	inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
+	inventoryCB := newServiceBreaker("inventory")
+
 	shopConn, err := grpc.NewClient(cfg.ShopAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to shop: %v", err)
@@ -831,7 +841,92 @@ func runGateway() {
 		}
 		resp := out.(*shopPb.PurchaseItemResponse)
 
-		c.JSON(http.StatusOK, resp)
+		// Catalog cards live in inventory; shop.items.stock is a synced mirror
+		// (often default 999). Decrement the inventory source of truth so the
+		// shop UI "В наличии: N" stays correct. Ignore NotFound (pure shop skins).
+		var remainingStock *int32
+		if req.ItemID != "" {
+			resOut, resErr := throughBreaker(inventoryCB, c, func() (any, error) {
+				return inventoryClient.ReserveItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReserveItemRequest{
+					Id:       req.ItemID,
+					Quantity: 1,
+				})
+			})
+			if resErr == nil {
+				if rresp, ok := resOut.(*inventoryPb.ReserveItemResponse); ok {
+					v := rresp.GetRemainingStock()
+					remainingStock = &v
+				}
+			} else if st, ok := status.FromError(resErr); ok && st.Code() == codes.NotFound {
+				// Shop-only item (skin/theme) — no inventory row.
+			} else if resErr != circuit.ErrOpen {
+				log.Printf("shop purchase: inventory reserve failed item=%s: %v", req.ItemID, resErr)
+			}
+		}
+
+		body := gin.H{
+			"success":     resp.GetSuccess(),
+			"message":     resp.GetMessage(),
+			"new_balance": resp.GetNewBalance(),
+		}
+		if remainingStock != nil {
+			body["remaining_stock"] = *remainingStock
+		}
+		c.JSON(http.StatusOK, body)
+	})
+
+	r.POST("/api/shop/purchase/:id/cancel", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		itemID := c.Param("id")
+		if itemID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
+			return
+		}
+
+		out, err := throughBreaker(shopCB, c, func() (any, error) {
+			return shopClient.CancelPurchase(c.Request.Context(), &shopPb.CancelPurchaseRequest{
+				UserId: middleware.UserID(c),
+				ItemId: itemID,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*shopPb.CancelPurchaseResponse)
+
+		var remainingStock *int32
+		if !resp.GetAlreadyRefunded() && itemID != "" {
+			relOut, relErr := throughBreaker(inventoryCB, c, func() (any, error) {
+				return inventoryClient.ReleaseItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReleaseItemRequest{
+					Id:       itemID,
+					Quantity: 1,
+				})
+			})
+			if relErr == nil {
+				if rresp, ok := relOut.(*inventoryPb.ReleaseItemResponse); ok {
+					v := rresp.GetRemainingStock()
+					remainingStock = &v
+				}
+			} else if st, ok := status.FromError(relErr); ok && st.Code() == codes.NotFound {
+				// Shop-only item — no inventory catalog row.
+			} else if relErr != circuit.ErrOpen {
+				log.Printf("shop cancel: inventory release failed item=%s: %v", itemID, relErr)
+			}
+		}
+
+		body := gin.H{
+			"success":          resp.GetSuccess(),
+			"message":          resp.GetMessage(),
+			"new_balance":      resp.GetNewBalance(),
+			"refunded_amount":  resp.GetRefundedAmount(),
+			"already_refunded": resp.GetAlreadyRefunded(),
+		}
+		if remainingStock != nil {
+			body["remaining_stock"] = *remainingStock
+		}
+		c.JSON(http.StatusOK, body)
 	})
 
 	r.GET("/api/shop/inventory", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -1326,14 +1421,7 @@ func runGateway() {
 		})
 	})
 
-	// --- Inventory gRPC клиент ---
-	inventoryConn, err := grpc.NewClient(cfg.InventoryAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect to inventory: %v", err)
-	}
-	defer inventoryConn.Close()
-	inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
-	inventoryCB := newServiceBreaker("inventory")
+	// Inventory gRPC client created earlier (shared with shop purchase).
 
 	// GET /api/inventory/items — список товаров с фильтрами
 	r.GET("/api/inventory/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -1381,9 +1469,9 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.SearchItemsResponse)
-		// Map via dto so price:0 / stock:0 / images:[] survive proto3 omitempty.
+		// Catalog list DTO: omit card_text / flavor_text (detail GET stays full).
 		c.JSON(http.StatusOK, gin.H{
-			"items": dto.InventoryItems(resp.GetItems()),
+			"items": dto.InventoryItemsCatalog(resp.GetItems()),
 			"total": resp.GetTotal(),
 		})
 	})
