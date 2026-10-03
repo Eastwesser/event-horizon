@@ -185,15 +185,22 @@ def http_json(
 
 
 def login(base: str) -> str:
+    """Prefer admin credentials.
+
+    scripts/.env.seed.admin uses SEED_ADMIN_EMAIL/PASSWORD; author env uses
+    SEED_EMAIL/PASSWORD. Preferring SEED_EMAIL first logged in as author, so
+    PUT failed with 403 on admin-owned rows (e.g. Пращник) while author-owned
+    cards updated fine.
+    """
     token = getenv("SEED_TOKEN")
     if token:
         return token
     email = getenv(
-        "SEED_EMAIL", "SEED_ADMIN_EMAIL", "SEED_AUTHOR_EMAIL",
+        "SEED_ADMIN_EMAIL", "SEED_EMAIL", "SEED_AUTHOR_EMAIL",
         default="admin@eventhorizon.local",
     )
     password = getenv(
-        "SEED_PASSWORD", "SEED_ADMIN_PASSWORD", "SEED_AUTHOR_PASSWORD",
+        "SEED_ADMIN_PASSWORD", "SEED_PASSWORD", "SEED_AUTHOR_PASSWORD",
         default="",
     )
     if not password:
@@ -206,6 +213,7 @@ def login(base: str) -> str:
     tok = resp.get("access_token") or resp.get("token")
     if not tok:
         raise SystemExit(f"login failed: {resp}")
+    print(f"Logged in as {email}")
     return tok
 
 
