@@ -2281,3 +2281,21 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 📬 Напиши мне: eastwesser@gmail.com
 
 Event Horizon — играй, соревнуйся, побеждай! 🚀
+
+## [v1.0.9] — 03.10.2026
+
+### Added
+- Berserk CCG card seed (280 cards, ~5 sets)
+- Attribute filters panel
+- Noiz reviews UI block
+- Refund / cancel purchase flow
+- Artist pages
+
+### Fixed
+- Element normalization (56 cards)
+- Purchase-path RBAC (Reserve/Release)
+- List DTO slim (-26% bytes)
+
+### Docs
+- REVIEW_RESULT.md (full)
+- Berserk history (rules, icons, how-to-read, pricing)
