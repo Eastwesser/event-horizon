@@ -555,6 +555,45 @@ paths:
         '409':
           description: Conflict (already owned, insufficient tickets)
 
+  /api/shop/purchase/{id}/cancel:
+    post:
+      summary: Cancel a completed purchase and refund tickets at purchase price
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Catalog / shop item id that was purchased
+      responses:
+        '200':
+          description: Success (also returned when already refunded — idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  new_balance:
+                    type: integer
+                  refunded_amount:
+                    type: integer
+                    description: Tickets restored from the original purchase price
+                  already_refunded:
+                    type: boolean
+                  remaining_stock:
+                    type: integer
+                    description: Inventory catalog stock after release (when applicable)
+        '401':
+          description: Unauthorized
+        '404':
+          description: No completed purchase found for this item
+
   /api/shop/inventory:
     get:
       summary: Get user inventory

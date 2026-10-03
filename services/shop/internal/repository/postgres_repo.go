@@ -8,16 +8,25 @@ import (
 )
 
 type Item struct {
-	ID          string
-	Name        string
-	Description string
-	Price       int
-	Category    string
-	GameID      *string
-	ImageURL    string
-	Available   bool
-	Owned       bool
-	PurchasedAt *time.Time
+	ID            string
+	Name          string
+	Description   string
+	Price         int
+	Category      string
+	GameID        *string
+	ImageURL      string
+	Available     bool
+	Owned         bool
+	PurchasedAt   *time.Time
+	PurchasePrice int
+	PurchaseID    string
+}
+
+// RefundResult is the outcome of marking a completed purchase as refunded.
+type RefundResult struct {
+	PurchaseID      string
+	Price           int
+	AlreadyRefunded bool
 }
 
 type PostgresShopRepo struct {
@@ -78,13 +87,22 @@ func (r *PostgresShopRepo) GetItems(ctx context.Context, category, gameID string
 	return items, nil
 }
 
-// CreateItemFromInventory создаёт товар из события инвентаря
-func (r *PostgresShopRepo) CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64) error {
+// CreateItemFromInventory создаёт товар из события инвентаря.
+// stock mirrors inventory catalog stock (not the old default 999).
+func (r *PostgresShopRepo) CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64, stock int) error {
+	if stock < 0 {
+		stock = 0
+	}
 	_, err := r.db.ExecContext(ctx, `
-        INSERT INTO items (id, name, description, price, category, game_id, image_url, available)
-        VALUES ($1, $2, $3, $4, 'merch', '', '', true)
-        ON CONFLICT (id) DO NOTHING
-    `, itemID, name, description, int(price))
+        INSERT INTO items (id, name, description, price, category, game_id, image_url, available, stock)
+        VALUES ($1, $2, $3, $4, 'merch', '', '', true, $5)
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            price = EXCLUDED.price,
+            stock = EXCLUDED.stock,
+            available = true
+    `, itemID, name, description, int(price), stock)
 	return err
 }
 
@@ -132,9 +150,22 @@ func (r *PostgresShopRepo) PurchaseItem(ctx context.Context, userID, itemID stri
 
 func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) ([]Item, error) {
 	query := `
-        SELECT i.id, i.name, i.description, i.price, i.category, i.game_id, i.image_url, i.available, inv.purchased_at
+        SELECT i.id, i.name, i.description, i.price, i.category, i.game_id, i.image_url, i.available,
+               inv.purchased_at,
+               COALESCE(p.price, 0) AS purchase_price,
+               COALESCE(p.id::text, '') AS purchase_id
         FROM inventory inv
         JOIN items i ON inv.item_id = i.id
+        LEFT JOIN LATERAL (
+            SELECT id, price
+            FROM purchases
+            WHERE user_id = inv.user_id
+              AND item_id = inv.item_id
+              AND status = 'COMPLETED'
+              AND refunded_at IS NULL
+            ORDER BY COALESCE(completed_at, purchased_at) DESC
+            LIMIT 1
+        ) p ON true
         WHERE inv.user_id = $1
         ORDER BY inv.purchased_at DESC
     `
@@ -159,6 +190,8 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
 			&item.ImageURL,
 			&item.Available,
 			&purchasedAt,
+			&item.PurchasePrice,
+			&item.PurchaseID,
 		)
 		if err != nil {
 			return nil, err
@@ -190,12 +223,79 @@ func (r *PostgresShopRepo) CompletePurchase(ctx context.Context, purchaseID stri
 	return err
 }
 
-func (r *PostgresShopRepo) CancelPurchase(ctx context.Context, purchaseID string) error {
+func (r *PostgresShopRepo) CancelPendingPurchase(ctx context.Context, purchaseID string) error {
 	_, err := r.db.ExecContext(ctx, `
         UPDATE purchases SET status = 'CANCELLED' 
         WHERE id = $1 AND status = 'PENDING'
     `, purchaseID)
 	return err
+}
+
+// RefundPurchase marks the latest completed purchase as REFUNDED, removes the
+// inventory row, and restores shop.items stock. Idempotent via refunded_at.
+func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID string) (*RefundResult, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var purchaseID string
+	var price int
+	err = tx.QueryRowContext(ctx, `
+		SELECT id, price FROM purchases
+		WHERE user_id = $1 AND item_id = $2
+		  AND status = 'COMPLETED' AND refunded_at IS NULL
+		ORDER BY COALESCE(completed_at, purchased_at) DESC
+		LIMIT 1
+		FOR UPDATE
+	`, userID, itemID).Scan(&purchaseID, &price)
+	if err == sql.ErrNoRows {
+		var already bool
+		_ = tx.QueryRowContext(ctx, `
+			SELECT EXISTS(
+				SELECT 1 FROM purchases
+				WHERE user_id = $1 AND item_id = $2
+				  AND (status = 'REFUNDED' OR refunded_at IS NOT NULL)
+			)
+		`, userID, itemID).Scan(&already)
+		if already {
+			return &RefundResult{AlreadyRefunded: true}, nil
+		}
+		return nil, fmt.Errorf("purchase not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := tx.ExecContext(ctx, `
+		UPDATE purchases
+		SET status = 'REFUNDED', refunded_at = NOW()
+		WHERE id = $1 AND status = 'COMPLETED' AND refunded_at IS NULL
+	`, purchaseID)
+	if err != nil {
+		return nil, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return &RefundResult{PurchaseID: purchaseID, Price: price, AlreadyRefunded: true}, nil
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		DELETE FROM inventory WHERE user_id = $1 AND item_id = $2
+	`, userID, itemID); err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE items SET stock = stock + 1, version = version + 1 WHERE id = $1
+	`, itemID); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return &RefundResult{PurchaseID: purchaseID, Price: price}, nil
 }
 
 type OutboxRecord struct {

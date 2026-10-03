@@ -23,10 +23,18 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+// CancelResult is returned by CancelPurchase.
+type CancelResult struct {
+	NewBalance      int32
+	RefundedAmount  int32
+	AlreadyRefunded bool
+}
+
 // ShopService is the interface for the shop service.
 type ShopService interface {
 	GetItems(ctx context.Context, category, gameID, userID string) ([]repository.Item, error)
 	PurchaseItem(ctx context.Context, userID, itemID string) (int32, error)
+	CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error)
 	GetInventory(ctx context.Context, userID string) ([]repository.Item, error)
 	SetKafkaProducer(p kafka.Producer)
 }
@@ -88,10 +96,21 @@ func NewShopService(
 		name, _ := event["name"].(string)
 		description, _ := event["description"].(string)
 		price, _ := event["price"].(float64)
+		stock := 1
+		switch v := event["stock"].(type) {
+		case float64:
+			stock = int(v)
+		case int:
+			stock = v
+		case int32:
+			stock = int(v)
+		case int64:
+			stock = int(v)
+		}
 
-		log.Printf("📦 Creating shop item: %s (ID: %s)", name, itemID)
+		log.Printf("📦 Creating shop item: %s (ID: %s, stock=%d)", name, itemID, stock)
 
-		if err := pg.CreateItemFromInventory(context.Background(), itemID, name, description, price); err != nil {
+		if err := pg.CreateItemFromInventory(context.Background(), itemID, name, description, price, stock); err != nil {
 			log.Printf("Failed to create shop item from inventory: %v", err)
 			msg.Nak()
 			return
@@ -276,6 +295,71 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 
 func (s *shopService) GetInventory(ctx context.Context, userID string) ([]repository.Item, error) {
 	return s.pgRepo.GetUserInventory(ctx, userID)
+}
+
+func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error) {
+	item, err := s.pgRepo.GetItemByID(ctx, itemID)
+	if err != nil {
+		// Still allow refund if purchase exists but shop item row is gone.
+		item = &repository.Item{ID: itemID, Category: "merch"}
+	}
+
+	refund, err := s.pgRepo.RefundPurchase(ctx, userID, itemID)
+	if err != nil {
+		if strings.Contains(err.Error(), "purchase not found") {
+			return nil, model.ErrPurchaseNotFound
+		}
+		return nil, err
+	}
+	if refund.AlreadyRefunded {
+		bal, _ := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
+			UserId:   userID,
+			Currency: billingPb.CurrencyType_TICKETS,
+		})
+		var newBal int32
+		if bal != nil {
+			newBal = bal.GetBalance()
+		}
+		return &CancelResult{
+			NewBalance:      newBal,
+			AlreadyRefunded: true,
+		}, nil
+	}
+
+	refID := fmt.Sprintf("cancel-%s", refund.PurchaseID)
+	if len(refID) > 100 {
+		refID = refID[:100]
+	}
+	addResp, err := s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
+		UserId:      userID,
+		Currency:    billingPb.CurrencyType_TICKETS,
+		Amount:      int32(refund.Price),
+		Reason:      "shop_purchase_cancel",
+		ReferenceId: refID,
+	})
+	if err != nil {
+		log.Printf("CRITICAL: purchase refunded in shop but AddCurrency failed user=%s item=%s purchase=%s: %v",
+			userID, itemID, refund.PurchaseID, err)
+		return nil, fmt.Errorf("failed to refund tickets: %w", err)
+	}
+
+	gameID := ""
+	if item.GameID != nil {
+		gameID = *item.GameID
+	}
+	_ = s.redisRepo.Delete(ctx, fmt.Sprintf("shop:items:%s:%s", item.Category, gameID))
+	_ = s.redisRepo.Delete(ctx, fmt.Sprintf("shop:items:%s:", item.Category))
+	_ = s.redisRepo.Delete(ctx, "shop:items:all:")
+	_ = s.redisRepo.Delete(ctx, fmt.Sprintf("balance:%s:tickets", userID))
+
+	newBal := int32(0)
+	if addResp != nil {
+		newBal = addResp.GetNewBalance()
+	}
+	return &CancelResult{
+		NewBalance:     newBal,
+		RefundedAmount: int32(refund.Price),
+	}, nil
 }
 
 func (s *shopService) checkMerchAllowed(ctx context.Context, userID string) error {
