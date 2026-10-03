@@ -9,6 +9,7 @@ import "validate/validate.proto";
 service GameService {
     rpc SubmitScore(SubmitScoreRequest) returns (SubmitScoreResponse);
     rpc GetGameInfo(GetGameInfoRequest) returns (GetGameInfoResponse);
+    rpc StartBoost(StartBoostRequest) returns (StartBoostResponse);
 }
 
 message SubmitScoreRequest {
@@ -21,6 +22,8 @@ message SubmitScoreRequest {
     string seed = 7 [(validate.rules).string = {max_len: 128}];
     repeated Move moves = 8 [(validate.rules).repeated = {max_items: 10000}];
     int32 client_version = 10;
+    // Optional boost id from StartBoost; server also checks unconsumed run_boosts.
+    string boost_id = 11 [(validate.rules).string = {max_len: 64}];
 }
 
 message Move {
@@ -38,6 +41,8 @@ message SubmitScoreResponse {
     string message = 4;
     int32 lamps_earned = 10;
     int32 tickets_earned = 11;
+    // false when a lamp boost was active for this run (kids-safe: not ranked).
+    bool ranked = 12;
 }
 
 message GetGameInfoRequest {
@@ -56,4 +61,17 @@ message LevelInfo {
     int32 target_score = 2;
     int32 reward_lamps = 3;
     int32 reward_tickets = 4;
+}
+
+message StartBoostRequest {
+    string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
+    string game_id = 2 [(validate.rules).string = {min_len: 1, max_len: 32}];
+}
+
+message StartBoostResponse {
+    string boost_id = 1;
+    bool boosted = 2;
+    int32 cost = 3;
+    int32 new_balance = 4;
+    string message = 5;
 }

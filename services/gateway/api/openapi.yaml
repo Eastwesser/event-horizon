@@ -337,6 +337,9 @@ paths:
                 seed:
                   type: string
                   description: Deterministic seed для валидации
+                boost_id:
+                  type: string
+                  description: Optional boost id from POST /api/game/boost/start
                 moves:
                   type: array
                   items:
@@ -370,8 +373,50 @@ paths:
                     type: integer
                   tickets_earned:
                     type: integer
+                  ranked:
+                    type: boolean
+                    description: false when a lamp boost was active for this run
         '401':
           description: Unauthorized
+
+  /api/game/boost/start:
+    post:
+      summary: Spend lamps to arm a pre-game boost (Flappy pilot)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [game_id]
+              properties:
+                game_id:
+                  type: string
+                  enum: [flappy]
+      responses:
+        '200':
+          description: Boost armed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  boost_id:
+                    type: string
+                  boosted:
+                    type: boolean
+                  cost:
+                    type: integer
+                  new_balance:
+                    type: integer
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+        '412':
+          description: Insufficient lamps or boost unavailable for game
 
   # ===== LEADERBOARD =====
   /api/leaderboard:

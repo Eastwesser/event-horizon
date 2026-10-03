@@ -5,13 +5,23 @@ import (
     "encoding/json"
     "fmt"
     "log"
+    "strings"
     "time"
 
+    "github.com/google/uuid"
     "github.com/nats-io/nats.go"
+    "google.golang.org/grpc/codes"
+    "google.golang.org/grpc/status"
 
+    billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
     "github.com/Eastwesser/event-horizon/services/game/internal/repository"
     hexagonValidator "github.com/Eastwesser/event-horizon/services/game/games/hexagons"
     "github.com/Eastwesser/event-horizon/services/game/games/memory"
+)
+
+const (
+    flappyBoostGameID = "flappy"
+    flappyBoostCost   = 10
 )
 
 type SubmitScoreRequest struct {
@@ -23,6 +33,7 @@ type SubmitScoreRequest struct {
     Nickname  string
     Seed      string
     Moves     []hexagonValidator.Move
+    BoostID   string
 }
 
 type SubmitScoreResponse struct {
@@ -32,6 +43,20 @@ type SubmitScoreResponse struct {
     Message       string
     LampsEarned   int
     TicketsEarned int
+    Ranked        bool
+}
+
+type StartBoostRequest struct {
+    UserID string
+    GameID string
+}
+
+type StartBoostResponse struct {
+    BoostID    string
+    Boosted    bool
+    Cost       int
+    NewBalance int
+    Message    string
 }
 
 type GameInfo struct {
@@ -51,19 +76,22 @@ type LevelInfo struct {
 type GameService interface {
     SubmitScore(ctx context.Context, req *SubmitScoreRequest) (*SubmitScoreResponse, error)
     GetGameInfo(ctx context.Context, gameID string) (*GameInfo, error)
+    StartBoost(ctx context.Context, req *StartBoostRequest) (*StartBoostResponse, error)
 }
 
 type gameService struct {
-    repo      repository.GameRepository
-    js        nats.JetStreamContext
-    validator *hexagonValidator.Validator
+    repo          repository.GameRepository
+    js            nats.JetStreamContext
+    validator     *hexagonValidator.Validator
+    billingClient billingPb.BillingServiceClient
 }
 
-func NewGameService(repo repository.GameRepository, js nats.JetStreamContext) GameService {
+func NewGameService(repo repository.GameRepository, js nats.JetStreamContext, billingClient billingPb.BillingServiceClient) GameService {
     return &gameService{
-        repo:      repo,
-        js:        js,
-        validator: hexagonValidator.NewValidator(),
+        repo:          repo,
+        js:            js,
+        validator:     hexagonValidator.NewValidator(),
+        billingClient: billingClient,
     }
 }
 
@@ -206,6 +234,41 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
 
     log.Printf("📥 Validated score: %d", validatedScore)
 
+    // Kids-safe: any unconsumed boost for this user+game skips leaderboard + rewards.
+    boostID := strings.TrimSpace(req.BoostID)
+    if boostID == "" {
+        if activeID, ok, lookupErr := s.repo.GetActiveRunBoost(ctx, req.UserID, req.GameID); lookupErr != nil {
+            log.Printf("lookup boost failed: %v", lookupErr)
+        } else if ok {
+            boostID = activeID
+        }
+    }
+    consumedID, boosted, err := s.repo.ConsumeActiveRunBoost(ctx, req.UserID, req.GameID, boostID)
+    if err != nil {
+        log.Printf("consume boost failed: %v", err)
+    }
+    // If client sent a stale boost_id, still block on any remaining active boost.
+    if !boosted {
+        if activeID, ok, lookupErr := s.repo.GetActiveRunBoost(ctx, req.UserID, req.GameID); lookupErr == nil && ok {
+            if cid, cok, cerr := s.repo.ConsumeActiveRunBoost(ctx, req.UserID, req.GameID, activeID); cerr == nil && cok {
+                consumedID, boosted = cid, true
+            }
+        }
+    }
+    if boosted {
+        log.Printf("🚫 Boosted run not ranked: user=%s game=%s boost=%s score=%d",
+            req.UserID, req.GameID, consumedID, validatedScore)
+        return &SubmitScoreResponse{
+            Success:       true,
+            NewHighscore:  validatedScore,
+            Rank:          0,
+            Message:       "boosted run — not ranked",
+            LampsEarned:   0,
+            TicketsEarned: 0,
+            Ranked:        false,
+        }, nil
+    }
+
     // Получаем текущий рекорд
     currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID)
     if err != nil {
@@ -260,6 +323,78 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
         Message:       "score submitted successfully",
         LampsEarned:   lampsEarned,
         TicketsEarned: ticketsEarned,
+        Ranked:        true,
+    }, nil
+}
+
+func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*StartBoostResponse, error) {
+    if req == nil {
+        return nil, status.Error(codes.InvalidArgument, "request is required")
+    }
+    gameID := strings.TrimSpace(req.GameID)
+    userID := strings.TrimSpace(req.UserID)
+    if userID == "" || gameID == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id and game_id are required")
+    }
+    if gameID != flappyBoostGameID {
+        return nil, status.Errorf(codes.FailedPrecondition, "boosts not available for game %s yet", gameID)
+    }
+    if s.billingClient == nil {
+        return nil, status.Error(codes.Unavailable, "billing unavailable")
+    }
+
+    // Reuse an unpaid-for active boost (crash / reconnect) without double-charging.
+    if existing, ok, err := s.repo.GetActiveRunBoost(ctx, userID, gameID); err != nil {
+        return nil, status.Errorf(codes.Internal, "lookup boost: %v", err)
+    } else if ok {
+        return &StartBoostResponse{
+            BoostID:    existing,
+            Boosted:    true,
+            Cost:       0,
+            NewBalance: -1,
+            Message:    "existing boost reused",
+        }, nil
+    }
+
+    boostID := uuid.NewString()
+    spendResp, err := s.billingClient.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
+        UserId:      userID,
+        Currency:    billingPb.CurrencyType_LAMPS,
+        Amount:      flappyBoostCost,
+        Reason:      "game_boost",
+        ReferenceId: "boost:" + boostID,
+    })
+    if err != nil {
+        if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
+            return nil, status.Error(codes.FailedPrecondition, st.Message())
+        }
+        if strings.Contains(err.Error(), "insufficient") {
+            return nil, status.Error(codes.FailedPrecondition, err.Error())
+        }
+        return nil, status.Errorf(codes.Internal, "spend lamps: %v", err)
+    }
+    if spendResp != nil && !spendResp.GetSuccess() {
+        msg := spendResp.GetMessage()
+        if msg == "" {
+            msg = "failed to spend lamps"
+        }
+        return nil, status.Error(codes.FailedPrecondition, msg)
+    }
+
+    if err := s.repo.CreateRunBoost(ctx, boostID, userID, gameID); err != nil {
+        return nil, status.Errorf(codes.Internal, "record boost: %v", err)
+    }
+
+    newBalance := 0
+    if spendResp != nil {
+        newBalance = int(spendResp.GetNewBalance())
+    }
+    return &StartBoostResponse{
+        BoostID:    boostID,
+        Boosted:    true,
+        Cost:       flappyBoostCost,
+        NewBalance: newBalance,
+        Message:    "boost armed — this run will not be ranked",
     }, nil
 }
 

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/game.proto
+// source: game.proto
 
 package game
 
@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	GameService_SubmitScore_FullMethodName = "/game.GameService/SubmitScore"
 	GameService_GetGameInfo_FullMethodName = "/game.GameService/GetGameInfo"
+	GameService_StartBoost_FullMethodName  = "/game.GameService/StartBoost"
 )
 
 // GameServiceClient is the client API for GameService service.
@@ -29,6 +30,7 @@ const (
 type GameServiceClient interface {
 	SubmitScore(ctx context.Context, in *SubmitScoreRequest, opts ...grpc.CallOption) (*SubmitScoreResponse, error)
 	GetGameInfo(ctx context.Context, in *GetGameInfoRequest, opts ...grpc.CallOption) (*GetGameInfoResponse, error)
+	StartBoost(ctx context.Context, in *StartBoostRequest, opts ...grpc.CallOption) (*StartBoostResponse, error)
 }
 
 type gameServiceClient struct {
@@ -57,12 +59,22 @@ func (c *gameServiceClient) GetGameInfo(ctx context.Context, in *GetGameInfoRequ
 	return out, nil
 }
 
+func (c *gameServiceClient) StartBoost(ctx context.Context, in *StartBoostRequest, opts ...grpc.CallOption) (*StartBoostResponse, error) {
+	out := new(StartBoostResponse)
+	err := c.cc.Invoke(ctx, GameService_StartBoost_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 // All implementations must embed UnimplementedGameServiceServer
 // for forward compatibility
 type GameServiceServer interface {
 	SubmitScore(context.Context, *SubmitScoreRequest) (*SubmitScoreResponse, error)
 	GetGameInfo(context.Context, *GetGameInfoRequest) (*GetGameInfoResponse, error)
+	StartBoost(context.Context, *StartBoostRequest) (*StartBoostResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedGameServiceServer) SubmitScore(context.Context, *SubmitScoreR
 }
 func (UnimplementedGameServiceServer) GetGameInfo(context.Context, *GetGameInfoRequest) (*GetGameInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGameInfo not implemented")
+}
+func (UnimplementedGameServiceServer) StartBoost(context.Context, *StartBoostRequest) (*StartBoostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartBoost not implemented")
 }
 func (UnimplementedGameServiceServer) mustEmbedUnimplementedGameServiceServer() {}
 
@@ -125,6 +140,24 @@ func _GameService_GetGameInfo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_StartBoost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartBoostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).StartBoost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameService_StartBoost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).StartBoost(ctx, req.(*StartBoostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GameService_ServiceDesc is the grpc.ServiceDesc for GameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -140,7 +173,11 @@ var GameService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetGameInfo",
 			Handler:    _GameService_GetGameInfo_Handler,
 		},
+		{
+			MethodName: "StartBoost",
+			Handler:    _GameService_StartBoost_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/game.proto",
+	Metadata: "game.proto",
 }

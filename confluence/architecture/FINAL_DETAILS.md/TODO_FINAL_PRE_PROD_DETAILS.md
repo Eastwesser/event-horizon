@@ -33,7 +33,7 @@ Start here. Low risk, each item independent.
   - [ ] Hanoi — drag polish
   - [ ] Memory — flip / skins
   - [ ] Hexagon — gameplay polish
-- [ ] **Лампочки как бусты в играх** — M · med · Game service + UI
+- [x] **Лампочки как бусты в играх** — M · med · Game service + UI
 - [ ] **Уровни сложности (1–20)** — M · med · Game service
 - [ ] **Достижения (achievements)** — M · med · New feature + DB
 
@@ -108,7 +108,7 @@ Update this table when you tick boxes above.
 | Wave | Done / Total |
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
-| 2 Content + debt | 2 / 6 (+ 0 / 5 games) |
+| 2 Content + debt | 3 / 6 (+ 0 / 5 games) |
 | 3 Author reg | 0 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |

@@ -22,11 +22,13 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/Eastwesser/event-horizon/pkg/migrator"
 	"github.com/Eastwesser/event-horizon/platform/pkg/closer"
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
+	billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
 	"github.com/Eastwesser/event-horizon/services/game/internal/config"
 	"github.com/Eastwesser/event-horizon/services/game/internal/handler"
 	"github.com/Eastwesser/event-horizon/services/game/internal/interceptor"
@@ -40,12 +42,13 @@ import (
 type diContainer struct {
 	cfg config.ConfigProvider
 
-	db   *sql.DB
-	nc   *nats.Conn
-	js   nats.JetStreamContext
-	repo repository.GameRepository
-	svc  service.GameService
-	api  pb.GameServiceServer
+	db            *sql.DB
+	nc            *nats.Conn
+	js            nats.JetStreamContext
+	billingClient billingPb.BillingServiceClient
+	repo          repository.GameRepository
+	svc           service.GameService
+	api           pb.GameServiceServer
 }
 
 func newDiContainer(cfg config.ConfigProvider) *diContainer {
@@ -174,8 +177,20 @@ func (a *App) initNATS(_ context.Context) error {
 }
 
 func (a *App) initDomain(_ context.Context) error {
+	addr := a.cfg.BillingAddr()
+	billingConn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		a.log.Warn("billing dial failed; boosts disabled", "addr", addr, "err", err)
+	} else {
+		a.di.billingClient = billingPb.NewBillingServiceClient(billingConn)
+		a.closer.AddNamed("billing grpc", func(context.Context) error {
+			return billingConn.Close()
+		})
+		a.log.Info("billing client ready", "addr", addr)
+	}
+
 	a.di.repo = repository.NewPostgresGameRepo(a.di.db)
-	a.di.svc = service.NewGameService(a.di.repo, a.di.js)
+	a.di.svc = service.NewGameService(a.di.repo, a.di.js, a.di.billingClient)
 	a.di.api = handler.NewGameHandler(a.di.svc)
 	return nil
 }

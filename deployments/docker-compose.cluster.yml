@@ -582,10 +582,13 @@ services:
       - DB_USER=${POSTGRES_USER:-eventhorizon}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_game
+      - BILLING_ADDR=billing:50053
     depends_on:
       postgres-game:
         condition: service_healthy
       nats-1:
+        condition: service_healthy
+      billing:
         condition: service_healthy
     networks:
       - event-horizon-net

@@ -1959,6 +1959,7 @@ func runGateway() {
 			UserEmail string `json:"user_email"`
 			Nickname  string `json:"nickname"`
 			Seed      string `json:"seed"`
+			BoostID   string `json:"boost_id"`
 			Moves     []struct {
 				FromX     int32 `json:"fromX"`
 				FromY     int32 `json:"fromY"`
@@ -1994,6 +1995,7 @@ func runGateway() {
 				Nickname:  req.Nickname,
 				Seed:      req.Seed,
 				Moves:     moves,
+				BoostId:   req.BoostID,
 			})
 		})
 		if err == circuit.ErrOpen {
@@ -2004,9 +2006,53 @@ func runGateway() {
 		}
 		resp := out.(*gamePb.SubmitScoreResponse)
 
-		respJSON, _ := json.Marshal(resp)
+		// Explicit map keeps ranked=false (proto3 omitempty would drop it).
+		respBody := gin.H{
+			"success":        resp.GetSuccess(),
+			"new_highscore":  resp.GetNewHighscore(),
+			"rank":           resp.GetRank(),
+			"message":        resp.GetMessage(),
+			"lamps_earned":   resp.GetLampsEarned(),
+			"tickets_earned": resp.GetTicketsEarned(),
+			"ranked":         resp.GetRanked(),
+		}
+		respJSON, _ := json.Marshal(respBody)
 		scoreCache.Set(cacheKey, respJSON)
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, respBody)
+	})
+
+	r.POST("/api/game/boost/start", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		var req struct {
+			GameID string `json:"game_id"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if req.GameID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "game_id is required"})
+			return
+		}
+		out, err := throughBreaker(gameCB, c, func() (any, error) {
+			return gameClient.StartBoost(c.Request.Context(), &gamePb.StartBoostRequest{
+				UserId: middleware.UserID(c),
+				GameId: req.GameID,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*gamePb.StartBoostResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"boost_id":    resp.GetBoostId(),
+			"boosted":     resp.GetBoosted(),
+			"cost":        resp.GetCost(),
+			"new_balance": resp.GetNewBalance(),
+			"message":     resp.GetMessage(),
+		})
 	})
 
 	srv := &http.Server{
