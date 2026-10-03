@@ -10,3 +10,65 @@ groups:
         annotations:
           summary: "Shop purchases exceed 10/min"
           description: "orders_total rate is {{ $value }} per second over 1m window"
+
+  - name: event_horizon_services
+    rules:
+      - alert: GatewayDown
+        expr: up{job="gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: gateway
+        annotations:
+          summary: "Gateway is down"
+          description: "Prometheus scrape target gateway is down for >1m"
+
+      - alert: AuthDown
+        expr: up{job="auth"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "Auth is down"
+          description: "Prometheus scrape target auth is down for >1m"
+
+      - alert: GameDown
+        expr: up{job="game"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: game
+        annotations:
+          summary: "Game is down"
+          description: "Prometheus scrape target game is down for >1m"
+
+      - alert: BillingDown
+        expr: up{job="billing"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: billing
+        annotations:
+          summary: "Billing is down"
+          description: "Prometheus scrape target billing is down for >1m"
+
+      - alert: LeaderboardDown
+        expr: up{job="leaderboard"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: leaderboard
+        annotations:
+          summary: "Leaderboard is down"
+          description: "Prometheus scrape target leaderboard is down for >1m"
+
+      - alert: InventoryDown
+        expr: up{job="inventory"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: inventory
+        annotations:
+          summary: "Inventory is down"
+          description: "Prometheus scrape target inventory is down for >2m"

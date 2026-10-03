@@ -1,37 +1,44 @@
-# Alertmanager (Week 8 stub)
+# Alertmanager → Telegram
 
-Optional Telegram alerts for high shop order rate.
+Prometheus evaluates `deployments/prometheus/alerts.yml` and sends firing alerts to Alertmanager, which posts to Telegram when credentials are set.
 
 ## Enable
 
-1. Set env on the alertmanager container:
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
+1. Put secrets in your env / `.env` (never commit them):
 
-2. Add to `prometheus/prometheus.yml`:
-
-```yaml
-rule_files:
-  - /etc/prometheus/alerts.yml
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: ['alertmanager:9093']
+```bash
+TELEGRAM_BOT_TOKEN=123456:ABC...
+TELEGRAM_CHAT_ID=-1001234567890   # group/channel id (integer)
 ```
 
-3. Example rule (`deployments/prometheus/alerts.yml`):
+2. Start the observability stack (includes `alertmanager` in `docker-compose.cluster.yml`):
 
-```yaml
-groups:
-  - name: shop
-    rules:
-      - alert: HighOrderRate
-        expr: rate(orders_total[1m]) > 10
-        for: 1m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Shop order rate above 10/min"
+```bash
+docker compose -f deployments/docker-compose.cluster.yml up -d prometheus alertmanager grafana
 ```
 
-ELK stack is **not** required for Event Horizon — structured `slog` JSON logs (`LOG_FORMAT=json`) are enough for local dev.
+3. Without `TELEGRAM_*`, Alertmanager still runs with a **null** receiver (alerts are dropped locally — no crash loop).
+
+## Smoke test
+
+```bash
+# Fire a test alert via Alertmanager API
+curl -XPOST http://localhost:9193/api/v2/alerts -H 'Content-Type: application/json' -d '[
+  {
+    "labels": {"alertname":"TestTelegram","severity":"warning","service":"ops"},
+    "annotations": {"summary":"EH Telegram smoke","description":"If you see this, Telegram works."}
+  }
+]'
+```
+
+UI: http://localhost:9193 (host port; container still listens on `:9093` for Prometheus).
+
+## Rules
+
+| Alert | When |
+|-------|------|
+| GatewayDown / AuthDown / GameDown / BillingDown / LeaderboardDown | `up{job=…} == 0` for 1m |
+| InventoryDown | inventory scrape down 2m |
+| HighOrderRate | `rate(orders_total[1m]) > 10` for 1m |
+
+ELK is **not** required — structured `slog` JSON (`LOG_FORMAT=json`) is enough for local dev.

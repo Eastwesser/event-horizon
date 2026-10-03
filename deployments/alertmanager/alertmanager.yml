@@ -6,11 +6,28 @@ route:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
-  receiver: 'default'
+  receiver: 'telegram'
+  routes:
+    - matchers:
+        - severity = critical
+      receiver: 'telegram'
+      continue: false
 
 receivers:
-  - name: 'default'
-    # Wire Telegram when TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID are set.
-    # See deployments/alertmanager/README.md
+  - name: 'telegram'
+    telegram_configs:
+      - bot_token: '__TELEGRAM_BOT_TOKEN__'
+        chat_id: __TELEGRAM_CHAT_ID__
+        send_resolved: true
+        parse_mode: 'HTML'
+        message: |-
+          <b>{{ .Status | toUpper }}</b> {{ .CommonLabels.alertname }}
+          {{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary }}{{ end }}
+          {{ range .Alerts -}}
+          • <b>{{ .Labels.severity }}</b>{{ if .Labels.service }} / {{ .Labels.service }}{{ end }}
+          {{ if .Annotations.description }}{{ .Annotations.description }}{{ end }}
+          {{ end }}
+
+  - name: 'null'
 
 inhibit_rules: []

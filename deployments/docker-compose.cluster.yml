@@ -393,10 +393,34 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - event-horizon-net
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: event-horizon-alertmanager
+    ports:
+      # Host 9193 — billing metrics already owns host 9093; container stays :9093 for in-net Prometheus.
+      - "9193:9093"
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.noop.yml:/etc/alertmanager/alertmanager.noop.yml:ro
+      - ./alertmanager/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+      - alertmanager_data:/alertmanager
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+    command:
+      - '--web.listen-address=:9093'
     restart: unless-stopped
     networks:
       - event-horizon-net
@@ -419,6 +443,7 @@ services:
       - event-horizon-net
     depends_on:
       - prometheus
+      - alertmanager
 
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -1153,6 +1178,7 @@ volumes:
   postgres_billing_data:
   postgres_leaderboard_data:
   prometheus_data:
+  alertmanager_data:
   grafana_data:
   qdrant_data:
   postgres_profile_data:
