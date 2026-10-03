@@ -58,6 +58,43 @@ func InventoryItems(items []*inventoryPb.Item) []gin.H {
 	return out
 }
 
+// catalogAttrOmit are bulky / internal keys not needed for grid filters.
+var catalogAttrOmit = map[string]struct{}{
+	"card_text":       {},
+	"flavor_text":     {},
+	"noiz_review":     {},
+	"idempotency_key": {},
+	"market_rub":      {},
+}
+
+// InventoryItemsCatalog is a smaller list DTO for SearchItems:
+// keeps filterable attributes + images, drops card/flavor text.
+// Detail GET still uses InventoryItem (full).
+func InventoryItemsCatalog(items []*inventoryPb.Item) []gin.H {
+	if items == nil {
+		return []gin.H{}
+	}
+	out := make([]gin.H, 0, len(items))
+	for _, it := range items {
+		h := InventoryItem(it)
+		if h == nil {
+			continue
+		}
+		if attrs, ok := h["attributes"].(map[string]interface{}); ok && len(attrs) > 0 {
+			slim := make(map[string]interface{}, len(attrs))
+			for k, v := range attrs {
+				if _, drop := catalogAttrOmit[k]; drop {
+					continue
+				}
+				slim[k] = v
+			}
+			h["attributes"] = slim
+		}
+		out = append(out, h)
+	}
+	return out
+}
+
 func attributesMap(s *structpb.Struct) map[string]interface{} {
 	if s == nil {
 		return map[string]interface{}{}
