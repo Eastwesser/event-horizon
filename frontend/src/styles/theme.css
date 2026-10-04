@@ -249,13 +249,12 @@ html {
   width: min(420px, 70vw);
   aspect-ratio: 1;
   cursor: pointer;
-  /* No isolation:isolate — it composited a 420×420 layer → faint square edge in VM. */
-  perspective: 900px;
   overflow: visible;
   background: transparent;
 }
 
-/* Soft circular glow — radial only; clip-path keeps compositing bounds circular. */
+/* Soft circular glow — radial only; clip-path keeps compositing bounds circular.
+   Fade to same-hue alpha 0 (not keyword transparent) — avoids muddy black pad. */
 .eh-disk-glow {
   position: absolute;
   inset: -80px;
@@ -264,13 +263,13 @@ html {
   z-index: 0;
   background: radial-gradient(
     circle at center,
-    color-mix(in srgb, var(--color-horizon-gold) 40%, transparent) 0%,
-    color-mix(in srgb, var(--color-horizon-gold) 18%, transparent) 26%,
-    color-mix(in srgb, var(--color-photon-cyan) 12%, transparent) 45%,
-    transparent 68%,
-    rgba(0, 0, 0, 0) 100%
+    rgb(232 184 74 / 0.4) 0%,
+    rgb(232 184 74 / 0.16) 26%,
+    rgb(110 201 232 / 0.12) 45%,
+    rgb(110 201 232 / 0.03) 62%,
+    rgb(11 14 26 / 0) 78%,
+    rgb(11 14 26 / 0) 100%
   );
-  /* Geometry itself is a circle — avoids rectangular layer silhouette. */
   clip-path: circle(50% at center);
   opacity: 0.55;
   transition:
@@ -283,23 +282,13 @@ html {
   position: absolute;
   inset: 0;
   z-index: 1;
-  transform-origin: center;
-  transform-style: preserve-3d;
-  transition: transform var(--eh-disk-leave) ease-out;
   background: transparent;
-}
-
-/* Mild 3D tip so the flattened equator reads as a disc on a sphere. */
-.eh-disk--pull .eh-disk-pull {
-  transform: rotateX(52deg);
-  transition-duration: var(--eh-disk-pull-in);
-  transition-timing-function: cubic-bezier(0.22, 0.8, 0.28, 1);
+  /* No rotateX — a full-bleed 3D plane projected a moving square silhouette (NW drift). */
 }
 
 .eh-disk-rings {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
   background: transparent;
 }
 
@@ -504,9 +493,8 @@ html {
 .eh-disk--pull .eh-disk-ring::before {
   opacity: 1;
   animation-play-state: paused;
-  box-shadow:
-    0 0 10px 1px color-mix(in srgb, var(--color-horizon-gold) 55%, transparent),
-    0 0 28px 4px color-mix(in srgb, var(--color-photon-cyan) 28%, transparent);
+  /* Soft ring light only — large box-shadows on full-bleed ring boxes read as a pad. */
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent);
   transition-duration: var(--eh-disk-pull-in);
 }
 
@@ -536,10 +524,6 @@ html {
   animation:
     eh-disk-glow-align 1.35s ease-out forwards,
     eh-disk-glow-pulse 1.1s ease-in-out 1.35s infinite;
-}
-
-.eh-disk--hot .eh-disk-pull {
-  transform: rotateX(62deg);
 }
 
 .eh-disk--hot .eh-disk-ring {
@@ -624,6 +608,75 @@ html {
   }
 }
 
+/* ---------- DEV: ?debug-void=1 — outline VOID layers + ancestors ---------- */
+html.eh-void-debug .eh-disk {
+  outline: 1px solid red !important;
+  outline-offset: -1px;
+}
+html.eh-void-debug .eh-disk-glow {
+  outline: 1px solid lime !important;
+  outline-offset: -1px;
+}
+html.eh-void-debug .eh-disk-pull {
+  outline: 1px solid dodgerblue !important;
+  outline-offset: -1px;
+}
+html.eh-void-debug .eh-disk-rings {
+  outline: 1px solid magenta !important;
+  outline-offset: -1px;
+}
+html.eh-void-debug .eh-disk-core {
+  outline: 1px solid cyan !important;
+  outline-offset: -1px;
+}
+html.eh-void-debug svg.eh-disk-particles {
+  outline: 1px solid orange !important;
+  outline-offset: -1px;
+}
+
+/* Ancestors (outer → farther): yellow → white → pink → gold → silver → wheat */
+html.eh-void-debug [data-void-debug-anc='0'] {
+  outline: 2px dashed yellow !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='1'] {
+  outline: 2px dashed white !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='2'] {
+  outline: 2px dashed hotpink !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='3'] {
+  outline: 2px dashed gold !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='4'] {
+  outline: 2px dashed silver !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='5'] {
+  outline: 2px dashed wheat !important;
+  outline-offset: -2px;
+}
+html.eh-void-debug [data-void-debug-anc='6'],
+html.eh-void-debug [data-void-debug-anc='7'] {
+  outline: 2px dashed coral !important;
+  outline-offset: -2px;
+}
+
+/* Siblings of disk / hit */
+html.eh-void-debug [data-void-debug-sib] {
+  outline: 2px dotted aqua !important;
+  outline-offset: -2px;
+}
+
+/* Nearby painted backgrounds (buttons, etc.) */
+html.eh-void-debug [data-void-debug-bg] {
+  outline: 2px dotted chartreuse !important;
+  outline-offset: 2px;
+}
+
 /* ---------- One orchestrated entrance moment ---------- */
 @keyframes eh-rise-in {
   from {
@@ -676,13 +729,6 @@ html {
   html:not(.eh-motion-force) .eh-disk--pull .eh-disk-particle,
   html:not(.eh-motion-force) .eh-disk--hot .eh-disk-particle {
     animation: none !important;
-  }
-
-  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-pull,
-  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-pull {
-    transform: none !important;
-    will-change: auto;
-    transition: none !important;
   }
 
   html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r1 { --ry: 0.28; --tilt: -10deg; }
