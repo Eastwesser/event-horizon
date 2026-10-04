@@ -31,7 +31,7 @@ Start here. Low risk, each item independent.
   - [x] Flappy — textures / polish · ✅ **Done 04.10.2026** (draw helpers, parallax, Modal GO, shake/flap; physics untouched)
   - [x] Towers — animations / GAME OVER · ✅ **Done 04.10.2026** (draw helpers, Modal GO, shake/drop pulse; physics untouched)
   - [x] Hanoi — drag polish · ✅ **Done 04.10.2026** (target hover valid/invalid, invalid shake, Modal emoji strip; rules untouched)
-  - [ ] Memory — flip / skins
+  - [x] Memory — flip / skins
   - [ ] Hexagon — gameplay polish
 - [x] **Лампочки как бусты в играх** — M · med · Game service + UI
 - [x] **Уровни сложности (1–20)** — M · med · Game service *(Flappy 1–10 pilot)*
