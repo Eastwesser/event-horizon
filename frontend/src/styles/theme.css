@@ -117,10 +117,16 @@
 /* ---------- Home hero — HTML wordmark + transparent planet (Plan A) ---------- */
 .eh-hero {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 100%;
-  /* Paint layout: wordmark → air → chevron; choose sits below the fold */
-  height: 70vh;
-  min-height: 28rem;
+  height: 80vh;
+  min-height: 80vh;
+  /* Clear navbar + leave room for bottom chevron */
+  padding-top: 5.5rem;
+  padding-bottom: 3.5rem;
   overflow: hidden;
   background: var(--color-void);
 }
@@ -145,28 +151,29 @@
   background-size: 100% 100%;
 }
 
-/* Same horizontal band as «Выбери игру» (shellInner) */
+/* In-flow so hero flex can vertically center the wordmark */
 .eh-hero-wordmark-shell {
-  position: absolute;
-  top: clamp(1.5rem, 8vh, 4rem);
-  left: 0;
-  right: 0;
+  position: relative;
   z-index: 3;
+  width: 100%;
   pointer-events: none;
 }
 
 .eh-hero-wordmark {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: baseline;
-  margin: 0 0 8vh;
-  width: 100%;
+  gap: 0.35em;
+  margin: 0 auto;
+  width: auto;
+  max-width: 100%;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 5.5vw, 6.5rem);
+  font-size: clamp(3rem, 8vw, 7rem);
   font-weight: 700;
   line-height: 0.95;
   letter-spacing: 0;
   text-transform: uppercase;
+  text-align: center;
   color: color-mix(in srgb, #c8ccd8 88%, var(--color-photon-cyan) 12%);
   text-shadow:
     0 0 28px color-mix(in srgb, var(--color-photon-cyan) 22%, transparent),
@@ -174,22 +181,19 @@
   pointer-events: auto;
 }
 
-/* Narrow shells: keep EVENT + HORIZON inside content box */
-@media (max-width: 639px) {
+/* Mobile: EVENT above HORIZON, each centered */
+@media (max-width: 640px) {
   .eh-hero-wordmark {
-    font-size: clamp(1.7rem, 8.5vw, 2.35rem);
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2em;
+    font-size: clamp(2.5rem, 14vw, 3.75rem);
   }
 }
 
-/* Words flush to shell edges; letters inside keep natural kerning */
 .eh-hero-wordmark-word {
   flex: 0 0 auto;
-  letter-spacing: 0.01em;
-}
-
-.eh-hero-wordmark-gap {
-  flex: 1 1 auto;
-  min-width: 0.5em;
+  letter-spacing: 0.02em;
 }
 
 .eh-hero-planet {

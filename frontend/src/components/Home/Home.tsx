@@ -244,7 +244,6 @@ export function Home() {
             <span className="eh-hero-wordmark-word" aria-hidden="true">
               EVENT
             </span>
-            <span className="eh-hero-wordmark-gap" aria-hidden="true" />
             <span className="eh-hero-wordmark-word" aria-hidden="true">
               HORIZON
             </span>
