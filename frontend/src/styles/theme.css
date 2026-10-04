@@ -311,8 +311,8 @@ html {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  /* ~3.25px ring band (was 1.75px) — reads as a disc when flattened */
-  padding: 3.25px;
+  /* ~3.5px ring band — reads as a disc when flattened to equator */
+  padding: 3.5px;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -411,25 +411,38 @@ html {
   opacity: 0.55;
 }
 
+/*
+  Full-disk circular core+corona. No box-shadow — large shadow AABBs painted the
+  visible square (see VOID-INSPECTION/POSTMORTEM_VOID_SQUARE.md).
+  Black hole ~36% diameter → ~36% of closest-side radius.
+*/
 .eh-disk-core {
   position: absolute;
   left: 50%;
   top: 50%;
   z-index: 2;
-  width: 36%;
-  height: 36%;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 40%, #0c0d14 0%, #000 48%, #000 100%);
+  clip-path: circle(50% at center);
+  pointer-events: none;
+  background: radial-gradient(
+    circle closest-side at 50% 50%,
+    #0c0d14 0%,
+    #000 34%,
+    #000 36%,
+    rgb(255 233 184 / 0.55) 38%,
+    rgb(232 184 74 / 0.28) 48%,
+    rgb(232 184 74 / 0.1) 58%,
+    rgb(110 201 232 / 0.06) 72%,
+    rgb(11 14 26 / 0) 100%
+  );
   transform: translate(-50%, -50%) scale(1);
   transform-origin: center;
   transition:
     transform var(--eh-disk-leave) ease-out,
-    box-shadow var(--eh-disk-leave) ease-out;
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
-    0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
-    0 0 70px 20px color-mix(in srgb, var(--color-horizon-gold) 18%, transparent),
-    inset 0 0 30px 10px #000;
+    opacity var(--eh-disk-leave) ease-out;
+  box-shadow: none;
 }
 
 .eh-disk-particles {
@@ -501,12 +514,18 @@ html {
 .eh-disk--pull .eh-disk-core {
   transform: translate(-50%, -50%) scale(1.04);
   transition-duration: var(--eh-disk-pull-in);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 95%, transparent),
-    0 0 52px 16px color-mix(in srgb, var(--color-horizon-gold) 78%, transparent),
-    0 0 140px 42px color-mix(in srgb, var(--color-horizon-gold) 38%, transparent),
-    0 0 200px 64px color-mix(in srgb, var(--color-photon-cyan) 24%, transparent),
-    inset 0 0 48px 18px #000;
+  background: radial-gradient(
+    circle closest-side at 50% 50%,
+    #0c0d14 0%,
+    #000 34%,
+    #000 36%,
+    rgb(255 233 184 / 0.85) 39%,
+    rgb(232 184 74 / 0.45) 50%,
+    rgb(232 184 74 / 0.18) 62%,
+    rgb(110 201 232 / 0.14) 78%,
+    rgb(11 14 26 / 0) 100%
+  );
+  box-shadow: none;
 }
 
 /* Particles wait for flatten (~0.95s) then spiral in — loop while hovering. */
@@ -536,12 +555,18 @@ html {
 
 .eh-disk--hot .eh-disk-core {
   transform: translate(-50%, -50%) scale(1.08);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 100%, transparent),
-    0 0 64px 20px color-mix(in srgb, var(--color-horizon-gold) 90%, transparent),
-    0 0 170px 50px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
-    0 0 240px 80px color-mix(in srgb, var(--color-photon-cyan) 30%, transparent),
-    inset 0 0 56px 22px #000;
+  background: radial-gradient(
+    circle closest-side at 50% 50%,
+    #0c0d14 0%,
+    #000 33%,
+    #000 35%,
+    rgb(255 233 184 / 0.95) 38%,
+    rgb(232 184 74 / 0.55) 52%,
+    rgb(232 184 74 / 0.22) 66%,
+    rgb(110 201 232 / 0.2) 82%,
+    rgb(11 14 26 / 0) 100%
+  );
+  box-shadow: none;
 }
 
 @keyframes eh-disk-spin {
@@ -797,11 +822,18 @@ html.eh-void-debug [data-void-debug-bg] {
   html:not(.eh-motion-force) .eh-disk--hot .eh-disk-core {
     transform: translate(-50%, -50%) scale(1);
     transition: none !important;
-    box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
-      0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
-      0 0 70px 20px color-mix(in srgb, var(--color-horizon-gold) 18%, transparent),
-      inset 0 0 30px 10px #000;
+    box-shadow: none;
+    background: radial-gradient(
+      circle closest-side at 50% 50%,
+      #0c0d14 0%,
+      #000 34%,
+      #000 36%,
+      rgb(255 233 184 / 0.55) 38%,
+      rgb(232 184 74 / 0.28) 48%,
+      rgb(232 184 74 / 0.1) 58%,
+      rgb(110 201 232 / 0.06) 72%,
+      rgb(11 14 26 / 0) 100%
+    );
   }
 
   html:not(.eh-motion-force) .eh-disk-particle {
