@@ -244,6 +244,7 @@ export function HanoiTower() {
 
       setScoreSaved(true);
       setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
+      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
     } catch (err) {
       setSaveMessage({ type: 'error', text: '❌ Ошибка при сохранении' });
     }

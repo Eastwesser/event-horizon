@@ -181,6 +181,7 @@ export function FlappyGame() {
           const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
           localStorage.setItem(totalScoreKey, String(totalScore + score));
           setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
+          void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         } else {
           setSaveMessage({ type: 'success', text: 'Забег с boost — не попал в лидерборд' });
         }

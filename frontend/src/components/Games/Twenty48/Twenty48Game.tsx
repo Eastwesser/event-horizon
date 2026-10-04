@@ -184,6 +184,7 @@ export function Twenty48Game() {
         moves: [],
       });
       setNotif({ message: 'Счёт сохранён', type: 'success' });
+      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
     } catch {
       setNotif({ message: 'Не удалось сохранить счёт', type: 'error' });
     } finally {

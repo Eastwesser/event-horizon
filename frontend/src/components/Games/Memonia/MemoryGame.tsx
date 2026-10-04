@@ -76,6 +76,7 @@ export function MemoryGame() {
       if (response.data) {
         setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
         setTimeout(() => setSaveMessage(null), 3000);
+        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
       }
     } catch (err) {
       setSaveMessage({ type: 'error', text: '❌ Ошибка при сохранении' });

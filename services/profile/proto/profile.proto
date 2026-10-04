@@ -15,6 +15,14 @@ message GetProfileRequest {
     string user_id = 1 [(validate.rules).string = {min_len: 1, max_len: 64}];
 }
 
+message Achievement {
+    string code = 1;
+    string title = 2;
+    string description = 3;
+    string icon = 4;          // SVG IconName (trophy, bird, star, …) — not emoji
+    string unlocked_at = 5;   // RFC3339
+}
+
 message GetProfileResponse {
     string user_id = 1;
     string email = 2;
@@ -23,6 +31,7 @@ message GetProfileResponse {
     map<string, int32> best_scores = 5;
     int32 lamps = 6;
     int32 tickets = 7;
+    repeated Achievement achievements = 8;
 }
 
 message UpdateProfileRequest {

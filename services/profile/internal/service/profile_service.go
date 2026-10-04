@@ -11,16 +11,24 @@ import (
 type ProfileService interface {
 	GetProfile(ctx context.Context, userID string) (*repository.UserProfile, error)
 	UpdateProfile(ctx context.Context, profile *repository.UserProfile) error
+	EvaluateAndUnlock(ctx context.Context, userID string, bestScores map[string]int32, totalScore int32, gameID string, level int) error
+	ListAchievements(ctx context.Context, userID string) ([]repository.Achievement, error)
 }
 
 type profileService struct {
-	repo     repository.ProfileRepository
-	cache    *repository.RedisProfileRepo
-	cacheTTL time.Duration
+	repo         repository.ProfileRepository
+	achievements repository.AchievementRepository
+	cache        *repository.RedisProfileRepo
+	cacheTTL     time.Duration
 }
 
-func NewProfileService(repo repository.ProfileRepository, cache *repository.RedisProfileRepo, cacheTTL time.Duration) ProfileService {
-	return &profileService{repo: repo, cache: cache, cacheTTL: cacheTTL}
+func NewProfileService(
+	repo repository.ProfileRepository,
+	achievements repository.AchievementRepository,
+	cache *repository.RedisProfileRepo,
+	cacheTTL time.Duration,
+) ProfileService {
+	return &profileService{repo: repo, achievements: achievements, cache: cache, cacheTTL: cacheTTL}
 }
 
 func (s *profileService) GetProfile(ctx context.Context, userID string) (*repository.UserProfile, error) {

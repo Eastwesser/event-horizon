@@ -261,6 +261,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
             
             const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
             localStorage.setItem(totalScoreKey, String(totalScore + score));
+            void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         }
     } catch (err) {
         console.error('Failed to submit memory score:', err);
