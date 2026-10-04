@@ -23,6 +23,49 @@
   background: rgba(0, 0, 0, 0.25);
   border-radius: 20px;
   position: relative;
+  transform-origin: center center;
+}
+
+.hanoi-board--shake {
+  animation: eh-hanoi-shake 420ms ease-out;
+}
+
+.hanoi-board--pulse {
+  animation: eh-hanoi-pulse 180ms ease-out;
+}
+
+@keyframes eh-hanoi-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  15% {
+    transform: translate(-5px, 1px);
+  }
+  30% {
+    transform: translate(5px, -2px);
+  }
+  45% {
+    transform: translate(-4px, 1px);
+  }
+  60% {
+    transform: translate(3px, 2px);
+  }
+  75% {
+    transform: translate(-2px, -1px);
+  }
+}
+
+@keyframes eh-hanoi-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .hanoi-peg {
@@ -37,16 +80,27 @@
   min-height: calc(var(--hanoi-stack-h) + 48px);
   padding-bottom: 12px;
   border-radius: 12px;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
-.hanoi-peg:hover:not(.hanoi-peg--disabled) {
+.hanoi-peg:hover:not(.hanoi-peg--disabled):not(.hanoi-peg--selected):not(.hanoi-peg--target-valid):not(.hanoi-peg--target-invalid) {
   background: rgba(255, 215, 0, 0.05);
 }
 
 .hanoi-peg--selected {
   background: rgba(255, 215, 0, 0.12);
   box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.5);
+}
+
+/* Target preview while a source peg is selected */
+.hanoi-peg--target-valid {
+  background: rgba(105, 219, 124, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(105, 219, 124, 0.65);
+}
+
+.hanoi-peg--target-invalid {
+  background: rgba(255, 107, 107, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(255, 107, 107, 0.55);
 }
 
 .hanoi-peg--disabled {

@@ -100,6 +100,9 @@ export function HanoiTower() {
   const [animating, setAnimating] = useState<{ disk: number; from: number; to: number } | null>(null);
   const [scoreSaved, setScoreSaved] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [hoverPeg, setHoverPeg] = useState<number | null>(null);
+  const [boardShake, setBoardShake] = useState(false);
+  const [boardPulse, setBoardPulse] = useState(false);
 
   const pegRefs = useRef<(HTMLDivElement | null)[]>([]);
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,6 +138,7 @@ export function HanoiTower() {
     setAnimating(null);
     setPegs(createInitialPegs(count));
     setSelectedPeg(null);
+    setHoverPeg(null);
     setMoves(0);
     setWon(false);
     setScoreSaved(false);
@@ -177,6 +181,13 @@ export function HanoiTower() {
     [pegs, applyMove]
   );
 
+  const triggerInvalidFeedback = () => {
+    setBoardShake(true);
+    setBoardPulse(true);
+    window.setTimeout(() => setBoardShake(false), 420);
+    window.setTimeout(() => setBoardPulse(false), 180);
+  };
+
   const handlePegClick = async (pegIndex: number) => {
     if (autoSolving || animating || won) return;
 
@@ -193,9 +204,20 @@ export function HanoiTower() {
     if (canMove(pegs, selectedPeg, pegIndex)) {
       await animateAndMove(selectedPeg, pegIndex);
     } else {
+      triggerInvalidFeedback();
       if (pegs[pegIndex].length > 0) setSelectedPeg(pegIndex);
       else setSelectedPeg(null);
     }
+  };
+
+  const pegTargetClass = (pegIndex: number): string => {
+    if (selectedPeg === null || selectedPeg === pegIndex || autoSolving || animating || won) {
+      return '';
+    }
+    if (hoverPeg !== pegIndex) return '';
+    return canMove(pegs, selectedPeg, pegIndex)
+      ? 'hanoi-peg--target-valid'
+      : 'hanoi-peg--target-invalid';
   };
 
   const runAutoSolve = async () => {
@@ -243,10 +265,10 @@ export function HanoiTower() {
       });
 
       setScoreSaved(true);
-      setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
+      setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
       void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
     } catch (err) {
-      setSaveMessage({ type: 'error', text: '❌ Ошибка при сохранении' });
+      setSaveMessage({ type: 'error', text: 'Ошибка при сохранении' });
     }
   };
 
@@ -335,19 +357,19 @@ export function HanoiTower() {
             </select>
           </label>
           <Button variant="secondary" size="sm" onClick={() => resetGame()} disabled={autoSolving}>
-            🔄 Сброс
+            Сброс
           </Button>
           <Button variant="ghost" size="sm" onClick={runAutoSolve} disabled={autoSolving || won}>
-            {autoSolving ? '⏳ Решаю...' : '🤖 Авто-решение'}
+            {autoSolving ? 'Решаю…' : 'Авто-решение'}
           </Button>
         </>
       }
       help={
         <>
-          <p>🎯 Перенесите все кольца со стержня A на стержень C</p>
-          <p>🚫 Нельзя класть большее кольцо на меньшее</p>
-          <p>🏆 Очки: 1000 − (лишние ходы × 20), минимум 100</p>
-          <p>🤖 Кнопка «Авто-решение» покажет оптимальный путь</p>
+          <p>Перенесите все кольца со стержня A на стержень C</p>
+          <p>Нельзя класть большее кольцо на меньшее</p>
+          <p>Очки: 1000 − (лишние ходы × 20), минимум 100</p>
+          <p>Кнопка «Авто-решение» покажет оптимальный путь</p>
         </>
       }
     >
@@ -359,13 +381,30 @@ export function HanoiTower() {
         />
       )}
 
-      <div className="hanoi-board">
+      <div
+        className={[
+          'hanoi-board',
+          boardShake ? 'hanoi-board--shake' : '',
+          boardPulse ? 'hanoi-board--pulse' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {pegs.map((stack, pegIndex) => (
           <div
             key={pegIndex}
             ref={(el) => { pegRefs.current[pegIndex] = el; }}
-            className={`hanoi-peg ${selectedPeg === pegIndex ? 'hanoi-peg--selected' : ''} ${autoSolving ? 'hanoi-peg--disabled' : ''}`}
+            className={[
+              'hanoi-peg',
+              selectedPeg === pegIndex ? 'hanoi-peg--selected' : '',
+              pegTargetClass(pegIndex),
+              autoSolving ? 'hanoi-peg--disabled' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => handlePegClick(pegIndex)}
+            onMouseEnter={() => setHoverPeg(pegIndex)}
+            onMouseLeave={() => setHoverPeg((h) => (h === pegIndex ? null : h))}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handlePegClick(pegIndex)}
@@ -405,23 +444,23 @@ export function HanoiTower() {
         </div>
       )}
 
-      <Modal open={won} onClose={() => setWon(false)} title="🎉 Победа!">
+      <Modal open={won} onClose={() => setWon(false)} title="Победа">
         <p className="text-text-secondary">Все кольца на месте!</p>
 
         <div className="mt-4 space-y-1.5 text-text-secondary">
           <p>
-            ⏱ Время: <strong className="text-text-primary">{formatTime(elapsedMs)}</strong>
+            Время: <strong className="text-text-primary">{formatTime(elapsedMs)}</strong>
           </p>
           <p>
-            🎯 {pluralMoves(moves)}
+            {pluralMoves(moves)}
             {minMoves > 0 ? (
               <span className="text-text-muted"> (минимум {minMoves})</span>
             ) : null}
           </p>
           <p className={`text-sm font-medium ${moves <= minMoves ? 'text-success' : 'text-warning'}`}>
             {moves <= minMoves
-              ? '✨ Идеально! Вы уложились в оптимум!'
-              : `📈 Превышение на ${pluralMoves(moves - minMoves)}`}
+              ? 'Идеально! Вы уложились в оптимум.'
+              : `Превышение на ${pluralMoves(moves - minMoves)}`}
           </p>
         </div>
 
@@ -430,17 +469,15 @@ export function HanoiTower() {
           <p className="font-hud text-3xl font-bold text-horizon-gold">{finalScore}</p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Button
-            variant="primary"
-            className="w-full min-w-0"
-            onClick={handleSubmitScore}
-            disabled={scoreSaved}
-          >
-            {scoreSaved ? '✅ Сохранено' : '📤 Сохранить рекорд'}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="primary" size="sm" onClick={handleSubmitScore} disabled={scoreSaved}>
+            {scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
           </Button>
-          <Button variant="ghost" className="w-full min-w-0" onClick={() => resetGame()}>
-            🔄 Играть снова
+          <Button variant="secondary" size="sm" onClick={() => resetGame()}>
+            Новая игра
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            На главную
           </Button>
         </div>
       </Modal>
