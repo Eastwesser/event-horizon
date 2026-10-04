@@ -9,7 +9,12 @@ import { AppFooter, AppNavbar, shellInner } from '../Layout/AppNavbar';
 import { gameIcon } from '../../lib/gameIcons';
 import { cn } from '../../lib/cn';
 import { VOID_PARTICLES } from './voidParticles';
-import { prefersReducedMotion, syncMotionForceClass } from '../../lib/motion';
+import {
+  isVoidDebug,
+  prefersReducedMotion,
+  syncMotionForceClass,
+  syncVoidDebugMarks,
+} from '../../lib/motion';
 
 const games: {
   id: string;
@@ -121,6 +126,7 @@ export function Home() {
   // VOID debug — build mode + reduced-motion once; animationstart while mounted.
   useEffect(() => {
     const motionForce = syncMotionForceClass();
+    const voidDebug = isVoidDebug();
     const osReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     console.log('[VOID] mount', {
       mode: import.meta.env.MODE,
@@ -128,8 +134,11 @@ export function Home() {
       href: window.location.href,
       osReducedMotion: osReduced,
       motionForce,
+      voidDebug,
       reducedMotion: prefersReducedMotion(),
     });
+    // Ancestors may not be tagged if this ran before paint; refresh marks.
+    if (voidDebug) syncVoidDebugMarks();
 
     const disk = diskRef.current;
     const pull = pullLayerRef.current;
