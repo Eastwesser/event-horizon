@@ -7,16 +7,42 @@ import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
+import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
 import { cn } from '../../../lib/cn';
+import {
+  BLOCK_HEIGHT,
+  blockColor,
+  drawBackground,
+  drawBlock,
+  drawDirectionChevron,
+  drawMovingBlock,
+  stackStartY,
+} from './towerDraw';
+import './TowerGame.css';
+
+function IconBlocks({ rainbow }: { rainbow: boolean }) {
+  return (
+    <svg className="eh-tower-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <rect x="3" y="9" width="10" height="4" rx="0.5" fill={rainbow ? '#60A5FA' : '#C0392B'} />
+      <rect x="4" y="5" width="8" height="4" rx="0.5" fill={rainbow ? '#FFD700' : '#E74C3C'} />
+      <rect x="5" y="1" width="6" height="4" rx="0.5" fill={rainbow ? '#FF6B6B' : '#A93226'} />
+    </svg>
+  );
+}
 
 export function TowerGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prevGameOver = useRef(false);
   const { skins, loading: skinsLoading } = useSkins();
   const [useRainbowBlocks, setUseRainbowBlocks] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+  const [dropPulse, setDropPulse] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const {
     towerBlocks,
@@ -26,6 +52,7 @@ export function TowerGame() {
     level,
     combo,
     gameOver,
+    direction,
     GAME_WIDTH,
     GAME_HEIGHT,
     startGame,
@@ -33,20 +60,17 @@ export function TowerGame() {
     submitScore,
   } = useTowerStore();
 
-  // Загружаем настройки скинов из localStorage
   useEffect(() => {
     const saved = localStorage.getItem('towers_rainbow_blocks');
     if (saved !== null) setUseRainbowBlocks(saved === 'true');
   }, []);
 
-  // Сохраняем настройки скинов
   const toggleRainbowBlocks = () => {
     const newVal = !useRainbowBlocks;
     setUseRainbowBlocks(newVal);
     localStorage.setItem('towers_rainbow_blocks', String(newVal));
   };
 
-  // Проверка авторизации
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -55,26 +79,52 @@ export function TowerGame() {
     }
   }, [token, navigate, startGame]);
 
-  // SPACE / ArrowUp — window-level (works even before canvas mounts)
+  const pulseDrop = () => {
+    setDropPulse(true);
+    window.setTimeout(() => setDropPulse(false), 90);
+  };
+
+  const tryDrop = () => {
+    if (gameOver) return;
+    const beforeLen = useTowerStore.getState().towerBlocks.length;
+    const beforeOver = useTowerStore.getState().gameOver;
+    dropBlock();
+    const after = useTowerStore.getState();
+    if (!beforeOver && after.towerBlocks.length > beforeLen) {
+      pulseDrop();
+    }
+  };
+
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (!gameOver) dropBlock();
+        if (gameOver) return;
+        const beforeLen = useTowerStore.getState().towerBlocks.length;
+        dropBlock();
+        const after = useTowerStore.getState();
+        if (after.towerBlocks.length > beforeLen) {
+          pulseDrop();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [gameOver, dropBlock]);
 
-  const handleCanvasClick = () => {
-    if (!gameOver) dropBlock();
-  };
+  useEffect(() => {
+    if (gameOver && !prevGameOver.current) {
+      setShake(true);
+      const t = window.setTimeout(() => setShake(false), 420);
+      prevGameOver.current = true;
+      return () => window.clearTimeout(t);
+    }
+    if (!gameOver) prevGameOver.current = false;
+  }, [gameOver]);
 
-  // Ручное сохранение рекорда
   const handleManualSave = async () => {
     await submitScore();
-    setSaveMessage({ type: 'success', text: '✅ Рекорд сохранён!' });
+    setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
   };
 
   const handleResetGame = () => {
@@ -85,123 +135,44 @@ export function TowerGame() {
     navigate('/');
   };
 
-  // Получение цвета блока с учетом скина
-  const getBlockColor = (blockLevel: number) => {
-    if (useRainbowBlocks && skins.towers.hasRainbowBlocks) {
-      const rainbowColors = [
-        '#FF6B6B', // Красный
-        '#FF9F43', // Оранжевый
-        '#FFD700', // Жёлтый
-        '#4ADE80', // Зелёный
-        '#60A5FA', // Голубой
-        '#818CF8', // Синий
-        '#C084FC', // Фиолетовый
-      ];
-      return rainbowColors[(blockLevel - 1) % rainbowColors.length];
-    }
+  const rainbow = useRainbowBlocks && skins.towers.hasRainbowBlocks;
 
-    // Стандартные цвета
-    const colors = ['#E74C3C', '#C0392B', '#A93226', '#922B21', '#7B241C', '#641E16', '#4A1A0A'];
-
-    const index = Math.min(Math.floor((blockLevel - 1) / 2), colors.length - 1);
-    return colors[index];
-  };
-
-  // Отрисовка игры
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Очищаем canvas
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    drawBackground(ctx, GAME_WIDTH, GAME_HEIGHT);
 
-    // Фон
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-    // Рисуем башню
-    const blockHeight = 25;
-    const startY = GAME_HEIGHT - 50;
+    const startY = stackStartY(GAME_HEIGHT);
+    const h = BLOCK_HEIGHT - 2;
 
     for (let i = 0; i < towerBlocks.length; i++) {
       const blockW = towerBlocks[i];
       const blockX = (GAME_WIDTH - blockW) / 2;
-      const blockY = startY - i * blockHeight;
-
-      const color = getBlockColor(i + 1);
-
-      // Градиент для объёма
-      const gradient = ctx.createLinearGradient(blockX, blockY, blockX + blockW, blockY);
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, color + 'aa');
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(blockX, blockY, blockW, blockHeight - 2);
-
-      // Обводка
-      ctx.strokeStyle = '#ffffffaa';
-      ctx.strokeRect(blockX, blockY, blockW, blockHeight - 2);
-
-      // Текстура (линии)
-      ctx.fillStyle = '#ffffff33';
-      for (let j = 0; j < 3; j++) {
-        ctx.fillRect(blockX + 5 + (j * (blockW - 10)) / 3, blockY + 5, 2, blockHeight - 12);
-      }
+      const blockY = startY - i * BLOCK_HEIGHT;
+      drawBlock(ctx, blockX, blockY, blockW, h, blockColor(i + 1, rainbow));
     }
 
-    // Рисуем текущий движущийся блок
-    const currentY = startY - towerBlocks.length * blockHeight;
-    const currentColor = getBlockColor(towerBlocks.length + 1);
-    const gradientCurrent = ctx.createLinearGradient(currentBlockX, currentY, currentBlockX + blockWidth, currentY);
-    gradientCurrent.addColorStop(0, currentColor);
-    gradientCurrent.addColorStop(1, currentColor + 'aa');
-
-    ctx.fillStyle = gradientCurrent;
-    ctx.fillRect(currentBlockX, currentY, blockWidth, blockHeight - 2);
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.strokeRect(currentBlockX, currentY, blockWidth, blockHeight - 2);
-
-    // Добавляем тень для эффекта парящего блока
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(currentBlockX, currentY, blockWidth, blockHeight - 2);
-    ctx.shadowBlur = 0;
-
-    // Рисуем стрелки направления
-    ctx.font = '24px monospace';
-    ctx.fillStyle = '#ffffffaa';
-    if (useTowerStore.getState().direction === 1) {
-      ctx.fillText('→', GAME_WIDTH - 30, currentY + 20);
-    } else {
-      ctx.fillText('←', 10, currentY + 20);
+    if (!gameOver) {
+      const currentY = startY - towerBlocks.length * BLOCK_HEIGHT;
+      const color = blockColor(towerBlocks.length + 1, rainbow);
+      drawMovingBlock(ctx, currentBlockX, currentY, blockWidth, h, color);
+      drawDirectionChevron(ctx, direction, GAME_WIDTH, currentY, h);
     }
+  }, [
+    towerBlocks,
+    currentBlockX,
+    blockWidth,
+    gameOver,
+    GAME_WIDTH,
+    GAME_HEIGHT,
+    rainbow,
+    direction,
+  ]);
 
-    // Game Over экран — warm/neutral game state, not an error red
-    if (gameOver) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-      ctx.font = 'bold 28px "Space Grotesk", system-ui, sans-serif';
-      ctx.fillStyle = '#E8D5A3';
-      ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40);
-
-      ctx.font = '20px "Space Grotesk", system-ui, sans-serif';
-      ctx.fillStyle = '#FFD700';
-      ctx.fillText(`Счёт: ${score}`, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20);
-
-      ctx.font = '14px "Space Grotesk", system-ui, sans-serif';
-      ctx.fillStyle = '#c8c4b8';
-      ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 70);
-      ctx.textAlign = 'start';
-    }
-  }, [towerBlocks, currentBlockX, blockWidth, score, gameOver, GAME_WIDTH, GAME_HEIGHT, skins, useRainbowBlocks]);
-
-  // Получение множителя для отображения
   const getMultiplierDisplay = () => {
     if (combo >= 5) return `x${combo - 2}`;
     if (combo >= 4) return 'x3';
@@ -245,7 +216,8 @@ export function TowerGame() {
                   : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
               )}
             >
-              {useRainbowBlocks ? '🌈' : '🧱'} Радужные блоки
+              <IconBlocks rainbow={useRainbowBlocks} />
+              Радужные блоки
             </button>
           )}
         </>
@@ -253,20 +225,22 @@ export function TowerGame() {
       controls={
         <>
           <Button variant="primary" size="sm" onClick={handleResetGame}>
-            🔄 Новая игра
+            Новая игра
           </Button>
           <Button variant="secondary" size="sm" onClick={handleManualSave}>
-            💾 Сохранить рекорд
+            Сохранить рекорд
           </Button>
         </>
       }
       help={
         <>
-          <p>🏗️ Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы положить блок на башню</p>
-          <p>🎯 Чем точнее попадание, тем шире будет следующий блок</p>
-          <p>⚡ 3 блока подряд = x2, 4 = x3, 5+ = x{combo >= 5 ? combo - 2 : 'N'} множитель очков</p>
-          <p>🏆 Очки: 10 × уровень × множитель</p>
-          <p>💡 Башня сужается при неточном попадании!</p>
+          <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы положить блок на башню</p>
+          <p>Чем точнее попадание, тем шире будет следующий блок</p>
+          <p>
+            3 блока подряд = x2, 4 = x3, 5+ = x{combo >= 5 ? combo - 2 : 'N'} множитель очков
+          </p>
+          <p>Очки: 10 × уровень × множитель</p>
+          <p>Башня сужается при неточном попадании</p>
         </>
       }
     >
@@ -277,13 +251,40 @@ export function TowerGame() {
           onClose={() => setSaveMessage(null)}
         />
       )}
-      <canvas
-        ref={canvasRef}
-        width={GAME_WIDTH}
-        height={GAME_HEIGHT}
-        onClick={handleCanvasClick}
-        className="mx-auto block h-auto w-full max-w-[400px] shrink-0 cursor-pointer rounded-md shadow-elevated"
-      />
+      <div
+        className={cn(
+          'eh-tower-stage',
+          dropPulse && 'eh-tower-stage--drop',
+          shake && 'eh-tower-stage--shake',
+        )}
+      >
+        <canvas
+          ref={canvasRef}
+          width={GAME_WIDTH}
+          height={GAME_HEIGHT}
+          onClick={tryDrop}
+        />
+      </div>
+
+      <Modal open={gameOver} onClose={() => {}} title="Game Over">
+        <p className="text-lg text-text-primary">
+          Счёт: <span className="font-display font-semibold text-horizon-gold">{score}</span>
+        </p>
+        <p className="mt-1 text-sm text-text-secondary">Уровень {level}</p>
+        <p className="mt-1 text-sm text-text-secondary">Высота: {towerBlocks.length}</p>
+        <p className="mt-1 text-sm text-photon-cyan">Комбо: {getMultiplierDisplay()}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button variant="primary" size="sm" onClick={handleResetGame}>
+            Новая игра
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleManualSave}>
+            Сохранить рекорд
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleBack}>
+            На главную
+          </Button>
+        </div>
+      </Modal>
     </GameShell>
   );
 }
