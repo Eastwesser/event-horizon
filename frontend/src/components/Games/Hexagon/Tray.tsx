@@ -42,7 +42,7 @@ const spaceColors: Record<string, string> = {
 export function Tray({ stacks, skinMode = 'default' }: TrayProps) {
   return (
     <div className="tray">
-      <h3>🍽️ Поднос</h3>
+      <h3>Поднос</h3>
       <div className="tray-stacks">
         {stacks.map((stack) => (
           <TrayStack key={stack.id} stack={stack} skinMode={skinMode} />

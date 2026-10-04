@@ -33,13 +33,11 @@ export function HexagonGame() {
     setGameOver,
   } = useGameStore();
 
-  // Загружаем настройки скинов из localStorage
   useEffect(() => {
     const saved = localStorage.getItem('hexagon_space_pancakes');
     if (saved !== null) setUseSpacePancakes(saved === 'true');
   }, []);
 
-  // Сохраняем настройки скинов
   const toggleSpacePancakes = () => {
     const newVal = !useSpacePancakes;
     setUseSpacePancakes(newVal);
@@ -54,7 +52,7 @@ export function HexagonGame() {
     }
   }, [token, navigate, initGame]);
 
-  const handleDrop = (item: any, coord: any) => {
+  const handleDrop = (item: { id: number }, coord: { q: number; r: number }) => {
     addPancakeToHex(item.id, coord);
   };
 
@@ -66,7 +64,7 @@ export function HexagonGame() {
 
   const handleBack = () => navigate('/');
 
-  const activeIcon = useSpacePancakes && skins.hexagon.hasSpacePancakes ? '🌌' : '🥞';
+  const spaceActive = useSpacePancakes && skins.hexagon.hasSpacePancakes;
 
   if (skinsLoading) {
     return (
@@ -85,20 +83,29 @@ export function HexagonGame() {
         width="wide"
         stats={
           <>
-            <ScoreChip label="Счёт" value={`${activeIcon} ${score}`} className="[&_span:last-child]:text-horizon-gold" />
-            <ScoreChip label="Уровень" value={level} className="[&_span:last-child]:text-photon-cyan" />
+            <ScoreChip
+              label="Счёт"
+              value={score}
+              className="[&_span:last-child]:text-horizon-gold"
+            />
+            <ScoreChip
+              label="Уровень"
+              value={level}
+              className="[&_span:last-child]:text-photon-cyan"
+            />
             {skins.hexagon.hasSpacePancakes && (
               <button
+                type="button"
                 onClick={toggleSpacePancakes}
                 title="Космические блины"
                 className={cn(
                   'rounded-sm border px-3 py-1.5 text-sm transition-colors',
-                  useSpacePancakes
+                  spaceActive
                     ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
                     : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
                 )}
               >
-                {useSpacePancakes ? '🌌' : '🥞'} Космические блины
+                Космические блины
               </button>
             )}
           </>
@@ -107,7 +114,7 @@ export function HexagonGame() {
           <>
             <Leaderboard gameId="hexagon" />
             <Button variant="danger" size="sm" onClick={handleEndGame}>
-              ⏹️ Завершить
+              Завершить
             </Button>
           </>
         }
@@ -116,24 +123,27 @@ export function HexagonGame() {
           <HexGrid
             tiles={tiles}
             onDrop={handleDrop}
-            skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
+            skinMode={spaceActive ? 'space' : 'default'}
           />
-          <Tray
-            stacks={tray}
-            skinMode={useSpacePancakes && skins.hexagon.hasSpacePancakes ? 'space' : 'default'}
-          />
+          <Tray stacks={tray} skinMode={spaceActive ? 'space' : 'default'} />
         </div>
       </GameShell>
 
-      <Modal open={isGameOver} onClose={() => {}} title={`${activeIcon} Игра окончена! ${activeIcon}`}>
+      <Modal open={isGameOver} onClose={() => {}} title="Игра окончена">
         <p className="text-text-secondary">Вы испекли {finalScore} блинов!</p>
-        <p className="mt-1 text-text-secondary">Стопка блинов пополнилась! 🎉</p>
+        <p className="mt-1 text-text-secondary">Стопка блинов пополнилась.</p>
+
+        <div className="mt-5 text-center">
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Очки</p>
+          <p className="font-hud text-3xl font-bold text-horizon-gold">{finalScore}</p>
+        </div>
+
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" onClick={() => initGame()}>
-            🔄 Новая игра
+          <Button variant="primary" size="sm" onClick={() => initGame()}>
+            Новая игра
           </Button>
-          <Button variant="ghost" onClick={handleBack}>
-            🏠 На главную
+          <Button variant="ghost" size="sm" onClick={handleBack}>
+            На главную
           </Button>
         </div>
       </Modal>

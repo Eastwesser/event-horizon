@@ -34,12 +34,78 @@
   min-height: 0;
   max-height: 100%;
   overflow: hidden;
+  transform-origin: center center;
+}
+
+.hex-grid-container--shake {
+  animation: eh-hex-shake 420ms ease-out;
 }
 
 .hex-grid-svg {
   width: 100%;
   height: 100%;
   max-height: min(52dvh, 520px);
+}
+
+.hex-cell {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hex-cell--valid polygon {
+  stroke: #4ade80;
+  stroke-width: 2.5;
+  filter: brightness(1.12);
+}
+
+.hex-cell--hover-valid polygon {
+  stroke: #67e8f9;
+  stroke-width: 3.5;
+  filter: brightness(1.2);
+}
+
+.hex-cell--hover-invalid polygon {
+  stroke: #ff6b6b;
+  stroke-width: 3;
+  filter: brightness(0.92);
+}
+
+.hex-cell--pulse {
+  animation: eh-hex-pulse 320ms ease-out;
+}
+
+@keyframes eh-hex-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  15% {
+    transform: translate(-5px, 1px);
+  }
+  30% {
+    transform: translate(5px, -2px);
+  }
+  45% {
+    transform: translate(-4px, 1px);
+  }
+  60% {
+    transform: translate(3px, 2px);
+  }
+  75% {
+    transform: translate(-2px, -1px);
+  }
+}
+
+@keyframes eh-hex-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ========== TRAY ========== */

@@ -27,12 +27,12 @@ Start here. Low risk, each item independent.
 
 - [x] **/shop/items thin DTO** — M · low · — Logical wrap-up of v1.0.9 catalog work. *(Inventory list DTO already shipped; this is the shop-side twin.)*
 - [x] **Реальные товары** — M · low · 2–3 days. Drop placeholders (Ключница Дракон…); keep Berserk CCG cards. Needs manual keep/delete list + SQL/script.
-- [ ] **Полиш игр** — M–L per game · med · ~1 week total. **One game per PR, sequentially** (not 5 games in parallel).
+- [x] **Полиш игр** — M–L per game · med · ~1 week total. **One game per PR, sequentially** (not 5 games in parallel). ✅ **Wave 2 #6 closed 04.10.2026** (5/5).
   - [x] Flappy — textures / polish · ✅ **Done 04.10.2026** (draw helpers, parallax, Modal GO, shake/flap; physics untouched)
   - [x] Towers — animations / GAME OVER · ✅ **Done 04.10.2026** (draw helpers, Modal GO, shake/drop pulse; physics untouched)
   - [x] Hanoi — drag polish · ✅ **Done 04.10.2026** (target hover valid/invalid, invalid shake, Modal emoji strip; rules untouched)
-  - [x] Memory — flip / skins
-  - [ ] Hexagon — gameplay polish
+  - [x] Memory — flip / skins · ✅ **Done 04.10.2026**
+  - [x] Hexagon — gameplay polish · ✅ **Done 04.10.2026** (valid-hex drag highlight, place/clear pulse, invalid shake, Modal plain labels; rules untouched)
 - [x] **Лампочки как бусты в играх** — M · med · Game service + UI
 - [x] **Уровни сложности (1–20)** — M · med · Game service *(Flappy 1–10 pilot)*
 - [x] **Достижения (achievements)** — M · med · ✅ **Done 04.10.2026.** Profile `achievements` + `user_achievements`; unlock on `score.updated` (+ GetProfile backfill); RU seed; SVG icon names; FE Profile API badges; toast new only (silent first seed).
