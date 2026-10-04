@@ -1,15 +1,15 @@
 // frontend/src/components/Games/Hexagon/HexGrid.tsx
 import { useDrop } from 'react-dnd';
-import { useRef } from 'react';
-import { 
-  type HexCoord, 
-  hexToPixel, 
-  getHexagonPoints, 
-  HEX_GRID, 
-  pancakeEmoji, 
-  pancakeColor, 
-  EMPTY_COLOR, 
-  HEX_STROKE 
+import { useEffect, useRef, useState } from 'react';
+import {
+  type HexCoord,
+  hexToPixel,
+  getHexagonPoints,
+  HEX_GRID,
+  pancakeEmoji,
+  pancakeColor,
+  EMPTY_COLOR,
+  HEX_STROKE,
 } from '../../../utils/hexagon';
 
 interface HexTile {
@@ -18,48 +18,65 @@ interface HexTile {
   count: number;
 }
 
+interface DragPancake {
+  id: number;
+  type: string;
+  count: number;
+}
+
 interface HexGridProps {
   tiles: HexTile[];
-  onDrop: (item: any, coord: HexCoord) => void;
+  onDrop: (item: DragPancake, coord: HexCoord) => void;
   skinMode?: 'default' | 'space';
 }
 
-// Расширяем маппинг для космических блинов - используем реальные типы из hexagon.ts
 const spaceEmojis: Record<string, string> = {
-  nutella: '🌙',      // шоколад → луна
-  strawberry: '⭐',   // клубника → звезда
-  fish: '🌌',         // рыба → космос (галактика)
-  sausage: '☄️',      // сосиска → комета
-  chicken: '🪐',      // курица → сатурн
-  caesar: '🌠',       // цезарь → падающая звезда
-  cranberry: '✨',    // клюква → искры/звезды
-  pancake: '☀️',      // обычный блин → солнце
+  nutella: '🌙',
+  strawberry: '⭐',
+  fish: '🌌',
+  sausage: '☄️',
+  chicken: '🪐',
+  caesar: '🌠',
+  cranberry: '✨',
+  pancake: '☀️',
   default: '🌌',
 };
 
 const spaceColors: Record<string, string> = {
-  nutella: '#4A2C6B',    // фиолетовый (луна)
-  strawberry: '#A29BFE', // светло-фиолетовый (звезда)
-  fish: '#6C5CE7',       // фиолетовый (космос)
-  sausage: '#74B9FF',    // огненно-красный (комета)
-  chicken: '#E17055',    // желтый (сатурн)
-  caesar: '#FDA7DF',     // розовый (падающая звезда)
-  cranberry: '#00B894',  // зеленый (искры)
-  pancake: '#FDCB6E',    // желтый (солнце)
+  nutella: '#4A2C6B',
+  strawberry: '#A29BFE',
+  fish: '#6C5CE7',
+  sausage: '#74B9FF',
+  chicken: '#E17055',
+  caesar: '#FDA7DF',
+  cranberry: '#00B894',
+  pancake: '#FDCB6E',
   default: '#6C5CE7',
 };
+
+function coordKey(c: HexCoord): string {
+  return `${c.q},${c.r}`;
+}
+
+function sameCoord(a: HexCoord | null | undefined, b: HexCoord): boolean {
+  return !!a && a.q === b.q && a.r === b.r;
+}
 
 export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
   const svgRef = useRef<SVGSVGElement>(null);
-  
-  const allPixels = HEX_GRID.map(coord => hexToPixel(coord.q, coord.r));
-  const minX = Math.min(...allPixels.map(p => p.x)) - RADIUS;
-  const maxX = Math.max(...allPixels.map(p => p.x)) + RADIUS;
-  const minY = Math.min(...allPixels.map(p => p.y)) - RADIUS;
-  const maxY = Math.max(...allPixels.map(p => p.y)) + RADIUS;
-  
+  const prevTilesRef = useRef<HexTile[] | null>(null);
+  const [hoverCoord, setHoverCoord] = useState<HexCoord | null>(null);
+  const [pulseKeys, setPulseKeys] = useState<Set<string>>(() => new Set());
+  const [boardShake, setBoardShake] = useState(false);
+
+  const allPixels = HEX_GRID.map((coord) => hexToPixel(coord.q, coord.r));
+  const minX = Math.min(...allPixels.map((p) => p.x)) - RADIUS;
+  const maxX = Math.max(...allPixels.map((p) => p.x)) + RADIUS;
+  const minY = Math.min(...allPixels.map((p) => p.y)) - RADIUS;
+  const maxY = Math.max(...allPixels.map((p) => p.y)) + RADIUS;
+
   const width = maxX - minX;
   const height = maxY - minY;
   const offsetX = -minX;
@@ -81,8 +98,6 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
   const clientToViewBox = (clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
     if (!svg) return null;
-    // CTM accounts for preserveAspectRatio="meet" letterboxing after h-dvh resize.
-    // Naive scaleX/scaleY over the full CSS box maps off-center clicks to neighbors.
     const ctm = svg.getScreenCTM();
     if (!ctm) return null;
     const pt = svg.createSVGPoint();
@@ -92,26 +107,99 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
     return { x: local.x, y: local.y };
   };
 
-  const [{ isOver }, dropRef] = useDrop(() => ({
-    accept: 'pancake',
-    drop: (item: any, monitor) => {
-      const clientOffset = monitor.getClientOffset();
-      if (!clientOffset) return;
+  const pulseHex = (coord: HexCoord) => {
+    const key = coordKey(coord);
+    setPulseKeys((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+    window.setTimeout(() => {
+      setPulseKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }, 320);
+  };
 
-      const view = clientToViewBox(clientOffset.x, clientOffset.y);
-      if (!view) return;
+  const triggerShake = () => {
+    setBoardShake(true);
+    window.setTimeout(() => setBoardShake(false), 420);
+  };
 
-      const coord = getHexAtPixel(view.x, view.y);
-      if (coord) {
-        onDrop(item, coord);
+  const isValidPlacement = (tile: HexTile | undefined, dragType: string | undefined): boolean => {
+    if (!tile || !dragType) return false;
+    return tile.type === 'empty' || tile.type === dragType;
+  };
+
+  // Collect pulse: UI-observe clear (tile → empty). Skip mass resets (new game).
+  useEffect(() => {
+    const prev = prevTilesRef.current;
+    prevTilesRef.current = tiles;
+    if (!prev) return;
+
+    const cleared: HexCoord[] = [];
+    for (const before of prev) {
+      if (before.type === 'empty') continue;
+      const after = tiles.find((t) => t.coord.q === before.coord.q && t.coord.r === before.coord.r);
+      if (after && after.type === 'empty') {
+        cleared.push(before.coord);
       }
-    },
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  }));
+    }
+    if (cleared.length === 0 || cleared.length > 6) return;
+    for (const coord of cleared) pulseHex(coord);
+  }, [tiles]);
 
-  // Получение эмодзи с учетом скина
+  const [{ isOver, dragItem }, dropRef] = useDrop(
+    () => ({
+      accept: 'pancake',
+      hover: (item: DragPancake, monitor) => {
+        const clientOffset = monitor.getClientOffset();
+        if (!clientOffset) {
+          setHoverCoord(null);
+          return;
+        }
+        const view = clientToViewBox(clientOffset.x, clientOffset.y);
+        if (!view) {
+          setHoverCoord(null);
+          return;
+        }
+        setHoverCoord(getHexAtPixel(view.x, view.y));
+      },
+      drop: (item: DragPancake, monitor) => {
+        const clientOffset = monitor.getClientOffset();
+        if (!clientOffset) return;
+
+        const view = clientToViewBox(clientOffset.x, clientOffset.y);
+        if (!view) return;
+
+        const coord = getHexAtPixel(view.x, view.y);
+        if (!coord) return;
+
+        const tile = tiles.find((t) => t.coord.q === coord.q && t.coord.r === coord.r);
+        const valid = isValidPlacement(tile, item.type);
+
+        onDrop(item, coord);
+
+        if (!valid) {
+          triggerShake();
+          return;
+        }
+        pulseHex(coord);
+      },
+      collect: (monitor) => ({
+        isOver: !!monitor.isOver(),
+        dragItem: monitor.getItem() as DragPancake | null,
+      }),
+    }),
+    [tiles, onDrop],
+  );
+
+  useEffect(() => {
+    if (!isOver) setHoverCoord(null);
+  }, [isOver]);
+
   const getPancakeEmoji = (type: string) => {
     if (skinMode === 'space') {
       return spaceEmojis[type] || spaceEmojis.default || '🌌';
@@ -119,7 +207,6 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
     return pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞';
   };
 
-  // Получение цвета с учетом скина
   const getPancakeColorFn = (type: string) => {
     if (skinMode === 'space') {
       return spaceColors[type] || spaceColors.default || '#6C5CE7';
@@ -127,42 +214,79 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
     return pancakeColor[type as keyof typeof pancakeColor] || '#DEB887';
   };
 
+  const dragging = !!dragItem;
+
   return (
-    <div ref={dropRef as any} className="hex-grid-container">
-      <svg 
+    <div
+      ref={dropRef as any}
+      className={['hex-grid-container', boardShake ? 'hex-grid-container--shake' : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <svg
         ref={svgRef}
         className="hex-grid-svg"
-        width="100%" 
+        width="100%"
         height="100%"
         viewBox={`${-50} ${-50} ${width + 100} ${height + 100}`}
         style={{ maxWidth: '900px', margin: '0 auto', cursor: isOver ? 'copy' : 'default' }}
       >
         {HEX_GRID.map((coord) => {
-          const tile = tiles.find(t => t.coord.q === coord.q && t.coord.r === coord.r);
+          const tile = tiles.find((t) => t.coord.q === coord.q && t.coord.r === coord.r);
           const { x, y } = hexToPixel(coord.q, coord.r);
           const type = tile?.type || 'empty';
           const count = tile?.count || 0;
           const fillColor = type === 'empty' ? EMPTY_COLOR : getPancakeColorFn(type);
-          
+          const key = coordKey(coord);
+          const validTarget = dragging && isValidPlacement(tile, dragItem?.type);
+          const hovered = sameCoord(hoverCoord, coord);
+          const cellClass = [
+            'hex-cell',
+            validTarget ? 'hex-cell--valid' : '',
+            dragging && hovered && validTarget ? 'hex-cell--hover-valid' : '',
+            dragging && hovered && !validTarget ? 'hex-cell--hover-invalid' : '',
+            pulseKeys.has(key) ? 'hex-cell--pulse' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+
           return (
-            <g key={`${coord.q},${coord.r}`} transform={`translate(${x + offsetX}, ${y + offsetY})`}>
-              <polygon
-                points={points}
-                fill={fillColor}
-                stroke={HEX_STROKE}
-                strokeWidth="2"
-                opacity={isOver ? 0.9 : 1}
-              />
-              {type !== 'empty' && (
-                <>
-                  <text x="0" y="-6" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
-                    {getPancakeEmoji(type)}
-                  </text>
-                  <text x="0" y="18" textAnchor="middle" fill="#ffd700" fontSize="12" fontWeight="bold" style={{ textShadow: '1px 1px 0 #000' }}>
-                    x{count}
-                  </text>
-                </>
-              )}
+            <g key={key} transform={`translate(${x + offsetX}, ${y + offsetY})`}>
+              <g className={cellClass}>
+                <polygon
+                  points={points}
+                  fill={fillColor}
+                  stroke={HEX_STROKE}
+                  strokeWidth="2"
+                  opacity={isOver && !dragging ? 0.9 : 1}
+                />
+                {type !== 'empty' && (
+                  <>
+                    <text
+                      x="0"
+                      y="-6"
+                      textAnchor="middle"
+                      fill="#fff"
+                      fontSize="18"
+                      fontWeight="bold"
+                      style={{ textShadow: '1px 1px 0 #000' }}
+                    >
+                      {getPancakeEmoji(type)}
+                    </text>
+                    <text
+                      x="0"
+                      y="18"
+                      textAnchor="middle"
+                      fill="#ffd700"
+                      fontSize="12"
+                      fontWeight="bold"
+                      style={{ textShadow: '1px 1px 0 #000' }}
+                    >
+                      x{count}
+                    </text>
+                  </>
+                )}
+              </g>
             </g>
           );
         })}
