@@ -114,64 +114,140 @@
   pointer-events: none;
 }
 
-/* ---------- Home hero — shellInner width; height follows square PNG ----------
-   At shell ~1152px, 1238×1200 → ~1117px tall. min(80vh,900px) still letterboxes. */
-.eh-hero-banner {
+/* ---------- Home hero — HTML wordmark + transparent planet (Plan A) ---------- */
+.eh-hero {
   position: relative;
   width: 100%;
-  height: auto;
-  overflow: visible;
+  height: min(60vh, 520px);
+  overflow: hidden;
   background: var(--color-void);
 }
 
-.eh-hero-banner__frame {
-  position: relative;
-  width: 100%;
-  height: auto;
-  overflow: visible;
+.eh-hero-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, color-mix(in srgb, white 70%, transparent), transparent),
+    radial-gradient(1px 1px at 28% 42%, color-mix(in srgb, white 55%, transparent), transparent),
+    radial-gradient(1.5px 1.5px at 44% 12%, color-mix(in srgb, var(--color-photon-cyan) 65%, transparent), transparent),
+    radial-gradient(1px 1px at 61% 28%, color-mix(in srgb, white 60%, transparent), transparent),
+    radial-gradient(1px 1px at 76% 16%, color-mix(in srgb, white 50%, transparent), transparent),
+    radial-gradient(1.5px 1.5px at 88% 38%, color-mix(in srgb, var(--color-horizon-gold) 55%, transparent), transparent),
+    radial-gradient(1px 1px at 18% 58%, color-mix(in srgb, white 45%, transparent), transparent),
+    radial-gradient(1px 1px at 52% 48%, color-mix(in srgb, white 40%, transparent), transparent),
+    radial-gradient(1px 1px at 93% 8%, color-mix(in srgb, white 55%, transparent), transparent);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-.eh-hero-banner__img {
-  display: block;
-  width: 100%;
-  max-width: none;
-  height: auto;
-  object-fit: contain;
-  object-position: center center;
-  image-rendering: high-quality;
-  filter: none;
-  transform: none;
-  user-select: none;
+/* Same horizontal band as «Выбери игру» (shellInner) */
+.eh-hero-wordmark-shell {
+  position: absolute;
+  top: 10%;
+  left: 0;
+  right: 0;
+  z-index: 3;
   pointer-events: none;
-  /* Soft edge blend into page void — kills the hard square */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    #000 8%,
-    #000 92%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    #000 8%,
-    #000 92%,
-    transparent 100%
-  );
+}
+
+.eh-hero-wordmark {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #c8ccd8 88%, var(--color-photon-cyan) 12%);
+  text-shadow:
+    0 0 28px color-mix(in srgb, var(--color-photon-cyan) 22%, transparent),
+    0 2px 0 color-mix(in srgb, black 40%, transparent);
+  pointer-events: auto;
+}
+
+/* Equal tracks so letters fill shell; gap slightly wider between words */
+.eh-hero-wordmark > span {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+.eh-hero-wordmark > span:first-child {
+  text-align: left;
+}
+
+.eh-hero-wordmark > span:last-child {
+  text-align: right;
+}
+
+.eh-hero-wordmark-gap {
+  flex: 1.35 1 0;
+  min-width: 0.35em;
+}
+
+.eh-hero-planet {
+  position: absolute;
+  left: 50%;
+  /* Drop so the limb sits mid/lower; wordmark keeps void sky above */
+  bottom: -22%;
+  z-index: 1;
+  width: 100%;
+  max-width: 1152px;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  /* Radial dissolve + wide side fades — kill rectangular PNG edge */
+  -webkit-mask-image:
+    radial-gradient(ellipse 75% 85% at center, #000 50%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 25%, #000 75%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-image:
+    radial-gradient(ellipse 75% 85% at center, #000 50%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 25%, #000 75%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  -webkit-mask-composite: source-in, source-in;
+  mask-composite: intersect, intersect;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
 
-.eh-hero-banner__veil {
+.eh-hero-fade-top,
+.eh-hero-fade-bottom {
   position: absolute;
-  inset: 0;
-  z-index: 1;
+  left: 0;
+  right: 0;
+  z-index: 2;
   pointer-events: none;
+}
+
+.eh-hero-fade-top {
+  top: 0;
+  height: clamp(2.5rem, 10vh, 5rem);
   background: linear-gradient(
     to bottom,
-    transparent 0%,
-    transparent 82%,
-    color-mix(in srgb, var(--color-void) 75%, transparent) 100%
+    var(--color-void) 0%,
+    color-mix(in srgb, var(--color-void) 55%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+.eh-hero-fade-bottom {
+  bottom: 0;
+  height: clamp(3.5rem, 14vh, 7rem);
+  background: linear-gradient(
+    to top,
+    var(--color-void) 0%,
+    color-mix(in srgb, var(--color-void) 70%, transparent) 45%,
+    transparent 100%
   );
 }
 
@@ -652,7 +728,7 @@ html.eh-void-hide-particles svg.eh-disk-particles {
 html.eh-void-hide-disk .eh-disk {
   display: none !important;
 }
-html.eh-void-hide-hero .eh-hero-banner {
+html.eh-void-hide-hero .eh-hero {
   display: none !important;
 }
 html.eh-void-hide-bg-nebula .bg-void,

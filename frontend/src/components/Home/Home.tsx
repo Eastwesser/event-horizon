@@ -228,20 +228,36 @@ export function Home() {
     <div className="min-h-screen bg-void font-body text-text-primary">
       <AppNavbar />
 
-      <section ref={heroRef} className="eh-hero-banner" aria-label="Event Horizon">
-        {/* Same horizontal bounds as «Выбери игру» (shellInner). */}
-        <div className={`${shellInner} eh-hero-banner__frame`}>
-          <img
-            className="eh-hero-banner__img w-full max-w-none"
-            src="/images/brand/logo-minimal.png"
-            alt=""
-            width={1238}
-            height={1200}
-            decoding="async"
-            fetchPriority="high"
-          />
-          <div className="eh-hero-banner__veil" aria-hidden="true" />
+      <section ref={heroRef} className="eh-hero" aria-label="Event Horizon">
+        <div className="eh-hero-stars" aria-hidden="true" />
+        <img
+          className="eh-hero-planet"
+          src="/images/brand/planet-hero.png"
+          alt=""
+          width={1238}
+          height={600}
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div className={`${shellInner} eh-hero-wordmark-shell`}>
+          <h1 className="eh-hero-wordmark" aria-label="EVENT HORIZON">
+            <span aria-hidden="true">E</span>
+            <span aria-hidden="true">V</span>
+            <span aria-hidden="true">E</span>
+            <span aria-hidden="true">N</span>
+            <span aria-hidden="true">T</span>
+            <span aria-hidden="true" className="eh-hero-wordmark-gap" />
+            <span aria-hidden="true">H</span>
+            <span aria-hidden="true">O</span>
+            <span aria-hidden="true">R</span>
+            <span aria-hidden="true">I</span>
+            <span aria-hidden="true">Z</span>
+            <span aria-hidden="true">O</span>
+            <span aria-hidden="true">N</span>
+          </h1>
         </div>
+        <div className="eh-hero-fade-top" aria-hidden="true" />
+        <div className="eh-hero-fade-bottom" aria-hidden="true" />
         <button
           type="button"
           className="eh-hero-scroll"
