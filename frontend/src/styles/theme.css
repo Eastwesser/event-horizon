@@ -232,7 +232,7 @@ html {
   scroll-margin-top: 80px;
 }
 
-/* ---------- VOID v2 — accretion disk (SVG Level 1, no logo) ---------- */
+/* ---------- VOID — accretion disk (stars + equator pull) ---------- */
 .eh-disk-hit {
   /* ~80px near-field around the disk */
   padding: 80px;
@@ -242,32 +242,36 @@ html {
 }
 
 .eh-disk {
-  --eh-disk-pull-duration: 700ms;
-  --eh-disk-pull-in: 1.5s;
+  --eh-disk-leave: 700ms;
+  --eh-disk-pull-in: 1.8s;
+  --eh-disk-particle-delay: 0.95s;
   position: relative;
   width: min(420px, 70vw);
   aspect-ratio: 1;
   cursor: pointer;
   isolation: isolate;
+  perspective: 900px;
+  overflow: visible;
 }
 
+/* Soft circular glow — radial only (no filter:blur → no square clip edge). */
 .eh-disk-glow {
   position: absolute;
-  inset: 8%;
+  inset: -80px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
   background: radial-gradient(
-    circle at 50% 50%,
-    color-mix(in srgb, var(--color-horizon-gold) 35%, transparent) 0%,
-    color-mix(in srgb, var(--color-photon-cyan) 18%, transparent) 42%,
-    transparent 70%
+    circle at center,
+    color-mix(in srgb, var(--color-horizon-gold) 40%, transparent) 0%,
+    color-mix(in srgb, var(--color-horizon-gold) 18%, transparent) 28%,
+    color-mix(in srgb, var(--color-photon-cyan) 14%, transparent) 48%,
+    transparent 72%
   );
   opacity: 0.55;
-  filter: blur(18px);
   transition:
-    opacity var(--eh-disk-pull-duration) ease-out,
-    transform var(--eh-disk-pull-duration) ease-out;
+    opacity var(--eh-disk-leave) ease-out,
+    transform var(--eh-disk-leave) ease-out;
   transform: scale(1);
 }
 
@@ -275,27 +279,36 @@ html {
   position: absolute;
   inset: 0;
   z-index: 1;
-  transition: transform var(--eh-disk-pull-duration) ease-out;
   transform-origin: center;
+  transform-style: preserve-3d;
+  transition: transform var(--eh-disk-leave) ease-out;
 }
 
+/* Mild 3D tip so the flattened equator reads as a disc on a sphere. */
 .eh-disk--pull .eh-disk-pull {
-  transform: scale(0.75);
+  transform: rotateX(52deg);
   transition-duration: var(--eh-disk-pull-in);
+  transition-timing-function: cubic-bezier(0.22, 0.8, 0.28, 1);
   will-change: transform;
 }
 
 .eh-disk-rings {
   position: absolute;
   inset: 0;
+  transform-style: preserve-3d;
 }
 
 /* Parent keeps elliptical scaleY; ::before spins so transform isn't overwritten. */
 .eh-disk-ring {
+  --ry: 0.4;
+  --tilt: 0deg;
   position: absolute;
   inset: 0;
   margin: auto;
   border-radius: 50%;
+  transform: scaleY(var(--ry)) rotate(var(--tilt));
+  transition: transform var(--eh-disk-leave) ease-out;
+  transform-origin: center;
 }
 
 .eh-disk-ring::before {
@@ -309,12 +322,15 @@ html {
   mask-composite: exclude;
   transform-origin: center;
   animation: eh-disk-spin linear infinite;
-  transition: opacity var(--eh-disk-pull-duration) ease-out;
+  transition:
+    opacity var(--eh-disk-leave) ease-out,
+    box-shadow var(--eh-disk-leave) ease-out;
 }
 
 /* Outer → inner: slower → faster; gold / cyan / violet */
 .eh-disk-ring--r1 {
-  transform: scaleY(0.28) rotate(-10deg);
+  --ry: 0.28;
+  --tilt: -10deg;
 }
 .eh-disk-ring--r1::before {
   animation-duration: 160s;
@@ -330,7 +346,8 @@ html {
 }
 
 .eh-disk-ring--r2 {
-  transform: scaleY(0.42) rotate(18deg);
+  --ry: 0.42;
+  --tilt: 18deg;
 }
 .eh-disk-ring--r2::before {
   animation-duration: 120s;
@@ -347,7 +364,8 @@ html {
 }
 
 .eh-disk-ring--r3 {
-  transform: scaleY(0.58) rotate(-28deg);
+  --ry: 0.58;
+  --tilt: -28deg;
 }
 .eh-disk-ring--r3::before {
   animation-duration: 90s;
@@ -363,7 +381,8 @@ html {
 }
 
 .eh-disk-ring--r4 {
-  transform: scaleY(0.78) rotate(55deg);
+  --ry: 0.78;
+  --tilt: 55deg;
 }
 .eh-disk-ring--r4::before {
   animation-duration: 60s;
@@ -380,7 +399,8 @@ html {
 }
 
 .eh-disk-ring--r5 {
-  transform: scaleY(0.94) rotate(82deg);
+  --ry: 0.94;
+  --tilt: 82deg;
 }
 .eh-disk-ring--r5::before {
   animation-duration: 40s;
@@ -407,8 +427,8 @@ html {
   transform: translate(-50%, -50%) scale(1);
   transform-origin: center;
   transition:
-    transform var(--eh-disk-pull-duration) ease-out,
-    box-shadow var(--eh-disk-pull-duration) ease-out;
+    transform var(--eh-disk-leave) ease-out,
+    box-shadow var(--eh-disk-leave) ease-out;
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
     0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
@@ -427,7 +447,8 @@ html {
 }
 
 .eh-disk-particle {
-  opacity: 0.55;
+  opacity: 0.62;
+  /* view-box so spiral translate uses SVG units toward (50,50). */
   transform-box: view-box;
   transform-origin: var(--ox) var(--oy);
 }
@@ -457,24 +478,34 @@ html {
   animation-delay: var(--delay);
 }
 
-/* --- Pull (pointer on disk) --- */
+/* --- Pull: align once → hold; glow pulse ∞; particles spiral ∞ --- */
 .eh-disk--pull .eh-disk-glow {
-  opacity: 1;
-  transform: scale(1.12);
+  /* (a) ramp once, (b) pulse forever while --pull is on */
+  animation:
+    eh-disk-glow-align 1.35s ease-out forwards,
+    eh-disk-glow-pulse 1.6s ease-in-out 1.35s infinite;
 }
 
-.eh-disk--pull .eh-disk-ring--r1::before { animation-duration: 90s; }
-.eh-disk--pull .eh-disk-ring--r2::before { animation-duration: 70s; }
-.eh-disk--pull .eh-disk-ring--r3::before { animation-duration: 50s; }
-.eh-disk--pull .eh-disk-ring--r4::before { animation-duration: 36s; }
-.eh-disk--pull .eh-disk-ring--r5::before { animation-duration: 22s; }
+/* Collapse vertical semi-axis → flat equatorial disc; hold spin. */
+.eh-disk--pull .eh-disk-ring {
+  --ry: 0.06;
+  --tilt: 0deg;
+  transition-duration: 1.35s;
+  transition-timing-function: cubic-bezier(0.22, 0.8, 0.28, 1);
+}
 
 .eh-disk--pull .eh-disk-ring::before {
   opacity: 1;
+  animation-play-state: paused;
+  box-shadow:
+    0 0 10px 1px color-mix(in srgb, var(--color-horizon-gold) 55%, transparent),
+    0 0 28px 4px color-mix(in srgb, var(--color-photon-cyan) 28%, transparent);
+  transition-duration: var(--eh-disk-pull-in);
 }
 
 .eh-disk--pull .eh-disk-core {
-  transform: translate(-50%, -50%) scale(1.06);
+  transform: translate(-50%, -50%) scale(1.04);
+  transition-duration: var(--eh-disk-pull-in);
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 95%, transparent),
     0 0 52px 16px color-mix(in srgb, var(--color-horizon-gold) 78%, transparent),
@@ -483,34 +514,37 @@ html {
     inset 0 0 48px 18px #000;
 }
 
+/* Particles wait for flatten (~0.95s) then spiral in — loop while hovering. */
 .eh-disk--pull .eh-disk-particle {
-  animation: eh-disk-spiral-in var(--dur) ease-in infinite;
-  animation-delay: var(--delay);
+  animation-name: eh-disk-spiral-in;
+  animation-duration: var(--dur);
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+  animation-delay: calc(var(--eh-disk-particle-delay) + var(--delay));
+  animation-fill-mode: none;
 }
 
 /* --- Hot: hover > 2s --- */
 .eh-disk--hot .eh-disk-glow {
-  opacity: 1;
-  transform: scale(1.2);
-  filter: blur(22px);
+  animation:
+    eh-disk-glow-align 1.35s ease-out forwards,
+    eh-disk-glow-pulse 1.1s ease-in-out 1.35s infinite;
 }
 
 .eh-disk--hot .eh-disk-pull {
-  transform: scale(0.68);
+  transform: rotateX(62deg);
 }
 
-.eh-disk--hot .eh-disk-ring--r1::before { animation-duration: 55s; }
-.eh-disk--hot .eh-disk-ring--r2::before { animation-duration: 42s; }
-.eh-disk--hot .eh-disk-ring--r3::before { animation-duration: 30s; }
-.eh-disk--hot .eh-disk-ring--r4::before { animation-duration: 20s; }
-.eh-disk--hot .eh-disk-ring--r5::before { animation-duration: 12s; }
+.eh-disk--hot .eh-disk-ring {
+  --ry: 0.04;
+}
 
 .eh-disk--hot .eh-disk-particle {
   animation-duration: calc(var(--dur) / 1.5);
 }
 
 .eh-disk--hot .eh-disk-core {
-  transform: translate(-50%, -50%) scale(1.1);
+  transform: translate(-50%, -50%) scale(1.08);
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 100%, transparent),
     0 0 64px 20px color-mix(in srgb, var(--color-horizon-gold) 90%, transparent),
@@ -524,35 +558,61 @@ html {
   to { transform: rotate(360deg); }
 }
 
+@keyframes eh-disk-glow-align {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes eh-disk-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(1.14);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.26);
+  }
+}
+
 @keyframes eh-disk-drift {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.5;
+    transform: translate(0, 0) rotate(var(--rot, 0deg)) scale(1);
+    opacity: 0.55;
   }
   50% {
-    transform: translate(calc((50px - var(--ox)) * 0.08), calc((50px - var(--oy)) * 0.08)) scale(1.05);
-    opacity: 0.75;
+    transform:
+      translate(calc((50px - var(--ox)) * 0.08), calc((50px - var(--oy)) * 0.08))
+      rotate(var(--rot, 0deg))
+      scale(1.08);
+    opacity: 0.85;
   }
 }
 
 @keyframes eh-disk-spiral-in {
   0% {
-    opacity: 0.9;
-    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0.95;
+    transform: translate(0, 0) rotate(var(--rot, 0deg)) scale(1);
   }
   70% {
     opacity: 0.45;
     transform:
       translate(calc((50px - var(--ox)) * 0.72), calc((50px - var(--oy)) * 0.72))
-      rotate(calc(var(--spin) * 160deg))
+      rotate(calc(var(--rot, 0deg) + var(--spin) * 160deg))
       scale(0.45);
   }
   100% {
     opacity: 0;
     transform:
       translate(calc(50px - var(--ox)), calc(50px - var(--oy)))
-      rotate(calc(var(--spin) * 240deg))
+      rotate(calc(var(--rot, 0deg) + var(--spin) * 240deg))
       scale(0.08);
   }
 }
@@ -584,49 +644,73 @@ html {
 
 /* Prefer reduced motion for UI chrome — but do NOT blanket-kill transitions
    on game mechanics (Memory flip, Hanoi ring move). Those are intentional
-   feedback for player actions. */
+   feedback for player actions.
+   DEV override: <html class="eh-motion-force"> from ?motion=force skips these. */
 @media (prefers-reduced-motion: reduce) {
-  html {
+  html:not(.eh-motion-force) {
     scroll-behavior: auto;
   }
 
-  .eh-stagger-in,
-  .eh-glow,
-  .eh-hero-scroll__chevron {
+  html:not(.eh-motion-force) .eh-stagger-in,
+  html:not(.eh-motion-force) .eh-glow,
+  html:not(.eh-motion-force) .eh-hero-scroll__chevron {
     animation: none !important;
   }
 
-  .eh-stagger-in {
+  html:not(.eh-motion-force) .eh-stagger-in {
     opacity: 1;
     transform: none;
   }
 
-  /* VOID — hard off: static disk, no spin / particles / pull */
-  .eh-disk-ring::before,
-  .eh-disk-particle,
-  .eh-disk--near .eh-disk-particle,
-  .eh-disk--pull .eh-disk-particle,
-  .eh-disk--hot .eh-disk-particle {
+  /* VOID — hard off: static disk, no spin / particles / equator / pull */
+  html:not(.eh-motion-force) .eh-disk-ring::before,
+  html:not(.eh-motion-force) .eh-disk-particle,
+  html:not(.eh-motion-force) .eh-disk--near .eh-disk-particle,
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-particle,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-particle {
     animation: none !important;
   }
 
-  .eh-disk--pull .eh-disk-pull,
-  .eh-disk--hot .eh-disk-pull {
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-pull,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-pull {
     transform: none !important;
     will-change: auto;
+    transition: none !important;
   }
 
-  .eh-disk--near .eh-disk-glow,
-  .eh-disk--pull .eh-disk-glow,
-  .eh-disk--hot .eh-disk-glow {
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r1 { --ry: 0.28; --tilt: -10deg; }
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r2 { --ry: 0.42; --tilt: 18deg; }
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r3 { --ry: 0.58; --tilt: -28deg; }
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r4 { --ry: 0.78; --tilt: 55deg; }
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring--r5 { --ry: 0.94; --tilt: 82deg; }
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring--r1 { --ry: 0.28; --tilt: -10deg; }
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring--r2 { --ry: 0.42; --tilt: 18deg; }
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring--r3 { --ry: 0.58; --tilt: -28deg; }
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring--r4 { --ry: 0.78; --tilt: 55deg; }
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring--r5 { --ry: 0.94; --tilt: 82deg; }
+
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring,
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-ring::before,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-ring::before {
+    transition: none !important;
+    box-shadow: none;
+    animation-play-state: running !important;
+  }
+
+  html:not(.eh-motion-force) .eh-disk--near .eh-disk-glow,
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-glow,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-glow {
+    animation: none !important;
     opacity: 0.55;
     transform: none;
-    filter: blur(18px);
+    transition: none !important;
   }
 
-  .eh-disk--pull .eh-disk-core,
-  .eh-disk--hot .eh-disk-core {
+  html:not(.eh-motion-force) .eh-disk--pull .eh-disk-core,
+  html:not(.eh-motion-force) .eh-disk--hot .eh-disk-core {
     transform: translate(-50%, -50%) scale(1);
+    transition: none !important;
     box-shadow:
       0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
       0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
@@ -634,8 +718,8 @@ html {
       inset 0 0 30px 10px #000;
   }
 
-  .eh-disk-particle {
-    opacity: 0.55;
+  html:not(.eh-motion-force) .eh-disk-particle {
+    opacity: 0.62;
     transform: none;
   }
 }

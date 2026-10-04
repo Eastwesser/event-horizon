@@ -9,6 +9,7 @@ import { AppFooter, AppNavbar, shellInner } from '../Layout/AppNavbar';
 import { gameIcon } from '../../lib/gameIcons';
 import { cn } from '../../lib/cn';
 import { VOID_PARTICLES } from './voidParticles';
+import { prefersReducedMotion, syncMotionForceClass } from '../../lib/motion';
 
 const games: {
   id: string;
@@ -88,11 +89,14 @@ export function Home() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLElement>(null);
   const diskRef = useRef<HTMLDivElement>(null);
+  const pullLayerRef = useRef<HTMLDivElement>(null);
   const hotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scrollHintFaded, setScrollHintFaded] = useState(false);
   const [diskNear, setDiskNear] = useState(false);
   const [diskPull, setDiskPull] = useState(false);
   const [diskHot, setDiskHot] = useState(false);
+  /** Bumps on each enter so particle animations remount at frame 0. */
+  const [pullCycle, setPullCycle] = useState(0);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -114,11 +118,58 @@ export function Home() {
     };
   }, []);
 
+  // VOID debug — build mode + reduced-motion once; animationstart while mounted.
+  useEffect(() => {
+    const motionForce = syncMotionForceClass();
+    const osReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    console.log('[VOID] mount', {
+      mode: import.meta.env.MODE,
+      dev: import.meta.env.DEV,
+      href: window.location.href,
+      osReducedMotion: osReduced,
+      motionForce,
+      reducedMotion: prefersReducedMotion(),
+    });
+
+    const disk = diskRef.current;
+    const pull = pullLayerRef.current;
+    if (!disk || !pull) return;
+
+    const onAnimStart = (e: AnimationEvent) => {
+      console.log('[VOID] animation start', e.animationName, (e.target as Element)?.className);
+    };
+    const onPullTransition = () => {
+      console.log('[VOID] pull transition run', getComputedStyle(pull).transform);
+    };
+    // Glow + particles bubble on disk; pull layer itself is mostly transitions.
+    disk.addEventListener('animationstart', onAnimStart);
+    pull.addEventListener('animationstart', onAnimStart);
+    pull.addEventListener('transitionrun', onPullTransition);
+
+    return () => {
+      disk.removeEventListener('animationstart', onAnimStart);
+      pull.removeEventListener('animationstart', onAnimStart);
+      pull.removeEventListener('transitionrun', onPullTransition);
+    };
+  }, []);
+
+  const logDiskClasses = (label: 'enter' | 'leave') => {
+    // Wait for React commit so --pull/--near are on the node.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = diskRef.current;
+        console.log(`[VOID] ${label}`, el?.classList?.value ?? el?.className ?? '(no disk)');
+      });
+    });
+  };
+
   const scrollToChoose = () => {
     const el = document.getElementById('choose');
     if (!el) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    el.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start',
+    });
   };
 
   const clearHotTimer = () => {
@@ -139,16 +190,19 @@ export function Home() {
   };
 
   const onDiskEnter = () => {
+    setPullCycle((n) => n + 1);
     setDiskPull(true);
     setDiskNear(true);
     clearHotTimer();
     hotTimerRef.current = setTimeout(() => setDiskHot(true), 2000);
+    logDiskClasses('enter');
   };
 
   const onDiskLeave = () => {
     setDiskPull(false);
     setDiskHot(false);
     clearHotTimer();
+    logDiskClasses('leave');
   };
 
   const onDiskHitLeave = () => {
@@ -156,6 +210,7 @@ export function Home() {
     setDiskPull(false);
     setDiskHot(false);
     clearHotTimer();
+    logDiskClasses('leave');
   };
 
   return (
@@ -214,8 +269,10 @@ export function Home() {
                   onClick={() => {
                     const el = document.getElementById('games');
                     if (!el) return;
-                    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+                    el.scrollIntoView({
+                      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                      block: 'start',
+                    });
                   }}
                 >
                   Все игры
@@ -247,7 +304,7 @@ export function Home() {
                 onPointerLeave={onDiskLeave}
               >
                 <div className="eh-disk-glow" />
-                <div className="eh-disk-pull">
+                <div ref={pullLayerRef} className="eh-disk-pull">
                   <div className="eh-disk-rings">
                     <div className="eh-disk-ring eh-disk-ring--r1" />
                     <div className="eh-disk-ring eh-disk-ring--r2" />
@@ -257,25 +314,48 @@ export function Home() {
                   </div>
                 </div>
                 <div className="eh-disk-core" />
-                <svg className="eh-disk-particles" viewBox="0 0 100 100">
-                  {VOID_PARTICLES.map((p, i) => (
-                    <circle
-                      key={i}
-                      className={`eh-disk-particle eh-disk-particle--${p.tone}`}
-                      cx={p.cx}
-                      cy={p.cy}
-                      r={p.r}
-                      style={
-                        {
-                          '--ox': `${p.cx}px`,
-                          '--oy': `${p.cy}px`,
-                          '--dur': `${p.dur}s`,
-                          '--delay': `${p.delay}s`,
-                          '--spin': p.spin,
-                        } as CSSProperties
-                      }
-                    />
-                  ))}
+                <svg key={pullCycle} className="eh-disk-particles" viewBox="0 0 100 100">
+                  <defs>
+                    <symbol id="eh-star4" viewBox="0 0 10 10">
+                      <path d="M5 0.4 L5.85 4.15 L9.6 5 L5.85 5.85 L5 9.6 L4.15 5.85 L0.4 5 L4.15 4.15 Z" />
+                    </symbol>
+                  </defs>
+                  {VOID_PARTICLES.map((p, i) => {
+                    const style = {
+                      '--ox': `${p.cx}px`,
+                      '--oy': `${p.cy}px`,
+                      '--dur': `${p.dur}s`,
+                      '--delay': `${p.delay}s`,
+                      '--spin': p.spin,
+                      '--rot': `${p.rot}deg`,
+                    } as CSSProperties;
+                    const cls = `eh-disk-particle eh-disk-particle--${p.tone}`;
+                    if (p.shape === 'dot') {
+                      return (
+                        <circle
+                          key={i}
+                          className={cls}
+                          cx={p.cx}
+                          cy={p.cy}
+                          r={p.r}
+                          style={style}
+                        />
+                      );
+                    }
+                    const size = p.r * 3.2;
+                    return (
+                      <use
+                        key={i}
+                        className={`${cls} eh-disk-particle--star4`}
+                        href="#eh-star4"
+                        x={p.cx - size / 2}
+                        y={p.cy - size / 2}
+                        width={size}
+                        height={size}
+                        style={style}
+                      />
+                    );
+                  })}
                 </svg>
               </div>
             </div>
