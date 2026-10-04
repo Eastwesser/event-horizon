@@ -249,12 +249,13 @@ html {
   width: min(420px, 70vw);
   aspect-ratio: 1;
   cursor: pointer;
-  isolation: isolate;
+  /* No isolation:isolate — it composited a 420×420 layer → faint square edge in VM. */
   perspective: 900px;
   overflow: visible;
+  background: transparent;
 }
 
-/* Soft circular glow — radial only (no filter:blur → no square clip edge). */
+/* Soft circular glow — radial only; clip-path keeps compositing bounds circular. */
 .eh-disk-glow {
   position: absolute;
   inset: -80px;
@@ -264,10 +265,13 @@ html {
   background: radial-gradient(
     circle at center,
     color-mix(in srgb, var(--color-horizon-gold) 40%, transparent) 0%,
-    color-mix(in srgb, var(--color-horizon-gold) 18%, transparent) 28%,
-    color-mix(in srgb, var(--color-photon-cyan) 14%, transparent) 48%,
-    transparent 72%
+    color-mix(in srgb, var(--color-horizon-gold) 18%, transparent) 26%,
+    color-mix(in srgb, var(--color-photon-cyan) 12%, transparent) 45%,
+    transparent 68%,
+    rgba(0, 0, 0, 0) 100%
   );
+  /* Geometry itself is a circle — avoids rectangular layer silhouette. */
+  clip-path: circle(50% at center);
   opacity: 0.55;
   transition:
     opacity var(--eh-disk-leave) ease-out,
@@ -282,6 +286,7 @@ html {
   transform-origin: center;
   transform-style: preserve-3d;
   transition: transform var(--eh-disk-leave) ease-out;
+  background: transparent;
 }
 
 /* Mild 3D tip so the flattened equator reads as a disc on a sphere. */
@@ -289,13 +294,13 @@ html {
   transform: rotateX(52deg);
   transition-duration: var(--eh-disk-pull-in);
   transition-timing-function: cubic-bezier(0.22, 0.8, 0.28, 1);
-  will-change: transform;
 }
 
 .eh-disk-rings {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
+  background: transparent;
 }
 
 /* Parent keeps elliptical scaleY; ::before spins so transform isn't overwritten. */
@@ -309,6 +314,7 @@ html {
   transform: scaleY(var(--ry)) rotate(var(--tilt));
   transition: transform var(--eh-disk-leave) ease-out;
   transform-origin: center;
+  background: transparent;
 }
 
 .eh-disk-ring::before {
@@ -316,7 +322,8 @@ html {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  padding: 1.75px;
+  /* ~3.25px ring band (was 1.75px) — reads as a disc when flattened */
+  padding: 3.25px;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
