@@ -46,10 +46,12 @@ C1–C3 can proceed without payouts locked.
 
 ### C1. Application (S)
 
-- [ ] Route `/register-author` (auth user)
-- [ ] Form: name, portfolio, reason
-- [ ] `POST /api/authors/apply`
-- [ ] DB row: `pending`
+- [x] Route `/register-author` (auth user)
+- [x] Form: name, portfolio, reason
+- [x] `POST /api/authors/apply`
+- [x] DB row: `pending`
+- [x] Public register forced to `role=user` (no self-serve author)
+- Follow-up (later PR): `author.application.submitted` → notify admins
 
 ### C2. Admin approval (M)
 
@@ -109,7 +111,7 @@ Update this table when you tick boxes above.
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
 | 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
-| 3 Author reg | 0 / 4 phases |
+| 3 Author reg | 1 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
 

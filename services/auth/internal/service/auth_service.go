@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,7 +18,8 @@ import (
 
 const bcryptCost = 12
 
-var validPublicRoles = map[string]bool{"user": true, "author": true}
+// Public registration may only create role=user. Author is granted via Wave 3 approval.
+var validPublicRoles = map[string]bool{"user": true}
 var validRoles = map[string]bool{"user": true, "author": true, "admin": true}
 
 // TokenPair is returned by Login / RefreshToken.
@@ -72,11 +74,12 @@ func (s *authService) Register(ctx context.Context, email, password, role string
 	if existing != nil {
 		return "", "", model.ErrUserAlreadyExists
 	}
+	role = strings.TrimSpace(role)
 	if role == "" {
 		role = "user"
 	}
 	if !validPublicRoles[role] {
-		return "", "", fmt.Errorf("%w: %q cannot be self-assigned at registration", model.ErrInvalidRole, role)
+		return "", "", fmt.Errorf("%w: public registration only allows role=user", model.ErrInvalidRole)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {

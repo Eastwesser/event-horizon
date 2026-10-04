@@ -43,3 +43,21 @@ func TestListAuthorsRequest_Validate(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestSubmitApplicationRequest_Validate(t *testing.T) {
+	valid := &authorspb.SubmitApplicationRequest{
+		UserId: "u1", DisplayName: "A", Motivation: "why", ContactEmail: "a@b.c",
+	}
+	if err := valid.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&authorspb.SubmitApplicationRequest{UserId: "u1", DisplayName: "A", Motivation: "why"}).Validate(); err == nil {
+		t.Fatal("expected contact_email error")
+	}
+}
+
+func TestGetMyApplicationRequest_Validate(t *testing.T) {
+	if err := (&authorspb.GetMyApplicationRequest{}).Validate(); err == nil {
+		t.Fatal("expected error")
+	}
+}

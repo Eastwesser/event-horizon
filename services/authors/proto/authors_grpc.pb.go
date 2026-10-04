@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: proto/authors.proto
+// source: authors.proto
 
 package authors
 
@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AuthorsService_UpsertProfile_FullMethodName = "/authors.AuthorsService/UpsertProfile"
-	AuthorsService_GetAuthor_FullMethodName     = "/authors.AuthorsService/GetAuthor"
-	AuthorsService_ListAuthors_FullMethodName   = "/authors.AuthorsService/ListAuthors"
+	AuthorsService_UpsertProfile_FullMethodName     = "/authors.AuthorsService/UpsertProfile"
+	AuthorsService_GetAuthor_FullMethodName         = "/authors.AuthorsService/GetAuthor"
+	AuthorsService_ListAuthors_FullMethodName       = "/authors.AuthorsService/ListAuthors"
+	AuthorsService_SubmitApplication_FullMethodName = "/authors.AuthorsService/SubmitApplication"
+	AuthorsService_GetMyApplication_FullMethodName  = "/authors.AuthorsService/GetMyApplication"
 )
 
 // AuthorsServiceClient is the client API for AuthorsService service.
@@ -31,6 +33,9 @@ type AuthorsServiceClient interface {
 	UpsertProfile(ctx context.Context, in *UpsertProfileRequest, opts ...grpc.CallOption) (*UpsertProfileResponse, error)
 	GetAuthor(ctx context.Context, in *GetAuthorRequest, opts ...grpc.CallOption) (*GetAuthorResponse, error)
 	ListAuthors(ctx context.Context, in *ListAuthorsRequest, opts ...grpc.CallOption) (*ListAuthorsResponse, error)
+	// Wave 3 C1 — author application (approval is C2).
+	SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*SubmitApplicationResponse, error)
+	GetMyApplication(ctx context.Context, in *GetMyApplicationRequest, opts ...grpc.CallOption) (*GetMyApplicationResponse, error)
 }
 
 type authorsServiceClient struct {
@@ -68,6 +73,24 @@ func (c *authorsServiceClient) ListAuthors(ctx context.Context, in *ListAuthorsR
 	return out, nil
 }
 
+func (c *authorsServiceClient) SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*SubmitApplicationResponse, error) {
+	out := new(SubmitApplicationResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_SubmitApplication_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authorsServiceClient) GetMyApplication(ctx context.Context, in *GetMyApplicationRequest, opts ...grpc.CallOption) (*GetMyApplicationResponse, error) {
+	out := new(GetMyApplicationResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_GetMyApplication_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorsServiceServer is the server API for AuthorsService service.
 // All implementations must embed UnimplementedAuthorsServiceServer
 // for forward compatibility
@@ -75,6 +98,9 @@ type AuthorsServiceServer interface {
 	UpsertProfile(context.Context, *UpsertProfileRequest) (*UpsertProfileResponse, error)
 	GetAuthor(context.Context, *GetAuthorRequest) (*GetAuthorResponse, error)
 	ListAuthors(context.Context, *ListAuthorsRequest) (*ListAuthorsResponse, error)
+	// Wave 3 C1 — author application (approval is C2).
+	SubmitApplication(context.Context, *SubmitApplicationRequest) (*SubmitApplicationResponse, error)
+	GetMyApplication(context.Context, *GetMyApplicationRequest) (*GetMyApplicationResponse, error)
 	mustEmbedUnimplementedAuthorsServiceServer()
 }
 
@@ -90,6 +116,12 @@ func (UnimplementedAuthorsServiceServer) GetAuthor(context.Context, *GetAuthorRe
 }
 func (UnimplementedAuthorsServiceServer) ListAuthors(context.Context, *ListAuthorsRequest) (*ListAuthorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAuthors not implemented")
+}
+func (UnimplementedAuthorsServiceServer) SubmitApplication(context.Context, *SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitApplication not implemented")
+}
+func (UnimplementedAuthorsServiceServer) GetMyApplication(context.Context, *GetMyApplicationRequest) (*GetMyApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyApplication not implemented")
 }
 func (UnimplementedAuthorsServiceServer) mustEmbedUnimplementedAuthorsServiceServer() {}
 
@@ -158,6 +190,42 @@ func _AuthorsService_ListAuthors_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthorsService_SubmitApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).SubmitApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_SubmitApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).SubmitApplication(ctx, req.(*SubmitApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthorsService_GetMyApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).GetMyApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_GetMyApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).GetMyApplication(ctx, req.(*GetMyApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthorsService_ServiceDesc is the grpc.ServiceDesc for AuthorsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -177,7 +245,15 @@ var AuthorsService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ListAuthors",
 			Handler:    _AuthorsService_ListAuthors_Handler,
 		},
+		{
+			MethodName: "SubmitApplication",
+			Handler:    _AuthorsService_SubmitApplication_Handler,
+		},
+		{
+			MethodName: "GetMyApplication",
+			Handler:    _AuthorsService_GetMyApplication_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/authors.proto",
+	Metadata: "authors.proto",
 }

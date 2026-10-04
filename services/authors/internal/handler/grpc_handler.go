@@ -32,6 +32,28 @@ func toPB(a *model.Author) *pb.Author {
 	}
 }
 
+func applicationToPB(a *model.AuthorApplication) *pb.AuthorApplication {
+	if a == nil {
+		return nil
+	}
+	out := &pb.AuthorApplication{
+		Id:            a.ID,
+		UserId:        a.UserID,
+		Status:        string(a.Status),
+		DisplayName:   a.Payload.DisplayName,
+		Portfolio:     a.Payload.Portfolio,
+		Motivation:    a.Payload.Motivation,
+		ContactEmail:  a.Payload.ContactEmail,
+		CreatedAtUnix: a.CreatedAt.Unix(),
+		ReviewedBy:    a.ReviewedBy,
+		ReviewerNote:  a.ReviewerNote,
+	}
+	if a.ReviewedAt != nil {
+		out.ReviewedAtUnix = a.ReviewedAt.Unix()
+	}
+	return out
+}
+
 func (h *GRPCHandler) UpsertProfile(ctx context.Context, req *pb.UpsertProfileRequest) (*pb.UpsertProfileResponse, error) {
 	a, err := h.svc.UpsertProfile(ctx, req.GetUserId(), req.GetDisplayName(), req.GetBio(), req.GetAvatarUrl())
 	if err != nil {
@@ -60,11 +82,35 @@ func (h *GRPCHandler) ListAuthors(ctx context.Context, req *pb.ListAuthorsReques
 	return &pb.ListAuthorsResponse{Authors: out, Total: total}, nil
 }
 
+func (h *GRPCHandler) SubmitApplication(ctx context.Context, req *pb.SubmitApplicationRequest) (*pb.SubmitApplicationResponse, error) {
+	app, err := h.svc.SubmitApplication(
+		ctx,
+		req.GetUserId(),
+		req.GetCallerRole(),
+		req.GetDisplayName(),
+		req.GetPortfolio(),
+		req.GetMotivation(),
+		req.GetContactEmail(),
+	)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &pb.SubmitApplicationResponse{Application: applicationToPB(app)}, nil
+}
+
+func (h *GRPCHandler) GetMyApplication(ctx context.Context, req *pb.GetMyApplicationRequest) (*pb.GetMyApplicationResponse, error) {
+	app, err := h.svc.GetMyApplication(ctx, req.GetUserId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &pb.GetMyApplicationResponse{Application: applicationToPB(app)}, nil
+}
+
 func mapErr(err error) error {
 	switch {
-	case errors.Is(err, model.ErrNotFound):
+	case errors.Is(err, model.ErrNotFound), errors.Is(err, model.ErrApplicationMissing):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, model.ErrInvalidInput):
+	case errors.Is(err, model.ErrInvalidInput), errors.Is(err, model.ErrAlreadyPrivileged):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Errorf(codes.Internal, "%v", err)

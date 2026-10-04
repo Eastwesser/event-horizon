@@ -75,6 +75,69 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID string) (*model.A
 	return &a, nil
 }
 
+func (r *PostgresRepo) GetPendingApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error) {
+	row := r.db.QueryRow(ctx, `
+		SELECT id, user_id, status, payload, created_at, reviewed_at, reviewed_by, reviewer_note
+		FROM author_applications
+		WHERE user_id = $1 AND status = 'pending'
+		LIMIT 1`, userID)
+	return scanApplication(row)
+}
+
+func (r *PostgresRepo) GetLatestApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error) {
+	row := r.db.QueryRow(ctx, `
+		SELECT id, user_id, status, payload, created_at, reviewed_at, reviewed_by, reviewer_note
+		FROM author_applications
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT 1`, userID)
+	return scanApplication(row)
+}
+
+func (r *PostgresRepo) InsertApplication(ctx context.Context, a *model.AuthorApplication) error {
+	body, err := json.Marshal(a.Payload)
+	if err != nil {
+		return err
+	}
+	if a.ID == "" {
+		a.ID = uuid.NewString()
+	}
+	if a.CreatedAt.IsZero() {
+		a.CreatedAt = time.Now().UTC()
+	}
+	_, err = r.db.Exec(ctx, `
+		INSERT INTO author_applications
+			(id, user_id, status, payload, created_at, reviewed_at, reviewed_by, reviewer_note)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		a.ID, a.UserID, string(a.Status), body, a.CreatedAt, a.ReviewedAt, a.ReviewedBy, a.ReviewerNote)
+	return err
+}
+
+type scannable interface {
+	Scan(dest ...any) error
+}
+
+func scanApplication(row scannable) (*model.AuthorApplication, error) {
+	var (
+		a       model.AuthorApplication
+		status  string
+		payload []byte
+		reviewedAt *time.Time
+	)
+	if err := row.Scan(&a.ID, &a.UserID, &status, &payload, &a.CreatedAt, &reviewedAt, &a.ReviewedBy, &a.ReviewerNote); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, model.ErrApplicationMissing
+		}
+		return nil, err
+	}
+	a.Status = model.ApplicationStatus(status)
+	a.ReviewedAt = reviewedAt
+	if len(payload) > 0 {
+		_ = json.Unmarshal(payload, &a.Payload)
+	}
+	return &a, nil
+}
+
 func (r *PostgresRepo) List(ctx context.Context, limit, offset int) ([]*model.Author, int64, error) {
 	if limit <= 0 {
 		limit = 20

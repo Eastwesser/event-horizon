@@ -508,6 +508,12 @@ func runGateway() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		// Public registration is always role=user. Reject self-serve author/admin.
+		if role := strings.TrimSpace(req.Role); role != "" && role != "user" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "public registration only allows role=user"})
+			return
+		}
+		req.Role = ""
 		out, err := throughBreaker(authCB, c, func() (any, error) {
 			return authClient.GetClient().Register(c.Request.Context(), &req)
 		})
@@ -1291,6 +1297,66 @@ func runGateway() {
 		}
 		resp := out.(*authorsPb.UpsertProfileResponse)
 		c.JSON(http.StatusOK, resp.Author)
+	})
+
+	// Wave 3 C1 — author application (approval is C2).
+	r.POST("/api/authors/apply", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		var req struct {
+			DisplayName  string `json:"display_name"`
+			Portfolio    string `json:"portfolio"`
+			Motivation   string `json:"motivation"`
+			ContactEmail string `json:"contact_email"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if strings.TrimSpace(req.DisplayName) == "" || strings.TrimSpace(req.Motivation) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "display_name and motivation are required"})
+			return
+		}
+		contact := strings.TrimSpace(req.ContactEmail)
+		if contact == "" {
+			contact = middleware.Email(c)
+		}
+		if contact == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "contact_email is required"})
+			return
+		}
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.SubmitApplication(c.Request.Context(), &authorsPb.SubmitApplicationRequest{
+				UserId:       middleware.UserID(c),
+				CallerRole:   middleware.Role(c),
+				DisplayName:  strings.TrimSpace(req.DisplayName),
+				Portfolio:    strings.TrimSpace(req.Portfolio),
+				Motivation:   strings.TrimSpace(req.Motivation),
+				ContactEmail: contact,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.SubmitApplicationResponse)
+		c.JSON(http.StatusOK, resp.Application)
+	})
+
+	r.GET("/api/authors/me/application", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.GetMyApplication(c.Request.Context(), &authorsPb.GetMyApplicationRequest{
+				UserId: middleware.UserID(c),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.GetMyApplicationResponse)
+		c.JSON(http.StatusOK, resp.Application)
 	})
 
 	r.GET("/api/authors/:user_id", func(c *gin.Context) {

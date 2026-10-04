@@ -308,15 +308,13 @@ func TestRegisterAuthorRole(t *testing.T) {
 	repo := &mocks.UserRepository{
 		GetByEmailFn: func(ctx context.Context, email string) (*model.User, error) { return nil, nil },
 		CreateFn: func(ctx context.Context, email, passwordHash, role string) (string, error) {
-			if role != "author" {
-				t.Fatalf("role=%q", role)
-			}
-			return "uid-a", nil
+			t.Fatal("Create must not be called when role=author is rejected")
+			return "", nil
 		},
 	}
-	id, role, err := newTestService(repo).Register(context.Background(), "author@example.com", "password123", "author")
-	if err != nil || id != "uid-a" || role != "author" {
-		t.Fatalf("id=%s role=%s err=%v", id, role, err)
+	_, _, err := newTestService(repo).Register(context.Background(), "author@example.com", "password123", "author")
+	if !errors.Is(err, model.ErrInvalidRole) {
+		t.Fatalf("want ErrInvalidRole, got %v", err)
 	}
 }
 
