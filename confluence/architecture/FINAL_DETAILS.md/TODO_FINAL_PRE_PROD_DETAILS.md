@@ -108,7 +108,7 @@ Update this table when you tick boxes above.
 | Wave | Done / Total |
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
-| 2 Content + debt | 5 / 6 (+ 0 / 5 games) |
+| 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
 | 3 Author reg | 0 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
