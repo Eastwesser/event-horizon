@@ -4,26 +4,39 @@ export type VoidParticle = {
   cy: number;
   r: number;
   tone: 'gold' | 'cyan' | 'white';
+  shape: 'dot' | 'star4';
   dur: number;
   delay: number;
   spin: 1 | -1;
+  /** Extra rotation (deg) for star variety. */
+  rot: number;
 };
 
 const TONES: VoidParticle['tone'][] = ['gold', 'cyan', 'white'];
 const RADII = [0.55, 0.85, 1.25];
+
+function shapeFor(tone: VoidParticle['tone'], r: number): VoidParticle['shape'] {
+  // Tiny gold stay as dots; everything else = 4-point stars.
+  if (tone === 'gold' && r < 0.7) return 'dot';
+  return 'star4';
+}
 
 export const VOID_PARTICLES: VoidParticle[] = Array.from({ length: 30 }, (_, i) => {
   const angle = (i / 30) * Math.PI * 2 + (i % 5) * 0.17;
   const orbit = 36 + (i % 6) * 3.2;
   const cx = 50 + Math.cos(angle) * orbit;
   const cy = 50 + Math.sin(angle) * orbit * 0.52;
+  const r = RADII[i % 3];
+  const tone = TONES[i % 3];
   return {
     cx: Math.round(cx * 10) / 10,
     cy: Math.round(cy * 10) / 10,
-    r: RADII[i % 3],
-    tone: TONES[i % 3],
+    r,
+    tone,
+    shape: shapeFor(tone, r),
     dur: 0.85 + (i % 9) * 0.18,
     delay: (i % 12) * 0.11,
     spin: i % 2 === 0 ? 1 : -1,
+    rot: (i % 4) * 22,
   };
 });
