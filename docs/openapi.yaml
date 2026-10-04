@@ -498,6 +498,23 @@ paths:
                     type: integer
                   tickets:
                     type: integer
+                  achievements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        icon:
+                          type: string
+                          description: SVG IconName from FE Icon set (not emoji)
+                        unlocked_at:
+                          type: string
+                          format: date-time
         '401':
           description: Unauthorized
         '404':

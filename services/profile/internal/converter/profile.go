@@ -17,6 +17,7 @@ func ProfileToProto(p *model.Profile) *pb.GetProfileResponse {
 		BestScores: p.BestScores,
 		Lamps:      p.Lamps,
 		Tickets:    p.Tickets,
+		// Achievements are loaded separately in the gRPC handler.
 	}
 }
 

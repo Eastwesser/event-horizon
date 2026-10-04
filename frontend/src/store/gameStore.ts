@@ -507,6 +507,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
             localStorage.setItem(totalScoreKey, String(totalScore + currentScore));
+            void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         }
 
         alert('✅ Score submitted: ' + JSON.stringify(response.data));

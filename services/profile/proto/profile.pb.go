@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: proto/profile.proto
+// source: profile.proto
 
 package profile
 
@@ -31,7 +31,7 @@ type GetProfileRequest struct {
 
 func (x *GetProfileRequest) Reset() {
 	*x = GetProfileRequest{}
-	mi := &file_proto_profile_proto_msgTypes[0]
+	mi := &file_profile_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *GetProfileRequest) String() string {
 func (*GetProfileRequest) ProtoMessage() {}
 
 func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_profile_proto_msgTypes[0]
+	mi := &file_profile_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,12 +56,88 @@ func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfileRequest.ProtoReflect.Descriptor instead.
 func (*GetProfileRequest) Descriptor() ([]byte, []int) {
-	return file_proto_profile_proto_rawDescGZIP(), []int{0}
+	return file_profile_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetProfileRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
+	}
+	return ""
+}
+
+type Achievement struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Icon          string                 `protobuf:"bytes,4,opt,name=icon,proto3" json:"icon,omitempty"`                               // SVG IconName (trophy, bird, star, …) — not emoji
+	UnlockedAt    string                 `protobuf:"bytes,5,opt,name=unlocked_at,json=unlockedAt,proto3" json:"unlocked_at,omitempty"` // RFC3339
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Achievement) Reset() {
+	*x = Achievement{}
+	mi := &file_profile_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Achievement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Achievement) ProtoMessage() {}
+
+func (x *Achievement) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Achievement.ProtoReflect.Descriptor instead.
+func (*Achievement) Descriptor() ([]byte, []int) {
+	return file_profile_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Achievement) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *Achievement) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Achievement) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Achievement) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *Achievement) GetUnlockedAt() string {
+	if x != nil {
+		return x.UnlockedAt
 	}
 	return ""
 }
@@ -75,13 +151,14 @@ type GetProfileResponse struct {
 	BestScores    map[string]int32       `protobuf:"bytes,5,rep,name=best_scores,json=bestScores,proto3" json:"best_scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	Lamps         int32                  `protobuf:"varint,6,opt,name=lamps,proto3" json:"lamps,omitempty"`
 	Tickets       int32                  `protobuf:"varint,7,opt,name=tickets,proto3" json:"tickets,omitempty"`
+	Achievements  []*Achievement         `protobuf:"bytes,8,rep,name=achievements,proto3" json:"achievements,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProfileResponse) Reset() {
 	*x = GetProfileResponse{}
-	mi := &file_proto_profile_proto_msgTypes[1]
+	mi := &file_profile_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +170,7 @@ func (x *GetProfileResponse) String() string {
 func (*GetProfileResponse) ProtoMessage() {}
 
 func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_profile_proto_msgTypes[1]
+	mi := &file_profile_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +183,7 @@ func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfileResponse.ProtoReflect.Descriptor instead.
 func (*GetProfileResponse) Descriptor() ([]byte, []int) {
-	return file_proto_profile_proto_rawDescGZIP(), []int{1}
+	return file_profile_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetProfileResponse) GetUserId() string {
@@ -158,6 +235,13 @@ func (x *GetProfileResponse) GetTickets() int32 {
 	return 0
 }
 
+func (x *GetProfileResponse) GetAchievements() []*Achievement {
+	if x != nil {
+		return x.Achievements
+	}
+	return nil
+}
+
 type UpdateProfileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -170,7 +254,7 @@ type UpdateProfileRequest struct {
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_proto_profile_proto_msgTypes[2]
+	mi := &file_profile_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -182,7 +266,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_profile_proto_msgTypes[2]
+	mi := &file_profile_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -195,7 +279,7 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_proto_profile_proto_rawDescGZIP(), []int{2}
+	return file_profile_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *UpdateProfileRequest) GetUserId() string {
@@ -236,7 +320,7 @@ type UpdateProfileResponse struct {
 
 func (x *UpdateProfileResponse) Reset() {
 	*x = UpdateProfileResponse{}
-	mi := &file_proto_profile_proto_msgTypes[3]
+	mi := &file_profile_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -248,7 +332,7 @@ func (x *UpdateProfileResponse) String() string {
 func (*UpdateProfileResponse) ProtoMessage() {}
 
 func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_profile_proto_msgTypes[3]
+	mi := &file_profile_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -261,7 +345,7 @@ func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
-	return file_proto_profile_proto_rawDescGZIP(), []int{3}
+	return file_profile_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpdateProfileResponse) GetSuccess() bool {
@@ -278,13 +362,20 @@ func (x *UpdateProfileResponse) GetMessage() string {
 	return ""
 }
 
-var File_proto_profile_proto protoreflect.FileDescriptor
+var File_profile_proto protoreflect.FileDescriptor
 
-const file_proto_profile_proto_rawDesc = "" +
+const file_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/profile.proto\x12\aprofile\x1a\x17validate/validate.proto\"7\n" +
+	"\rprofile.proto\x12\aprofile\x1a\x17validate/validate.proto\"7\n" +
 	"\x11GetProfileRequest\x12\"\n" +
-	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"\xbd\x02\n" +
+	"\auser_id\x18\x01 \x01(\tB\t\xfaB\x06r\x04\x10\x01\x18@R\x06userId\"\x8e\x01\n" +
+	"\vAchievement\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x12\n" +
+	"\x04icon\x18\x04 \x01(\tR\x04icon\x12\x1f\n" +
+	"\vunlocked_at\x18\x05 \x01(\tR\n" +
+	"unlockedAt\"\xf7\x02\n" +
 	"\x12GetProfileResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -294,7 +385,8 @@ const file_proto_profile_proto_rawDesc = "" +
 	"\vbest_scores\x18\x05 \x03(\v2+.profile.GetProfileResponse.BestScoresEntryR\n" +
 	"bestScores\x12\x14\n" +
 	"\x05lamps\x18\x06 \x01(\x05R\x05lamps\x12\x18\n" +
-	"\atickets\x18\a \x01(\x05R\atickets\x1a=\n" +
+	"\atickets\x18\a \x01(\x05R\atickets\x128\n" +
+	"\fachievements\x18\b \x03(\v2\x14.profile.AchievementR\fachievements\x1a=\n" +
 	"\x0fBestScoresEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\xa4\x02\n" +
@@ -318,61 +410,63 @@ const file_proto_profile_proto_rawDesc = "" +
 	"\rUpdateProfile\x12\x1d.profile.UpdateProfileRequest\x1a\x1e.profile.UpdateProfileResponseBDZBgithub.com/Eastwesser/event-horizon/services/profile/proto;profileb\x06proto3"
 
 var (
-	file_proto_profile_proto_rawDescOnce sync.Once
-	file_proto_profile_proto_rawDescData []byte
+	file_profile_proto_rawDescOnce sync.Once
+	file_profile_proto_rawDescData []byte
 )
 
-func file_proto_profile_proto_rawDescGZIP() []byte {
-	file_proto_profile_proto_rawDescOnce.Do(func() {
-		file_proto_profile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_profile_proto_rawDesc), len(file_proto_profile_proto_rawDesc)))
+func file_profile_proto_rawDescGZIP() []byte {
+	file_profile_proto_rawDescOnce.Do(func() {
+		file_profile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_profile_proto_rawDesc), len(file_profile_proto_rawDesc)))
 	})
-	return file_proto_profile_proto_rawDescData
+	return file_profile_proto_rawDescData
 }
 
-var file_proto_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_profile_proto_goTypes = []any{
+var file_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_profile_proto_goTypes = []any{
 	(*GetProfileRequest)(nil),     // 0: profile.GetProfileRequest
-	(*GetProfileResponse)(nil),    // 1: profile.GetProfileResponse
-	(*UpdateProfileRequest)(nil),  // 2: profile.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil), // 3: profile.UpdateProfileResponse
-	nil,                           // 4: profile.GetProfileResponse.BestScoresEntry
-	nil,                           // 5: profile.UpdateProfileRequest.BestScoresEntry
+	(*Achievement)(nil),           // 1: profile.Achievement
+	(*GetProfileResponse)(nil),    // 2: profile.GetProfileResponse
+	(*UpdateProfileRequest)(nil),  // 3: profile.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil), // 4: profile.UpdateProfileResponse
+	nil,                           // 5: profile.GetProfileResponse.BestScoresEntry
+	nil,                           // 6: profile.UpdateProfileRequest.BestScoresEntry
 }
-var file_proto_profile_proto_depIdxs = []int32{
-	4, // 0: profile.GetProfileResponse.best_scores:type_name -> profile.GetProfileResponse.BestScoresEntry
-	5, // 1: profile.UpdateProfileRequest.best_scores:type_name -> profile.UpdateProfileRequest.BestScoresEntry
-	0, // 2: profile.ProfileService.GetProfile:input_type -> profile.GetProfileRequest
-	2, // 3: profile.ProfileService.UpdateProfile:input_type -> profile.UpdateProfileRequest
-	1, // 4: profile.ProfileService.GetProfile:output_type -> profile.GetProfileResponse
-	3, // 5: profile.ProfileService.UpdateProfile:output_type -> profile.UpdateProfileResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+var file_profile_proto_depIdxs = []int32{
+	5, // 0: profile.GetProfileResponse.best_scores:type_name -> profile.GetProfileResponse.BestScoresEntry
+	1, // 1: profile.GetProfileResponse.achievements:type_name -> profile.Achievement
+	6, // 2: profile.UpdateProfileRequest.best_scores:type_name -> profile.UpdateProfileRequest.BestScoresEntry
+	0, // 3: profile.ProfileService.GetProfile:input_type -> profile.GetProfileRequest
+	3, // 4: profile.ProfileService.UpdateProfile:input_type -> profile.UpdateProfileRequest
+	2, // 5: profile.ProfileService.GetProfile:output_type -> profile.GetProfileResponse
+	4, // 6: profile.ProfileService.UpdateProfile:output_type -> profile.UpdateProfileResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_profile_proto_init() }
-func file_proto_profile_proto_init() {
-	if File_proto_profile_proto != nil {
+func init() { file_profile_proto_init() }
+func file_profile_proto_init() {
+	if File_profile_proto != nil {
 		return
 	}
-	file_proto_profile_proto_msgTypes[2].OneofWrappers = []any{}
+	file_profile_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_profile_proto_rawDesc), len(file_proto_profile_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_proto_rawDesc), len(file_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_profile_proto_goTypes,
-		DependencyIndexes: file_proto_profile_proto_depIdxs,
-		MessageInfos:      file_proto_profile_proto_msgTypes,
+		GoTypes:           file_profile_proto_goTypes,
+		DependencyIndexes: file_profile_proto_depIdxs,
+		MessageInfos:      file_profile_proto_msgTypes,
 	}.Build()
-	File_proto_profile_proto = out.File
-	file_proto_profile_proto_goTypes = nil
-	file_proto_profile_proto_depIdxs = nil
+	File_profile_proto = out.File
+	file_profile_proto_goTypes = nil
+	file_profile_proto_depIdxs = nil
 }

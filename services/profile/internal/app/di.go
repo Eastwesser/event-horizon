@@ -32,6 +32,7 @@ type ScoreEvent struct {
 	GameID        string `json:"game_id"`
 	Score         int    `json:"score"`
 	IsRecord      bool   `json:"is_record"`
+	Level         int    `json:"level"`
 	LampsEarned   int    `json:"lamps_earned"`
 	TicketsEarned int    `json:"tickets_earned"`
 }
@@ -200,8 +201,9 @@ func (a *App) initRedis(ctx context.Context) error {
 
 func (a *App) initDomain(_ context.Context) error {
 	a.di.repo = repository.NewPostgresProfileRepo(a.di.dbpool)
+	achRepo := repository.NewPostgresAchievementRepo(a.di.dbpool)
 	cacheTTL := time.Duration(a.cfg.ProfileCacheTTLMin) * time.Minute
-	a.di.svc = service.NewProfileService(a.di.repo, a.di.redisRepo, cacheTTL)
+	a.di.svc = service.NewProfileService(a.di.repo, achRepo, a.di.redisRepo, cacheTTL)
 	a.di.api = handler.NewProfileHandler(a.di.svc)
 	return nil
 }
@@ -353,6 +355,10 @@ func (a *App) initSubscriptions(_ context.Context) error {
 			a.log.Error("failed to update profile", "user", event.UserID, "err", err)
 		} else {
 			a.log.Info("profile updated", "user", event.UserID, "total", profile.TotalScore)
+			// total_score = sum(best_scores); unlock after upsert (boosted runs never publish)
+			if err := svc.EvaluateAndUnlock(ctx, event.UserID, profile.BestScores, profile.TotalScore, event.GameID, event.Level); err != nil {
+				a.log.Error("failed to evaluate achievements", "user", event.UserID, "err", err)
+			}
 		}
 		_ = msg.Ack()
 	}, nats.Durable("profile-score-updated"), nats.ManualAck())

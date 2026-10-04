@@ -137,6 +137,7 @@ export function CompanionGame() {
         moves: [],
       });
       setNotif({ message: 'Забота сохранена в счёт', type: 'success' });
+      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
     } catch {
       setNotif({ message: 'Не удалось сохранить', type: 'error' });
     } finally {

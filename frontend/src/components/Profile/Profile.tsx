@@ -10,6 +10,11 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { gameIcon } from '../../lib/gameIcons';
+import {
+  achievementIcon,
+  syncAchievements,
+  type ProfileAchievement,
+} from '../../lib/achievements';
 
 const GAME_ROUTES: Record<string, string> = {
   hexagon: '/game/hexagon',
@@ -22,134 +27,80 @@ const GAME_ROUTES: Record<string, string> = {
   companion: '/game/companion',
 };
 
-type Achievement = { icon: IconName; label: string };
+const EMPTY_SCORES = {
+  hexagon: 0,
+  memory: 0,
+  flappy: 0,
+  towers: 0,
+  hanoi: 0,
+  twenty48: 0,
+  gears: 0,
+  companion: 0,
+};
 
 export function Profile() {
   const navigate = useNavigate();
   const email = localStorage.getItem('userEmail') || 'unknown@example.com';
   const userId = localStorage.getItem('userId') || '';
-
-  const storageKey = `gameScores_${userId}`;
-  const playedKey = `gamesPlayed_${userId}`;
-  const totalScoreKey = `totalScore_${userId}`;
   const nicknameKey = `nickname_${userId}`;
 
   const [stats, setStats] = useState({
     nickname: localStorage.getItem(nicknameKey) || email.split('@')[0],
     totalScore: 0,
-    bestScores: {
-      hexagon: 0,
-      memory: 0,
-      flappy: 0,
-      towers: 0,
-      hanoi: 0,
-      twenty48: 0,
-      gears: 0,
-      companion: 0,
-    },
-    gamesPlayed: {
-      hexagon: 0,
-      memory: 0,
-      flappy: 0,
-      towers: 0,
-      hanoi: 0,
-      twenty48: 0,
-      gears: 0,
-      companion: 0,
-    },
-    achievements: [] as Achievement[],
+    bestScores: { ...EMPTY_SCORES },
+    achievements: [] as ProfileAchievement[],
   });
   const [balance, setBalance] = useState({ lamps: 0, tickets: 0 });
   const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
-    const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-    const played = JSON.parse(localStorage.getItem(playedKey) || '{}');
-
-    const hexagonBest = savedScores.hexagon || 0;
-    const memoryBest = savedScores.memory || 0;
-    const flappyBest = savedScores.flappy || 0;
-    const towersBest = savedScores.towers || 0;
-    const hanoiBest = savedScores.hanoi || 0;
-    const twenty48Best = savedScores.twenty48 || 0;
-    const gearsBest = savedScores.gears || 0;
-    const companionBest = savedScores.companion || 0;
-
-    const hexagonPlayed = played.hexagon || 0;
-    const memoryPlayed = played.memory || 0;
-    const flappyPlayed = played.flappy || 0;
-    const towersPlayed = played.towers || 0;
-    const hanoiPlayed = played.hanoi || 0;
-    const twenty48Played = played.twenty48 || 0;
-    const gearsPlayed = played.gears || 0;
-    const companionPlayed = played.companion || 0;
-
-    const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
-    const gamesTotal =
-      hexagonPlayed +
-      memoryPlayed +
-      flappyPlayed +
-      towersPlayed +
-      hanoiPlayed +
-      twenty48Played +
-      gearsPlayed +
-      companionPlayed;
-
-    const achievements: Achievement[] = [];
-    if (hexagonBest >= 100) achievements.push({ icon: 'hex', label: '100 блинов' });
-    if (hexagonBest >= 500) achievements.push({ icon: 'crown', label: 'Master Pancaker' });
-    if (memoryBest >= 500) achievements.push({ icon: 'cards', label: 'Memonia Master' });
-    if (towersBest >= 100) achievements.push({ icon: 'tower', label: 'Builder Master' });
-    if (flappyBest >= 100) achievements.push({ icon: 'bird', label: 'Flappy Master' });
-    if (hanoiBest >= 900) achievements.push({ icon: 'hanoi', label: 'Hanoi Master' });
-    if (twenty48Best >= 2048) achievements.push({ icon: 'twenty48', label: 'Горизонт 2048' });
-    if (gearsBest >= 200) achievements.push({ icon: 'gears', label: 'Орбита VIII' });
-    if (companionBest >= 100) achievements.push({ icon: 'star', label: 'Заботливый' });
-    if (gamesTotal >= 10) achievements.push({ icon: 'trophy', label: '10+ игр позади' });
-    if (gamesTotal >= 50) achievements.push({ icon: 'sparkle', label: 'Одержимый' });
-
-    setStats({
-      nickname: localStorage.getItem(nicknameKey) || email.split('@')[0],
-      totalScore,
-      bestScores: {
-        hexagon: hexagonBest,
-        memory: memoryBest,
-        flappy: flappyBest,
-        towers: towersBest,
-        hanoi: hanoiBest,
-        twenty48: twenty48Best,
-        gears: gearsBest,
-        companion: companionBest,
-      },
-      gamesPlayed: {
-        hexagon: hexagonPlayed,
-        memory: memoryPlayed,
-        flappy: flappyPlayed,
-        towers: towersPlayed,
-        hanoi: hanoiPlayed,
-        twenty48: twenty48Played,
-        gears: gearsPlayed,
-        companion: companionPlayed,
-      },
-      achievements,
-    });
-
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      api
-        .get('/billing/balance/all', { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => {
-          const data = res.data || {};
-          setBalance({
-            lamps: data.lamps ?? data.Lamps ?? 0,
-            tickets: data.tickets ?? data.Tickets ?? 0,
-          });
-        })
-        .catch(() => {
-          /* ignore */
+    if (!token) return;
+
+    // Silent seed of seen-set (option a) + load badges / scores from API
+    syncAchievements({ toast: false })
+      .then(({ profile, achievements }) => {
+        const best = profile.best_scores || {};
+        setStats((prev) => ({
+          ...prev,
+          nickname:
+            profile.nickname ||
+            localStorage.getItem(nicknameKey) ||
+            email.split('@')[0],
+          totalScore: profile.total_score ?? 0,
+          bestScores: {
+            hexagon: best.hexagon || 0,
+            memory: best.memory || 0,
+            flappy: best.flappy || 0,
+            towers: best.towers || 0,
+            hanoi: best.hanoi || 0,
+            twenty48: best.twenty48 || 0,
+            gears: best.gears || 0,
+            companion: best.companion || 0,
+          },
+          achievements,
+        }));
+        if (profile.nickname) {
+          localStorage.setItem(nicknameKey, profile.nickname);
+        }
+      })
+      .catch(() => {
+        /* keep local nickname fallback */
+      });
+
+    api
+      .get('/billing/balance/all', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        const data = res.data || {};
+        setBalance({
+          lamps: data.lamps ?? data.Lamps ?? 0,
+          tickets: data.tickets ?? data.Tickets ?? 0,
         });
-    }
-  }, [storageKey, playedKey, totalScoreKey, nicknameKey, email]);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, [nicknameKey, email]);
 
   const handleSetNickname = async () => {
     const newNick = window.prompt('Новый никнейм:', stats.nickname);
@@ -173,9 +124,9 @@ export function Profile() {
   };
 
   const confirmResetStats = () => {
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(playedKey);
-    localStorage.removeItem(totalScoreKey);
+    localStorage.removeItem(`gameScores_${userId}`);
+    localStorage.removeItem(`gamesPlayed_${userId}`);
+    localStorage.removeItem(`totalScore_${userId}`);
     localStorage.removeItem(nicknameKey);
     setShowResetModal(false);
     window.location.reload();
@@ -251,10 +202,10 @@ export function Profile() {
             </IconLabel>
           </h3>
           <div className="flex flex-wrap gap-2">
-            {stats.achievements.map((ach, i) => (
-              <Badge key={i} tone="gold">
-                <IconLabel name={ach.icon} iconClassName="h-3 w-3">
-                  {ach.label}
+            {stats.achievements.map((ach) => (
+              <Badge key={ach.code} tone="gold" title={ach.description || undefined}>
+                <IconLabel name={achievementIcon(ach.icon)} iconClassName="h-3 w-3">
+                  {ach.title}
                 </IconLabel>
               </Badge>
             ))}

@@ -26,6 +26,7 @@ import { AdminPage } from './components/Admin/AdminPage';
 import { useEffect, useState } from 'react';
 import { getAccessToken, hydrateAuth } from './lib/auth';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { AchievementToast } from './components/Common/AchievementToast/AchievementToast';
 
 hydrateAuth();
 
@@ -49,6 +50,7 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary label="app">
+        <AchievementToast />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
