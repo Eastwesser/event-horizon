@@ -1,4 +1,5 @@
 // frontend/src/components/Home/Home.tsx
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -83,13 +84,66 @@ const games: {
 
 export function Home() {
   const navigate = useNavigate();
+  const heroRef = useRef<HTMLElement>(null);
+  const [scrollHintFaded, setScrollHintFaded] = useState(false);
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setScrollHintFaded(!entry.isIntersecting || entry.intersectionRatio < 0.45);
+      },
+      { threshold: [0, 0.45, 0.8] },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const scrollToChoose = () => {
+    document.getElementById('choose')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-void font-body text-text-primary">
       <AppNavbar />
 
+      <section ref={heroRef} className="eh-hero-banner" aria-label="Event Horizon">
+        <img
+          className="eh-hero-banner__img"
+          src="/images/brand/logo-minimal.png"
+          alt=""
+          width={1238}
+          height={1200}
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div className="eh-hero-banner__veil" aria-hidden="true" />
+        <button
+          type="button"
+          className="eh-hero-scroll"
+          data-faded={scrollHintFaded ? 'true' : 'false'}
+          onClick={scrollToChoose}
+          aria-label="Прокрутить к играм"
+        >
+          <svg
+            className="eh-hero-scroll__chevron"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      </section>
+
       <main className={shellInner}>
-        <section className="relative py-12 sm:py-16">
+        <section id="choose" className="relative scroll-mt-24 py-12 sm:py-16">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="text-center lg:text-left">
               <h1 className="font-display text-4xl font-bold leading-tight text-text-primary sm:text-5xl">
@@ -115,18 +169,16 @@ export function Home() {
 
             {/* Decorative accretion disk — brand mark in the core (no flagship game). */}
             <div className="eh-disk mx-auto" aria-hidden="true">
-              <div className="eh-disk-rings">
-                <div className="eh-disk-ring eh-disk-ring--lensed" />
-                <div className="eh-disk-ring eh-disk-ring--mid" />
-                <div className="eh-disk-ring eh-disk-ring--main" />
+              <div className="eh-disk-pull">
+                <div className="eh-disk-rings">
+                  <div className="eh-disk-ring eh-disk-ring--lensed" />
+                  <div className="eh-disk-ring eh-disk-ring--mid" />
+                  <div className="eh-disk-ring eh-disk-ring--main" />
+                </div>
               </div>
               <div className="eh-disk-core" />
-              <div className="absolute left-1/2 top-1/2 flex w-[42%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
-                <img
-                  src="/images/brand/logo-minimal.png"
-                  alt=""
-                  className="h-auto w-full rounded-full object-cover opacity-95"
-                />
+              <div className="eh-disk-mark">
+                <img src="/images/brand/logo-minimal.png" alt="" />
               </div>
             </div>
           </div>
