@@ -7,27 +7,73 @@ import api from '../../../services/api';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
+import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
 import { Balance, invalidateBalanceCache } from '../../Billing/Balance';
 import { cn } from '../../../lib/cn';
+import {
+  FLAPPY_H,
+  FLAPPY_W,
+  drawBird,
+  drawClouds,
+  drawPipe,
+  drawScore,
+  drawSky,
+  drawStars,
+  drawStartHint,
+} from './flappyDraw';
+import './FlappyGame.css';
 
 const BOOST_COST = 10;
+const BIRD_SIZE = 30;
+
+function IconBird({ golden }: { golden: boolean }) {
+  return (
+    <svg className="eh-flappy-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <ellipse cx="7" cy="8" rx="5" ry="4.5" fill={golden ? '#FFD700' : '#4A90D9'} />
+      <circle cx="10" cy="6.5" r="1.2" fill="#111" />
+      <path d="M11.5 8 L15 8.5 L11.5 9.2 Z" fill="#E53935" />
+    </svg>
+  );
+}
+
+function IconPipes({ rainbow }: { rainbow: boolean }) {
+  return (
+    <svg className="eh-flappy-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <defs>
+        <linearGradient id="eh-pipe-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={rainbow ? '#FF6B6B' : '#2E7D32'} />
+          <stop offset="100%" stopColor={rainbow ? '#818CF8' : '#1B5E20'} />
+        </linearGradient>
+      </defs>
+      <rect x="4" y="1" width="8" height="6" rx="1" fill="url(#eh-pipe-grad)" />
+      <rect x="3" y="6" width="10" height="2" fill="url(#eh-pipe-grad)" />
+      <rect x="3" y="9" width="10" height="2" fill="url(#eh-pipe-grad)" />
+      <rect x="4" y="11" width="8" height="4" rx="1" fill="url(#eh-pipe-grad)" />
+    </svg>
+  );
+}
 
 export function FlappyGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cloudScrollRef = useRef(0);
+  const starScrollRef = useRef(0);
+  const prevGameOver = useRef(false);
   const { skins, loading: skinsLoading } = useSkins();
 
-  // Состояния для переключения скинов
   const [useRainbowPipes, setUseRainbowPipes] = useState(false);
   const [useGoldenBird, setUseGoldenBird] = useState(false);
   const [useBoost, setUseBoost] = useState(false);
   const [boostBusy, setBoostBusy] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(1);
+  const [flapPulse, setFlapPulse] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const {
     birdY,
+    birdVelocity,
     pipes,
     score,
     gameOver,
@@ -38,13 +84,10 @@ export function FlappyGame() {
     setLevel,
     boosted,
     level,
+    PIPE_SPEED,
     lastSubmitRanked,
     lastSubmitMessage,
   } = useFlappyStore();
-
-  const GAME_WIDTH = 800;
-  const GAME_HEIGHT = 500;
-  const BIRD_SIZE = 30;
 
   // Загружаем настройки скинов / уровня из localStorage
   useEffect(() => {
@@ -120,7 +163,9 @@ export function FlappyGame() {
           void beginRun();
           return;
         }
+        if (isOver) return;
         jump();
+        pulseFlap();
       }
     };
 
@@ -191,205 +236,64 @@ export function FlappyGame() {
     }
   };
 
-  // Определяем цвета для скинов
-  const getBirdColor = () => {
-    if (useGoldenBird && skins.flappy.hasGoldenBird) {
-      return '#FFD700'; // Золотой
-    }
-    return '#4A90D9'; // Стандартный
+  const pulseFlap = () => {
+    setFlapPulse(true);
+    window.setTimeout(() => setFlapPulse(false), 90);
   };
 
-  const getPipeColor = () => {
-    if (useRainbowPipes && skins.flappy.hasRainbowPipes) {
-      return 'rainbow';
+  // Shake once when run ends
+  useEffect(() => {
+    if (gameOver && !prevGameOver.current) {
+      setShake(true);
+      const t = window.setTimeout(() => setShake(false), 420);
+      prevGameOver.current = true;
+      return () => window.clearTimeout(t);
     }
-    return '#228B22'; // Стандартный зеленый
-  };
+    if (!gameOver) prevGameOver.current = false;
+  }, [gameOver]);
 
-  // Функция для рисования радужной трубы
-  const drawRainbowPipe = (ctx: CanvasRenderingContext2D, x: number, y: number, height: number, width: number, isTop: boolean) => {
-  // Создаем градиент вдоль трубы
-  const gradient = ctx.createLinearGradient(x, y, x, y + height);
-    gradient.addColorStop(0, '#FF6B6B');
-    gradient.addColorStop(0.17, '#FFA500');
-    gradient.addColorStop(0.33, '#FFD700');
-    gradient.addColorStop(0.5, '#4ADE80');
-    gradient.addColorStop(0.67, '#60A5FA');
-    gradient.addColorStop(0.83, '#818CF8');
-    gradient.addColorStop(1, '#C084FC');
-
-    // Основная труба с градиентом
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x, y, width, height);
-
-    // Шляпка трубы (как у обычной)
-    ctx.fillStyle = gradient;
-    if (isTop) {
-      // Шляпка сверху (расширение)
-      ctx.fillRect(x - 5, y + height - 30, width + 10, 30);
-    } else {
-      // Шляпка снизу
-      ctx.fillRect(x - 5, y, width + 10, 30);
-    }
-
-    // Обводка
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.strokeRect(x, y, width, height);
-  };
-
-  // Отрисовка игры
+  // Draw loop (cosmetic) — physics stay in flappyStore
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Очищаем canvas
-    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-    // Фон (небо)
-    const gradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-    gradient.addColorStop(0, '#87CEEB');
-    gradient.addColorStop(1, '#E0F6FF');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-    // Рисуем облака (декор)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.beginPath();
-    ctx.ellipse(150, 80, 40, 30, 0, 0, Math.PI * 2);
-    ctx.ellipse(180, 70, 50, 35, 0, 0, Math.PI * 2);
-    ctx.ellipse(120, 70, 35, 25, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(600, 120, 45, 35, 0, 0, Math.PI * 2);
-    ctx.ellipse(640, 110, 55, 40, 0, 0, Math.PI * 2);
-    ctx.ellipse(570, 110, 40, 30, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Рисуем трубы
-    const pipeColor = getPipeColor();
-    const isRainbow = pipeColor === 'rainbow';
-
-    pipes.forEach(pipe => {
-      if (isRainbow) {
-        // Верхняя труба (радужная)
-        drawRainbowPipe(ctx, pipe.x, 0, pipe.topHeight, 60, true);
-        // Нижняя труба (радужная)
-        drawRainbowPipe(ctx, pipe.x, pipe.bottomY, GAME_HEIGHT - pipe.bottomY, 60, false);
-
-        // Обводка для радужных труб
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.strokeRect(pipe.x, 0, 60, pipe.topHeight);
-        ctx.strokeRect(pipe.x, pipe.bottomY, 60, GAME_HEIGHT - pipe.bottomY);
-      } else {
-        // Обычные зеленые трубы
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(pipe.x, 0, 60, pipe.topHeight);
-        ctx.fillStyle = '#2E7D32';
-        ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, 70, 30);
-
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(pipe.x, pipe.bottomY, 60, GAME_HEIGHT - pipe.bottomY);
-        ctx.fillStyle = '#2E7D32';
-        ctx.fillRect(pipe.x - 5, pipe.bottomY, 70, 30);
-
-        // Детали труб
-        ctx.fillStyle = '#1B5E20';
-        for (let i = 0; i < 3; i++) {
-          ctx.fillRect(pipe.x + 10, pipe.topHeight - 20 + i * 10, 40, 5);
-        }
-        for (let i = 0; i < 3; i++) {
-          ctx.fillRect(pipe.x + 10, pipe.bottomY + 10 + i * 10, 40, 5);
-        }
-      }
-    });
-
-    // Рисуем птичку
-    const birdColor = getBirdColor();
-    ctx.save();
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-
-    // Тело
-    ctx.fillStyle = birdColor;
-    ctx.beginPath();
-    ctx.ellipse(100, birdY + BIRD_SIZE/2, BIRD_SIZE/2, BIRD_SIZE/2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Если золотая птичка - добавляем блеск
-    if (useGoldenBird && skins.flappy.hasGoldenBird) {
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.beginPath();
-      ctx.ellipse(95, birdY + BIRD_SIZE/2 - 8, 8, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
+    if (started && !gameOver) {
+      cloudScrollRef.current += PIPE_SPEED * 0.3;
+      starScrollRef.current += PIPE_SPEED * 0.08;
     }
 
-    // Глаз
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(110, birdY + BIRD_SIZE/2 - 5, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#FFF';
-    ctx.beginPath();
-    ctx.arc(108, birdY + BIRD_SIZE/2 - 6, 1.5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.clearRect(0, 0, FLAPPY_W, FLAPPY_H);
+    drawSky(ctx, FLAPPY_W, FLAPPY_H);
+    drawStars(ctx, FLAPPY_W, FLAPPY_H, starScrollRef.current);
+    drawClouds(ctx, FLAPPY_W, cloudScrollRef.current);
 
-    // Клюв
-    ctx.fillStyle = '#FF6347';
-    ctx.beginPath();
-    ctx.moveTo(115, birdY + BIRD_SIZE/2 - 3);
-    ctx.lineTo(125, birdY + BIRD_SIZE/2);
-    ctx.lineTo(115, birdY + BIRD_SIZE/2 + 3);
-    ctx.fill();
+    const rainbow = useRainbowPipes && skins.flappy.hasRainbowPipes;
+    const golden = useGoldenBird && skins.flappy.hasGoldenBird;
 
-    // Крыло
-    ctx.fillStyle = (useGoldenBird && skins.flappy.hasGoldenBird) ? '#FFC000' : '#FF8C00';
-    ctx.beginPath();
-    ctx.ellipse(90, birdY + BIRD_SIZE/2, 12, 8, -Math.PI / 4, 0, Math.PI * 2);
-    ctx.fill();
+    for (const pipe of pipes) {
+      drawPipe(ctx, pipe, 60, FLAPPY_H, rainbow);
+    }
 
-    ctx.restore();
+    drawBird(ctx, birdY, BIRD_SIZE, birdVelocity, golden);
+    drawScore(ctx, score, FLAPPY_W);
 
-    // Счёт
-    ctx.font = 'bold 36px "Press Start 2P", monospace';
-    ctx.fillStyle = '#FFF';
-    ctx.shadowBlur = 0;
-    ctx.fillText(`${score}`, GAME_WIDTH / 2 - 20, 60);
-
-    // Стартовый экран
     if (!started && !gameOver) {
-      ctx.font = 'bold 24px "Press Start 2P", monospace';
-      ctx.fillStyle = '#FFF';
-      ctx.shadowColor = '#000';
-      ctx.fillText('НАЖМИТЕ ПРОБЕЛ', GAME_WIDTH / 2 - 150, GAME_HEIGHT / 2);
-      ctx.font = '16px monospace';
-      ctx.fillText('или кликните мышкой', GAME_WIDTH / 2 - 110, GAME_HEIGHT / 2 + 50);
+      drawStartHint(ctx, FLAPPY_W, FLAPPY_H);
     }
-
-    // Game Over экран
-    if (gameOver) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-      ctx.font = 'bold 36px "Press Start 2P", monospace';
-      ctx.fillStyle = '#FF6B6B';
-      ctx.fillText('GAME OVER', GAME_WIDTH / 2 - 120, GAME_HEIGHT / 2 - 40);
-
-      ctx.font = '24px monospace';
-      ctx.fillStyle = '#FFF';
-      ctx.fillText(`Счёт: ${score}`, GAME_WIDTH / 2 - 50, GAME_HEIGHT / 2 + 20);
-
-      ctx.font = '16px monospace';
-      ctx.fillStyle = '#FFD700';
-      ctx.fillText('Нажмите "Новая игра"', GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 80);
-    }
-  }, [birdY, pipes, score, gameOver, started, GAME_WIDTH, GAME_HEIGHT, BIRD_SIZE, skins, useRainbowPipes, useGoldenBird]);
+  }, [
+    birdY,
+    birdVelocity,
+    pipes,
+    score,
+    gameOver,
+    started,
+    skins,
+    useRainbowPipes,
+    useGoldenBird,
+    PIPE_SPEED,
+  ]);
 
   const handleCanvasClick = () => {
     const { started: isStarted, gameOver: isOver } = useFlappyStore.getState();
@@ -397,7 +301,9 @@ export function FlappyGame() {
       void beginRun();
       return;
     }
+    if (isOver) return;
     jump();
+    pulseFlap();
   };
 
   const handleBack = () => {
@@ -439,7 +345,8 @@ export function FlappyGame() {
                   : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
               )}
             >
-              {useGoldenBird ? '⭐' : '🐦'} Птичка
+              <IconBird golden={useGoldenBird} />
+              Птичка
             </button>
           )}
           {skins.flappy.hasRainbowPipes && (
@@ -454,7 +361,8 @@ export function FlappyGame() {
                   : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
               )}
             >
-              {useRainbowPipes ? '🌈' : '🟩'} Трубы
+              <IconPipes rainbow={useRainbowPipes} />
+              Трубы
             </button>
           )}
         </>
@@ -501,7 +409,16 @@ export function FlappyGame() {
               )}
             </label>
           )}
-          <Button variant="primary" size="sm" onClick={() => { resetGame(); }} disabled={boostBusy}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              cloudScrollRef.current = 0;
+              starScrollRef.current = 0;
+              resetGame();
+            }}
+            disabled={boostBusy}
+          >
             Новая игра
           </Button>
           {!started && (
@@ -531,13 +448,63 @@ export function FlappyGame() {
           onClose={() => setSaveMessage(null)}
         />
       )}
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={500}
-        onClick={handleCanvasClick}
-        className="mx-auto block h-auto w-full max-w-[800px] cursor-pointer rounded-md shadow-elevated"
-      />
+      <div
+        className={cn(
+          'eh-flappy-stage',
+          flapPulse && 'eh-flappy-stage--flap',
+          shake && 'eh-flappy-stage--shake',
+        )}
+      >
+        <canvas
+          ref={canvasRef}
+          width={FLAPPY_W}
+          height={FLAPPY_H}
+          onClick={handleCanvasClick}
+        />
+      </div>
+
+      <Modal
+        open={gameOver}
+        onClose={() => {
+          /* keep run state; dismiss overlay only via buttons below if needed */
+        }}
+        title="Game Over"
+      >
+        <p className="text-lg text-text-primary">
+          Счёт: <span className="font-display font-semibold text-horizon-gold">{score}</span>
+        </p>
+        <p className="mt-1 text-sm text-text-secondary">Уровень {level}</p>
+        {boosted && (
+          <p className="mt-3 text-sm text-horizon-gold">
+            Забег с boost — не попал в лидерборд
+          </p>
+        )}
+        {!boosted && lastSubmitRanked === true && (
+          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+        )}
+        {!boosted && lastSubmitRanked === false && lastSubmitMessage && (
+          <p className="mt-3 text-sm text-text-secondary">{lastSubmitMessage}</p>
+        )}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              cloudScrollRef.current = 0;
+              starScrollRef.current = 0;
+              resetGame();
+            }}
+          >
+            Новая игра
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleManualSave}>
+            Сохранить рекорд
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleBack}>
+            На главную
+          </Button>
+        </div>
+      </Modal>
     </GameShell>
   );
 }
