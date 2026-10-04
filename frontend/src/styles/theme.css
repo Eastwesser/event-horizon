@@ -114,50 +114,72 @@
   pointer-events: none;
 }
 
-/* ---------- Full-bleed Home hero (logo-minimal) ---------- */
+/* ---------- Home hero — shellInner width; height follows square PNG ----------
+   At shell ~1152px, 1238×1200 → ~1117px tall. min(80vh,900px) still letterboxes. */
 .eh-hero-banner {
   position: relative;
   width: 100%;
-  height: min(70vh, 640px);
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
   background: var(--color-void);
+}
+
+.eh-hero-banner__frame {
+  position: relative;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 .eh-hero-banner__img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 60%;
+  max-width: none;
+  height: auto;
+  object-fit: contain;
+  object-position: center center;
+  image-rendering: high-quality;
+  filter: none;
+  transform: none;
   user-select: none;
+  pointer-events: none;
+  /* Soft edge blend into page void — kills the hard square */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
 .eh-hero-banner__veil {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
-  background:
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--color-void) 78%, transparent) 0%,
-      transparent 32%,
-      transparent 58%,
-      color-mix(in srgb, var(--color-void) 88%, transparent) 100%
-    ),
-    linear-gradient(
-      to right,
-      color-mix(in srgb, var(--color-void) 45%, transparent) 0%,
-      transparent 18%,
-      transparent 82%,
-      color-mix(in srgb, var(--color-void) 45%, transparent) 100%
-    );
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 82%,
+    color-mix(in srgb, var(--color-void) 75%, transparent) 100%
+  );
 }
 
 .eh-hero-scroll {
   position: absolute;
   left: 50%;
   bottom: 1.25rem;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -197,52 +219,78 @@
   }
 }
 
-/* ---------- Hero centerpiece: the event horizon itself ----------
-   Structure unchanged — only gold/ember tones softened to match palette. */
+/* ---------- Smooth page scroll (chevron → #choose) ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
+.eh-choose {
+  scroll-margin-top: 80px;
+}
+
+#games {
+  scroll-margin-top: 80px;
+}
+
+/* ---------- VOID v2 — accretion disk (SVG Level 1, no logo) ---------- */
+.eh-disk-hit {
+  /* ~80px near-field around the disk */
+  padding: 80px;
+  margin: -80px auto;
+  width: fit-content;
+  max-width: 100%;
+}
+
 .eh-disk {
   --eh-disk-pull-duration: 700ms;
-  --eh-disk-spin-duration: 140s;
-  --eh-disk-spin-duration-pull: 80s;
+  --eh-disk-pull-in: 1.5s;
   position: relative;
-  width: min(420px, 82vw);
+  width: min(420px, 70vw);
   aspect-ratio: 1;
+  cursor: pointer;
+  isolation: isolate;
+}
+
+.eh-disk-glow {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-horizon-gold) 35%, transparent) 0%,
+    color-mix(in srgb, var(--color-photon-cyan) 18%, transparent) 42%,
+    transparent 70%
+  );
+  opacity: 0.55;
+  filter: blur(18px);
+  transition:
+    opacity var(--eh-disk-pull-duration) ease-out,
+    transform var(--eh-disk-pull-duration) ease-out;
+  transform: scale(1);
 }
 
 .eh-disk-pull {
   position: absolute;
   inset: 0;
+  z-index: 1;
   transition: transform var(--eh-disk-pull-duration) ease-out;
   transform-origin: center;
+}
+
+.eh-disk--pull .eh-disk-pull {
+  transform: scale(0.75);
+  transition-duration: var(--eh-disk-pull-in);
+  will-change: transform;
 }
 
 .eh-disk-rings {
   position: absolute;
   inset: 0;
-  animation: eh-disk-spin var(--eh-disk-spin-duration) linear infinite;
 }
 
-.eh-disk:hover .eh-disk-pull {
-  transform: scale(0.92);
-}
-
-.eh-disk:hover .eh-disk-rings {
-  animation-duration: var(--eh-disk-spin-duration-pull);
-}
-
-.eh-disk:hover .eh-disk-core {
-  transform: translate(-50%, -50%) scale(1.12);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 90%, transparent),
-    0 0 36px 8px color-mix(in srgb, var(--color-horizon-gold) 70%, transparent),
-    0 0 110px 32px color-mix(in srgb, var(--color-horizon-gold) 32%, transparent),
-    0 0 160px 48px color-mix(in srgb, var(--color-photon-cyan) 12%, transparent);
-}
-
-.eh-disk:hover .eh-disk-mark {
-  transform: translate(-50%, -50%) scale(1.06);
-  filter: brightness(1.08);
-}
-
+/* Parent keeps elliptical scaleY; ::before spins so transform isn't overwritten. */
 .eh-disk-ring {
   position: absolute;
   inset: 0;
@@ -255,104 +303,258 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  padding: 1.5px;
+  padding: 1.75px;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  transform-origin: center;
+  animation: eh-disk-spin linear infinite;
+  transition: opacity var(--eh-disk-pull-duration) ease-out;
 }
 
-.eh-disk-ring--main {
-  transform: scaleY(0.3) rotate(-8deg);
+/* Outer → inner: slower → faster; gold / cyan / violet */
+.eh-disk-ring--r1 {
+  transform: scaleY(0.28) rotate(-10deg);
 }
-.eh-disk-ring--main::before {
+.eh-disk-ring--r1::before {
+  animation-duration: 160s;
   background: conic-gradient(
     from 200deg,
     var(--color-horizon-gold-hot) 0deg,
-    var(--color-horizon-gold) 70deg,
-    var(--color-horizon-ember) 150deg,
-    color-mix(in srgb, var(--color-horizon-ember) 22%, transparent) 210deg,
-    color-mix(in srgb, var(--color-horizon-ember) 8%, transparent) 300deg,
+    var(--color-horizon-gold) 80deg,
+    transparent 160deg,
+    var(--color-horizon-ember) 280deg,
     var(--color-horizon-gold-hot) 360deg
   );
-  opacity: 0.78;
+  opacity: 0.75;
 }
 
-.eh-disk-ring--lensed {
-  transform: scaleY(0.94) rotate(83deg);
+.eh-disk-ring--r2 {
+  transform: scaleY(0.42) rotate(18deg);
 }
-.eh-disk-ring--lensed::before {
+.eh-disk-ring--r2::before {
+  animation-duration: 120s;
+  animation-direction: reverse;
+  background: conic-gradient(
+    from 40deg,
+    color-mix(in srgb, var(--color-photon-cyan) 75%, transparent) 0deg,
+    transparent 90deg,
+    color-mix(in srgb, var(--color-photon-cyan) 55%, transparent) 220deg,
+    transparent 300deg,
+    color-mix(in srgb, var(--color-photon-cyan) 75%, transparent) 360deg
+  );
+  opacity: 0.5;
+}
+
+.eh-disk-ring--r3 {
+  transform: scaleY(0.58) rotate(-28deg);
+}
+.eh-disk-ring--r3::before {
+  animation-duration: 90s;
+  background: conic-gradient(
+    from 120deg,
+    color-mix(in srgb, var(--color-indigo-soft) 80%, transparent) 0deg,
+    transparent 70deg,
+    var(--color-horizon-gold) 200deg,
+    transparent 280deg,
+    color-mix(in srgb, var(--color-indigo-soft) 80%, transparent) 360deg
+  );
+  opacity: 0.42;
+}
+
+.eh-disk-ring--r4 {
+  transform: scaleY(0.78) rotate(55deg);
+}
+.eh-disk-ring--r4::before {
+  animation-duration: 60s;
+  animation-direction: reverse;
   background: conic-gradient(
     from 90deg,
-    color-mix(in srgb, var(--color-photon-cyan) 55%, transparent) 0deg,
-    transparent 40deg,
-    transparent 320deg,
-    color-mix(in srgb, var(--color-photon-cyan) 55%, transparent) 360deg
-  );
-  opacity: 0.45;
-}
-
-.eh-disk-ring--mid {
-  transform: scaleY(0.55) rotate(32deg);
-}
-.eh-disk-ring--mid::before {
-  background: conic-gradient(
-    from 150deg,
     var(--color-horizon-gold) 0deg,
     transparent 50deg,
-    transparent 310deg,
+    color-mix(in srgb, var(--color-photon-cyan) 60%, transparent) 180deg,
+    transparent 260deg,
     var(--color-horizon-gold) 360deg
   );
-  opacity: 0.28;
+  opacity: 0.48;
+}
+
+.eh-disk-ring--r5 {
+  transform: scaleY(0.94) rotate(82deg);
+}
+.eh-disk-ring--r5::before {
+  animation-duration: 40s;
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--color-photon-cyan) 80%, transparent) 0deg,
+    transparent 40deg,
+    color-mix(in srgb, var(--color-indigo) 70%, transparent) 160deg,
+    transparent 240deg,
+    color-mix(in srgb, var(--color-photon-cyan) 80%, transparent) 360deg
+  );
+  opacity: 0.55;
 }
 
 .eh-disk-core {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 34%;
-  height: 34%;
+  z-index: 2;
+  width: 36%;
+  height: 36%;
   border-radius: 50%;
-  background: var(--color-void);
+  background: radial-gradient(circle at 50% 40%, #0c0d14 0%, #000 48%, #000 100%);
   transform: translate(-50%, -50%) scale(1);
   transform-origin: center;
   transition:
     transform var(--eh-disk-pull-duration) ease-out,
     box-shadow var(--eh-disk-pull-duration) ease-out;
   box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--color-horizon-gold-hot) 80%, transparent),
-    0 0 28px 5px color-mix(in srgb, var(--color-horizon-gold) 55%, transparent),
-    0 0 80px 22px color-mix(in srgb, var(--color-horizon-gold) 22%, transparent);
+    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
+    0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
+    0 0 70px 20px color-mix(in srgb, var(--color-horizon-gold) 18%, transparent),
+    inset 0 0 30px 10px #000;
 }
 
-.eh-disk-mark {
+.eh-disk-particles {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 1;
-  display: flex;
-  width: 42%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%) scale(1);
-  transform-origin: center;
-  transition:
-    transform var(--eh-disk-pull-duration) ease-out,
-    filter var(--eh-disk-pull-duration) ease-out;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  overflow: visible;
 }
 
-.eh-disk-mark img {
-  width: 100%;
-  height: auto;
-  border-radius: 9999px;
-  object-fit: cover;
-  opacity: 0.95;
+.eh-disk-particle {
+  opacity: 0.55;
+  transform-box: view-box;
+  transform-origin: var(--ox) var(--oy);
+}
+
+.eh-disk-particle--gold {
+  fill: color-mix(in srgb, var(--color-horizon-gold) 92%, white);
+}
+.eh-disk-particle--cyan {
+  fill: color-mix(in srgb, var(--color-photon-cyan) 88%, white);
+}
+.eh-disk-particle--white {
+  fill: color-mix(in srgb, white 90%, var(--color-horizon-gold));
+}
+
+/* --- Near: ~80px — alive without full pull --- */
+.eh-disk--near .eh-disk-glow {
+  opacity: 0.78;
+  transform: scale(1.04);
+}
+
+.eh-disk--near .eh-disk-ring::before {
+  opacity: 0.85;
+}
+
+.eh-disk--near:not(.eh-disk--pull) .eh-disk-particle {
+  animation: eh-disk-drift 3.2s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+/* --- Pull (pointer on disk) --- */
+.eh-disk--pull .eh-disk-glow {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.eh-disk--pull .eh-disk-ring--r1::before { animation-duration: 90s; }
+.eh-disk--pull .eh-disk-ring--r2::before { animation-duration: 70s; }
+.eh-disk--pull .eh-disk-ring--r3::before { animation-duration: 50s; }
+.eh-disk--pull .eh-disk-ring--r4::before { animation-duration: 36s; }
+.eh-disk--pull .eh-disk-ring--r5::before { animation-duration: 22s; }
+
+.eh-disk--pull .eh-disk-ring::before {
+  opacity: 1;
+}
+
+.eh-disk--pull .eh-disk-core {
+  transform: translate(-50%, -50%) scale(1.06);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 95%, transparent),
+    0 0 52px 16px color-mix(in srgb, var(--color-horizon-gold) 78%, transparent),
+    0 0 140px 42px color-mix(in srgb, var(--color-horizon-gold) 38%, transparent),
+    0 0 200px 64px color-mix(in srgb, var(--color-photon-cyan) 24%, transparent),
+    inset 0 0 48px 18px #000;
+}
+
+.eh-disk--pull .eh-disk-particle {
+  animation: eh-disk-spiral-in var(--dur) ease-in infinite;
+  animation-delay: var(--delay);
+}
+
+/* --- Hot: hover > 2s --- */
+.eh-disk--hot .eh-disk-glow {
+  opacity: 1;
+  transform: scale(1.2);
+  filter: blur(22px);
+}
+
+.eh-disk--hot .eh-disk-pull {
+  transform: scale(0.68);
+}
+
+.eh-disk--hot .eh-disk-ring--r1::before { animation-duration: 55s; }
+.eh-disk--hot .eh-disk-ring--r2::before { animation-duration: 42s; }
+.eh-disk--hot .eh-disk-ring--r3::before { animation-duration: 30s; }
+.eh-disk--hot .eh-disk-ring--r4::before { animation-duration: 20s; }
+.eh-disk--hot .eh-disk-ring--r5::before { animation-duration: 12s; }
+
+.eh-disk--hot .eh-disk-particle {
+  animation-duration: calc(var(--dur) / 1.5);
+}
+
+.eh-disk--hot .eh-disk-core {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 100%, transparent),
+    0 0 64px 20px color-mix(in srgb, var(--color-horizon-gold) 90%, transparent),
+    0 0 170px 50px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
+    0 0 240px 80px color-mix(in srgb, var(--color-photon-cyan) 30%, transparent),
+    inset 0 0 56px 22px #000;
 }
 
 @keyframes eh-disk-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes eh-disk-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(calc((50px - var(--ox)) * 0.08), calc((50px - var(--oy)) * 0.08)) scale(1.05);
+    opacity: 0.75;
+  }
+}
+
+@keyframes eh-disk-spiral-in {
+  0% {
+    opacity: 0.9;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  70% {
+    opacity: 0.45;
+    transform:
+      translate(calc((50px - var(--ox)) * 0.72), calc((50px - var(--oy)) * 0.72))
+      rotate(calc(var(--spin) * 160deg))
+      scale(0.45);
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate(calc(50px - var(--ox)), calc(50px - var(--oy)))
+      rotate(calc(var(--spin) * 240deg))
+      scale(0.08);
+  }
 }
 
 /* ---------- One orchestrated entrance moment ---------- */
@@ -384,7 +586,10 @@
    on game mechanics (Memory flip, Hanoi ring move). Those are intentional
    feedback for player actions. */
 @media (prefers-reduced-motion: reduce) {
-  .eh-disk-rings,
+  html {
+    scroll-behavior: auto;
+  }
+
   .eh-stagger-in,
   .eh-glow,
   .eh-hero-scroll__chevron {
@@ -396,25 +601,41 @@
     transform: none;
   }
 
-  /* Hard disable pull-in: no scale, no spin speedup, no glow change */
-  .eh-disk:hover .eh-disk-pull {
+  /* VOID — hard off: static disk, no spin / particles / pull */
+  .eh-disk-ring::before,
+  .eh-disk-particle,
+  .eh-disk--near .eh-disk-particle,
+  .eh-disk--pull .eh-disk-particle,
+  .eh-disk--hot .eh-disk-particle {
+    animation: none !important;
+  }
+
+  .eh-disk--pull .eh-disk-pull,
+  .eh-disk--hot .eh-disk-pull {
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .eh-disk--near .eh-disk-glow,
+  .eh-disk--pull .eh-disk-glow,
+  .eh-disk--hot .eh-disk-glow {
+    opacity: 0.55;
     transform: none;
+    filter: blur(18px);
   }
 
-  .eh-disk:hover .eh-disk-rings {
-    animation-duration: var(--eh-disk-spin-duration);
-  }
-
-  .eh-disk:hover .eh-disk-core {
+  .eh-disk--pull .eh-disk-core,
+  .eh-disk--hot .eh-disk-core {
     transform: translate(-50%, -50%) scale(1);
     box-shadow:
-      0 0 0 1.5px color-mix(in srgb, var(--color-horizon-gold-hot) 80%, transparent),
-      0 0 28px 5px color-mix(in srgb, var(--color-horizon-gold) 55%, transparent),
-      0 0 80px 22px color-mix(in srgb, var(--color-horizon-gold) 22%, transparent);
+      0 0 0 2px color-mix(in srgb, var(--color-horizon-gold-hot) 65%, transparent),
+      0 0 26px 6px color-mix(in srgb, var(--color-horizon-gold) 45%, transparent),
+      0 0 70px 20px color-mix(in srgb, var(--color-horizon-gold) 18%, transparent),
+      inset 0 0 30px 10px #000;
   }
 
-  .eh-disk:hover .eh-disk-mark {
-    transform: translate(-50%, -50%) scale(1);
-    filter: none;
+  .eh-disk-particle {
+    opacity: 0.55;
+    transform: none;
   }
 }

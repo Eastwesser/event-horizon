@@ -1,5 +1,5 @@
 // frontend/src/components/Home/Home.tsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -7,6 +7,8 @@ import { Button } from '../ui/Button';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { AppFooter, AppNavbar, shellInner } from '../Layout/AppNavbar';
 import { gameIcon } from '../../lib/gameIcons';
+import { cn } from '../../lib/cn';
+import { VOID_PARTICLES } from './voidParticles';
 
 const games: {
   id: string;
@@ -85,7 +87,12 @@ const games: {
 export function Home() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLElement>(null);
+  const diskRef = useRef<HTMLDivElement>(null);
+  const hotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scrollHintFaded, setScrollHintFaded] = useState(false);
+  const [diskNear, setDiskNear] = useState(false);
+  const [diskPull, setDiskPull] = useState(false);
+  const [diskHot, setDiskHot] = useState(false);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -101,8 +108,54 @@ export function Home() {
     return () => io.disconnect();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (hotTimerRef.current) clearTimeout(hotTimerRef.current);
+    };
+  }, []);
+
   const scrollToChoose = () => {
-    document.getElementById('choose')?.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById('choose');
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  };
+
+  const clearHotTimer = () => {
+    if (hotTimerRef.current) {
+      clearTimeout(hotTimerRef.current);
+      hotTimerRef.current = null;
+    }
+  };
+
+  const onDiskHitMove = (e: PointerEvent<HTMLDivElement>) => {
+    const disk = diskRef.current;
+    if (!disk) return;
+    const r = disk.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+    setDiskNear(dist <= r.width / 2 + 80);
+  };
+
+  const onDiskEnter = () => {
+    setDiskPull(true);
+    setDiskNear(true);
+    clearHotTimer();
+    hotTimerRef.current = setTimeout(() => setDiskHot(true), 2000);
+  };
+
+  const onDiskLeave = () => {
+    setDiskPull(false);
+    setDiskHot(false);
+    clearHotTimer();
+  };
+
+  const onDiskHitLeave = () => {
+    setDiskNear(false);
+    setDiskPull(false);
+    setDiskHot(false);
+    clearHotTimer();
   };
 
   return (
@@ -110,16 +163,19 @@ export function Home() {
       <AppNavbar />
 
       <section ref={heroRef} className="eh-hero-banner" aria-label="Event Horizon">
-        <img
-          className="eh-hero-banner__img"
-          src="/images/brand/logo-minimal.png"
-          alt=""
-          width={1238}
-          height={1200}
-          decoding="async"
-          fetchPriority="high"
-        />
-        <div className="eh-hero-banner__veil" aria-hidden="true" />
+        {/* Same horizontal bounds as «Выбери игру» (shellInner). */}
+        <div className={`${shellInner} eh-hero-banner__frame`}>
+          <img
+            className="eh-hero-banner__img w-full max-w-none"
+            src="/images/brand/logo-minimal.png"
+            alt=""
+            width={1238}
+            height={1200}
+            decoding="async"
+            fetchPriority="high"
+          />
+          <div className="eh-hero-banner__veil" aria-hidden="true" />
+        </div>
         <button
           type="button"
           className="eh-hero-scroll"
@@ -143,7 +199,7 @@ export function Home() {
       </section>
 
       <main className={shellInner}>
-        <section id="choose" className="relative scroll-mt-24 py-12 sm:py-16">
+        <section id="choose" className="eh-choose relative py-12 sm:py-16">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="text-center lg:text-left">
               <h1 className="font-display text-4xl font-bold leading-tight text-text-primary sm:text-5xl">
@@ -155,7 +211,12 @@ export function Home() {
               <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
                 <Button
                   size="md"
-                  onClick={() => document.getElementById('games')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => {
+                    const el = document.getElementById('games');
+                    if (!el) return;
+                    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+                  }}
                 >
                   Все игры
                 </Button>
@@ -167,18 +228,55 @@ export function Home() {
               </div>
             </div>
 
-            {/* Decorative accretion disk — brand mark in the core (no flagship game). */}
-            <div className="eh-disk mx-auto" aria-hidden="true">
-              <div className="eh-disk-pull">
-                <div className="eh-disk-rings">
-                  <div className="eh-disk-ring eh-disk-ring--lensed" />
-                  <div className="eh-disk-ring eh-disk-ring--mid" />
-                  <div className="eh-disk-ring eh-disk-ring--main" />
+            {/* VOID v2 — accretion disk, no logo. Near / pull / hot via classes. */}
+            <div
+              className="eh-disk-hit mx-auto"
+              onPointerMove={onDiskHitMove}
+              onPointerLeave={onDiskHitLeave}
+              aria-hidden="true"
+            >
+              <div
+                ref={diskRef}
+                className={cn(
+                  'eh-disk',
+                  diskNear && 'eh-disk--near',
+                  diskPull && 'eh-disk--pull',
+                  diskHot && 'eh-disk--hot',
+                )}
+                onPointerEnter={onDiskEnter}
+                onPointerLeave={onDiskLeave}
+              >
+                <div className="eh-disk-glow" />
+                <div className="eh-disk-pull">
+                  <div className="eh-disk-rings">
+                    <div className="eh-disk-ring eh-disk-ring--r1" />
+                    <div className="eh-disk-ring eh-disk-ring--r2" />
+                    <div className="eh-disk-ring eh-disk-ring--r3" />
+                    <div className="eh-disk-ring eh-disk-ring--r4" />
+                    <div className="eh-disk-ring eh-disk-ring--r5" />
+                  </div>
                 </div>
-              </div>
-              <div className="eh-disk-core" />
-              <div className="eh-disk-mark">
-                <img src="/images/brand/logo-minimal.png" alt="" />
+                <div className="eh-disk-core" />
+                <svg className="eh-disk-particles" viewBox="0 0 100 100">
+                  {VOID_PARTICLES.map((p, i) => (
+                    <circle
+                      key={i}
+                      className={`eh-disk-particle eh-disk-particle--${p.tone}`}
+                      cx={p.cx}
+                      cy={p.cy}
+                      r={p.r}
+                      style={
+                        {
+                          '--ox': `${p.cx}px`,
+                          '--oy': `${p.cy}px`,
+                          '--dur': `${p.dur}s`,
+                          '--delay': `${p.delay}s`,
+                          '--spin': p.spin,
+                        } as CSSProperties
+                      }
+                    />
+                  ))}
+                </svg>
               </div>
             </div>
           </div>
