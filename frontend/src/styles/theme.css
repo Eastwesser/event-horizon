@@ -151,12 +151,15 @@
   background-size: 100% 100%;
 }
 
-/* In-flow so hero flex can vertically center the wordmark */
-.eh-hero-wordmark-shell {
+/* Wordmark above planet — in-flow column, no overlap */
+.eh-hero-inner {
   position: relative;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2.5rem, 5vh, 3.75rem); /* ~40–60px */
   width: 100%;
-  pointer-events: none;
 }
 
 .eh-hero-wordmark {
@@ -164,7 +167,7 @@
   justify-content: center;
   align-items: baseline;
   gap: 0.35em;
-  margin: 0 auto;
+  margin: 0;
   width: auto;
   max-width: 100%;
   font-family: var(--font-display);
@@ -178,7 +181,6 @@
   text-shadow:
     0 0 28px color-mix(in srgb, var(--color-photon-cyan) 22%, transparent),
     0 2px 0 color-mix(in srgb, black 40%, transparent);
-  pointer-events: auto;
 }
 
 /* Mobile: EVENT above HORIZON, each centered */
@@ -189,6 +191,10 @@
     gap: 0.2em;
     font-size: clamp(2.5rem, 14vw, 3.75rem);
   }
+
+  .eh-hero-inner {
+    gap: clamp(1.75rem, 4vh, 2.5rem);
+  }
 }
 
 .eh-hero-wordmark-word {
@@ -197,15 +203,12 @@
 }
 
 .eh-hero-planet {
-  position: absolute;
-  left: 50%;
-  /* Sit in lower half — room under wordmark, room above fold */
-  bottom: 8%;
+  position: relative;
   z-index: 1;
-  width: min(100%, 1152px);
-  max-width: 1152px;
+  display: block;
+  width: 100%;
+  max-width: 1000px;
   height: auto;
-  transform: translateX(-50%);
   pointer-events: none;
   user-select: none;
   /* (a) tighter radial dissolve — (b) lighten blends near-black PNG into void */

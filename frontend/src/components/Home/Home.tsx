@@ -230,16 +230,7 @@ export function Home() {
 
       <section ref={heroRef} className="eh-hero" aria-label="Event Horizon">
         <div className="eh-hero-stars" aria-hidden="true" />
-        <img
-          className="eh-hero-planet"
-          src="/images/brand/planet-hero.png"
-          alt=""
-          width={1238}
-          height={600}
-          decoding="async"
-          fetchPriority="high"
-        />
-        <div className={`${shellInner} eh-hero-wordmark-shell`}>
+        <div className={`${shellInner} eh-hero-inner`}>
           <h1 className="eh-hero-wordmark" aria-label="EVENT HORIZON">
             <span className="eh-hero-wordmark-word" aria-hidden="true">
               EVENT
@@ -248,6 +239,15 @@ export function Home() {
               HORIZON
             </span>
           </h1>
+          <img
+            className="eh-hero-planet"
+            src="/images/brand/planet-hero.png"
+            alt=""
+            width={1238}
+            height={600}
+            decoding="async"
+            fetchPriority="high"
+          />
         </div>
         <div className="eh-hero-fade-top" aria-hidden="true" />
         <div className="eh-hero-fade-bottom" aria-hidden="true" />
