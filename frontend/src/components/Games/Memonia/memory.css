@@ -113,6 +113,47 @@
   gap: 0.75rem;
   max-width: 1000px;
   margin: 0 auto;
+  transform-origin: center center;
+}
+
+.memory-board--mismatch {
+  animation:
+    eh-memory-shake 420ms ease-out,
+    eh-memory-pulse 180ms ease-out;
+}
+
+@keyframes eh-memory-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  15% {
+    transform: translate(-5px, 1px);
+  }
+  30% {
+    transform: translate(5px, -2px);
+  }
+  45% {
+    transform: translate(-4px, 1px);
+  }
+  60% {
+    transform: translate(3px, 2px);
+  }
+  75% {
+    transform: translate(-2px, -1px);
+  }
+}
+
+@keyframes eh-memory-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Карта */
@@ -176,60 +217,13 @@
 .memory-card--matched {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.45s ease;
+  cursor: default;
 }
 
-/* Game Over */
-.memory-game-over {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.memory-game-over__content {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border: 2px solid #ffd700;
-  border-radius: 30px;
-  padding: 2rem;
-  text-align: center;
-  max-width: 400px;
-}
-
-.memory-game-over__content h2 {
-  color: #ffd700;
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.memory-game-over__score {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #4ade80;
-  margin: 1rem 0;
-}
-
-.memory-game-over__formula {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  margin: 1rem 0;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-}
-
-.memory-game-over__buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1.5rem;
+.memory-card--matched .memory-card__inner {
+  /* Hold face-up art while fading — no empty-shell swap */
+  transform: rotateY(180deg);
 }
 
 /* Правила */
@@ -311,38 +305,6 @@
   gap: 1rem;
   flex-wrap: wrap;
   align-items: center;
-}
-
-.memory-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-weight: bold;
-  z-index: 1100;
-  animation: slideIn 0.3s ease;
-}
-
-.memory-toast--success {
-  background: #4ade80;
-  color: #1a1a2e;
-}
-
-.memory-toast--error {
-  background: #ff6b6b;
-  color: white;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 
 /* Стиль для скина животных - фон карточки */
