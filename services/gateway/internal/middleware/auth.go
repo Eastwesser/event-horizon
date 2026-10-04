@@ -95,3 +95,10 @@ func Role(c *gin.Context) string {
 	s, _ := v.(string)
 	return s
 }
+
+// Email is a small helper for handlers to read the authenticated user's email.
+func Email(c *gin.Context) string {
+	v, _ := c.Get(CtxEmail)
+	s, _ := v.(string)
+	return s
+}

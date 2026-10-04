@@ -1190,6 +1190,40 @@ paths:
           description: Author profile
         '403':
           description: Forbidden
+  /api/authors/apply:
+    post:
+      summary: Submit author application (Wave 3 C1)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [display_name, motivation]
+              properties:
+                display_name: { type: string }
+                portfolio: { type: string }
+                motivation: { type: string }
+                contact_email: { type: string, description: Defaults to account email }
+      responses:
+        '200':
+          description: Application (idempotent if pending already exists)
+        '400':
+          description: Already author/admin or invalid input
+        '401':
+          description: Unauthorized
+  /api/authors/me/application:
+    get:
+      summary: Get current user's latest author application
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Application row
+        '404':
+          description: No application yet
+        '401':
+          description: Unauthorized
   /api/authors:
     get:
       summary: List authors

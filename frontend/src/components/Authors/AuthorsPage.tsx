@@ -129,6 +129,17 @@ export function AuthorsPage() {
         onBack={() => navigate('/')}
       />
 
+      {!roleLoading && !isAuthor && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-horizon-gold/25 bg-horizon-gold/5 px-4 py-3">
+          <p className="text-sm text-text-secondary">
+            Хотите публиковать карты? Отправьте заявку на роль автора.
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => navigate('/register-author')}>
+            Стать автором
+          </Button>
+        </div>
+      )}
+
       {error && (
         <div
           role="alert"

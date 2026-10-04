@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/mail"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Eastwesser/event-horizon/services/auth/internal/converter"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/model"
 	"github.com/Eastwesser/event-horizon/services/auth/internal/service"
 	pb "github.com/Eastwesser/event-horizon/services/auth/proto"
 )
@@ -30,12 +32,17 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	if err := validateCredentials(req.Email, req.Password); err != nil {
 		return nil, err
 	}
-	if role := strings.TrimSpace(req.Role); role != "" && role != "user" && role != "author" {
-		return nil, status.Error(codes.InvalidArgument, "role must be empty, user, or author")
+	// Public registration always creates role=user (Wave 3: author via approval only).
+	roleHint := strings.TrimSpace(req.Role)
+	if roleHint != "" && roleHint != "user" {
+		return nil, status.Error(codes.InvalidArgument, "public registration only allows role=user")
 	}
 
-	userID, role, err := h.authService.Register(ctx, req.Email, req.Password, req.Role)
+	userID, role, err := h.authService.Register(ctx, req.Email, req.Password, "user")
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidRole) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

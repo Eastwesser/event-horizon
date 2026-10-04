@@ -20,8 +20,8 @@ func (m *RegisterRequest) Validate() error {
 		return err
 	}
 	role := strings.TrimSpace(m.Role)
-	if role != "" && role != "user" && role != "author" {
-		return fmt.Errorf("role must be empty, user, or author")
+	if role != "" && role != "user" {
+		return fmt.Errorf("public registration only allows role=user")
 	}
 	return nil
 }

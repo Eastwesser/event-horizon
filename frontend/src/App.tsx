@@ -20,6 +20,7 @@ import { ShopWithInfiniteScroll } from './components/Shop/ShopWithInfiniteScroll
 import { Subscription } from './components/Payment/Subscription';
 import { AuthorsPage } from './components/Authors/AuthorsPage';
 import { CardArtistPage } from './components/Authors/CardArtistPage';
+import { RegisterAuthor } from './components/Authors/RegisterAuthor';
 import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
 import { HistoryPage } from './components/History/HistoryPage';
 import { AdminPage } from './components/Admin/AdminPage';
@@ -125,6 +126,10 @@ function App() {
           <Route 
             path="/authors" 
             element={isAuthenticated ? <AuthorsPage /> : <Navigate to="/login" />} 
+          />
+          <Route
+            path="/register-author"
+            element={isAuthenticated ? <RegisterAuthor /> : <Navigate to="/login" />}
           />
           <Route
             path="/authors/:artistId"
