@@ -10,6 +10,7 @@ import { gameIcon } from '../../lib/gameIcons';
 import { cn } from '../../lib/cn';
 import { VOID_PARTICLES } from './voidParticles';
 import {
+  getVoidHideSet,
   isVoidDebug,
   prefersReducedMotion,
   syncMotionForceClass,
@@ -135,6 +136,7 @@ export function Home() {
       osReducedMotion: osReduced,
       motionForce,
       voidDebug,
+      hide: [...getVoidHideSet()],
       reducedMotion: prefersReducedMotion(),
     });
     // Ancestors may not be tagged if this ran before paint; refresh marks.

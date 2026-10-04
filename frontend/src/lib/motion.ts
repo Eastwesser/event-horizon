@@ -89,12 +89,51 @@ export function syncVoidDebugMarks(): void {
   });
 }
 
+const VOID_HIDE_PREFIX = 'eh-void-hide-';
+const VOID_HIDE_KEYS = [
+  'glow',
+  'pull',
+  'rings',
+  'core',
+  'particles',
+  'disk',
+  'bg-nebula',
+  'hero',
+  'glow-filter',
+] as const;
+
+/** Dev-only: `?hide=glow&hide=pull` (or `?hide=glow,pull`) → which layers to suppress. */
+export function getVoidHideSet(): Set<string> {
+  if (!import.meta.env.DEV) return new Set();
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.getAll('hide').flatMap((v) => v.split(','));
+    return new Set(raw.map((s) => s.trim().toLowerCase()).filter(Boolean));
+  } catch {
+    return new Set();
+  }
+}
+
+/** Apply html.eh-void-hide-* classes from ?hide=… URL params. */
+export function syncVoidHideClasses(): void {
+  const root = document.documentElement;
+  [...root.classList]
+    .filter((c) => c.startsWith(VOID_HIDE_PREFIX))
+    .forEach((c) => root.classList.remove(c));
+
+  const hides = getVoidHideSet();
+  for (const key of VOID_HIDE_KEYS) {
+    if (hides.has(key)) root.classList.add(`${VOID_HIDE_PREFIX}${key}`);
+  }
+}
+
 /** Apply/remove DEV html classes for motion force + void layer outlines. */
 export function syncMotionForceClass(): boolean {
   const forced = isMotionForced();
   const voidDebug = isVoidDebug();
   document.documentElement.classList.toggle('eh-motion-force', forced);
   document.documentElement.classList.toggle('eh-void-debug', voidDebug);
+  syncVoidHideClasses();
   syncVoidDebugMarks();
   return forced;
 }
