@@ -29,7 +29,7 @@ Start here. Low risk, each item independent.
 - [x] **Реальные товары** — M · low · 2–3 days. Drop placeholders (Ключница Дракон…); keep Berserk CCG cards. Needs manual keep/delete list + SQL/script.
 - [ ] **Полиш игр** — M–L per game · med · ~1 week total. **One game per PR, sequentially** (not 5 games in parallel).
   - [x] Flappy — textures / polish · ✅ **Done 04.10.2026** (draw helpers, parallax, Modal GO, shake/flap; physics untouched)
-  - [ ] Towers — animations / GAME OVER
+  - [x] Towers — animations / GAME OVER · ✅ **Done 04.10.2026** (draw helpers, Modal GO, shake/drop pulse; physics untouched)
   - [ ] Hanoi — drag polish
   - [ ] Memory — flip / skins
   - [ ] Hexagon — gameplay polish
