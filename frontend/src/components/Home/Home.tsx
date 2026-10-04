@@ -241,19 +241,13 @@ export function Home() {
         />
         <div className={`${shellInner} eh-hero-wordmark-shell`}>
           <h1 className="eh-hero-wordmark" aria-label="EVENT HORIZON">
-            <span aria-hidden="true">E</span>
-            <span aria-hidden="true">V</span>
-            <span aria-hidden="true">E</span>
-            <span aria-hidden="true">N</span>
-            <span aria-hidden="true">T</span>
-            <span aria-hidden="true" className="eh-hero-wordmark-gap" />
-            <span aria-hidden="true">H</span>
-            <span aria-hidden="true">O</span>
-            <span aria-hidden="true">R</span>
-            <span aria-hidden="true">I</span>
-            <span aria-hidden="true">Z</span>
-            <span aria-hidden="true">O</span>
-            <span aria-hidden="true">N</span>
+            <span className="eh-hero-wordmark-word" aria-hidden="true">
+              EVENT
+            </span>
+            <span className="eh-hero-wordmark-gap" aria-hidden="true" />
+            <span className="eh-hero-wordmark-word" aria-hidden="true">
+              HORIZON
+            </span>
           </h1>
         </div>
         <div className="eh-hero-fade-top" aria-hidden="true" />

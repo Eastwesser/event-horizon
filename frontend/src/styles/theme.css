@@ -118,7 +118,9 @@
 .eh-hero {
   position: relative;
   width: 100%;
-  height: min(60vh, 520px);
+  /* Paint layout: wordmark → air → chevron; choose sits below the fold */
+  height: 70vh;
+  min-height: 28rem;
   overflow: hidden;
   background: var(--color-void);
 }
@@ -146,7 +148,7 @@
 /* Same horizontal band as «Выбери игру» (shellInner) */
 .eh-hero-wordmark-shell {
   position: absolute;
-  top: 10%;
+  top: clamp(1.5rem, 8vh, 4rem);
   left: 0;
   right: 0;
   z-index: 3;
@@ -157,10 +159,10 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin: 0;
+  margin: 0 0 8vh;
   width: 100%;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 7rem);
+  font-size: clamp(3rem, 5.5vw, 6.5rem);
   font-weight: 700;
   line-height: 0.95;
   letter-spacing: 0;
@@ -172,46 +174,46 @@
   pointer-events: auto;
 }
 
-/* Equal tracks so letters fill shell; gap slightly wider between words */
-.eh-hero-wordmark > span {
-  flex: 1 1 0;
-  text-align: center;
+/* Narrow shells: keep EVENT + HORIZON inside content box */
+@media (max-width: 639px) {
+  .eh-hero-wordmark {
+    font-size: clamp(1.7rem, 8.5vw, 2.35rem);
+  }
 }
 
-.eh-hero-wordmark > span:first-child {
-  text-align: left;
-}
-
-.eh-hero-wordmark > span:last-child {
-  text-align: right;
+/* Words flush to shell edges; letters inside keep natural kerning */
+.eh-hero-wordmark-word {
+  flex: 0 0 auto;
+  letter-spacing: 0.01em;
 }
 
 .eh-hero-wordmark-gap {
-  flex: 1.35 1 0;
-  min-width: 0.35em;
+  flex: 1 1 auto;
+  min-width: 0.5em;
 }
 
 .eh-hero-planet {
   position: absolute;
   left: 50%;
-  /* Drop so the limb sits mid/lower; wordmark keeps void sky above */
-  bottom: -22%;
+  /* Sit in lower half — room under wordmark, room above fold */
+  bottom: 8%;
   z-index: 1;
-  width: 100%;
+  width: min(100%, 1152px);
   max-width: 1152px;
   height: auto;
   transform: translateX(-50%);
   pointer-events: none;
   user-select: none;
-  /* Radial dissolve + wide side fades — kill rectangular PNG edge */
+  /* (a) tighter radial dissolve — (b) lighten blends near-black PNG into void */
+  mix-blend-mode: lighten;
   -webkit-mask-image:
-    radial-gradient(ellipse 75% 85% at center, #000 50%, transparent 100%),
-    linear-gradient(to right, transparent 0%, #000 25%, #000 75%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+    radial-gradient(ellipse 65% 80% at 50% 55%, #000 45%, transparent 95%),
+    linear-gradient(to right, transparent 0%, #000 22%, #000 78%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 16%, #000 88%, transparent 100%);
   mask-image:
-    radial-gradient(ellipse 75% 85% at center, #000 50%, transparent 100%),
-    linear-gradient(to right, transparent 0%, #000 25%, #000 75%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+    radial-gradient(ellipse 65% 80% at 50% 55%, #000 45%, transparent 95%),
+    linear-gradient(to right, transparent 0%, #000 22%, #000 78%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 16%, #000 88%, transparent 100%);
   -webkit-mask-composite: source-in, source-in;
   mask-composite: intersect, intersect;
   -webkit-mask-repeat: no-repeat;
@@ -242,19 +244,25 @@
 
 .eh-hero-fade-bottom {
   bottom: 0;
-  height: clamp(3.5rem, 14vh, 7rem);
+  height: clamp(4rem, 16vh, 9rem);
   background: linear-gradient(
     to top,
     var(--color-void) 0%,
-    color-mix(in srgb, var(--color-void) 70%, transparent) 45%,
+    color-mix(in srgb, var(--color-void) 75%, transparent) 50%,
     transparent 100%
   );
+}
+
+/* Breathing room before «Выбери игру» + disk */
+.eh-choose {
+  margin-top: clamp(3rem, 12vh, 7rem);
+  padding-top: clamp(2rem, 6vh, 4rem);
 }
 
 .eh-hero-scroll {
   position: absolute;
   left: 50%;
-  bottom: 1.25rem;
+  bottom: 1.5rem;
   z-index: 3;
   display: flex;
   flex-direction: column;
