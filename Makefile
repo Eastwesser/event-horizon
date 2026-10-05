@@ -210,20 +210,38 @@ delivery-prod:
 	cd delivery && ansible-playbook -i inventory/prod.ini ansible/site.yml
 
 # ===== K3S =====
+# Prefer Helm chart (Wave 4.5). Falls back to raw YAML if helm is missing.
+HELM_CHART := deployments/helm/event-horizon
+HELM_RELEASE := eh
+
 deploy-k3s:
 	@echo "🚀 Deploying to k3s..."
-	kubectl apply -f deployments/k3s/secret.yml
-	kubectl apply -f deployments/k3s/deployment.yml
-	kubectl apply -f deployments/k3s/service.yml
-	kubectl apply -f deployments/k3s/ingress.yml
-	kubectl rollout status deployment/event-horizon
+	@if command -v helm >/dev/null 2>&1; then \
+	  helm upgrade --install $(HELM_RELEASE) $(HELM_CHART); \
+	  kubectl rollout status deployment/$(HELM_RELEASE)-event-horizon --timeout=180s || \
+	    kubectl rollout status deployment/event-horizon --timeout=180s || true; \
+	else \
+	  echo "helm not found — applying deployments/k3s/*.yml"; \
+	  kubectl apply -f deployments/k3s/secret.yml; \
+	  kubectl apply -f deployments/k3s/deployment.yml; \
+	  kubectl apply -f deployments/k3s/service.yml; \
+	  kubectl apply -f deployments/k3s/ingress.yml; \
+	  kubectl rollout status deployment/event-horizon; \
+	fi
 
 undeploy-k3s:
 	@echo "🗑️ Removing from k3s..."
-	kubectl delete -f deployments/k3s/deployment.yml
-	kubectl delete -f deployments/k3s/service.yml
-	kubectl delete -f deployments/k3s/ingress.yml
-	kubectl delete -f deployments/k3s/secret.yml
+	@if command -v helm >/dev/null 2>&1 && helm status $(HELM_RELEASE) >/dev/null 2>&1; then \
+	  helm uninstall $(HELM_RELEASE); \
+	else \
+	  kubectl delete -f deployments/k3s/deployment.yml --ignore-not-found; \
+	  kubectl delete -f deployments/k3s/service.yml --ignore-not-found; \
+	  kubectl delete -f deployments/k3s/ingress.yml --ignore-not-found; \
+	  kubectl delete -f deployments/k3s/secret.yml --ignore-not-found; \
+	fi
+
+helm-template-k3s:
+	helm template $(HELM_RELEASE) $(HELM_CHART)
 
 # ===== DEV SEED (roles: admin | author | user) =====
 # Credentials: scripts/.env.seed.admin (gitignored) + optional .env.seed.author / .env.seed.user
