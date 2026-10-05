@@ -209,6 +209,9 @@ func TestRefreshTokenRoundTrip(t *testing.T) {
 		GetByEmailFn: func(ctx context.Context, email string) (*model.User, error) {
 			return &model.User{ID: "uid-1", Email: email, PasswordHash: string(hash), Role: "author"}, nil
 		},
+		GetByIDFn: func(_ context.Context, id string) (*model.User, error) {
+			return &model.User{ID: id, Email: "user@example.com", Role: "author"}, nil
+		},
 	}
 	svc := newTestServiceWithManager(repo)
 	pair, err := svc.Login(context.Background(), "user@example.com", "password123")
@@ -219,7 +222,7 @@ func TestRefreshTokenRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refreshed.AccessToken == "" || refreshed.RefreshToken == "" || refreshed.UserID != "uid-1" {
+	if refreshed.AccessToken == "" || refreshed.RefreshToken == "" || refreshed.UserID != "uid-1" || refreshed.Role != "author" {
 		t.Fatalf("unexpected refresh: %+v", refreshed)
 	}
 }
@@ -485,6 +488,9 @@ func TestRefreshToken_RevokesOldRefresh(t *testing.T) {
 		GetByEmailFn: func(_ context.Context, email string) (*model.User, error) {
 			return &model.User{ID: "uid-1", Email: email, PasswordHash: string(hash), Role: "user"}, nil
 		},
+		GetByIDFn: func(_ context.Context, id string) (*model.User, error) {
+			return &model.User{ID: id, Email: "user@example.com", Role: "user"}, nil
+		},
 	}
 	svc := NewAuthService(repo, cache, jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour))
 	pair, err := svc.Login(context.Background(), "user@example.com", "password123")
@@ -498,6 +504,64 @@ func TestRefreshToken_RevokesOldRefresh(t *testing.T) {
 	_, err = svc.RefreshToken(context.Background(), pair.RefreshToken)
 	if !errors.Is(err, model.ErrSessionRevoked) {
 		t.Fatalf("want revoked old refresh, got %v", err)
+	}
+}
+
+func TestUpdateRole_RevokesAccessKeepsRefresh_DBRoleOnRefresh(t *testing.T) {
+	cache, cleanup := withMiniRedis(t)
+	defer cleanup()
+	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	role := "user"
+	repo := &mocks.UserRepository{
+		GetByEmailFn: func(_ context.Context, email string) (*model.User, error) {
+			return &model.User{ID: "uid-1", Email: email, PasswordHash: string(hash), Role: role}, nil
+		},
+		GetByIDFn: func(_ context.Context, id string) (*model.User, error) {
+			return &model.User{ID: id, Email: "user@example.com", Role: role}, nil
+		},
+		UpdateRoleFn: func(_ context.Context, userID, r string) error {
+			if userID != "uid-1" {
+				t.Fatalf("userID=%s", userID)
+			}
+			role = r
+			return nil
+		},
+	}
+	svc := NewAuthService(repo, cache, jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour))
+	pair, err := svc.Login(context.Background(), "user@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pair.Role != "user" {
+		t.Fatalf("login role=%s", pair.Role)
+	}
+	if _, _, _, err := svc.ValidateToken(context.Background(), pair.AccessToken); err != nil {
+		t.Fatalf("pre-role validate: %v", err)
+	}
+
+	if err := svc.UpdateRole(context.Background(), "uid-1", "author"); err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, _, err = svc.ValidateToken(context.Background(), pair.AccessToken)
+	if !errors.Is(err, model.ErrSessionRevoked) {
+		t.Fatalf("want old access revoked, got %v", err)
+	}
+
+	// Refresh must still work (not revoked) and mint author from DB.
+	next, err := svc.RefreshToken(context.Background(), pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("refresh after role change: %v", err)
+	}
+	if next.Role != "author" {
+		t.Fatalf("want role=author after refresh, got %q", next.Role)
+	}
+	uid, _, gotRole, err := svc.ValidateToken(context.Background(), next.AccessToken)
+	if err != nil || uid != "uid-1" || gotRole != "author" {
+		t.Fatalf("new access validate uid=%s role=%s err=%v", uid, gotRole, err)
 	}
 }
 

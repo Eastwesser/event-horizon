@@ -1,58 +1,53 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import {
+  getWhoamiCache,
+  invalidateWhoamiCache,
+  setWhoamiCache,
+  setWhoamiInflight,
+  type UserRole,
+} from '../lib/whoamiCache';
 
-export type UserRole = 'user' | 'author' | 'admin';
-
-/** Module cache — StrictMode + multi-mount pages were hitting /auth/whoami 8×. */
-let cachedRole: UserRole | null = null;
-let cachedAt = 0;
-let inflight: Promise<UserRole> | null = null;
-const CACHE_MS = 60_000;
+export type { UserRole };
+export { invalidateWhoamiCache };
 
 function roleFromStorage(): UserRole {
   return (localStorage.getItem('role') as UserRole) || 'user';
 }
 
-export function invalidateWhoamiCache(): void {
-  cachedRole = null;
-  cachedAt = 0;
-  inflight = null;
-}
-
 async function fetchWhoamiOnce(): Promise<UserRole> {
+  const { role: cachedRole, at: cachedAt, inflight, cacheMs } = getWhoamiCache();
   const now = Date.now();
-  if (cachedRole && now - cachedAt < CACHE_MS) return cachedRole;
+  if (cachedRole && now - cachedAt < cacheMs) return cachedRole;
   if (inflight) return inflight;
 
-  inflight = api
+  const p = api
     .get('/auth/whoami')
     .then(({ data }) => {
       const r = (data.role as UserRole) || 'user';
-      cachedRole = r;
-      cachedAt = Date.now();
+      setWhoamiCache(r);
       localStorage.setItem('role', r);
       return r;
     })
     .catch(() => {
       const fallback = roleFromStorage();
-      cachedRole = fallback;
-      cachedAt = Date.now();
+      setWhoamiCache(fallback);
       return fallback;
     })
     .finally(() => {
-      inflight = null;
+      setWhoamiInflight(null);
     });
 
-  return inflight;
+  setWhoamiInflight(p);
+  return p;
 }
 
 export function useUserRole() {
-  const [role, setRole] = useState<UserRole>(() => cachedRole ?? roleFromStorage());
-  const [loading, setLoading] = useState(!cachedRole);
+  const [role, setRole] = useState<UserRole>(() => getWhoamiCache().role ?? roleFromStorage());
+  const [loading, setLoading] = useState(!getWhoamiCache().role);
 
   useEffect(() => {
     const onAuthChange = () => {
-      // Login/logout — drop cache; next fetchWhoamiOnce will refill if token exists.
       invalidateWhoamiCache();
       if (!localStorage.getItem('accessToken')) {
         setRole('user');
