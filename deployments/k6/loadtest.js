@@ -1,3 +1,8 @@
+/**
+ * LEGACY — outdated paths (e.g. /api/shop/inventory).
+ * Wave 4: use browse.js / purchase.js / leaderboard.js / auth_burst.js instead.
+ * Kept for reference only; do not use for load reports.
+ */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
