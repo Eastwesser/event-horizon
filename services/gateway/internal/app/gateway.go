@@ -1359,6 +1359,109 @@ func runGateway() {
 		c.JSON(http.StatusOK, resp.Application)
 	})
 
+	// Wave 3 C2 — admin application review (orchestrates Auth.UpdateRole on approve).
+	r.GET("/api/authors/applications", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+		statusFilter := strings.TrimSpace(c.DefaultQuery("status", "pending"))
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.ListApplications(c.Request.Context(), &authorsPb.ListApplicationsRequest{
+				Status: statusFilter,
+				Limit:  int32(limit),
+				Offset: int32(offset),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.ListApplicationsResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"applications": dto.AuthorApplications(resp.GetApplications()),
+			"total":        resp.GetTotal(),
+			"limit":        limit,
+			"offset":       offset,
+			"status":       statusFilter,
+		})
+	})
+
+	r.POST("/api/authors/applications/:id/approve", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		appID := c.Param("id")
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.ApproveApplication(c.Request.Context(), &authorsPb.ApproveApplicationRequest{
+				ApplicationId: appID,
+				ReviewerId:    middleware.UserID(c),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.ApproveApplicationResponse)
+		userID := ""
+		if resp.GetApplication() != nil {
+			userID = resp.GetApplication().GetUserId()
+		}
+		if userID == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "approved application missing user_id"})
+			return
+		}
+
+		_, roleErr := throughBreaker(authCB, c, func() (any, error) {
+			return authClient.GetClient().UpdateRole(c.Request.Context(), &authPb.UpdateRoleRequest{
+				UserId: userID,
+				Role:   RoleAuthor,
+			})
+		})
+		if roleErr == circuit.ErrOpen {
+			_, _ = authorsClient.RevertApplication(c.Request.Context(), &authorsPb.RevertApplicationRequest{
+				ApplicationId: appID,
+			})
+			return
+		}
+		if roleErr != nil {
+			_, _ = authorsClient.RevertApplication(c.Request.Context(), &authorsPb.RevertApplicationRequest{
+				ApplicationId: appID,
+			})
+			if handleRPCError(c, roleErr) {
+				return
+			}
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to update role after approve"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"application": dto.AuthorApplication(resp.GetApplication()),
+			"author":      dto.Author(resp.GetAuthor()),
+		})
+	})
+
+	r.POST("/api/authors/applications/:id/reject", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		var req struct {
+			ReviewerNote string `json:"reviewer_note"`
+		}
+		_ = c.ShouldBindJSON(&req)
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.RejectApplication(c.Request.Context(), &authorsPb.RejectApplicationRequest{
+				ApplicationId: c.Param("id"),
+				ReviewerId:    middleware.UserID(c),
+				ReviewerNote:  strings.TrimSpace(req.ReviewerNote),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.RejectApplicationResponse)
+		c.JSON(http.StatusOK, dto.AuthorApplication(resp.GetApplication()))
+	})
+
 	r.GET("/api/authors/:user_id", func(c *gin.Context) {
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
 			return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{

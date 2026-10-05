@@ -19,11 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AuthorsService_UpsertProfile_FullMethodName     = "/authors.AuthorsService/UpsertProfile"
-	AuthorsService_GetAuthor_FullMethodName         = "/authors.AuthorsService/GetAuthor"
-	AuthorsService_ListAuthors_FullMethodName       = "/authors.AuthorsService/ListAuthors"
-	AuthorsService_SubmitApplication_FullMethodName = "/authors.AuthorsService/SubmitApplication"
-	AuthorsService_GetMyApplication_FullMethodName  = "/authors.AuthorsService/GetMyApplication"
+	AuthorsService_UpsertProfile_FullMethodName      = "/authors.AuthorsService/UpsertProfile"
+	AuthorsService_GetAuthor_FullMethodName          = "/authors.AuthorsService/GetAuthor"
+	AuthorsService_ListAuthors_FullMethodName        = "/authors.AuthorsService/ListAuthors"
+	AuthorsService_SubmitApplication_FullMethodName  = "/authors.AuthorsService/SubmitApplication"
+	AuthorsService_GetMyApplication_FullMethodName   = "/authors.AuthorsService/GetMyApplication"
+	AuthorsService_ListApplications_FullMethodName   = "/authors.AuthorsService/ListApplications"
+	AuthorsService_ApproveApplication_FullMethodName = "/authors.AuthorsService/ApproveApplication"
+	AuthorsService_RejectApplication_FullMethodName  = "/authors.AuthorsService/RejectApplication"
+	AuthorsService_RevertApplication_FullMethodName  = "/authors.AuthorsService/RevertApplication"
 )
 
 // AuthorsServiceClient is the client API for AuthorsService service.
@@ -33,9 +37,15 @@ type AuthorsServiceClient interface {
 	UpsertProfile(ctx context.Context, in *UpsertProfileRequest, opts ...grpc.CallOption) (*UpsertProfileResponse, error)
 	GetAuthor(ctx context.Context, in *GetAuthorRequest, opts ...grpc.CallOption) (*GetAuthorResponse, error)
 	ListAuthors(ctx context.Context, in *ListAuthorsRequest, opts ...grpc.CallOption) (*ListAuthorsResponse, error)
-	// Wave 3 C1 — author application (approval is C2).
+	// Wave 3 C1 — author application.
 	SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*SubmitApplicationResponse, error)
 	GetMyApplication(ctx context.Context, in *GetMyApplicationRequest, opts ...grpc.CallOption) (*GetMyApplicationResponse, error)
+	// Wave 3 C2 — admin approval.
+	ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
+	ApproveApplication(ctx context.Context, in *ApproveApplicationRequest, opts ...grpc.CallOption) (*ApproveApplicationResponse, error)
+	RejectApplication(ctx context.Context, in *RejectApplicationRequest, opts ...grpc.CallOption) (*RejectApplicationResponse, error)
+	// Compensating call if Auth.UpdateRole fails after approve.
+	RevertApplication(ctx context.Context, in *RevertApplicationRequest, opts ...grpc.CallOption) (*RevertApplicationResponse, error)
 }
 
 type authorsServiceClient struct {
@@ -91,6 +101,42 @@ func (c *authorsServiceClient) GetMyApplication(ctx context.Context, in *GetMyAp
 	return out, nil
 }
 
+func (c *authorsServiceClient) ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error) {
+	out := new(ListApplicationsResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_ListApplications_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authorsServiceClient) ApproveApplication(ctx context.Context, in *ApproveApplicationRequest, opts ...grpc.CallOption) (*ApproveApplicationResponse, error) {
+	out := new(ApproveApplicationResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_ApproveApplication_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authorsServiceClient) RejectApplication(ctx context.Context, in *RejectApplicationRequest, opts ...grpc.CallOption) (*RejectApplicationResponse, error) {
+	out := new(RejectApplicationResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_RejectApplication_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authorsServiceClient) RevertApplication(ctx context.Context, in *RevertApplicationRequest, opts ...grpc.CallOption) (*RevertApplicationResponse, error) {
+	out := new(RevertApplicationResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_RevertApplication_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorsServiceServer is the server API for AuthorsService service.
 // All implementations must embed UnimplementedAuthorsServiceServer
 // for forward compatibility
@@ -98,9 +144,15 @@ type AuthorsServiceServer interface {
 	UpsertProfile(context.Context, *UpsertProfileRequest) (*UpsertProfileResponse, error)
 	GetAuthor(context.Context, *GetAuthorRequest) (*GetAuthorResponse, error)
 	ListAuthors(context.Context, *ListAuthorsRequest) (*ListAuthorsResponse, error)
-	// Wave 3 C1 — author application (approval is C2).
+	// Wave 3 C1 — author application.
 	SubmitApplication(context.Context, *SubmitApplicationRequest) (*SubmitApplicationResponse, error)
 	GetMyApplication(context.Context, *GetMyApplicationRequest) (*GetMyApplicationResponse, error)
+	// Wave 3 C2 — admin approval.
+	ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
+	ApproveApplication(context.Context, *ApproveApplicationRequest) (*ApproveApplicationResponse, error)
+	RejectApplication(context.Context, *RejectApplicationRequest) (*RejectApplicationResponse, error)
+	// Compensating call if Auth.UpdateRole fails after approve.
+	RevertApplication(context.Context, *RevertApplicationRequest) (*RevertApplicationResponse, error)
 	mustEmbedUnimplementedAuthorsServiceServer()
 }
 
@@ -122,6 +174,18 @@ func (UnimplementedAuthorsServiceServer) SubmitApplication(context.Context, *Sub
 }
 func (UnimplementedAuthorsServiceServer) GetMyApplication(context.Context, *GetMyApplicationRequest) (*GetMyApplicationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMyApplication not implemented")
+}
+func (UnimplementedAuthorsServiceServer) ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListApplications not implemented")
+}
+func (UnimplementedAuthorsServiceServer) ApproveApplication(context.Context, *ApproveApplicationRequest) (*ApproveApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApproveApplication not implemented")
+}
+func (UnimplementedAuthorsServiceServer) RejectApplication(context.Context, *RejectApplicationRequest) (*RejectApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RejectApplication not implemented")
+}
+func (UnimplementedAuthorsServiceServer) RevertApplication(context.Context, *RevertApplicationRequest) (*RevertApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevertApplication not implemented")
 }
 func (UnimplementedAuthorsServiceServer) mustEmbedUnimplementedAuthorsServiceServer() {}
 
@@ -226,6 +290,78 @@ func _AuthorsService_GetMyApplication_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthorsService_ListApplications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListApplicationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).ListApplications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_ListApplications_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).ListApplications(ctx, req.(*ListApplicationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthorsService_ApproveApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).ApproveApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_ApproveApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).ApproveApplication(ctx, req.(*ApproveApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthorsService_RejectApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).RejectApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_RejectApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).RejectApplication(ctx, req.(*RejectApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthorsService_RevertApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevertApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).RevertApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_RevertApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).RevertApplication(ctx, req.(*RevertApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthorsService_ServiceDesc is the grpc.ServiceDesc for AuthorsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +388,22 @@ var AuthorsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMyApplication",
 			Handler:    _AuthorsService_GetMyApplication_Handler,
+		},
+		{
+			MethodName: "ListApplications",
+			Handler:    _AuthorsService_ListApplications_Handler,
+		},
+		{
+			MethodName: "ApproveApplication",
+			Handler:    _AuthorsService_ApproveApplication_Handler,
+		},
+		{
+			MethodName: "RejectApplication",
+			Handler:    _AuthorsService_RejectApplication_Handler,
+		},
+		{
+			MethodName: "RevertApplication",
+			Handler:    _AuthorsService_RevertApplication_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

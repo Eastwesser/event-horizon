@@ -61,3 +61,21 @@ func TestGetMyApplicationRequest_Validate(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestListApplicationsRequest_Validate(t *testing.T) {
+	if err := (&authorspb.ListApplicationsRequest{Status: "pending"}).Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&authorspb.ListApplicationsRequest{Status: "nope"}).Validate(); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestApproveApplicationRequest_Validate(t *testing.T) {
+	if err := (&authorspb.ApproveApplicationRequest{}).Validate(); err == nil {
+		t.Fatal("expected error")
+	}
+	if err := (&authorspb.ApproveApplicationRequest{ApplicationId: "a", ReviewerId: "r"}).Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

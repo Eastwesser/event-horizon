@@ -15,14 +15,16 @@ func Author(a *authorsPb.Author) gin.H {
 		return nil
 	}
 	return gin.H{
-		"id":              a.GetId(),
-		"user_id":         a.GetUserId(),
-		"display_name":    a.GetDisplayName(),
-		"bio":             a.GetBio(),
-		"avatar_url":      a.GetAvatarUrl(),
-		"active":          a.GetActive(),
-		"created_at_unix": a.GetCreatedAtUnix(),
-		"updated_at_unix": a.GetUpdatedAtUnix(),
+		"id":               a.GetId(),
+		"user_id":          a.GetUserId(),
+		"display_name":     a.GetDisplayName(),
+		"bio":              a.GetBio(),
+		"avatar_url":       a.GetAvatarUrl(),
+		"portfolio":        a.GetPortfolio(),
+		"active":           a.GetActive(),
+		"created_at_unix":  a.GetCreatedAtUnix(),
+		"updated_at_unix":  a.GetUpdatedAtUnix(),
+		"verified_at_unix": a.GetVerifiedAtUnix(),
 	}
 }
 
@@ -33,6 +35,38 @@ func Authors(list []*authorsPb.Author) []gin.H {
 	out := make([]gin.H, 0, len(list))
 	for _, a := range list {
 		if h := Author(a); h != nil {
+			out = append(out, h)
+		}
+	}
+	return out
+}
+
+func AuthorApplication(a *authorsPb.AuthorApplication) gin.H {
+	if a == nil {
+		return nil
+	}
+	return gin.H{
+		"id":               a.GetId(),
+		"user_id":          a.GetUserId(),
+		"status":           a.GetStatus(),
+		"display_name":     a.GetDisplayName(),
+		"portfolio":        a.GetPortfolio(),
+		"motivation":       a.GetMotivation(),
+		"contact_email":    a.GetContactEmail(),
+		"created_at_unix":  a.GetCreatedAtUnix(),
+		"reviewed_at_unix": a.GetReviewedAtUnix(),
+		"reviewed_by":      a.GetReviewedBy(),
+		"reviewer_note":    a.GetReviewerNote(),
+	}
+}
+
+func AuthorApplications(list []*authorsPb.AuthorApplication) []gin.H {
+	if list == nil {
+		return []gin.H{}
+	}
+	out := make([]gin.H, 0, len(list))
+	for _, a := range list {
+		if h := AuthorApplication(a); h != nil {
 			out = append(out, h)
 		}
 	}
