@@ -1,16 +1,17 @@
 /**
  * Wave 4 — purchase → cancel (idempotency) load.
  *
- * Picks the cheapest non-merch shop item, buys it, cancels twice
- * (second cancel must report already_refunded / succeed without error).
+ * Each VU gets its own unowned non-merch item (buy → cancel → cancel again).
+ * Cancel restores ownership so the same VU can loop without 409.
  *
  * Usage:
  *   BASE_URL=http://localhost:8079 \
  *   EH_K6_EMAIL=... EH_K6_PASSWORD=... \
+ *   K6_VUS=1 K6_DURATION=30s \
  *   k6 run deployments/k6/purchase.js
  *
- * Account must have enough tickets for at least one purchase.
- * Prefer a seed admin / funded user. Optional: EH_K6_ITEM_ID to pin an item.
+ * Optional: EH_K6_ITEM_ID — pin as VU1's item only if that id is currently unowned.
+ * If fewer unowned items than VUs, extra VUs idle (console warning).
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
@@ -18,9 +19,10 @@ import { Rate } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
 const baseURL = __ENV.BASE_URL || 'http://localhost:8079';
+const requestedVUs = Number(__ENV.K6_VUS || 5);
 
 export const options = {
-  vus: Number(__ENV.K6_VUS || 5),
+  vus: requestedVUs,
   duration: __ENV.K6_DURATION || '30s',
   thresholds: {
     http_req_duration: ['p(95)<1200'],
@@ -36,14 +38,12 @@ function authHeaders(token) {
   };
 }
 
-function pickItem(items) {
-  const pinned = __ENV.EH_K6_ITEM_ID;
-  if (pinned) {
-    return pinned;
-  }
-  const candidates = (items || [])
+/** Non-merch, unowned, price > 0 — cheapest first. */
+function unownedCandidates(items) {
+  return (items || [])
     .filter((it) => {
       if (!it || !it.id) return false;
+      if (it.owned === true) return false;
       const type = String(it.type || it.item_type || '').toLowerCase();
       const cat = String(it.category || '').toLowerCase();
       if (type === 'merch' || cat === 'merch') return false;
@@ -51,7 +51,24 @@ function pickItem(items) {
       return Number.isFinite(price) && price > 0;
     })
     .sort((a, b) => Number(a.price) - Number(b.price));
-  return candidates.length ? candidates[0].id : null;
+}
+
+function pickItemIDs(items, need) {
+  const candidates = unownedCandidates(items);
+  const ids = candidates.map((it) => it.id);
+  const pinned = (__ENV.EH_K6_ITEM_ID || '').trim();
+  if (pinned) {
+    const idx = ids.indexOf(pinned);
+    if (idx === -1) {
+      console.warn(
+        `EH_K6_ITEM_ID=${pinned} is missing or already owned — ignoring pin`,
+      );
+    } else {
+      ids.splice(idx, 1);
+      ids.unshift(pinned);
+    }
+  }
+  return ids.slice(0, need);
 }
 
 export function setup() {
@@ -77,16 +94,30 @@ export function setup() {
   if (shopRes.status !== 200) {
     throw new Error(`shop items failed: ${shopRes.status}`);
   }
-  const itemID = pickItem(shopRes.json());
-  if (!itemID) {
-    throw new Error('no purchasable non-merch item found (set EH_K6_ITEM_ID)');
+
+  const itemIDs = pickItemIDs(shopRes.json(), requestedVUs);
+  if (itemIDs.length === 0) {
+    throw new Error(
+      'no unowned non-merch items (cancel some purchases or seed more skins)',
+    );
   }
-  return { token, itemID };
+  if (itemIDs.length < requestedVUs) {
+    console.warn(
+      `only ${itemIDs.length} unowned item(s) for ${requestedVUs} VUs — VUs > ${itemIDs.length} will idle`,
+    );
+  }
+  console.log(`purchase.js: assigned ${itemIDs.length} item(s) to VUs: ${itemIDs.join(', ')}`);
+  return { token, itemIDs };
 }
 
 export default function (data) {
   const headers = authHeaders(data.token);
-  const itemID = data.itemID;
+  const idx = __VU - 1;
+  if (idx >= data.itemIDs.length) {
+    sleep(1);
+    return;
+  }
+  const itemID = data.itemIDs[idx];
 
   const buyRes = http.post(
     `${baseURL}/api/shop/purchase`,
