@@ -29,6 +29,10 @@ message Item {
     // Price paid at purchase time (inventory list); 0 if unknown.
     int32 purchase_price = 11;
     string purchase_id = 12;
+    // Refund window (ISO-8601); inventory list only.
+    string refundable_until = 13;
+    string fulfilled_at = 14;
+    bool can_cancel = 15;
 }
 
 message GetItemsRequest {

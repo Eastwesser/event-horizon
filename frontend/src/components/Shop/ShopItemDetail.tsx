@@ -390,16 +390,33 @@ export function ShopItemDetail() {
               <div className="flex flex-col items-end gap-1">
                 {owned ? (
                   <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={cancelling}
-                      onClick={() => setShowCancelModal(true)}
-                      className="gap-1.5"
-                    >
-                      <Icon name="undo" className="h-3.5 w-3.5" />
-                      Отменить
-                    </Button>
+                    {ownedPurchase?.can_cancel ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={cancelling}
+                        onClick={() => setShowCancelModal(true)}
+                        className="gap-1.5"
+                      >
+                        <Icon name="undo" className="h-3.5 w-3.5" />
+                        Отменить
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        className="gap-1.5 opacity-50"
+                        title={
+                          ownedPurchase?.fulfilled_at
+                            ? 'Товар уже отправлен — возврат недоступен.'
+                            : 'Срок возврата истёк (7 дней с покупки).'
+                        }
+                      >
+                        <Icon name="undo" className="h-3.5 w-3.5" />
+                        Отменить
+                      </Button>
+                    )}
                     <Link
                       to="/shop?tab=inventory"
                       className="text-xs text-horizon-cyan underline-offset-2 hover:underline"

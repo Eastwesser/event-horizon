@@ -559,18 +559,36 @@ export const Shop: React.FC = () => {
                     </div>
                   </button>
                   <div className="mt-3 flex justify-end border-t border-white/5 pt-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="shrink-0 gap-1.5 px-2"
-                      disabled={cancelling}
-                      title="Отменить покупку"
-                      aria-label={`Отменить покупку ${title}`}
-                      onClick={() => setCancelTarget(purchased)}
-                    >
-                      <Icon name="undo" className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Отменить</span>
-                    </Button>
+                    {purchased.can_cancel ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 gap-1.5 px-2"
+                        disabled={cancelling}
+                        title="Отменить покупку"
+                        aria-label={`Отменить покупку ${title}`}
+                        onClick={() => setCancelTarget(purchased)}
+                      >
+                        <Icon name="undo" className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Отменить</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 gap-1.5 px-2 opacity-50"
+                        disabled
+                        title={
+                          purchased.fulfilled_at
+                            ? 'Товар уже отправлен — возврат недоступен.'
+                            : 'Срок возврата истёк (7 дней с покупки).'
+                        }
+                        aria-label="Возврат недоступен"
+                      >
+                        <Icon name="undo" className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Отменить</span>
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );

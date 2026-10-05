@@ -963,12 +963,7 @@ func runGateway() {
 			return
 		}
 		resp := out.(*shopPb.GetInventoryResponse)
-		// Never JSON-encode a nil slice as `null` — empty inventory is [].
-		items := resp.GetItems()
-		if items == nil {
-			items = []*shopPb.Item{}
-		}
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, dto.ShopItems(resp.GetItems()))
 	})
 
 	// --- Payment (Boosty subscription) ---

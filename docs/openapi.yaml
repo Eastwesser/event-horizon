@@ -733,6 +733,21 @@ paths:
           description: Unauthorized
         '404':
           description: No completed purchase found for this item
+        '400':
+          description: Refund window expired or physical item already fulfilled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Срок возврата истёк (7 дней с покупки).
+                      - Товар уже отправлен — возврат недоступен.
+                  grpc_code:
+                    type: string
+                    example: InvalidArgument
 
   /api/shop/inventory:
     get:
@@ -765,6 +780,21 @@ paths:
                       type: string
                     available:
                       type: boolean
+                    purchase_price:
+                      type: integer
+                    purchase_id:
+                      type: string
+                    purchased_at:
+                      type: string
+                    refundable_until:
+                      type: string
+                      description: ISO-8601 end of 7-day cancel window
+                    fulfilled_at:
+                      type: string
+                      description: Set when fulfillment marks the purchase shipped
+                    can_cancel:
+                      type: boolean
+                      description: Server-computed cancel eligibility
         '401':
           description: Unauthorized
 

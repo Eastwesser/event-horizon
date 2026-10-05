@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/Eastwesser/event-horizon/contracts/events"
 	"github.com/Eastwesser/event-horizon/pkg/migrator"
 	"github.com/Eastwesser/event-horizon/platform/pkg/closer"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
@@ -199,6 +200,7 @@ func (a *App) initDomain(_ context.Context) error {
 	}
 
 	subscribeInventorySync(a.di.js, a.di.pgRepo, a.log)
+	subscribePurchaseFulfilled(a.di.js, a.di.pgRepo, a.log)
 
 	a.di.svc = service.New(a.di.pgRepo, a.di.redisRepo, a.di.js, billingClient, paymentClient)
 	a.di.svc.SetKafkaProducer(a.di.kafkaProd)
@@ -250,6 +252,37 @@ func subscribeInventorySync(js nats.JetStreamContext, pg *repository.PostgresSho
 		return
 	}
 	log.Info("subscribed to inventory.item.created")
+}
+
+func subscribePurchaseFulfilled(js nats.JetStreamContext, pg *repository.PostgresShopRepo, log *slog.Logger) {
+	if js == nil || pg == nil {
+		return
+	}
+	log.Info("subscribing to purchase.fulfilled")
+	_, err := js.Subscribe(kafka.TopicPurchaseFulfilled, func(msg *nats.Msg) {
+		fulfilled, err := events.UnmarshalPurchaseFulfilled(msg.Data)
+		if err != nil {
+			log.Warn("purchase.fulfilled parse failed", "err", err)
+			_ = msg.Nak()
+			return
+		}
+		if fulfilled.PurchaseUUID == "" {
+			log.Warn("purchase.fulfilled missing purchase_uuid")
+			_ = msg.Nak()
+			return
+		}
+		if err := pg.MarkPurchaseFulfilled(context.Background(), fulfilled.PurchaseUUID); err != nil {
+			log.Warn("mark purchase fulfilled failed", "purchase_id", fulfilled.PurchaseUUID, "err", err)
+			_ = msg.Nak()
+			return
+		}
+		_ = msg.Ack()
+	}, nats.Durable("shop-purchase-fulfilled"))
+	if err != nil {
+		log.Warn("purchase.fulfilled subscribe failed", "err", err)
+		return
+	}
+	log.Info("subscribed to purchase.fulfilled")
 }
 
 func (a *App) initOutbox(_ context.Context) error {

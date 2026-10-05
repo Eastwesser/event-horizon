@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -47,6 +48,7 @@ type ShopStore interface {
 	PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int, outbox *repository.OutboxRecord) error
 	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
 	RefundPurchase(ctx context.Context, userID, itemID string) (*repository.RefundResult, error)
+	MarkPurchaseFulfilled(ctx context.Context, purchaseID string) error
 	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
 	CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64, stock int) error
 }
@@ -253,7 +255,28 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 }
 
 func (s *shopService) GetInventory(ctx context.Context, userID string) ([]repository.Item, error) {
-	return s.pgRepo.GetUserInventory(ctx, userID)
+	items, err := s.pgRepo.GetUserInventory(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	for i := range items {
+		items[i].CanCancel = canCancelInventoryItem(items[i], now)
+	}
+	return items, nil
+}
+
+func canCancelInventoryItem(item repository.Item, now time.Time) bool {
+	if item.PurchaseID == "" || item.RefundableUntil == nil {
+		return false
+	}
+	if now.After(item.RefundableUntil.UTC()) {
+		return false
+	}
+	if item.FulfilledAt != nil && model.IsPhysicalItem(item.Category) {
+		return false
+	}
+	return true
 }
 
 func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error) {
@@ -262,9 +285,13 @@ func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string)
 		// Still allow refund if purchase exists but shop item row is gone.
 		item = &repository.Item{ID: itemID, Category: "merch"}
 	}
+	_ = item
 
 	refund, err := s.pgRepo.RefundPurchase(ctx, userID, itemID)
 	if err != nil {
+		if errors.Is(err, model.ErrRefundWindowExpired) || errors.Is(err, model.ErrAlreadyFulfilled) {
+			return nil, err
+		}
 		if strings.Contains(err.Error(), "purchase not found") {
 			return nil, model.ErrPurchaseNotFound
 		}

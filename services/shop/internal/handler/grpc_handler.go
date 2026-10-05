@@ -108,20 +108,31 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
         if item.PurchasedAt != nil {
             purchasedAt = item.PurchasedAt.Format(time.RFC3339)
         }
-        
+        refundableUntil := ""
+        if item.RefundableUntil != nil {
+            refundableUntil = item.RefundableUntil.UTC().Format(time.RFC3339)
+        }
+        fulfilledAt := ""
+        if item.FulfilledAt != nil {
+            fulfilledAt = item.FulfilledAt.UTC().Format(time.RFC3339)
+        }
+
         pbItems[i] = &pb.Item{
-            Id:            item.ID,
-            Name:          item.Name,
-            Description:   item.Description,
-            Price:         int32(item.Price),
-            Category:      item.Category,
-            GameId:        gameID,
-            ImageUrl:      item.ImageURL,
-            Available:     item.Available,
-            Owned:         item.Owned,
-            PurchasedAt:   purchasedAt,
-            PurchasePrice: int32(item.PurchasePrice),
-            PurchaseId:    item.PurchaseID,
+            Id:              item.ID,
+            Name:            item.Name,
+            Description:     item.Description,
+            Price:           int32(item.Price),
+            Category:        item.Category,
+            GameId:          gameID,
+            ImageUrl:        item.ImageURL,
+            Available:       item.Available,
+            Owned:           item.Owned,
+            PurchasedAt:     purchasedAt,
+            PurchasePrice:   int32(item.PurchasePrice),
+            PurchaseId:      item.PurchaseID,
+            RefundableUntil: refundableUntil,
+            FulfilledAt:     fulfilledAt,
+            CanCancel:       item.CanCancel,
         }
     }
 
@@ -164,6 +175,9 @@ func mapShopErr(err error) error {
         return status.Error(codes.NotFound, err.Error())
     case errors.Is(err, model.ErrAlreadyOwned):
         return status.Error(codes.AlreadyExists, err.Error())
+    case errors.Is(err, model.ErrRefundWindowExpired), errors.Is(err, model.ErrAlreadyFulfilled):
+        // InvalidArgument → HTTP 400 (FailedPrecondition is mapped to 409 for funds/stock).
+        return status.Error(codes.InvalidArgument, err.Error())
     case errors.Is(err, model.ErrInsufficientFunds), errors.Is(err, model.ErrItemUnavailable):
         return status.Error(codes.FailedPrecondition, err.Error())
     default:

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+
+	"github.com/Eastwesser/event-horizon/services/shop/internal/model"
 )
 
 type Item struct {
@@ -22,6 +24,9 @@ type Item struct {
 	PurchasedAt   *time.Time
 	PurchasePrice int
 	PurchaseID    string
+	RefundableUntil *time.Time
+	FulfilledAt     *time.Time
+	CanCancel       bool
 }
 
 // RefundResult is the outcome of marking a completed purchase as refunded.
@@ -174,11 +179,13 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
         SELECT i.id, i.name, i.description, i.price, i.category, i.game_id, i.image_url, i.available,
                inv.purchased_at,
                COALESCE(p.price, 0) AS purchase_price,
-               COALESCE(p.id::text, '') AS purchase_id
+               COALESCE(p.id::text, '') AS purchase_id,
+               p.refundable_until,
+               p.fulfilled_at
         FROM inventory inv
         JOIN items i ON inv.item_id = i.id
         LEFT JOIN LATERAL (
-            SELECT id, price
+            SELECT id, price, refundable_until, fulfilled_at
             FROM purchases
             WHERE user_id = inv.user_id
               AND item_id = inv.item_id
@@ -201,6 +208,8 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
 		var item Item
 		var gameID sql.NullString
 		var purchasedAt time.Time
+		var refundableUntil sql.NullTime
+		var fulfilledAt sql.NullTime
 		err := rows.Scan(
 			&item.ID,
 			&item.Name,
@@ -213,6 +222,8 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
 			&purchasedAt,
 			&item.PurchasePrice,
 			&item.PurchaseID,
+			&refundableUntil,
+			&fulfilledAt,
 		)
 		if err != nil {
 			return nil, err
@@ -221,9 +232,17 @@ func (r *PostgresShopRepo) GetUserInventory(ctx context.Context, userID string) 
 			item.GameID = &gameID.String
 		}
 		item.PurchasedAt = &purchasedAt
+		if refundableUntil.Valid {
+			t := refundableUntil.Time
+			item.RefundableUntil = &t
+		}
+		if fulfilledAt.Valid {
+			t := fulfilledAt.Time
+			item.FulfilledAt = &t
+		}
 		items = append(items, item)
 	}
-	return items, nil
+	return items, rows.Err()
 }
 
 func (r *PostgresShopRepo) CreatePendingPurchase(ctx context.Context, userID, itemID string, price int) (string, error) {
@@ -254,6 +273,7 @@ func (r *PostgresShopRepo) CancelPendingPurchase(ctx context.Context, purchaseID
 
 // RefundPurchase marks the latest completed purchase as REFUNDED, removes the
 // inventory row, and restores shop.items stock. Idempotent via refunded_at.
+// Enforces 7-day refundable_until and blocks physical items after fulfilled_at.
 func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID string) (*RefundResult, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -263,14 +283,19 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 
 	var purchaseID string
 	var price int
+	var refundableUntil time.Time
+	var fulfilledAt sql.NullTime
+	var category string
 	err = tx.QueryRowContext(ctx, `
-		SELECT id, price FROM purchases
-		WHERE user_id = $1 AND item_id = $2
-		  AND status = 'COMPLETED' AND refunded_at IS NULL
-		ORDER BY COALESCE(completed_at, purchased_at) DESC
+		SELECT p.id, p.price, p.refundable_until, p.fulfilled_at, i.category
+		FROM purchases p
+		JOIN items i ON i.id = p.item_id
+		WHERE p.user_id = $1 AND p.item_id = $2
+		  AND p.status = 'COMPLETED' AND p.refunded_at IS NULL
+		ORDER BY COALESCE(p.completed_at, p.purchased_at) DESC
 		LIMIT 1
-		FOR UPDATE
-	`, userID, itemID).Scan(&purchaseID, &price)
+		FOR UPDATE OF p
+	`, userID, itemID).Scan(&purchaseID, &price, &refundableUntil, &fulfilledAt, &category)
 	if err == sql.ErrNoRows {
 		var already bool
 		_ = tx.QueryRowContext(ctx, `
@@ -287,6 +312,14 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	now := time.Now().UTC()
+	if now.After(refundableUntil) {
+		return nil, model.ErrRefundWindowExpired
+	}
+	if fulfilledAt.Valid && model.IsPhysicalItem(category) {
+		return nil, model.ErrAlreadyFulfilled
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -317,6 +350,16 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 		return nil, err
 	}
 	return &RefundResult{PurchaseID: purchaseID, Price: price}, nil
+}
+
+// MarkPurchaseFulfilled sets fulfilled_at when fulfillment publishes PurchaseFulfilled.
+func (r *PostgresShopRepo) MarkPurchaseFulfilled(ctx context.Context, purchaseID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE purchases
+		SET fulfilled_at = NOW()
+		WHERE id = $1 AND fulfilled_at IS NULL
+	`, purchaseID)
+	return err
 }
 
 type OutboxRecord struct {
@@ -359,7 +402,9 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
 	}
 
 	// Добавляем в историю покупок
-	_, err = tx.ExecContext(ctx, `INSERT INTO purchases (user_id, item_id, price, status) VALUES ($1, $2, $3, 'COMPLETED')`, userID, itemID, price)
+	_, err = tx.ExecContext(ctx, `
+        INSERT INTO purchases (user_id, item_id, price, status, refundable_until)
+        VALUES ($1, $2, $3, 'COMPLETED', NOW() + INTERVAL '7 days')`, userID, itemID, price)
 	if err != nil {
 		return err
 	}
