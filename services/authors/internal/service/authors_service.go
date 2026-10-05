@@ -9,15 +9,35 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Eastwesser/event-horizon/services/authors/internal/model"
-	"github.com/Eastwesser/event-horizon/services/authors/internal/repository"
 )
 
-type AuthorsService struct {
-	repo  *repository.PostgresRepo
-	cache *repository.RedisRepo
+// AuthorStore is the persistence port used by AuthorsService (Postgres in prod).
+type AuthorStore interface {
+	Upsert(ctx context.Context, a *model.Author, eventType string, eventPayload map[string]any) error
+	GetByUserID(ctx context.Context, userID string) (*model.Author, error)
+	List(ctx context.Context, limit, offset int) ([]*model.Author, int64, error)
+	GetPendingApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error)
+	GetLatestApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error)
+	InsertApplication(ctx context.Context, a *model.AuthorApplication) error
+	ListApplications(ctx context.Context, status string, limit, offset int) ([]*model.AuthorApplication, int64, error)
+	ApproveApplicationInTx(ctx context.Context, applicationID, reviewerID string) (*model.AuthorApplication, *model.Author, error)
+	RejectApplication(ctx context.Context, applicationID, reviewerID, note string) (*model.AuthorApplication, error)
+	RevertApplication(ctx context.Context, applicationID string) (*model.AuthorApplication, error)
 }
 
-func New(repo *repository.PostgresRepo, cache *repository.RedisRepo) *AuthorsService {
+// AuthorCache is the optional Redis port for author profiles.
+type AuthorCache interface {
+	Get(ctx context.Context, userID string) (*model.Author, error)
+	Set(ctx context.Context, a *model.Author) error
+	Delete(ctx context.Context, userID string) error
+}
+
+type AuthorsService struct {
+	repo  AuthorStore
+	cache AuthorCache
+}
+
+func New(repo AuthorStore, cache AuthorCache) *AuthorsService {
 	return &AuthorsService{repo: repo, cache: cache}
 }
 
