@@ -21,6 +21,7 @@ import { Subscription } from './components/Payment/Subscription';
 import { AuthorsPage } from './components/Authors/AuthorsPage';
 import { CardArtistPage } from './components/Authors/CardArtistPage';
 import { RegisterAuthor } from './components/Authors/RegisterAuthor';
+import { AuthorDashboard } from './components/Authors/AuthorDashboard';
 import { AnalyticsDashboard } from './components/Analytics/AnalyticsDashboard';
 import { HistoryPage } from './components/History/HistoryPage';
 import { AdminPage } from './components/Admin/AdminPage';
@@ -130,6 +131,10 @@ function App() {
           <Route
             path="/register-author"
             element={isAuthenticated ? <RegisterAuthor /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/author/dashboard"
+            element={isAuthenticated ? <AuthorDashboard /> : <Navigate to="/login" />}
           />
           <Route
             path="/authors/:artistId"

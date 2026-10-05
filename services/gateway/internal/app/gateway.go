@@ -113,6 +113,20 @@ func throughBreaker(b *circuit.Breaker, c *gin.Context, fn func() (any, error)) 
 	return out, err
 }
 
+// maskEmail hides local-part for author sales lists (a***@domain).
+func maskEmail(email string) string {
+	email = strings.TrimSpace(email)
+	at := strings.IndexByte(email, '@')
+	if at <= 0 {
+		return "hidden"
+	}
+	local, domain := email[:at], email[at:]
+	if len(local) == 1 {
+		return local + "***" + domain
+	}
+	return string(local[0]) + "***" + domain
+}
+
 // writeGRPCError maps common gRPC codes to HTTP (see architecture/STATUS_CODES.md).
 func writeGRPCError(c *gin.Context, err error) {
 	st, ok := status.FromError(err)
@@ -1276,6 +1290,7 @@ func runGateway() {
 			DisplayName string `json:"display_name"`
 			Bio         string `json:"bio"`
 			AvatarURL   string `json:"avatar_url"`
+			Portfolio   string `json:"portfolio"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil || req.DisplayName == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "display_name is required"})
@@ -1287,6 +1302,7 @@ func runGateway() {
 				DisplayName: req.DisplayName,
 				Bio:         req.Bio,
 				AvatarUrl:   req.AvatarURL,
+				Portfolio:   req.Portfolio,
 			})
 		})
 		if err == circuit.ErrOpen {
@@ -1296,7 +1312,146 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authorsPb.UpsertProfileResponse)
-		c.JSON(http.StatusOK, resp.Author)
+		c.JSON(http.StatusOK, dto.Author(resp.Author))
+	})
+
+	r.GET("/api/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+		out, err := throughBreaker(authorsCB, c, func() (any, error) {
+			return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
+				UserId: middleware.UserID(c),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*authorsPb.GetAuthorResponse)
+		c.JSON(http.StatusOK, dto.Author(resp.Author))
+	})
+
+	// Wave 3 C3 — author sales (read-only aggregates + purchase rows).
+	r.GET("/api/authors/me/sales", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+		authorID := middleware.UserID(c)
+		if middleware.Role(c) == RoleAdmin {
+			if q := strings.TrimSpace(c.Query("author_id")); q != "" {
+				authorID = q
+			}
+		}
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+		if limit <= 0 {
+			limit = 50
+		}
+
+		invOut, err := throughBreaker(inventoryCB, c, func() (any, error) {
+			return inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
+				Filters: map[string]string{"author_id": authorID, "include_deleted": "1"},
+				Limit:   100,
+				Offset:  0,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		invResp := invOut.(*inventoryPb.SearchItemsResponse)
+		itemIDs := make([]string, 0, len(invResp.GetItems()))
+		names := make(map[string]string, len(invResp.GetItems()))
+		for _, it := range invResp.GetItems() {
+			itemIDs = append(itemIDs, it.GetId())
+			names[it.GetId()] = it.GetName()
+		}
+		// Page remaining item ids if author has >100 items.
+		totalItems := invResp.GetTotal()
+		for off := int32(100); int64(off) < totalItems; off += 100 {
+			moreOut, err := throughBreaker(inventoryCB, c, func() (any, error) {
+				return inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
+					Filters: map[string]string{"author_id": authorID, "include_deleted": "1"},
+					Limit:   100,
+					Offset:  off,
+				})
+			})
+			if err == circuit.ErrOpen {
+				return
+			}
+			if handleRPCError(c, err) {
+				return
+			}
+			more := moreOut.(*inventoryPb.SearchItemsResponse)
+			for _, it := range more.GetItems() {
+				itemIDs = append(itemIDs, it.GetId())
+				names[it.GetId()] = it.GetName()
+			}
+		}
+
+		if len(itemIDs) == 0 {
+			c.JSON(http.StatusOK, gin.H{
+				"sales_count":    0,
+				"tickets_earned": 0,
+				"purchases":      []any{},
+				"total":          0,
+				"author_id":      authorID,
+			})
+			return
+		}
+
+		shopOut, err := throughBreaker(shopCB, c, func() (any, error) {
+			return shopClient.ListPurchasesByItemIDs(c.Request.Context(), &shopPb.ListPurchasesByItemIDsRequest{
+				ItemIds: itemIDs,
+				Limit:   int32(limit),
+				Offset:  int32(offset),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		sales := shopOut.(*shopPb.ListPurchasesByItemIDsResponse)
+
+		emailCache := map[string]string{}
+		purchases := make([]gin.H, 0, len(sales.GetPurchases()))
+		for _, p := range sales.GetPurchases() {
+			email := emailCache[p.GetUserId()]
+			if email == "" {
+				if uOut, uErr := throughBreaker(authCB, c, func() (any, error) {
+					return authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{UserId: p.GetUserId()})
+				}); uErr == nil {
+					if ur, ok := uOut.(*authPb.GetUserResponse); ok {
+						email = maskEmail(ur.GetEmail())
+						emailCache[p.GetUserId()] = email
+					}
+				}
+				if email == "" {
+					email = "hidden"
+				}
+			}
+			purchases = append(purchases, gin.H{
+				"id":            p.GetId(),
+				"item_id":       p.GetItemId(),
+				"item_name":     names[p.GetItemId()],
+				"buyer_email":   email,
+				"price":         p.GetPrice(),
+				"status":        p.GetStatus(),
+				"purchased_at":  p.GetPurchasedAt(),
+				"refunded_at":   p.GetRefundedAt(),
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"sales_count":    sales.GetSalesCount(),
+			"tickets_earned": sales.GetTicketsEarned(),
+			"purchases":      purchases,
+			"total":          sales.GetTotal(),
+			"author_id":      authorID,
+			"limit":          limit,
+			"offset":         offset,
+		})
 	})
 
 	// Wave 3 C1 — author application (approval is C2).
@@ -1608,6 +1763,19 @@ func runGateway() {
 		}
 		if query := c.Query("query"); query != "" {
 			filters["query"] = query
+		}
+		includeDeleted := c.Query("include_deleted") == "1" || strings.EqualFold(c.Query("include_deleted"), "true")
+		if includeDeleted {
+			role := middleware.Role(c)
+			if role != RoleAuthor && role != RoleAdmin {
+				c.JSON(http.StatusForbidden, gin.H{"error": "include_deleted requires author or admin"})
+				return
+			}
+			filters["include_deleted"] = "1"
+			// Non-admin authors may only see their own deleted rows.
+			if role != RoleAdmin {
+				filters["author_id"] = middleware.UserID(c)
+			}
 		}
 
 		limit := int32(20)
@@ -1978,10 +2146,36 @@ func runGateway() {
 
 	// POST /api/inventory/items/:id/restore — восстановить после soft delete (author владелец или admin)
 	r.POST("/api/inventory/items/:id/restore", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+		userID := middleware.UserID(c)
 		itemID := c.Param("id")
 		if itemID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
 			return
+		}
+
+		if middleware.Role(c) != RoleAdmin {
+			out, err := throughBreaker(inventoryCB, c, func() (any, error) {
+				return inventoryClient.SearchItems(c.Request.Context(), &inventoryPb.SearchItemsRequest{
+					Filters: map[string]string{
+						"id":              itemID,
+						"author_id":       userID,
+						"include_deleted": "1",
+					},
+					Limit:  1,
+					Offset: 0,
+				})
+			})
+			if err == circuit.ErrOpen {
+				return
+			}
+			if handleRPCError(c, err) {
+				return
+			}
+			found := out.(*inventoryPb.SearchItemsResponse)
+			if found.GetTotal() == 0 || len(found.GetItems()) == 0 {
+				c.JSON(http.StatusForbidden, gin.H{"error": "you can only restore your own items"})
+				return
+			}
 		}
 
 		if _, err := throughBreaker(inventoryCB, c, func() (any, error) {

@@ -1145,11 +1145,53 @@ paths:
     put:
       summary: Upsert author profile (author|admin)
       security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [display_name]
+              properties:
+                display_name: { type: string }
+                bio: { type: string }
+                avatar_url: { type: string }
+                portfolio: { type: string }
       responses:
         '200':
           description: Author profile
         '403':
           description: Forbidden
+    get:
+      summary: Get own author profile (author|admin)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Author profile
+        '404':
+          description: No profile yet
+        '403':
+          description: Forbidden
+  /api/authors/me/sales:
+    get:
+      summary: Author sales aggregates + purchase rows (Wave 3 C3)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: author_id
+          schema: { type: string }
+          description: Admin only — filter by author
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: sales_count, tickets_earned, purchases[]
+        '403':
+          description: Author|admin only
   /api/authors/apply:
     post:
       summary: Submit author application (Wave 3 C1)

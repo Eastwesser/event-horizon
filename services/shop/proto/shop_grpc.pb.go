@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: shop.proto
+// source: proto/shop.proto
 
 package shop
 
@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ShopService_GetItems_FullMethodName       = "/shop.ShopService/GetItems"
-	ShopService_PurchaseItem_FullMethodName   = "/shop.ShopService/PurchaseItem"
-	ShopService_CancelPurchase_FullMethodName = "/shop.ShopService/CancelPurchase"
-	ShopService_GetInventory_FullMethodName   = "/shop.ShopService/GetInventory"
+	ShopService_GetItems_FullMethodName               = "/shop.ShopService/GetItems"
+	ShopService_PurchaseItem_FullMethodName           = "/shop.ShopService/PurchaseItem"
+	ShopService_CancelPurchase_FullMethodName         = "/shop.ShopService/CancelPurchase"
+	ShopService_GetInventory_FullMethodName           = "/shop.ShopService/GetInventory"
+	ShopService_ListPurchasesByItemIDs_FullMethodName = "/shop.ShopService/ListPurchasesByItemIDs"
 )
 
 // ShopServiceClient is the client API for ShopService service.
@@ -33,6 +34,8 @@ type ShopServiceClient interface {
 	PurchaseItem(ctx context.Context, in *PurchaseItemRequest, opts ...grpc.CallOption) (*PurchaseItemResponse, error)
 	CancelPurchase(ctx context.Context, in *CancelPurchaseRequest, opts ...grpc.CallOption) (*CancelPurchaseResponse, error)
 	GetInventory(ctx context.Context, in *GetInventoryRequest, opts ...grpc.CallOption) (*GetInventoryResponse, error)
+	// Wave 3 C3 — author sales (purchases of given inventory item ids).
+	ListPurchasesByItemIDs(ctx context.Context, in *ListPurchasesByItemIDsRequest, opts ...grpc.CallOption) (*ListPurchasesByItemIDsResponse, error)
 }
 
 type shopServiceClient struct {
@@ -79,6 +82,15 @@ func (c *shopServiceClient) GetInventory(ctx context.Context, in *GetInventoryRe
 	return out, nil
 }
 
+func (c *shopServiceClient) ListPurchasesByItemIDs(ctx context.Context, in *ListPurchasesByItemIDsRequest, opts ...grpc.CallOption) (*ListPurchasesByItemIDsResponse, error) {
+	out := new(ListPurchasesByItemIDsResponse)
+	err := c.cc.Invoke(ctx, ShopService_ListPurchasesByItemIDs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShopServiceServer is the server API for ShopService service.
 // All implementations must embed UnimplementedShopServiceServer
 // for forward compatibility
@@ -87,6 +99,8 @@ type ShopServiceServer interface {
 	PurchaseItem(context.Context, *PurchaseItemRequest) (*PurchaseItemResponse, error)
 	CancelPurchase(context.Context, *CancelPurchaseRequest) (*CancelPurchaseResponse, error)
 	GetInventory(context.Context, *GetInventoryRequest) (*GetInventoryResponse, error)
+	// Wave 3 C3 — author sales (purchases of given inventory item ids).
+	ListPurchasesByItemIDs(context.Context, *ListPurchasesByItemIDsRequest) (*ListPurchasesByItemIDsResponse, error)
 	mustEmbedUnimplementedShopServiceServer()
 }
 
@@ -105,6 +119,9 @@ func (UnimplementedShopServiceServer) CancelPurchase(context.Context, *CancelPur
 }
 func (UnimplementedShopServiceServer) GetInventory(context.Context, *GetInventoryRequest) (*GetInventoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInventory not implemented")
+}
+func (UnimplementedShopServiceServer) ListPurchasesByItemIDs(context.Context, *ListPurchasesByItemIDsRequest) (*ListPurchasesByItemIDsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPurchasesByItemIDs not implemented")
 }
 func (UnimplementedShopServiceServer) mustEmbedUnimplementedShopServiceServer() {}
 
@@ -191,6 +208,24 @@ func _ShopService_GetInventory_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShopService_ListPurchasesByItemIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPurchasesByItemIDsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShopServiceServer).ListPurchasesByItemIDs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShopService_ListPurchasesByItemIDs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShopServiceServer).ListPurchasesByItemIDs(ctx, req.(*ListPurchasesByItemIDsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ShopService_ServiceDesc is the grpc.ServiceDesc for ShopService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,7 +249,11 @@ var ShopService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetInventory",
 			Handler:    _ShopService_GetInventory_Handler,
 		},
+		{
+			MethodName: "ListPurchasesByItemIDs",
+			Handler:    _ShopService_ListPurchasesByItemIDs_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "shop.proto",
+	Metadata: "proto/shop.proto",
 }

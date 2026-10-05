@@ -12,6 +12,8 @@ export interface InventoryItem {
   images: string[];
   created_at: string;
   updated_at: string;
+  deleted?: boolean;
+  deleted_at?: string;
 }
 
 export interface CreateItemRequest {
@@ -40,6 +42,7 @@ export interface SearchItemsRequest {
   price_min?: number;
   price_max?: number;
   query?: string;
+  include_deleted?: boolean | number | string;
   limit?: number;
   offset?: number;
 }
@@ -112,9 +115,17 @@ export const inventoryApi = {
     return response.data.item;
   },
 
-  // Удалить товар
+  // Удалить товар (hard)
   deleteItem: async (id: string): Promise<void> => {
     await api.delete(`${BASE_URL}/${id}`);
+  },
+
+  softDeleteItem: async (id: string): Promise<void> => {
+    await api.delete(`${BASE_URL}/${id}/soft`);
+  },
+
+  restoreItem: async (id: string): Promise<void> => {
+    await api.post(`${BASE_URL}/${id}/restore`);
   },
 
   // Получить товары автора

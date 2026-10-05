@@ -63,10 +63,12 @@ C1–C3 can proceed without payouts locked.
 
 ### C3. Author dashboard (L)
 
-- [ ] `/author/dashboard`
-- [ ] My cards (list + filter)
-- [ ] Create card (inventory, own items only)
-- [ ] Sales (from shop)
+- [x] `/author/dashboard` (author|admin)
+- [x] My cards (list + filter + soft-delete visible + restore)
+- [x] Create/edit card (inventory, own items; author_id = me)
+- [x] Sales read-only (`GET /api/authors/me/sales`)
+- [x] Author profile edit (`PUT /api/authors/me` + portfolio)
+- [x] Burger «Автор» link
 
 ### C4. Payouts / analytics (L)
 
@@ -77,6 +79,8 @@ C1–C3 can proceed without payouts locked.
 ---
 
 ## Wave 4 — Infrastructure (parallel, M–L)
+
+BEFORE START - CHECK WHAT ALREADY EXISTS 
 
 - [ ] **Helm charts for k3s** — M · med · DevOps
 - [ ] **Service Discovery (Consul)** — M · med · Infra
@@ -113,7 +117,7 @@ Update this table when you tick boxes above.
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
 | 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
-| 3 Author reg | 2 / 4 phases |
+| 3 Author reg | 3 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
 

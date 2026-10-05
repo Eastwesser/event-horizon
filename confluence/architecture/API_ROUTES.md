@@ -89,7 +89,9 @@ Legend: **Auth** = Bearer JWT required. **Roles** = minimum role(s); `-` = any a
 
 | Method | Path | Auth | Roles | Description |
 |--------|------|------|-------|-------------|
-| PUT | `/api/authors/me` | ✓ | author, admin | Upsert author profile |
+| PUT | `/api/authors/me` | ✓ | author, admin | Upsert author profile (+ portfolio) |
+| GET | `/api/authors/me` | ✓ | author, admin | Own author profile |
+| GET | `/api/authors/me/sales` | ✓ | author, admin | Sales aggregates + purchase rows (C3) |
 | POST | `/api/authors/apply` | ✓ | user+ | Submit author application (C1) |
 | GET | `/api/authors/me/application` | ✓ | user+ | Own latest application |
 | GET | `/api/authors/applications` | ✓ | **admin** | List applications (C2; default status=pending) |

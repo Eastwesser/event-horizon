@@ -38,6 +38,12 @@ func toPostgresFilter(filters map[string]interface{}) ([]string, []interface{}, 
 		argCount++
 	}
 
+	if id, ok := filters["id"].(string); ok && id != "" {
+		conditions = append(conditions, fmt.Sprintf("id = $%d", argCount))
+		args = append(args, id)
+		argCount++
+	}
+
 	if itemType, ok := filters["type"].(string); ok && itemType != "" {
 		conditions = append(conditions, fmt.Sprintf("type = $%d", argCount))
 		args = append(args, itemType)
@@ -81,7 +87,16 @@ func toPostgresFilter(filters map[string]interface{}) ([]string, []interface{}, 
 		argCount++
 	}
 
-	conditions = append(conditions, "deleted_at IS NULL")
+	includeDeleted := false
+	switch v := filters["include_deleted"].(type) {
+	case string:
+		includeDeleted = v == "1" || strings.EqualFold(v, "true")
+	case bool:
+		includeDeleted = v
+	}
+	if !includeDeleted {
+		conditions = append(conditions, "deleted_at IS NULL")
+	}
 
 	return conditions, args, argCount
 }
@@ -211,7 +226,7 @@ func (r *PostgresRepo) SearchItems(ctx context.Context, filters map[string]inter
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, author_id, type, name, description, price, stock, COALESCE(version,1), attributes, images, created_at, updated_at
+		SELECT id, author_id, type, name, description, price, stock, COALESCE(version,1), attributes, images, created_at, updated_at, deleted_at
 		FROM inventory_items %s
 		ORDER BY created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -229,11 +244,12 @@ func (r *PostgresRepo) SearchItems(ctx context.Context, filters map[string]inter
 		var item model.Item
 		var attrsJSON []byte
 		var images []string
+		var deletedAt sql.NullTime
 
 		err := rows.Scan(
 			&item.ID, &item.AuthorID, &item.Type, &item.Name, &item.Description,
 			&item.Price, &item.Stock, &item.Version, &attrsJSON, pq.Array(&images),
-			&item.CreatedAt, &item.UpdatedAt,
+			&item.CreatedAt, &item.UpdatedAt, &deletedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -244,7 +260,16 @@ func (r *PostgresRepo) SearchItems(ctx context.Context, filters map[string]inter
 				return nil, 0, err
 			}
 		}
+		if item.Attributes == nil {
+			item.Attributes = map[string]interface{}{}
+		}
 		item.Images = images
+		if deletedAt.Valid {
+			t := deletedAt.Time.UTC()
+			item.DeletedAt = &t
+			item.Attributes["_deleted"] = true
+			item.Attributes["_deleted_at"] = t.Format(time.RFC3339)
+		}
 		items = append(items, &item)
 	}
 
