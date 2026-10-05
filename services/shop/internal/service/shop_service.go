@@ -43,6 +43,7 @@ type ShopStore interface {
 	GetItems(ctx context.Context, category, gameID string) ([]repository.Item, error)
 	GetItemByID(ctx context.Context, itemID string) (*repository.Item, error)
 	IsItemOwned(ctx context.Context, userID, itemID string) (bool, error)
+	ListOwnedItemIDs(ctx context.Context, userID string) ([]string, error)
 	PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int, outbox *repository.OutboxRecord) error
 	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
 	RefundPurchase(ctx context.Context, userID, itemID string) (*repository.RefundResult, error)
@@ -90,11 +91,7 @@ func (s *shopService) GetItems(ctx context.Context, category, gameID, userID str
 	// Пытаемся получить из Redis
 	items, err := s.redisRepo.GetItems(ctx, cacheKey)
 	if err == nil {
-		// Проверяем owned для каждого товара
-		for i := range items {
-			owned, _ := s.pgRepo.IsItemOwned(ctx, userID, items[i].ID)
-			items[i].Owned = owned
-		}
+		s.applyOwnedFlags(ctx, userID, items)
 		return items, nil
 	}
 
@@ -107,13 +104,26 @@ func (s *shopService) GetItems(ctx context.Context, category, gameID, userID str
 	// Сохраняем в Redis (TTL 5 минут)
 	_ = s.redisRepo.SetItems(ctx, cacheKey, items, 5*time.Minute)
 
-	// Проверяем owned
-	for i := range items {
-		owned, _ := s.pgRepo.IsItemOwned(ctx, userID, items[i].ID)
-		items[i].Owned = owned
-	}
-
+	s.applyOwnedFlags(ctx, userID, items)
 	return items, nil
+}
+
+// applyOwnedFlags sets Owned from one inventory query (avoids N+1 IsItemOwned).
+func (s *shopService) applyOwnedFlags(ctx context.Context, userID string, items []repository.Item) {
+	if len(items) == 0 || userID == "" {
+		return
+	}
+	ids, err := s.pgRepo.ListOwnedItemIDs(ctx, userID)
+	if err != nil {
+		return
+	}
+	owned := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		owned[id] = struct{}{}
+	}
+	for i := range items {
+		_, items[i].Owned = owned[items[i].ID]
+	}
 }
 
 func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (int32, error) {
