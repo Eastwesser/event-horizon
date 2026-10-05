@@ -7,6 +7,7 @@ import {
   hydrateAuth,
   setTokens,
 } from '../lib/auth';
+import { invalidateWhoamiCache } from '../lib/whoamiCache';
 
 export const API_BASE = '/api';
 
@@ -55,6 +56,10 @@ async function refreshAccessToken(): Promise<string | null> {
     const nextRefresh = (data.refresh_token as string | undefined) || refresh;
     if (!access) return null;
     setTokens(access, nextRefresh);
+    if (typeof data.role === 'string' && data.role) {
+      localStorage.setItem('role', data.role);
+    }
+    invalidateWhoamiCache();
     return access;
   } catch {
     return null;

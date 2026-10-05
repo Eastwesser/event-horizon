@@ -167,7 +167,18 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*T
 		}
 		_ = s.cache.DeleteRefresh(ctx, claims.JTI, claims.UserID)
 	}
-	return s.issuePair(ctx, claims.UserID, claims.Email, claims.Role)
+	// Re-read role from DB so approve/UpdateRole is picked up without re-login.
+	role := claims.Role
+	email := claims.Email
+	if user, err := s.GetUser(ctx, claims.UserID); err == nil && user != nil {
+		if user.Role != "" {
+			role = user.Role
+		}
+		if user.Email != "" {
+			email = user.Email
+		}
+	}
+	return s.issuePair(ctx, claims.UserID, email, role)
 }
 
 func (s *authService) Whoami(ctx context.Context, accessToken string) (*model.User, error) {
@@ -193,12 +204,11 @@ func (s *authService) Logout(ctx context.Context, tokenString string) error {
 	case jwtauth.TokenTypeRefresh:
 		return s.cache.DeleteRefresh(ctx, claims.JTI, claims.UserID)
 	default:
-		// access or legacy
-		_ = s.cache.DeleteSession(ctx, claims.JTI)
-		if claims.Type == jwtauth.TokenTypeRefresh {
-			_ = s.cache.DeleteRefresh(ctx, claims.JTI, claims.UserID)
+		// access or legacy — drop jti from user session set when known
+		if claims.UserID != "" {
+			return s.cache.DeleteSessionForUser(ctx, claims.JTI, claims.UserID)
 		}
-		return nil
+		return s.cache.DeleteSession(ctx, claims.JTI)
 	}
 }
 
@@ -240,6 +250,12 @@ func (s *authService) UpdateRole(ctx context.Context, userID, role string) error
 		return err
 	}
 	s.invalidateUserCache(ctx, userID)
+	// Revoke access only — keep refresh so FE 401 → refresh picks up new role (B).
+	if s.cache != nil {
+		if err := s.cache.DeleteAllSessionsForUser(ctx, userID); err != nil {
+			log.Printf("auth: DeleteAllSessionsForUser failed: %v", err)
+		}
+	}
 	return nil
 }
 

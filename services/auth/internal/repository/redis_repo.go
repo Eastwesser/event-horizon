@@ -81,9 +81,21 @@ func sessionKey(jti string) string {
 	return fmt.Sprintf("auth:session:%s", jti)
 }
 
+func userSessionSetKey(userID string) string {
+	return fmt.Sprintf("auth:user_session:%s", userID)
+}
+
 // CreateSession регистрирует выданный JWT (по jti) как активный, TTL = сроку жизни токена.
+// Also tracks jti in auth:user_session:{userID} so UpdateRole can revoke all access tokens.
 func (r *RedisAuthRepo) CreateSession(ctx context.Context, jti, userID string, ttl time.Duration) error {
-	return r.client.Set(ctx, sessionKey(jti), userID, ttl).Err()
+	pipe := r.client.TxPipeline()
+	pipe.Set(ctx, sessionKey(jti), userID, ttl)
+	if userID != "" {
+		pipe.SAdd(ctx, userSessionSetKey(userID), jti)
+		pipe.Expire(ctx, userSessionSetKey(userID), ttl)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 // SessionExists проверяет, не отозвана ли сессия (logout/бан удаляют ключ раньше TTL).
@@ -95,7 +107,37 @@ func (r *RedisAuthRepo) SessionExists(ctx context.Context, jti string) (bool, er
 	return n > 0, nil
 }
 
-// DeleteSession отзывает сессию (logout).
+// DeleteSession отзывает одну access-сессию (logout).
 func (r *RedisAuthRepo) DeleteSession(ctx context.Context, jti string) error {
 	return r.client.Del(ctx, sessionKey(jti)).Err()
+}
+
+// DeleteSessionForUser removes one access jti and drops it from the user's session set.
+func (r *RedisAuthRepo) DeleteSessionForUser(ctx context.Context, jti, userID string) error {
+	pipe := r.client.TxPipeline()
+	pipe.Del(ctx, sessionKey(jti))
+	if userID != "" {
+		pipe.SRem(ctx, userSessionSetKey(userID), jti)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// DeleteAllSessionsForUser revokes every access session for the user (role change).
+// Refresh tokens are intentionally left alive so FE can 401 → refresh → new role.
+func (r *RedisAuthRepo) DeleteAllSessionsForUser(ctx context.Context, userID string) error {
+	if userID == "" {
+		return nil
+	}
+	jtis, err := r.client.SMembers(ctx, userSessionSetKey(userID)).Result()
+	if err != nil {
+		return err
+	}
+	pipe := r.client.TxPipeline()
+	for _, jti := range jtis {
+		pipe.Del(ctx, sessionKey(jti))
+	}
+	pipe.Del(ctx, userSessionSetKey(userID))
+	_, err = pipe.Exec(ctx)
+	return err
 }
