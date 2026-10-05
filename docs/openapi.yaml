@@ -1462,6 +1462,57 @@ paths:
         '200':
           description: events + total
 
+  /api/notifications:
+    get:
+      summary: Own in-app notifications
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: offset
+          schema: { type: integer }
+        - in: query
+          name: unread_only
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: notifications + total + unread_count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        user_id: { type: string }
+                        title: { type: string }
+                        body: { type: string }
+                        link: { type: string }
+                        created_at_unix: { type: integer }
+                        read_at_unix: { type: integer }
+                  total: { type: integer }
+                  unread_count: { type: integer }
+  /api/notifications/{id}/read:
+    post:
+      summary: Mark notification read (id=all marks all)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: marked count
+        '404':
+          description: Notification not found
+
   # ===== ANALYTICS (admin) =====
   /api/analytics/dau:
     get:

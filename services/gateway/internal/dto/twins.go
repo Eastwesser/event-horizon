@@ -7,6 +7,7 @@ import (
 	authorsPb "github.com/Eastwesser/event-horizon/services/authors/proto"
 	historyPb "github.com/Eastwesser/event-horizon/services/history/proto"
 	leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+	notificationPb "github.com/Eastwesser/event-horizon/services/notification/proto"
 )
 
 // Author maps authors proto with explicit zeros (active/timestamps never omit).
@@ -93,6 +94,34 @@ func HistoryEvents(list []*historyPb.HistoryEvent) []gin.H {
 	out := make([]gin.H, 0, len(list))
 	for _, e := range list {
 		if h := HistoryEvent(e); h != nil {
+			out = append(out, h)
+		}
+	}
+	return out
+}
+
+func Notification(n *notificationPb.Notification) gin.H {
+	if n == nil {
+		return nil
+	}
+	return gin.H{
+		"id":              n.GetId(),
+		"user_id":         n.GetUserId(),
+		"title":           n.GetTitle(),
+		"body":            n.GetBody(),
+		"link":            n.GetLink(),
+		"created_at_unix": n.GetCreatedAtUnix(),
+		"read_at_unix":    n.GetReadAtUnix(),
+	}
+}
+
+func Notifications(list []*notificationPb.Notification) []gin.H {
+	if list == nil {
+		return []gin.H{}
+	}
+	out := make([]gin.H, 0, len(list))
+	for _, n := range list {
+		if h := Notification(n); h != nil {
 			out = append(out, h)
 		}
 	}

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "github.com/Eastwesser/event-horizon/services/notification/proto;notification";
+
+// NotificationService — in-app user inbox (author application events, etc.).
+service NotificationService {
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+}
+
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  string title = 3;
+  string body = 4;
+  string link = 5;
+  int64 created_at_unix = 6;
+  int64 read_at_unix = 7; // 0 if unread
+}
+
+message ListNotificationsRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  bool unread_only = 4;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  int64 total = 2;
+  int64 unread_count = 3;
+}
+
+message MarkReadRequest {
+  string user_id = 1;
+  string notification_id = 2; // empty → mark all for user
+}
+
+message MarkReadResponse {
+  int64 marked = 1;
+}

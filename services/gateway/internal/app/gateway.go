@@ -53,6 +53,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
 	historyPb "github.com/Eastwesser/event-horizon/services/history/proto"
 	inventoryPb "github.com/Eastwesser/event-horizon/services/inventory/proto"
+	notificationPb "github.com/Eastwesser/event-horizon/services/notification/proto"
 	leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
 	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 	profilePb "github.com/Eastwesser/event-horizon/services/profile/proto"
@@ -125,6 +126,43 @@ func maskEmail(email string) string {
 		return local + "***" + domain
 	}
 	return string(local[0]) + "***" + domain
+}
+
+// listAdminUserIDs pages Auth.ListUsers and keeps role=admin. Best-effort for event enrichment.
+func listAdminUserIDs(ctx context.Context, authClient *client.AuthClient, authCB *circuit.Breaker) []string {
+	const page = int32(100)
+	var out []string
+	var offset int32
+	for {
+		respAny, err := authCB.Execute(func() (any, error) {
+			return authClient.GetClient().ListUsers(ctx, &authPb.ListUsersRequest{
+				Limit:  page,
+				Offset: offset,
+			})
+		})
+		if err != nil {
+			log.Printf("listAdminUserIDs: %v", err)
+			break
+		}
+		resp := respAny.(*authPb.ListUsersResponse)
+		users := resp.GetUsers()
+		if len(users) == 0 {
+			break
+		}
+		for _, u := range users {
+			if strings.EqualFold(u.GetRole(), RoleAdmin) && u.GetUserId() != "" {
+				out = append(out, u.GetUserId())
+			}
+		}
+		offset += int32(len(users))
+		if int64(offset) >= resp.GetTotal() || len(users) < int(page) {
+			break
+		}
+		if offset > 5000 { // safety cap
+			break
+		}
+	}
+	return out
 }
 
 // writeGRPCError maps common gRPC codes to HTTP (see architecture/STATUS_CODES.md).
@@ -1492,6 +1530,20 @@ func runGateway() {
 			return
 		}
 		resp := out.(*authorsPb.SubmitApplicationResponse)
+		app := resp.GetApplication()
+		if js != nil && app != nil {
+			adminIDs := listAdminUserIDs(c.Request.Context(), authClient, authCB)
+			payload, _ := json.Marshal(map[string]any{
+				"event":           "author.application.submitted",
+				"application_id":  app.GetId(),
+				"user_id":         app.GetUserId(),
+				"display_name":    app.GetDisplayName(),
+				"admin_ids":       adminIDs,
+			})
+			if _, err := js.Publish("author.application.submitted", payload); err != nil {
+				log.Printf("publish author.application.submitted: %v", err)
+			}
+		}
 		c.JSON(http.StatusOK, resp.Application)
 	})
 
@@ -1586,6 +1638,17 @@ func runGateway() {
 			return
 		}
 
+		if js != nil {
+			payload, _ := json.Marshal(map[string]any{
+				"event":          "author.application.approved",
+				"application_id": appID,
+				"user_id":        userID,
+			})
+			if _, err := js.Publish("author.application.approved", payload); err != nil {
+				log.Printf("publish author.application.approved: %v", err)
+			}
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"application": dto.AuthorApplication(resp.GetApplication()),
 			"author":      dto.Author(resp.GetAuthor()),
@@ -1647,6 +1710,62 @@ func runGateway() {
 		}
 		resp := out.(*authorsPb.ListAuthorsResponse)
 		c.JSON(http.StatusOK, gin.H{"authors": dto.Authors(resp.GetAuthors()), "total": resp.GetTotal()})
+	})
+
+	// --- Notification (in-app inbox) ---
+	notificationConn, err := client.Dial(cfg.NotificationAddr)
+	if err != nil {
+		log.Fatalf("Failed to connect to notification: %v", err)
+	}
+	defer notificationConn.Close()
+	notificationClient := notificationPb.NewNotificationServiceClient(notificationConn)
+	notificationCB := newServiceBreaker("notification")
+
+	r.GET("/api/notifications", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+		unreadOnly := c.Query("unread_only") == "1" || strings.EqualFold(c.Query("unread_only"), "true")
+		out, err := throughBreaker(notificationCB, c, func() (any, error) {
+			return notificationClient.ListNotifications(c.Request.Context(), &notificationPb.ListNotificationsRequest{
+				UserId:     middleware.UserID(c),
+				Limit:      int32(limit),
+				Offset:     int32(offset),
+				UnreadOnly: unreadOnly,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*notificationPb.ListNotificationsResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"notifications": dto.Notifications(resp.GetNotifications()),
+			"total":         resp.GetTotal(),
+			"unread_count":  resp.GetUnreadCount(),
+		})
+	})
+
+	r.POST("/api/notifications/:id/read", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		id := c.Param("id")
+		if id == "all" {
+			id = ""
+		}
+		out, err := throughBreaker(notificationCB, c, func() (any, error) {
+			return notificationClient.MarkRead(c.Request.Context(), &notificationPb.MarkReadRequest{
+				UserId:         middleware.UserID(c),
+				NotificationId: id,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*notificationPb.MarkReadResponse)
+		c.JSON(http.StatusOK, gin.H{"marked": resp.GetMarked()})
 	})
 
 	// --- History ---

@@ -12,6 +12,7 @@ require (
 	github.com/Eastwesser/event-horizon/services/history/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20260810133207-bb7ed616e612
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-00010101000000-000000000000
+	github.com/Eastwesser/event-horizon/services/notification/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-00010101000000-000000000000
 	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-00010101000000-000000000000
@@ -89,6 +90,7 @@ replace (
 	github.com/Eastwesser/event-horizon/services/history/proto => ../history/proto
 	github.com/Eastwesser/event-horizon/services/inventory/proto => ../inventory/proto
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto => ../leaderboard/proto
+	github.com/Eastwesser/event-horizon/services/notification/proto => ../notification/proto
 	github.com/Eastwesser/event-horizon/services/payment/proto => ../payment/proto
 	github.com/Eastwesser/event-horizon/services/profile/proto => ../profile/proto
 	github.com/Eastwesser/event-horizon/services/shop/proto => ../shop/proto

@@ -58,6 +58,8 @@ func New(ctx context.Context) (*App, error) {
 			"purchase.paid",
 			"purchase.fulfilled",
 			"author.upserted",
+			"author.application.submitted",
+			"author.application.approved",
 			"inventory.item.created",
 			"inventory.item.updated",
 			"inventory.item.deleted",

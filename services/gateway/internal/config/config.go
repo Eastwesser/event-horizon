@@ -20,8 +20,9 @@ type Config struct {
     InventoryAddr   string
     PaymentAddr     string
     AuthorsAddr     string
-    HistoryAddr     string
-    AnalyticsAddr   string
+    HistoryAddr      string
+    AnalyticsAddr    string
+    NotificationAddr string
 
     // Infrastructure
     NATSUrl   string
@@ -48,8 +49,9 @@ func Load() *Config {
         InventoryAddr:   getEnv("INVENTORY_ADDR", "inventory:50059"),
         PaymentAddr:     getEnv("PAYMENT_ADDR", "payment:50058"),
         AuthorsAddr:     getEnv("AUTHORS_ADDR", "authors:50061"),
-        HistoryAddr:     getEnv("HISTORY_ADDR", "history:50062"),
-        AnalyticsAddr:   getEnv("ANALYTICS_ADDR", "analytics:50057"),
+        HistoryAddr:      getEnv("HISTORY_ADDR", "history:50062"),
+        AnalyticsAddr:    getEnv("ANALYTICS_ADDR", "analytics:50057"),
+        NotificationAddr: getEnv("NOTIFICATION_ADDR", "notification:50063"),
         NATSUrl:              getEnv("NATS_URL", "nats://localhost:4222"),
         RedisAddr:            getEnv("REDIS_ADDR", "localhost:6379"),
         PaymentWebhookSecret: getEnv("PAYMENT_WEBHOOK_SECRET", ""),
