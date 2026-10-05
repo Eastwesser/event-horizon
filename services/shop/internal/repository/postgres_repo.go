@@ -128,6 +128,25 @@ func (r *PostgresShopRepo) IsItemOwned(ctx context.Context, userID, itemID strin
 	return exists, err
 }
 
+// ListOwnedItemIDs returns all catalog item ids the user owns (one round-trip for GetItems).
+func (r *PostgresShopRepo) ListOwnedItemIDs(ctx context.Context, userID string) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT item_id FROM inventory WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 func (r *PostgresShopRepo) PurchaseItem(ctx context.Context, userID, itemID string, price int) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

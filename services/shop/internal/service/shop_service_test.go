@@ -18,6 +18,8 @@ type mockShopStore struct {
 	getItemErr        error
 	owned             bool
 	ownedErr          error
+	ownedIDs          []string
+	listOwnedErr      error
 	purchaseErr       error
 	purchaseCalls     int
 	refund            *repository.RefundResult
@@ -51,6 +53,15 @@ func (m *mockShopStore) GetItemByID(context.Context, string) (*repository.Item, 
 }
 func (m *mockShopStore) IsItemOwned(context.Context, string, string) (bool, error) {
 	return m.owned, m.ownedErr
+}
+func (m *mockShopStore) ListOwnedItemIDs(context.Context, string) ([]string, error) {
+	if m.listOwnedErr != nil {
+		return nil, m.listOwnedErr
+	}
+	if m.ownedIDs != nil {
+		return m.ownedIDs, nil
+	}
+	return nil, nil
 }
 func (m *mockShopStore) PurchaseItemWithStock(_ context.Context, _, _ string, _ int, _ *repository.OutboxRecord) error {
 	m.purchaseCalls++
@@ -324,7 +335,7 @@ func TestGetInventory_Delegates(t *testing.T) {
 }
 
 func TestGetItems_CacheHitSetsOwned(t *testing.T) {
-	store := &mockShopStore{owned: true}
+	store := &mockShopStore{ownedIDs: []string{"i1"}}
 	cache := &mockShopCache{items: []repository.Item{{ID: "i1", Name: "cached"}}}
 	got, err := newTestShop(store, cache, &stubBilling{}).GetItems(context.Background(), "all", "", "u1")
 	if err != nil || len(got) != 1 || !got[0].Owned {
@@ -334,13 +345,31 @@ func TestGetItems_CacheHitSetsOwned(t *testing.T) {
 
 func TestGetItems_CacheMissLoadsPostgres(t *testing.T) {
 	store := &mockShopStore{
-		items: []repository.Item{{ID: "i2", Name: "db"}},
-		owned: false,
+		items:    []repository.Item{{ID: "i2", Name: "db"}},
+		ownedIDs: []string{},
 	}
 	cache := &mockShopCache{getErr: errors.New("miss")}
 	got, err := newTestShop(store, cache, &stubBilling{}).GetItems(context.Background(), "card", "hexagon", "u1")
 	if err != nil || len(got) != 1 || got[0].Name != "db" || got[0].Owned {
 		t.Fatalf("%+v err=%v", got, err)
+	}
+}
+
+func TestGetItems_BatchOwnedMixed(t *testing.T) {
+	store := &mockShopStore{
+		ownedIDs: []string{"i2"},
+	}
+	cache := &mockShopCache{items: []repository.Item{
+		{ID: "i1", Name: "a"},
+		{ID: "i2", Name: "b"},
+		{ID: "i3", Name: "c"},
+	}}
+	got, err := newTestShop(store, cache, &stubBilling{}).GetItems(context.Background(), "all", "", "u1")
+	if err != nil || len(got) != 3 {
+		t.Fatalf("%+v err=%v", got, err)
+	}
+	if got[0].Owned || !got[1].Owned || got[2].Owned {
+		t.Fatalf("owned flags: %+v %+v %+v", got[0], got[1], got[2])
 	}
 }
 
