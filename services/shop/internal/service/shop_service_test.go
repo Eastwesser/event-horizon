@@ -81,6 +81,9 @@ func (m *mockShopStore) RefundPurchase(context.Context, string, string) (*reposi
 	cp := *m.refund
 	return &cp, nil
 }
+func (m *mockShopStore) MarkPurchaseFulfilled(context.Context, string) error {
+	return nil
+}
 func (m *mockShopStore) ListPurchasesByItemIDs(context.Context, []string, int, int) ([]repository.PurchaseRecord, int64, int64, int64, error) {
 	return m.listRows, m.listTotal, m.listSales, m.listTickets, m.listErr
 }
@@ -391,6 +394,44 @@ func TestCancelPurchase_AddCurrencyFails(t *testing.T) {
 	_, err := newTestShop(store, nil, billing).CancelPurchase(context.Background(), "u1", "i1")
 	if err == nil || !strings.Contains(err.Error(), "failed to refund tickets") {
 		t.Fatalf("%v", err)
+	}
+}
+
+func TestCancelPurchase_RefundWindowExpired(t *testing.T) {
+	store := &mockShopStore{
+		item:      &repository.Item{ID: "i1", Category: "game_skin"},
+		refundErr: model.ErrRefundWindowExpired,
+	}
+	_, err := newTestShop(store, nil, &stubBilling{}).CancelPurchase(context.Background(), "u1", "i1")
+	if !errors.Is(err, model.ErrRefundWindowExpired) {
+		t.Fatalf("%v", err)
+	}
+}
+
+func TestCancelPurchase_AlreadyFulfilledPhysical(t *testing.T) {
+	store := &mockShopStore{
+		item:      &repository.Item{ID: "i1", Category: "merch"},
+		refundErr: model.ErrAlreadyFulfilled,
+	}
+	_, err := newTestShop(store, nil, &stubBilling{}).CancelPurchase(context.Background(), "u1", "i1")
+	if !errors.Is(err, model.ErrAlreadyFulfilled) {
+		t.Fatalf("%v", err)
+	}
+}
+
+func TestGetInventory_ComputesCanCancel(t *testing.T) {
+	until := time.Now().UTC().Add(48 * time.Hour)
+	store := &mockShopStore{
+		inventory: []repository.Item{{
+			ID:              "i1",
+			Category:        "game_skin",
+			PurchaseID:      "p1",
+			RefundableUntil: &until,
+		}},
+	}
+	got, err := newTestShop(store, nil, &stubBilling{}).GetInventory(context.Background(), "u1")
+	if err != nil || len(got) != 1 || !got[0].CanCancel {
+		t.Fatalf("%+v err=%v", got, err)
 	}
 }
 

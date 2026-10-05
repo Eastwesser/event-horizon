@@ -13,18 +13,21 @@ func ShopItem(item *shopPb.Item) gin.H {
 		return nil
 	}
 	return gin.H{
-		"id":             item.GetId(),
-		"name":           item.GetName(),
-		"description":    item.GetDescription(),
-		"price":          item.GetPrice(),
-		"category":       item.GetCategory(),
-		"game_id":        item.GetGameId(),
-		"image_url":      item.GetImageUrl(),
-		"available":      item.GetAvailable(),
-		"owned":          item.GetOwned(),
-		"purchased_at":   item.GetPurchasedAt(),
-		"purchase_price": item.GetPurchasePrice(),
-		"purchase_id":    item.GetPurchaseId(),
+		"id":               item.GetId(),
+		"name":             item.GetName(),
+		"description":      item.GetDescription(),
+		"price":            item.GetPrice(),
+		"category":         item.GetCategory(),
+		"game_id":          item.GetGameId(),
+		"image_url":        item.GetImageUrl(),
+		"available":        item.GetAvailable(),
+		"owned":            item.GetOwned(),
+		"purchased_at":     item.GetPurchasedAt(),
+		"purchase_price":   item.GetPurchasePrice(),
+		"purchase_id":      item.GetPurchaseId(),
+		"refundable_until": item.GetRefundableUntil(),
+		"fulfilled_at":     item.GetFulfilledAt(),
+		"can_cancel":       item.GetCanCancel(),
 	}
 }
 

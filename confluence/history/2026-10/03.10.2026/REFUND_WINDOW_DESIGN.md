@@ -1,7 +1,7 @@
 # Refund window + fulfilled guard (design)
 
-**Status:** design only — not implemented.  
-**Context:** Wave 1 follow-up before Wave 2. Cancel/refund is currently always allowed for completed purchases.
+**Status:** implemented (Track A item 1) — migration + CancelPurchase guards + inventory `can_cancel` + FE gating.  
+**Context:** Wave 1 follow-up; abuse case was physical merch received → cancel.
 
 ## Current state
 

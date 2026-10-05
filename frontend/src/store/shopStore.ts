@@ -37,6 +37,10 @@ export interface PurchasedItem {
   /** Price paid at purchase time (for refund UI). */
   purchase_price?: number;
   purchase_id?: string;
+  refundable_until?: string;
+  fulfilled_at?: string;
+  /** Server-computed: within 7d window and not blocked by fulfilled merch. */
+  can_cancel?: boolean;
   item: ShopItem;
 }
 
@@ -185,6 +189,11 @@ export const useShopStore = create<ShopState>()(
                 new Date().toISOString(),
               purchase_price: purchasePrice || currentPrice,
               purchase_id: item.purchase_id || item.purchaseId || item.PurchaseId || '',
+              refundable_until:
+                item.refundable_until || item.refundableUntil || undefined,
+              fulfilled_at: item.fulfilled_at || item.fulfilledAt || undefined,
+              can_cancel:
+                item.can_cancel === true || item.canCancel === true,
               item: {
                 id: item.id || item.Id || '',
                 name: item.name || item.Name || 'Без названия',

@@ -37,8 +37,12 @@ type Item struct {
 	// Price paid at purchase time (inventory list); 0 if unknown.
 	PurchasePrice int32  `protobuf:"varint,11,opt,name=purchase_price,json=purchasePrice,proto3" json:"purchase_price,omitempty"`
 	PurchaseId    string `protobuf:"bytes,12,opt,name=purchase_id,json=purchaseId,proto3" json:"purchase_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Refund window (ISO-8601); inventory list only.
+	RefundableUntil string `protobuf:"bytes,13,opt,name=refundable_until,json=refundableUntil,proto3" json:"refundable_until,omitempty"`
+	FulfilledAt     string `protobuf:"bytes,14,opt,name=fulfilled_at,json=fulfilledAt,proto3" json:"fulfilled_at,omitempty"`
+	CanCancel       bool   `protobuf:"varint,15,opt,name=can_cancel,json=canCancel,proto3" json:"can_cancel,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Item) Reset() {
@@ -153,6 +157,27 @@ func (x *Item) GetPurchaseId() string {
 		return x.PurchaseId
 	}
 	return ""
+}
+
+func (x *Item) GetRefundableUntil() string {
+	if x != nil {
+		return x.RefundableUntil
+	}
+	return ""
+}
+
+func (x *Item) GetFulfilledAt() string {
+	if x != nil {
+		return x.FulfilledAt
+	}
+	return ""
+}
+
+func (x *Item) GetCanCancel() bool {
+	if x != nil {
+		return x.CanCancel
+	}
+	return false
 }
 
 type GetItemsRequest struct {
@@ -812,7 +837,7 @@ var File_proto_shop_proto protoreflect.FileDescriptor
 
 const file_proto_shop_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/shop.proto\x12\x04shop\x1a\x17validate/validate.proto\"\xd3\x02\n" +
+	"\x10proto/shop.proto\x12\x04shop\x1a\x17validate/validate.proto\"\xc0\x03\n" +
 	"\x04Item\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -827,7 +852,11 @@ const file_proto_shop_proto_rawDesc = "" +
 	" \x01(\tR\vpurchasedAt\x12%\n" +
 	"\x0epurchase_price\x18\v \x01(\x05R\rpurchasePrice\x12\x1f\n" +
 	"\vpurchase_id\x18\f \x01(\tR\n" +
-	"purchaseId\"z\n" +
+	"purchaseId\x12)\n" +
+	"\x10refundable_until\x18\r \x01(\tR\x0frefundableUntil\x12!\n" +
+	"\ffulfilled_at\x18\x0e \x01(\tR\vfulfilledAt\x12\x1d\n" +
+	"\n" +
+	"can_cancel\x18\x0f \x01(\bR\tcanCancel\"z\n" +
 	"\x0fGetItemsRequest\x12#\n" +
 	"\bcategory\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x18 R\bcategory\x12 \n" +
 	"\agame_id\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x18 R\x06gameId\x12 \n" +
