@@ -21,7 +21,21 @@ jobs:
       - name: Run actionlint
         uses: reviewdog/action-actionlint@v1
 
+  # Wave 4: gate internal/service coverage (≥70%). Gateway excluded.
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - name: Service-layer coverage gate
+        run: MIN_COVERAGE=70 bash scripts/coverage-gate.sh
+
   build:
+    needs: [lint, coverage]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
