@@ -14,8 +14,8 @@
 |---------|------:|---------------------|--------|
 | authors | 13.5% pkg / **93.2% service** | Submit/Approve/Reject/Revert/Upsert covered | ✅ service target met |
 | shop | 16.5% pkg / **83.9% service** | Purchase/Cancel/ListPurchasesByItemIDs covered | ✅ service target met |
-| inventory | 7.2% | Search/GetByAuthor/Release 0% | 🟧 queued |
-| auth | 22.7% | Logout/Refresh/ListUsers weak | 🟧 queued |
+| inventory | 8.8% pkg / **98.5% service** | GetByAuthor/SoftDelete/Restore/Reserve/Release | ✅ service target met |
+| auth | — / **86.7% service** | Logout+session, Refresh revoke, ListUsers, role gate | ✅ service target met |
 | gateway | 8.3% | excluded from gate | — |
 | billing | — | after priority 4 | ⬜ |
 | payment | — | after priority 4 | ⬜ |
@@ -32,6 +32,9 @@
 | 2026-10-05 | — | baseline recorded | plan approved C4_TODO_3 |
 | 2026-10-05 | authors | service 0% → **93.2%** / pkg 0% → 13.5% | mock store+cache; thin `AuthorStore`/`AuthorCache` ports |
 | 2026-10-05 | shop | service ~2% → **83.9%** / pkg 2% → 16.5% | mock store+billing; dial/NATS sync moved to `app`; fixed stale merch_gate assertions |
+| 2026-10-05 | inventory | service 7% → **98.5%** | Search/GetByAuthor/include_deleted + soft-delete/restore/reserve/release |
+| 2026-10-05 | auth | service 65% → **86.7%** | miniredis session tests; ListUsers; public role=user only |
+| 2026-10-05 | k6 | browse.js + purchase.js ready | smoke deferred — needs live stack (`make deploy`) |
 
 ## Order
 
