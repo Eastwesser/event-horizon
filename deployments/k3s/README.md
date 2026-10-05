@@ -41,7 +41,17 @@ kubectl get pods -A
 
 ## 🚀 ДЕПЛОЙ
 
-### Запустить деплой в k3s
+### Helm (preferred — Wave 4.5)
+
+```bash
+make deploy-k3s          # helm upgrade --install eh ./deployments/helm/event-horizon
+make undeploy-k3s
+make helm-template-k3s   # dry-run render
+```
+
+Chart: [`../helm/event-horizon/`](../helm/event-horizon/). Raw YAML below remains a reference snapshot.
+
+### Legacy kubectl apply
 
 make deploy-k3s
 
@@ -54,13 +64,13 @@ kubectl get ingress
 ### Посмотреть логи
 
 # Все контейнеры в поде
-kubectl logs deployment/event-horizon
+kubectl logs deployment/eh-event-horizon
 
 # Конкретный контейнер
-kubectl logs deployment/event-horizon -c auth
-kubectl logs deployment/event-horizon -c billing
-kubectl logs deployment/event-horizon -c game
-kubectl logs deployment/event-horizon -c shop
+kubectl logs deployment/eh-event-horizon -c auth
+kubectl logs deployment/eh-event-horizon -c billing
+kubectl logs deployment/eh-event-horizon -c game
+kubectl logs deployment/eh-event-horizon -c shop
 
 ### Подробная информация
 
@@ -141,10 +151,11 @@ kubectl exec -it deployment/event-horizon -c auth -- /bin/sh
 
 ## 🚧 TODO
 
+- [x] Helm chart wrapping app manifests (Wave 4.5 — `deployments/helm/event-horizon`)
 - [ ] Добавить NATS в k3s
 - [ ] Добавить StatefulSet для PostgreSQL
-- [ ] Настроить CoreDNS
-- [ ] Добавить Ingress для внешнего доступа
+- [ ] Настроить CoreDNS (usually fine out of the box)
+- [x] Ingress для внешнего доступа (Traefik / chart)
 - [ ] Настроить автоматическое масштабирование (HPA)
 
 Сделано с ❤️ для Event Horizon"

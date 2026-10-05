@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: EventHorizon Gateway API
   description: API для фронтенда (React/Angular)
-  version: 1.0.7
+  version: 1.1.0
 servers:
   - url: http://localhost:8079
     description: Local development (через балансировщик)
@@ -17,7 +17,7 @@ paths:
   # ===== HEALTH =====
   /health:
     get:
-      summary: Health check
+      summary: Liveness probe
       responses:
         '200':
           description: OK
@@ -29,6 +29,76 @@ paths:
                   status:
                     type: string
                     example: ok
+
+  /ready:
+    get:
+      summary: Readiness probe (dependency ping)
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+        '503':
+          description: Not ready
+
+  # ===== ADMIN =====
+  /api/admin/users:
+    get:
+      summary: List users (admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query (email / nickname)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                        nickname:
+                          type: string
+                        created_at:
+                          type: string
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin only)
 
   # ===== AUTH =====
   /api/auth/register:
@@ -624,6 +694,45 @@ paths:
           description: Item not found
         '409':
           description: Conflict (already owned, insufficient tickets)
+
+  /api/shop/purchase/{id}/cancel:
+    post:
+      summary: Cancel a completed purchase and refund tickets at purchase price
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Catalog / shop item id that was purchased
+      responses:
+        '200':
+          description: Success (also returned when already refunded — idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  new_balance:
+                    type: integer
+                  refunded_amount:
+                    type: integer
+                    description: Tickets restored from the original purchase price
+                  already_refunded:
+                    type: boolean
+                  remaining_stock:
+                    type: integer
+                    description: Inventory catalog stock after release (when applicable)
+        '401':
+          description: Unauthorized
+        '404':
+          description: No completed purchase found for this item
 
   /api/shop/inventory:
     get:

@@ -1,0 +1,77 @@
+# Default values for event-horizon (Wave 4.5).
+# NATS / Postgres / Redis are still external — see deployments/k3s/README.md.
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  registry: eastwesser
+  tag: latest
+  pullPolicy: IfNotPresent
+
+natsURL: "nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222"
+
+# Same-pod gRPC: prefer 127.0.0.1 once Services are not split by name.
+# Defaults mirror legacy deployments/k3s/deployment.yml for drop-in parity.
+addrs:
+  auth: "auth:50051"
+  game: "game:50052"
+  billing: "billing:50053"
+  leaderboard: "leaderboard:50054"
+  profile: "profile:50060"
+  shop: "shop:50055"
+  inventory: "inventory:50059"
+
+db:
+  userSecretKey: POSTGRES_USER
+  passwordSecretKey: POSTGRES_PASSWORD
+  hosts:
+    auth: postgres
+    billing: postgres-billing
+    game: postgres-game
+    leaderboard: postgres-leaderboard
+    profile: postgres-profile
+    shop: postgres-shop
+    inventory: postgres-inventory
+  names:
+    auth: eventhorizon
+    billing: eventhorizon_billing
+    game: eventhorizon_game
+    leaderboard: eventhorizon_leaderboard
+    profile: eventhorizon_profile
+    shop: eventhorizon_shop
+    inventory: eventhorizon_inventory
+
+redis:
+  auth: "redis:6379"
+  billing: "redis-billing:6379"
+  leaderboard: "redis-leaderboard:6379"
+  profile: "redis-profile:6379"
+  shop: "redis-shop:6379"
+  inventory: "redis-inventory:6379"
+  gateway: "redis:6379"
+
+secret:
+  # Generate before real cluster apply — never commit production values.
+  create: true
+  name: event-horizon-auth-secrets
+  jwtSecret: "CHANGE_ME_generate_with_openssl_rand_base64_32"
+  postgresUser: "eventhorizon"
+  postgresPassword: "CHANGE_ME_postgres_password"
+
+service:
+  type: ClusterIP
+  httpPort: 8079
+  gatewayTargetPort: 8080
+
+ingress:
+  enabled: true
+  className: ""
+  host: event-horizon.local
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+
+serviceAccount:
+  create: false

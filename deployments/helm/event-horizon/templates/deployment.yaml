@@ -1,0 +1,261 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "event-horizon.fullname" . }}
+  labels:
+    {{- include "event-horizon.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "event-horizon.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "event-horizon.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: auth
+        image: {{ .Values.image.registry }}/auth:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50051
+        env:
+        - name: METRICS_PORT
+          value: "9091"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.auth | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.auth | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.auth | quote }}
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: JWT_SECRET
+
+      - name: billing
+        image: {{ .Values.image.registry }}/billing:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50053
+        env:
+        - name: METRICS_PORT
+          value: "9093"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.billing | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.billing | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.billing | quote }}
+
+      - name: game
+        image: {{ .Values.image.registry }}/game:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50052
+        env:
+        - name: METRICS_PORT
+          value: "9092"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.game | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.game | quote }}
+
+      - name: leaderboard
+        image: {{ .Values.image.registry }}/leaderboard:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50054
+        env:
+        - name: METRICS_PORT
+          value: "9094"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.leaderboard | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.leaderboard | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.leaderboard | quote }}
+
+      - name: profile
+        image: {{ .Values.image.registry }}/profile:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50060
+        env:
+        - name: GRPC_PORT
+          value: "50060"
+        - name: METRICS_PORT
+          value: "9099"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.profile | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.profile | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.profile | quote }}
+
+      - name: shop
+        image: {{ .Values.image.registry }}/shop:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50055
+        env:
+        - name: GRPC_PORT
+          value: "50055"
+        - name: METRICS_PORT
+          value: "9095"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: DB_HOST
+          value: {{ .Values.db.hosts.shop | quote }}
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: DB_NAME
+          value: {{ .Values.db.names.shop | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.shop | quote }}
+        - name: BILLING_ADDR
+          value: {{ .Values.addrs.billing | quote }}
+
+      - name: inventory
+        image: {{ .Values.image.registry }}/inventory:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50059
+        env:
+        - name: INVENTORY_GRPC_PORT
+          value: "50059"
+        - name: INVENTORY_METRICS_PORT
+          value: "9096"
+        - name: INVENTORY_DRIVER
+          value: "postgres"
+        - name: INVENTORY_PG_HOST
+          value: {{ .Values.db.hosts.inventory | quote }}
+        - name: INVENTORY_PG_PORT
+          value: "5432"
+        - name: INVENTORY_PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.userSecretKey }}
+        - name: INVENTORY_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "event-horizon.secretName" . }}
+              key: {{ .Values.db.passwordSecretKey }}
+        - name: INVENTORY_PG_DB
+          value: {{ .Values.db.names.inventory | quote }}
+        - name: INVENTORY_REDIS_ADDR
+          value: {{ .Values.redis.inventory | quote }}
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+
+      - name: gateway
+        image: {{ .Values.image.registry }}/gateway:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9095"
+        - name: NATS_URL
+          value: {{ .Values.natsURL | quote }}
+        - name: REDIS_ADDR
+          value: {{ .Values.redis.gateway | quote }}
+        - name: AUTH_ADDR
+          value: {{ .Values.addrs.auth | quote }}
+        - name: GAME_ADDR
+          value: {{ .Values.addrs.game | quote }}
+        - name: BILLING_ADDR
+          value: {{ .Values.addrs.billing | quote }}
+        - name: LEADERBOARD_ADDR
+          value: {{ .Values.addrs.leaderboard | quote }}
+        - name: PROFILE_ADDR
+          value: {{ .Values.addrs.profile | quote }}
+        - name: SHOP_ADDR
+          value: {{ .Values.addrs.shop | quote }}
+        - name: INVENTORY_ADDR
+          value: {{ .Values.addrs.inventory | quote }}

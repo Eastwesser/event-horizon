@@ -1,0 +1,6 @@
+apiVersion: v2
+name: event-horizon
+description: Event Horizon multi-container app chart (wraps deployments/k3s demo manifests)
+type: application
+version: 0.1.0
+appVersion: "1.1.0"

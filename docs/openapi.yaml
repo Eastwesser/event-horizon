@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: EventHorizon Gateway API
   description: API для фронтенда (React/Angular)
-  version: 1.0.7
+  version: 1.1.0
 servers:
   - url: http://localhost:8079
     description: Local development (через балансировщик)
@@ -17,7 +17,7 @@ paths:
   # ===== HEALTH =====
   /health:
     get:
-      summary: Health check
+      summary: Liveness probe
       responses:
         '200':
           description: OK
@@ -29,6 +29,76 @@ paths:
                   status:
                     type: string
                     example: ok
+
+  /ready:
+    get:
+      summary: Readiness probe (dependency ping)
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+        '503':
+          description: Not ready
+
+  # ===== ADMIN =====
+  /api/admin/users:
+    get:
+      summary: List users (admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query (email / nickname)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                        nickname:
+                          type: string
+                        created_at:
+                          type: string
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (admin only)
 
   # ===== AUTH =====
   /api/auth/register:
@@ -1091,9 +1161,8 @@ paths:
       description: |
         Creates an internal pending payment and returns checkout_url.
         - Local/dev: often completed via POST /api/payment/yookassa/webhook (stub).
-        - Boosty: checkout_url is a redirect helper to the creator page; Boosty has no
-          native webhook URL in creator UI — treat as secondary/manual path.
-          Autosubscription is not guaranteed via Boosty alone.
+        - Boosty: checkout_url is a redirect helper; no native creator webhook UI —
+          treat as secondary/manual path. Autosubscription not guaranteed via Boosty alone.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
