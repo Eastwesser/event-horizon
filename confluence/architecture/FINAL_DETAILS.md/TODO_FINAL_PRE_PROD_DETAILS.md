@@ -83,9 +83,9 @@ C1–C3 can proceed without payouts locked.
 BEFORE START - CHECK WHAT ALREADY EXISTS 
 
 - [ ] **Helm charts for k3s** — M · med · DevOps
-- [ ] **Service Discovery (Consul)** — M · med · Infra
-- [ ] **k6 load + DB indexes** — M–L · med · Scenarios, RPS/latency, index pass
-- [ ] **Unit tests ≥70%** — M · low · Long-running; parallel to everything
+- [ ] **Service Discovery (Consul)** — M · med · Infra · evaluate first (k3s DNS may be enough)
+- [ ] **k6 load + DB indexes** — M–L · med · scripts ready (`browse.js`/`purchase.js`); smoke pending live stack; indexes after EXPLAIN
+- [x] **Unit tests ≥70%** — M · low · ✅ **Wave 4 (1) done 05.10.2026.** All gated services ≥70% on `internal/service`. `scripts/coverage-gate.sh` measures service layer. CI `coverage` job in `main.yml` — **1 commit local** (`cd421de`) awaiting push (needs GitHub `workflow` OAuth scope).
 - [ ] **OpenAPI docs** — M · low · **Decision: gateway-only.** Public HTTP contract stays [`docs/openapi.yaml`](../../../docs/openapi.yaml) (+ Swagger at `/docs`). No per-service Swagger UI. gRPC contracts remain `.proto` in each service (optional: publish proto HTML later — not required for this checkbox).
 
 ### Deploy status (partially done)
@@ -117,8 +117,8 @@ Update this table when you tick boxes above.
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
 | 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
-| 3 Author reg | 3 / 4 phases |
-| 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
+| 3 Author reg | 3 / 4 phases (C4 payouts deferred) |
+| 4 Infra | 4 / 8 (CI/Ansible/k3s + unit tests ≥70%; k6/Helm/Consul/OpenAPI open) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
 
 ---
