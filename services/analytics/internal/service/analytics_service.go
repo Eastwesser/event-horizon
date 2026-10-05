@@ -4,14 +4,21 @@ import (
 	"context"
 
 	"github.com/Eastwesser/event-horizon/services/analytics/internal/model"
-	"github.com/Eastwesser/event-horizon/services/analytics/internal/repository"
 )
 
-type AnalyticsService struct {
-	repo *repository.AnalyticsRepo
+// AnalyticsStore is the persistence port for AnalyticsService.
+type AnalyticsStore interface {
+	Record(ctx context.Context, userID, eventType, payload string) error
+	DAU(ctx context.Context, days int) ([]model.DayCount, error)
+	MAU(ctx context.Context, days int) (int64, error)
+	Retention(ctx context.Context, cohortDaysAgo, windowDays int) (*model.Retention, error)
 }
 
-func New(repo *repository.AnalyticsRepo) *AnalyticsService {
+type AnalyticsService struct {
+	repo AnalyticsStore
+}
+
+func New(repo AnalyticsStore) *AnalyticsService {
 	return &AnalyticsService{repo: repo}
 }
 

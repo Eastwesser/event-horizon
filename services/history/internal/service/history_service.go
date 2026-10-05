@@ -6,15 +6,21 @@ import (
 	"time"
 
 	"github.com/Eastwesser/event-horizon/services/history/internal/model"
-	"github.com/Eastwesser/event-horizon/services/history/internal/repository"
 )
 
+// HistoryStore is the persistence port for HistoryService.
+type HistoryStore interface {
+	Insert(ctx context.Context, userID, eventType, payload string) (string, error)
+	List(ctx context.Context, userID, eventType string, limit, offset int) ([]*model.Event, int64, error)
+	DeleteOlderThan(ctx context.Context, before time.Time) (int64, error)
+}
+
 type HistoryService struct {
-	repo          *repository.PostgresRepo
+	repo          HistoryStore
 	retentionDays int
 }
 
-func New(repo *repository.PostgresRepo, retentionDays int) *HistoryService {
+func New(repo HistoryStore, retentionDays int) *HistoryService {
 	if retentionDays <= 0 {
 		retentionDays = 30
 	}

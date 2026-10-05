@@ -9,20 +9,33 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Eastwesser/event-horizon/services/payment/internal/model"
-	"github.com/Eastwesser/event-horizon/services/payment/internal/repository"
 )
 
+// PaymentStore is the PostgreSQL port.
+type PaymentStore interface {
+	CreatePayment(ctx context.Context, p *model.Payment) error
+	GetPayment(ctx context.Context, id string) (*model.Payment, error)
+	CompletePaymentAndActivateSubscription(ctx context.Context, paymentID, providerRef string, sub *model.Subscription, eventType string, eventPayload map[string]any) error
+	GetActiveSubscription(ctx context.Context, userID string) (*model.Subscription, error)
+}
+
+// SubscriptionCache is the Redis port.
+type SubscriptionCache interface {
+	GetSubscription(ctx context.Context, userID string) (*model.Subscription, error)
+	SetSubscription(ctx context.Context, sub *model.Subscription) error
+}
+
 type PaymentService struct {
-	repo              *repository.PostgresRepo
-	cache             *repository.RedisRepo
-	boostyURL         string
-	webhookSecret     string
-	subscriptionDays  int
+	repo             PaymentStore
+	cache            SubscriptionCache
+	boostyURL        string
+	webhookSecret    string
+	subscriptionDays int
 }
 
 func New(
-	repo *repository.PostgresRepo,
-	cache *repository.RedisRepo,
+	repo PaymentStore,
+	cache SubscriptionCache,
 	boostyURL, webhookSecret string,
 	subscriptionDays int,
 ) *PaymentService {
@@ -93,10 +106,7 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, provider
 		"provider_ref":    providerRef,
 		"timestamp":       now.Unix(),
 	}
-	// Happy path: activate subscription in a single DB transaction.
 	if err := s.repo.CompletePaymentAndActivateSubscription(ctx, paymentID, providerRef, sub, "payment.completed", event); err != nil {
-		// Idempotency: Boosty may retry the same delivery, and we already handled this `payment_id`.
-		// In that case, return the already-active subscription (so merch unlock remains correct).
 		if errors.Is(err, model.ErrAlreadyPaid) {
 			existing, getErr := s.repo.GetActiveSubscription(ctx, p.UserID)
 			if getErr == nil {
