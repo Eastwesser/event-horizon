@@ -1,10 +1,13 @@
-# Pre-prod debt checklist (post v1.0.9)
+# Pre-prod debt checklist — **v1.1.0** (post v1.0.9)
 
 **How to use:** tick `- [ ]` → `- [x]` as you finish items, then update the **Progress** table at the bottom.
 
-Source plan: [`README.md` → Планы на следующие спринты](../../../README.md#-планы-на-следующие-спринты).
+Source plan: [`README.md` → Планы на следующие спринты](../../../README.md#-планы-на-следующие-спринты).  
+k6 archive: [`K6_WAVES/`](../../history/2026-10/05.10.2026/K6_WAVES/).
 
 **Axes:** complexity XS–XL · risk low/med/high · dependency noted inline.
+
+**v1.1.0 focus (remaining):** Wave 4.5 — Helm · Consul evaluate · OpenAPI sync. C4 payouts stay deferred (monetization Q = D). Multi-VU purchase latency EXPLAIN — only if a real slow-purchase report appears.
 
 ---
 
@@ -82,15 +85,15 @@ C1–C3 can proceed without payouts locked.
 
 BEFORE START - CHECK WHAT ALREADY EXISTS 
 
-- [ ] **Helm charts for k3s** — M · med · DevOps
-- [ ] **Service Discovery (Consul)** — M · med · Infra · evaluate first (k3s DNS may be enough)
-- [ ] **k6 load + DB indexes** — M–L · med · scripts ready (`browse.js`/`purchase.js`); smoke pending live stack; indexes after EXPLAIN
-- [x] **Unit tests ≥70%** — M · low · ✅ **Wave 4 (1) done 05.10.2026.** All gated services ≥70% on `internal/service`. `scripts/coverage-gate.sh` measures service layer. CI `coverage` job in `main.yml` — **1 commit local** (`cd421de`) awaiting push (needs GitHub `workflow` OAuth scope).
-- [ ] **OpenAPI docs** — M · low · **Decision: gateway-only.** Public HTTP contract stays [`docs/openapi.yaml`](../../../docs/openapi.yaml) (+ Swagger at `/docs`). No per-service Swagger UI. gRPC contracts remain `.proto` in each service (optional: publish proto HTML later — not required for this checkbox).
+- [ ] **Helm charts for k3s** — M · med · DevOps · **v1.1.0 open**
+- [ ] **Service Discovery (Consul)** — M · med · Infra · evaluate first (k3s DNS may be enough) · **v1.1.0 open**
+- [x] **k6 load + DB indexes** — M–L · med · ✅ **Wave 4 (2) correctness closed 05.10.2026.** `browse.js` / `purchase.js` (per-VU unowned); browse 5 VU p95 ~355ms; purchase 1 VU 100% checks. Shop N+1 owned → batch `ListOwnedItemIDs`; gateway no 503 after shop commit. Indexes: **not added** (EXPLAIN showed list query fine; multi-VU purchase p95 deferred — not a functional issue). Archive: [`K6_WAVE_6`](../../history/2026-10/05.10.2026/K6_WAVES/WAVES/K6_WAVE_6.md).
+- [x] **Unit tests ≥70%** — M · low · ✅ **Wave 4 (1) done 05.10.2026.** All gated services ≥70% on `internal/service`. `scripts/coverage-gate.sh` + CI `coverage` job on `main` via [PR #2](https://github.com/Eastwesser/event-horizon/pull/2) merged (`f9ff55a`).
+- [ ] **OpenAPI docs** — M · low · **Decision: gateway-only.** Public HTTP contract stays [`docs/openapi.yaml`](../../../docs/openapi.yaml) (+ Swagger at `/docs`). No per-service Swagger UI. gRPC contracts remain `.proto` in each service (optional: publish proto HTML later — not required for this checkbox). · **v1.1.0 open (sync pass)**
 
 ### Deploy status (partially done)
 
-- [x] CI/CD GitHub Actions
+- [x] CI/CD GitHub Actions *(incl. coverage gate)*
 - [x] Ansible
 - [x] k3s
 - [ ] Helm charts
@@ -119,8 +122,8 @@ Update this table when you tick boxes above.
 | 1 Quick wins | 6 / 6 |
 | 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
 | 3 Author reg | 3 / 4 phases (C4 payouts deferred) |
-| 4 Infra | 4 / 8 (CI/Ansible/k3s + unit tests ≥70%; k6/Helm/Consul/OpenAPI open) |
-| 5 Long term | 2 / 3 (NATS + alerts done) |
+| 4 Infra | 6 / 8 (CI/Ansible/k3s + unit tests + k6 baseline; **Helm / Consul / OpenAPI** = v1.1.0) |
+| 5 Long term | 2 / 3 (NATS + alerts done; catalog page/filter still deferred) |
 
 ---
 
