@@ -22,17 +22,19 @@ const (
 )
 
 type Author struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	DisplayName   string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Bio           string                 `protobuf:"bytes,4,opt,name=bio,proto3" json:"bio,omitempty"`
-	AvatarUrl     string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
-	Active        bool                   `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
-	CreatedAtUnix int64                  `protobuf:"varint,7,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
-	UpdatedAtUnix int64                  `protobuf:"varint,8,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	DisplayName    string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Bio            string                 `protobuf:"bytes,4,opt,name=bio,proto3" json:"bio,omitempty"`
+	AvatarUrl      string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	Active         bool                   `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
+	CreatedAtUnix  int64                  `protobuf:"varint,7,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	UpdatedAtUnix  int64                  `protobuf:"varint,8,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	Portfolio      string                 `protobuf:"bytes,9,opt,name=portfolio,proto3" json:"portfolio,omitempty"`
+	VerifiedAtUnix int64                  `protobuf:"varint,10,opt,name=verified_at_unix,json=verifiedAtUnix,proto3" json:"verified_at_unix,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Author) Reset() {
@@ -121,12 +123,27 @@ func (x *Author) GetUpdatedAtUnix() int64 {
 	return 0
 }
 
+func (x *Author) GetPortfolio() string {
+	if x != nil {
+		return x.Portfolio
+	}
+	return ""
+}
+
+func (x *Author) GetVerifiedAtUnix() int64 {
+	if x != nil {
+		return x.VerifiedAtUnix
+	}
+	return 0
+}
+
 type UpsertProfileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	Bio           string                 `protobuf:"bytes,3,opt,name=bio,proto3" json:"bio,omitempty"`
 	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	Portfolio     string                 `protobuf:"bytes,5,opt,name=portfolio,proto3" json:"portfolio,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,6 +202,13 @@ func (x *UpsertProfileRequest) GetBio() string {
 func (x *UpsertProfileRequest) GetAvatarUrl() string {
 	if x != nil {
 		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetPortfolio() string {
+	if x != nil {
+		return x.Portfolio
 	}
 	return ""
 }
@@ -550,14 +574,13 @@ func (x *AuthorApplication) GetReviewerNote() string {
 }
 
 type SubmitApplicationRequest struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	UserId string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// Caller role from gateway JWT (user|author|admin). Used to reject author/admin.
-	CallerRole    string `protobuf:"bytes,2,opt,name=caller_role,json=callerRole,proto3" json:"caller_role,omitempty"`
-	DisplayName   string `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Portfolio     string `protobuf:"bytes,4,opt,name=portfolio,proto3" json:"portfolio,omitempty"`
-	Motivation    string `protobuf:"bytes,5,opt,name=motivation,proto3" json:"motivation,omitempty"`
-	ContactEmail  string `protobuf:"bytes,6,opt,name=contact_email,json=contactEmail,proto3" json:"contact_email,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CallerRole    string                 `protobuf:"bytes,2,opt,name=caller_role,json=callerRole,proto3" json:"caller_role,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Portfolio     string                 `protobuf:"bytes,4,opt,name=portfolio,proto3" json:"portfolio,omitempty"`
+	Motivation    string                 `protobuf:"bytes,5,opt,name=motivation,proto3" json:"motivation,omitempty"`
+	ContactEmail  string                 `protobuf:"bytes,6,opt,name=contact_email,json=contactEmail,proto3" json:"contact_email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -766,11 +789,419 @@ func (x *GetMyApplicationResponse) GetApplication() *AuthorApplication {
 	return nil
 }
 
+type ListApplicationsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // pending|approved|rejected|"" (all)
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListApplicationsRequest) Reset() {
+	*x = ListApplicationsRequest{}
+	mi := &file_authors_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListApplicationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListApplicationsRequest) ProtoMessage() {}
+
+func (x *ListApplicationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListApplicationsRequest.ProtoReflect.Descriptor instead.
+func (*ListApplicationsRequest) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListApplicationsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListApplicationsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListApplicationsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListApplicationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Applications  []*AuthorApplication   `protobuf:"bytes,1,rep,name=applications,proto3" json:"applications,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListApplicationsResponse) Reset() {
+	*x = ListApplicationsResponse{}
+	mi := &file_authors_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListApplicationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListApplicationsResponse) ProtoMessage() {}
+
+func (x *ListApplicationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListApplicationsResponse.ProtoReflect.Descriptor instead.
+func (*ListApplicationsResponse) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListApplicationsResponse) GetApplications() []*AuthorApplication {
+	if x != nil {
+		return x.Applications
+	}
+	return nil
+}
+
+func (x *ListApplicationsResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type ApproveApplicationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	ReviewerId    string                 `protobuf:"bytes,2,opt,name=reviewer_id,json=reviewerId,proto3" json:"reviewer_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveApplicationRequest) Reset() {
+	*x = ApproveApplicationRequest{}
+	mi := &file_authors_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveApplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveApplicationRequest) ProtoMessage() {}
+
+func (x *ApproveApplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveApplicationRequest.ProtoReflect.Descriptor instead.
+func (*ApproveApplicationRequest) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ApproveApplicationRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *ApproveApplicationRequest) GetReviewerId() string {
+	if x != nil {
+		return x.ReviewerId
+	}
+	return ""
+}
+
+type ApproveApplicationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Application   *AuthorApplication     `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	Author        *Author                `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveApplicationResponse) Reset() {
+	*x = ApproveApplicationResponse{}
+	mi := &file_authors_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveApplicationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveApplicationResponse) ProtoMessage() {}
+
+func (x *ApproveApplicationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveApplicationResponse.ProtoReflect.Descriptor instead.
+func (*ApproveApplicationResponse) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ApproveApplicationResponse) GetApplication() *AuthorApplication {
+	if x != nil {
+		return x.Application
+	}
+	return nil
+}
+
+func (x *ApproveApplicationResponse) GetAuthor() *Author {
+	if x != nil {
+		return x.Author
+	}
+	return nil
+}
+
+type RejectApplicationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	ReviewerId    string                 `protobuf:"bytes,2,opt,name=reviewer_id,json=reviewerId,proto3" json:"reviewer_id,omitempty"`
+	ReviewerNote  string                 `protobuf:"bytes,3,opt,name=reviewer_note,json=reviewerNote,proto3" json:"reviewer_note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectApplicationRequest) Reset() {
+	*x = RejectApplicationRequest{}
+	mi := &file_authors_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectApplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectApplicationRequest) ProtoMessage() {}
+
+func (x *RejectApplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectApplicationRequest.ProtoReflect.Descriptor instead.
+func (*RejectApplicationRequest) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RejectApplicationRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *RejectApplicationRequest) GetReviewerId() string {
+	if x != nil {
+		return x.ReviewerId
+	}
+	return ""
+}
+
+func (x *RejectApplicationRequest) GetReviewerNote() string {
+	if x != nil {
+		return x.ReviewerNote
+	}
+	return ""
+}
+
+type RejectApplicationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Application   *AuthorApplication     `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectApplicationResponse) Reset() {
+	*x = RejectApplicationResponse{}
+	mi := &file_authors_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectApplicationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectApplicationResponse) ProtoMessage() {}
+
+func (x *RejectApplicationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectApplicationResponse.ProtoReflect.Descriptor instead.
+func (*RejectApplicationResponse) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RejectApplicationResponse) GetApplication() *AuthorApplication {
+	if x != nil {
+		return x.Application
+	}
+	return nil
+}
+
+type RevertApplicationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevertApplicationRequest) Reset() {
+	*x = RevertApplicationRequest{}
+	mi := &file_authors_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevertApplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevertApplicationRequest) ProtoMessage() {}
+
+func (x *RevertApplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevertApplicationRequest.ProtoReflect.Descriptor instead.
+func (*RevertApplicationRequest) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RevertApplicationRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+type RevertApplicationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Application   *AuthorApplication     `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevertApplicationResponse) Reset() {
+	*x = RevertApplicationResponse{}
+	mi := &file_authors_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevertApplicationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevertApplicationResponse) ProtoMessage() {}
+
+func (x *RevertApplicationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authors_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevertApplicationResponse.ProtoReflect.Descriptor instead.
+func (*RevertApplicationResponse) Descriptor() ([]byte, []int) {
+	return file_authors_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *RevertApplicationResponse) GetApplication() *AuthorApplication {
+	if x != nil {
+		return x.Application
+	}
+	return nil
+}
+
 var File_authors_proto protoreflect.FileDescriptor
 
 const file_authors_proto_rawDesc = "" +
 	"\n" +
-	"\rauthors.proto\x12\aauthors\"\xed\x01\n" +
+	"\rauthors.proto\x12\aauthors\"\xb5\x02\n" +
 	"\x06Author\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12!\n" +
@@ -780,13 +1211,17 @@ const file_authors_proto_rawDesc = "" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06active\x18\x06 \x01(\bR\x06active\x12&\n" +
 	"\x0fcreated_at_unix\x18\a \x01(\x03R\rcreatedAtUnix\x12&\n" +
-	"\x0fupdated_at_unix\x18\b \x01(\x03R\rupdatedAtUnix\"\x83\x01\n" +
+	"\x0fupdated_at_unix\x18\b \x01(\x03R\rupdatedAtUnix\x12\x1c\n" +
+	"\tportfolio\x18\t \x01(\tR\tportfolio\x12(\n" +
+	"\x10verified_at_unix\x18\n" +
+	" \x01(\x03R\x0everifiedAtUnix\"\xa1\x01\n" +
 	"\x14UpsertProfileRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x10\n" +
 	"\x03bio\x18\x03 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
-	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\"@\n" +
+	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12\x1c\n" +
+	"\tportfolio\x18\x05 \x01(\tR\tportfolio\"@\n" +
 	"\x15UpsertProfileResponse\x12'\n" +
 	"\x06author\x18\x01 \x01(\v2\x0f.authors.AuthorR\x06author\"+\n" +
 	"\x10GetAuthorRequest\x12\x17\n" +
@@ -830,13 +1265,42 @@ const file_authors_proto_rawDesc = "" +
 	"\x17GetMyApplicationRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"X\n" +
 	"\x18GetMyApplicationResponse\x12<\n" +
-	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication2\xa3\x03\n" +
+	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication\"_\n" +
+	"\x17ListApplicationsRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"p\n" +
+	"\x18ListApplicationsResponse\x12>\n" +
+	"\fapplications\x18\x01 \x03(\v2\x1a.authors.AuthorApplicationR\fapplications\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"c\n" +
+	"\x19ApproveApplicationRequest\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1f\n" +
+	"\vreviewer_id\x18\x02 \x01(\tR\n" +
+	"reviewerId\"\x83\x01\n" +
+	"\x1aApproveApplicationResponse\x12<\n" +
+	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication\x12'\n" +
+	"\x06author\x18\x02 \x01(\v2\x0f.authors.AuthorR\x06author\"\x87\x01\n" +
+	"\x18RejectApplicationRequest\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1f\n" +
+	"\vreviewer_id\x18\x02 \x01(\tR\n" +
+	"reviewerId\x12#\n" +
+	"\rreviewer_note\x18\x03 \x01(\tR\freviewerNote\"Y\n" +
+	"\x19RejectApplicationResponse\x12<\n" +
+	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication\"A\n" +
+	"\x18RevertApplicationRequest\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\"Y\n" +
+	"\x19RevertApplicationResponse\x12<\n" +
+	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication2\x93\x06\n" +
 	"\x0eAuthorsService\x12N\n" +
 	"\rUpsertProfile\x12\x1d.authors.UpsertProfileRequest\x1a\x1e.authors.UpsertProfileResponse\x12B\n" +
 	"\tGetAuthor\x12\x19.authors.GetAuthorRequest\x1a\x1a.authors.GetAuthorResponse\x12H\n" +
 	"\vListAuthors\x12\x1b.authors.ListAuthorsRequest\x1a\x1c.authors.ListAuthorsResponse\x12Z\n" +
 	"\x11SubmitApplication\x12!.authors.SubmitApplicationRequest\x1a\".authors.SubmitApplicationResponse\x12W\n" +
-	"\x10GetMyApplication\x12 .authors.GetMyApplicationRequest\x1a!.authors.GetMyApplicationResponseBDZBgithub.com/Eastwesser/event-horizon/services/authors/proto;authorsb\x06proto3"
+	"\x10GetMyApplication\x12 .authors.GetMyApplicationRequest\x1a!.authors.GetMyApplicationResponse\x12W\n" +
+	"\x10ListApplications\x12 .authors.ListApplicationsRequest\x1a!.authors.ListApplicationsResponse\x12]\n" +
+	"\x12ApproveApplication\x12\".authors.ApproveApplicationRequest\x1a#.authors.ApproveApplicationResponse\x12Z\n" +
+	"\x11RejectApplication\x12!.authors.RejectApplicationRequest\x1a\".authors.RejectApplicationResponse\x12Z\n" +
+	"\x11RevertApplication\x12!.authors.RevertApplicationRequest\x1a\".authors.RevertApplicationResponseBDZBgithub.com/Eastwesser/event-horizon/services/authors/proto;authorsb\x06proto3"
 
 var (
 	file_authors_proto_rawDescOnce sync.Once
@@ -850,20 +1314,28 @@ func file_authors_proto_rawDescGZIP() []byte {
 	return file_authors_proto_rawDescData
 }
 
-var file_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_authors_proto_goTypes = []any{
-	(*Author)(nil),                    // 0: authors.Author
-	(*UpsertProfileRequest)(nil),      // 1: authors.UpsertProfileRequest
-	(*UpsertProfileResponse)(nil),     // 2: authors.UpsertProfileResponse
-	(*GetAuthorRequest)(nil),          // 3: authors.GetAuthorRequest
-	(*GetAuthorResponse)(nil),         // 4: authors.GetAuthorResponse
-	(*ListAuthorsRequest)(nil),        // 5: authors.ListAuthorsRequest
-	(*ListAuthorsResponse)(nil),       // 6: authors.ListAuthorsResponse
-	(*AuthorApplication)(nil),         // 7: authors.AuthorApplication
-	(*SubmitApplicationRequest)(nil),  // 8: authors.SubmitApplicationRequest
-	(*SubmitApplicationResponse)(nil), // 9: authors.SubmitApplicationResponse
-	(*GetMyApplicationRequest)(nil),   // 10: authors.GetMyApplicationRequest
-	(*GetMyApplicationResponse)(nil),  // 11: authors.GetMyApplicationResponse
+	(*Author)(nil),                     // 0: authors.Author
+	(*UpsertProfileRequest)(nil),       // 1: authors.UpsertProfileRequest
+	(*UpsertProfileResponse)(nil),      // 2: authors.UpsertProfileResponse
+	(*GetAuthorRequest)(nil),           // 3: authors.GetAuthorRequest
+	(*GetAuthorResponse)(nil),          // 4: authors.GetAuthorResponse
+	(*ListAuthorsRequest)(nil),         // 5: authors.ListAuthorsRequest
+	(*ListAuthorsResponse)(nil),        // 6: authors.ListAuthorsResponse
+	(*AuthorApplication)(nil),          // 7: authors.AuthorApplication
+	(*SubmitApplicationRequest)(nil),   // 8: authors.SubmitApplicationRequest
+	(*SubmitApplicationResponse)(nil),  // 9: authors.SubmitApplicationResponse
+	(*GetMyApplicationRequest)(nil),    // 10: authors.GetMyApplicationRequest
+	(*GetMyApplicationResponse)(nil),   // 11: authors.GetMyApplicationResponse
+	(*ListApplicationsRequest)(nil),    // 12: authors.ListApplicationsRequest
+	(*ListApplicationsResponse)(nil),   // 13: authors.ListApplicationsResponse
+	(*ApproveApplicationRequest)(nil),  // 14: authors.ApproveApplicationRequest
+	(*ApproveApplicationResponse)(nil), // 15: authors.ApproveApplicationResponse
+	(*RejectApplicationRequest)(nil),   // 16: authors.RejectApplicationRequest
+	(*RejectApplicationResponse)(nil),  // 17: authors.RejectApplicationResponse
+	(*RevertApplicationRequest)(nil),   // 18: authors.RevertApplicationRequest
+	(*RevertApplicationResponse)(nil),  // 19: authors.RevertApplicationResponse
 }
 var file_authors_proto_depIdxs = []int32{
 	0,  // 0: authors.UpsertProfileResponse.author:type_name -> authors.Author
@@ -871,21 +1343,34 @@ var file_authors_proto_depIdxs = []int32{
 	0,  // 2: authors.ListAuthorsResponse.authors:type_name -> authors.Author
 	7,  // 3: authors.SubmitApplicationResponse.application:type_name -> authors.AuthorApplication
 	7,  // 4: authors.GetMyApplicationResponse.application:type_name -> authors.AuthorApplication
-	1,  // 5: authors.AuthorsService.UpsertProfile:input_type -> authors.UpsertProfileRequest
-	3,  // 6: authors.AuthorsService.GetAuthor:input_type -> authors.GetAuthorRequest
-	5,  // 7: authors.AuthorsService.ListAuthors:input_type -> authors.ListAuthorsRequest
-	8,  // 8: authors.AuthorsService.SubmitApplication:input_type -> authors.SubmitApplicationRequest
-	10, // 9: authors.AuthorsService.GetMyApplication:input_type -> authors.GetMyApplicationRequest
-	2,  // 10: authors.AuthorsService.UpsertProfile:output_type -> authors.UpsertProfileResponse
-	4,  // 11: authors.AuthorsService.GetAuthor:output_type -> authors.GetAuthorResponse
-	6,  // 12: authors.AuthorsService.ListAuthors:output_type -> authors.ListAuthorsResponse
-	9,  // 13: authors.AuthorsService.SubmitApplication:output_type -> authors.SubmitApplicationResponse
-	11, // 14: authors.AuthorsService.GetMyApplication:output_type -> authors.GetMyApplicationResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	7,  // 5: authors.ListApplicationsResponse.applications:type_name -> authors.AuthorApplication
+	7,  // 6: authors.ApproveApplicationResponse.application:type_name -> authors.AuthorApplication
+	0,  // 7: authors.ApproveApplicationResponse.author:type_name -> authors.Author
+	7,  // 8: authors.RejectApplicationResponse.application:type_name -> authors.AuthorApplication
+	7,  // 9: authors.RevertApplicationResponse.application:type_name -> authors.AuthorApplication
+	1,  // 10: authors.AuthorsService.UpsertProfile:input_type -> authors.UpsertProfileRequest
+	3,  // 11: authors.AuthorsService.GetAuthor:input_type -> authors.GetAuthorRequest
+	5,  // 12: authors.AuthorsService.ListAuthors:input_type -> authors.ListAuthorsRequest
+	8,  // 13: authors.AuthorsService.SubmitApplication:input_type -> authors.SubmitApplicationRequest
+	10, // 14: authors.AuthorsService.GetMyApplication:input_type -> authors.GetMyApplicationRequest
+	12, // 15: authors.AuthorsService.ListApplications:input_type -> authors.ListApplicationsRequest
+	14, // 16: authors.AuthorsService.ApproveApplication:input_type -> authors.ApproveApplicationRequest
+	16, // 17: authors.AuthorsService.RejectApplication:input_type -> authors.RejectApplicationRequest
+	18, // 18: authors.AuthorsService.RevertApplication:input_type -> authors.RevertApplicationRequest
+	2,  // 19: authors.AuthorsService.UpsertProfile:output_type -> authors.UpsertProfileResponse
+	4,  // 20: authors.AuthorsService.GetAuthor:output_type -> authors.GetAuthorResponse
+	6,  // 21: authors.AuthorsService.ListAuthors:output_type -> authors.ListAuthorsResponse
+	9,  // 22: authors.AuthorsService.SubmitApplication:output_type -> authors.SubmitApplicationResponse
+	11, // 23: authors.AuthorsService.GetMyApplication:output_type -> authors.GetMyApplicationResponse
+	13, // 24: authors.AuthorsService.ListApplications:output_type -> authors.ListApplicationsResponse
+	15, // 25: authors.AuthorsService.ApproveApplication:output_type -> authors.ApproveApplicationResponse
+	17, // 26: authors.AuthorsService.RejectApplication:output_type -> authors.RejectApplicationResponse
+	19, // 27: authors.AuthorsService.RevertApplication:output_type -> authors.RevertApplicationResponse
+	19, // [19:28] is the sub-list for method output_type
+	10, // [10:19] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_authors_proto_init() }
@@ -899,7 +1384,7 @@ func file_authors_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authors_proto_rawDesc), len(file_authors_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -46,3 +46,40 @@ func (r *GetMyApplicationRequest) Validate() error {
 	}
 	return nil
 }
+
+func (r *ListApplicationsRequest) Validate() error {
+	status := strings.ToLower(strings.TrimSpace(r.GetStatus()))
+	switch status {
+	case "", "pending", "approved", "rejected":
+		return nil
+	default:
+		return fmt.Errorf("status must be pending, approved, rejected, or empty")
+	}
+}
+
+func (r *ApproveApplicationRequest) Validate() error {
+	if strings.TrimSpace(r.GetApplicationId()) == "" {
+		return fmt.Errorf("application_id is required")
+	}
+	if strings.TrimSpace(r.GetReviewerId()) == "" {
+		return fmt.Errorf("reviewer_id is required")
+	}
+	return nil
+}
+
+func (r *RejectApplicationRequest) Validate() error {
+	if strings.TrimSpace(r.GetApplicationId()) == "" {
+		return fmt.Errorf("application_id is required")
+	}
+	if strings.TrimSpace(r.GetReviewerId()) == "" {
+		return fmt.Errorf("reviewer_id is required")
+	}
+	return nil
+}
+
+func (r *RevertApplicationRequest) Validate() error {
+	if strings.TrimSpace(r.GetApplicationId()) == "" {
+		return fmt.Errorf("application_id is required")
+	}
+	return nil
+}

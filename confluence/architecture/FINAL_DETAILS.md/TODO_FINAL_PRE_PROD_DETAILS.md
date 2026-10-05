@@ -55,9 +55,11 @@ C1–C3 can proceed without payouts locked.
 
 ### C2. Admin approval (M)
 
-- [ ] `/admin` → tab «Заявки»
-- [ ] List pending · approve / reject
-- [ ] Approve → `role=author` + notification
+- [x] `/admin` → tab «Заявки»
+- [x] List pending · approve / reject (double review → 400)
+- [x] Approve → upsert authors profile + Auth `role=author` (gateway; revert on Auth fail)
+- Follow-up (later PR): `author.application.approved` → notify author
+- Follow-up (UX gap): JWT role refresh — re-login needed after approve until token refresh reloads role from Auth DB
 
 ### C3. Author dashboard (L)
 
@@ -111,7 +113,7 @@ Update this table when you tick boxes above.
 |------|--------------|
 | 1 Quick wins | 6 / 6 |
 | 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
-| 3 Author reg | 1 / 4 phases |
+| 3 Author reg | 2 / 4 phases |
 | 4 Infra | 3 / 8 (CI/Ansible/k3s done) |
 | 5 Long term | 2 / 3 (NATS + alerts done) |
 

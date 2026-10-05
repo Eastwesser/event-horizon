@@ -10,8 +10,9 @@ import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { AdminInventoryStats } from './AdminInventoryStats';
 import { AdminAnalytics } from './AdminAnalytics';
+import { AdminApplications } from './AdminApplications';
 
-type Tab = 'users' | 'inventory' | 'analytics';
+type Tab = 'users' | 'applications' | 'inventory' | 'analytics';
 
 const PAGE_SIZE = 50;
 const ROLES: AdminRole[] = ['user', 'author', 'admin'];
@@ -125,6 +126,7 @@ export function AdminPage() {
         {(
           [
             ['users', 'Пользователи'],
+            ['applications', 'Заявки'],
             ['inventory', 'Инвентарь'],
             ['analytics', 'Аналитика'],
           ] as const
@@ -262,6 +264,8 @@ export function AdminPage() {
           </div>
         </div>
       )}
+
+      {tab === 'applications' && <AdminApplications />}
 
       {tab === 'inventory' && <AdminInventoryStats />}
 

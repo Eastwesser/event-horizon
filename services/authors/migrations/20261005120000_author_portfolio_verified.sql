@@ -1,0 +1,7 @@
+-- +goose Up
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS portfolio TEXT NOT NULL DEFAULT '';
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+
+-- +goose Down
+ALTER TABLE authors DROP COLUMN IF EXISTS verified_at;
+ALTER TABLE authors DROP COLUMN IF EXISTS portfolio;

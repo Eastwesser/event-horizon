@@ -21,7 +21,7 @@ func New(repo *repository.PostgresRepo, cache *repository.RedisRepo) *AuthorsSer
 	return &AuthorsService{repo: repo, cache: cache}
 }
 
-func (s *AuthorsService) UpsertProfile(ctx context.Context, userID, displayName, bio, avatar string) (*model.Author, error) {
+func (s *AuthorsService) UpsertProfile(ctx context.Context, userID, displayName, bio, avatar, portfolio string) (*model.Author, error) {
 	if userID == "" || displayName == "" {
 		return nil, model.ErrInvalidInput
 	}
@@ -30,6 +30,7 @@ func (s *AuthorsService) UpsertProfile(ctx context.Context, userID, displayName,
 		DisplayName: displayName,
 		Bio:         bio,
 		AvatarURL:   avatar,
+		Portfolio:   portfolio,
 		Active:      true,
 	}
 	event := map[string]any{
@@ -119,4 +120,55 @@ func (s *AuthorsService) GetMyApplication(ctx context.Context, userID string) (*
 		return nil, model.ErrInvalidInput
 	}
 	return s.repo.GetLatestApplicationByUserID(ctx, userID)
+}
+
+func (s *AuthorsService) ListApplications(ctx context.Context, status string, limit, offset int) ([]*model.AuthorApplication, int64, error) {
+	status = strings.ToLower(strings.TrimSpace(status))
+	switch status {
+	case "", "pending", "approved", "rejected":
+	default:
+		return nil, 0, model.ErrInvalidInput
+	}
+	return s.repo.ListApplications(ctx, status, limit, offset)
+}
+
+func (s *AuthorsService) ApproveApplication(ctx context.Context, applicationID, reviewerID string) (*model.AuthorApplication, *model.Author, error) {
+	applicationID = strings.TrimSpace(applicationID)
+	reviewerID = strings.TrimSpace(reviewerID)
+	if applicationID == "" || reviewerID == "" {
+		return nil, nil, model.ErrInvalidInput
+	}
+	app, author, err := s.repo.ApproveApplicationInTx(ctx, applicationID, reviewerID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if s.cache != nil && author != nil {
+		_ = s.cache.Set(ctx, author)
+	}
+	return app, author, nil
+}
+
+func (s *AuthorsService) RejectApplication(ctx context.Context, applicationID, reviewerID, note string) (*model.AuthorApplication, error) {
+	applicationID = strings.TrimSpace(applicationID)
+	reviewerID = strings.TrimSpace(reviewerID)
+	note = strings.TrimSpace(note)
+	if applicationID == "" || reviewerID == "" {
+		return nil, model.ErrInvalidInput
+	}
+	return s.repo.RejectApplication(ctx, applicationID, reviewerID, note)
+}
+
+func (s *AuthorsService) RevertApplication(ctx context.Context, applicationID string) (*model.AuthorApplication, error) {
+	applicationID = strings.TrimSpace(applicationID)
+	if applicationID == "" {
+		return nil, model.ErrInvalidInput
+	}
+	app, err := s.repo.RevertApplication(ctx, applicationID)
+	if err != nil {
+		return nil, err
+	}
+	if s.cache != nil {
+		_ = s.cache.Delete(ctx, app.UserID)
+	}
+	return app, nil
 }

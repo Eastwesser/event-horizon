@@ -42,6 +42,39 @@ export interface InventoryStats {
   top_expensive: TopExpensiveItem[];
 }
 
+export type ApplicationStatusFilter = 'pending' | 'approved' | 'rejected';
+
+export interface AuthorApplication {
+  id: string;
+  user_id: string;
+  status: ApplicationStatusFilter | string;
+  display_name: string;
+  portfolio: string;
+  motivation: string;
+  contact_email: string;
+  created_at_unix: number;
+  reviewed_at_unix?: number;
+  reviewed_by?: string;
+  reviewer_note?: string;
+}
+
+export interface AuthorApplicationsResponse {
+  applications: AuthorApplication[];
+  total: number;
+  limit: number;
+  offset: number;
+  status: string;
+}
+
+export interface AuthorProfile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  bio: string;
+  portfolio: string;
+  verified_at_unix?: number;
+}
+
 export const adminApi = {
   listUsers: async (params: {
     q?: string;
@@ -59,6 +92,35 @@ export const adminApi = {
 
   updateRole: async (userId: string, role: AdminRole): Promise<void> => {
     await api.post('/auth/update-role', { user_id: userId, role });
+  },
+
+  listApplications: async (params: {
+    status?: ApplicationStatusFilter;
+    limit?: number;
+    offset?: number;
+  }): Promise<AuthorApplicationsResponse> => {
+    const { data } = await api.get('/authors/applications', { params });
+    return {
+      applications: Array.isArray(data?.applications) ? data.applications : [],
+      total: typeof data?.total === 'number' ? data.total : 0,
+      limit: typeof data?.limit === 'number' ? data.limit : 50,
+      offset: typeof data?.offset === 'number' ? data.offset : 0,
+      status: typeof data?.status === 'string' ? data.status : params.status ?? 'pending',
+    };
+  },
+
+  approveApplication: async (
+    id: string,
+  ): Promise<{ application: AuthorApplication; author: AuthorProfile }> => {
+    const { data } = await api.post(`/authors/applications/${id}/approve`);
+    return data;
+  },
+
+  rejectApplication: async (id: string, reviewerNote?: string): Promise<AuthorApplication> => {
+    const { data } = await api.post(`/authors/applications/${id}/reject`, {
+      reviewer_note: reviewerNote ?? '',
+    });
+    return data;
   },
 
   getInventoryStats: async (): Promise<InventoryStats> => {

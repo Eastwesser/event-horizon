@@ -10,6 +10,7 @@ var (
 	ErrInvalidInput       = errors.New("invalid input")
 	ErrAlreadyPrivileged  = errors.New("user is already author or admin")
 	ErrApplicationMissing = errors.New("application not found")
+	ErrAlreadyReviewed    = errors.New("application already reviewed")
 )
 
 type Author struct {
@@ -18,9 +19,11 @@ type Author struct {
 	DisplayName string
 	Bio         string
 	AvatarURL   string
+	Portfolio   string
 	Active      bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	VerifiedAt  *time.Time
 }
 
 type ApplicationStatus string
@@ -39,12 +42,12 @@ type ApplicationPayload struct {
 }
 
 type AuthorApplication struct {
-	ID            string
-	UserID        string
-	Status        ApplicationStatus
-	Payload       ApplicationPayload
-	CreatedAt     time.Time
-	ReviewedAt    *time.Time
-	ReviewedBy    string
-	ReviewerNote  string
+	ID           string
+	UserID       string
+	Status       ApplicationStatus
+	Payload      ApplicationPayload
+	CreatedAt    time.Time
+	ReviewedAt   *time.Time
+	ReviewedBy   string
+	ReviewerNote string
 }

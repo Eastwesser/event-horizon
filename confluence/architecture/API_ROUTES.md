@@ -24,7 +24,7 @@
 | Role | Assigned how | Typical access |
 |------|----------------|----------------|
 | **user** | Default on register | Shop, games, profile, history (own) |
-| **author** | Register with `role: "author"` or admin `update-role` | + inventory CRUD (own items), authors profile |
+| **author** | Admin approve (Wave 3 C2) or admin `update-role` | + inventory CRUD (own items), authors profile |
 | **admin** | Only via `POST /api/auth/update-role` (admin caller) | + analytics, inventory stats, any-user role changes |
 
 **Never:** self-assign `admin` at registration (blocked in Auth service).
@@ -51,7 +51,7 @@ Legend: **Auth** = Bearer JWT required. **Roles** = minimum role(s); `-` = any a
 
 | Method | Path | Auth | Roles | Description |
 |--------|------|------|-------|-------------|
-| POST | `/api/auth/register` | — | — | Register (`user` or `author` only) |
+| POST | `/api/auth/register` | — | — | Register (`role=user` only; self-serve author blocked) |
 | POST | `/api/auth/login` | — | — | Login → JWT pair |
 | POST | `/api/auth/refresh` | — | — | Refresh tokens |
 | GET | `/api/auth/whoami` | ✓ | user+ | Current user from token |
@@ -90,8 +90,15 @@ Legend: **Auth** = Bearer JWT required. **Roles** = minimum role(s); `-` = any a
 | Method | Path | Auth | Roles | Description |
 |--------|------|------|-------|-------------|
 | PUT | `/api/authors/me` | ✓ | author, admin | Upsert author profile |
+| POST | `/api/authors/apply` | ✓ | user+ | Submit author application (C1) |
+| GET | `/api/authors/me/application` | ✓ | user+ | Own latest application |
+| GET | `/api/authors/applications` | ✓ | **admin** | List applications (C2; default status=pending) |
+| POST | `/api/authors/applications/:id/approve` | ✓ | **admin** | Approve + Auth role=author + profile upsert |
+| POST | `/api/authors/applications/:id/reject` | ✓ | **admin** | Reject with optional note |
 | GET | `/api/authors` | — | — | List authors (public) |
 | GET | `/api/authors/:user_id` | — | — | Get author (public) |
+
+**UX gap (follow-up):** after approve, JWT still carries the old role until re-login / refresh that reloads role from Auth DB (`Whoami` may already show `author` while inventory RBAC uses JWT).
 
 ### History & analytics
 

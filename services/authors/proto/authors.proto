@@ -11,9 +11,16 @@ service AuthorsService {
   rpc GetAuthor(GetAuthorRequest) returns (GetAuthorResponse);
   rpc ListAuthors(ListAuthorsRequest) returns (ListAuthorsResponse);
 
-  // Wave 3 C1 — author application (approval is C2).
+  // Wave 3 C1 — author application.
   rpc SubmitApplication(SubmitApplicationRequest) returns (SubmitApplicationResponse);
   rpc GetMyApplication(GetMyApplicationRequest) returns (GetMyApplicationResponse);
+
+  // Wave 3 C2 — admin approval.
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
+  rpc ApproveApplication(ApproveApplicationRequest) returns (ApproveApplicationResponse);
+  rpc RejectApplication(RejectApplicationRequest) returns (RejectApplicationResponse);
+  // Compensating call if Auth.UpdateRole fails after approve.
+  rpc RevertApplication(RevertApplicationRequest) returns (RevertApplicationResponse);
 }
 
 message Author {
@@ -25,6 +32,8 @@ message Author {
   bool active = 6;
   int64 created_at_unix = 7;
   int64 updated_at_unix = 8;
+  string portfolio = 9;
+  int64 verified_at_unix = 10;
 }
 
 message UpsertProfileRequest {
@@ -32,6 +41,7 @@ message UpsertProfileRequest {
   string display_name = 2;
   string bio = 3;
   string avatar_url = 4;
+  string portfolio = 5;
 }
 
 message UpsertProfileResponse {
@@ -72,7 +82,6 @@ message AuthorApplication {
 
 message SubmitApplicationRequest {
   string user_id = 1;
-  // Caller role from gateway JWT (user|author|admin). Used to reject author/admin.
   string caller_role = 2;
   string display_name = 3;
   string portfolio = 4;
@@ -89,5 +98,44 @@ message GetMyApplicationRequest {
 }
 
 message GetMyApplicationResponse {
+  AuthorApplication application = 1;
+}
+
+message ListApplicationsRequest {
+  string status = 1; // pending|approved|rejected|"" (all)
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListApplicationsResponse {
+  repeated AuthorApplication applications = 1;
+  int64 total = 2;
+}
+
+message ApproveApplicationRequest {
+  string application_id = 1;
+  string reviewer_id = 2;
+}
+
+message ApproveApplicationResponse {
+  AuthorApplication application = 1;
+  Author author = 2;
+}
+
+message RejectApplicationRequest {
+  string application_id = 1;
+  string reviewer_id = 2;
+  string reviewer_note = 3;
+}
+
+message RejectApplicationResponse {
+  AuthorApplication application = 1;
+}
+
+message RevertApplicationRequest {
+  string application_id = 1;
+}
+
+message RevertApplicationResponse {
   AuthorApplication application = 1;
 }

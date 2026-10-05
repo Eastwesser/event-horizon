@@ -6,9 +6,11 @@ export interface Author {
   display_name: string;
   bio: string;
   avatar_url: string;
+  portfolio?: string;
   active: boolean;
   created_at_unix: number;
   updated_at_unix: number;
+  verified_at_unix?: number;
 }
 
 export interface AuthorApplication {

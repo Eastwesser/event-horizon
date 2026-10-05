@@ -1184,6 +1184,64 @@ paths:
           description: No application yet
         '401':
           description: Unauthorized
+  /api/authors/applications:
+    get:
+      summary: List author applications (admin, Wave 3 C2)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected], default: pending }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: applications + total
+        '403':
+          description: Admin only
+  /api/authors/applications/{id}/approve:
+    post:
+      summary: Approve application → upsert author profile + Auth role=author
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: application + author
+        '400':
+          description: Already reviewed or invalid
+        '403':
+          description: Admin only
+  /api/authors/applications/{id}/reject:
+    post:
+      summary: Reject application with optional note
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewer_note: { type: string }
+      responses:
+        '200':
+          description: Rejected application
+        '400':
+          description: Already reviewed or invalid
+        '403':
+          description: Admin only
   /api/authors:
     get:
       summary: List authors
