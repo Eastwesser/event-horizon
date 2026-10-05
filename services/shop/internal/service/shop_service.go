@@ -10,8 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/nats-io/nats.go"
 
 	"github.com/Eastwesser/event-horizon/contracts/events"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
@@ -20,7 +19,6 @@ import (
 	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/model"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/repository"
-	"github.com/nats-io/nats.go"
 )
 
 // CancelResult is returned by CancelPurchase.
@@ -40,99 +38,49 @@ type ShopService interface {
 	SetKafkaProducer(p kafka.Producer)
 }
 
+// ShopStore is the PostgreSQL port used by shopService.
+type ShopStore interface {
+	GetItems(ctx context.Context, category, gameID string) ([]repository.Item, error)
+	GetItemByID(ctx context.Context, itemID string) (*repository.Item, error)
+	IsItemOwned(ctx context.Context, userID, itemID string) (bool, error)
+	PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int, outbox *repository.OutboxRecord) error
+	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
+	RefundPurchase(ctx context.Context, userID, itemID string) (*repository.RefundResult, error)
+	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
+	CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64, stock int) error
+}
+
+// ShopCache is the Redis port for catalog lists / invalidation.
+type ShopCache interface {
+	GetItems(ctx context.Context, key string) ([]repository.Item, error)
+	SetItems(ctx context.Context, key string, items []repository.Item, ttl time.Duration) error
+	Delete(ctx context.Context, key string) error
+}
+
 // Note: kafka is replaced with NATS in our project
 type shopService struct {
-	pgRepo    *repository.PostgresShopRepo
-	redisRepo *repository.RedisShopRepo
+	pgRepo    ShopStore
+	redisRepo ShopCache
 	js        nats.JetStreamContext
 	billing   billingPb.BillingServiceClient
 	payment   paymentPb.PaymentServiceClient
 	kafkaProd kafka.Producer // optional (noop if unset / KAFKA_BROKERS empty)
 }
 
-func NewShopService(
-	pg *repository.PostgresShopRepo,
-	redis *repository.RedisShopRepo,
+// New constructs the shop service. gRPC dial / NATS inventory sync live in app wiring.
+func New(
+	pg ShopStore,
+	redis ShopCache,
 	js nats.JetStreamContext,
-	billingAddr string,
-	paymentAddr string,
+	billing billingPb.BillingServiceClient,
+	payment paymentPb.PaymentServiceClient,
 ) ShopService {
-	conn, err := grpc.Dial(billingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Printf("❌ Failed to connect to Billing: %v", err)
-		return nil
-	}
-	billingClient := billingPb.NewBillingServiceClient(conn)
-
-	var paymentClient paymentPb.PaymentServiceClient
-	if paymentAddr != "" {
-		pconn, perr := grpc.Dial(paymentAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if perr != nil {
-			log.Printf("⚠️ Failed to connect to Payment (merch gate degraded): %v", perr)
-		} else {
-			paymentClient = paymentPb.NewPaymentServiceClient(pconn)
-		}
-	}
-
-	log.Println("🔍 Shop: trying to subscribe to inventory.item.created...")
-
-	// ИСПРАВЛЕНО: убрал :=, оставил =
-	_, err = js.Subscribe("inventory.item.created", func(msg *nats.Msg) {
-		log.Println("📩 Shop: received inventory.item.created event!")
-
-		var event map[string]interface{}
-		if err := json.Unmarshal(msg.Data, &event); err != nil {
-			log.Printf("Failed to parse inventory event: %v", err)
-			msg.Nak()
-			return
-		}
-
-		itemID, ok := event["item_id"].(string)
-		if !ok || itemID == "" {
-			log.Printf("❌ Invalid or empty item_id in event: %v", event)
-			msg.Nak()
-			return
-		}
-
-		name, _ := event["name"].(string)
-		description, _ := event["description"].(string)
-		price, _ := event["price"].(float64)
-		stock := 1
-		switch v := event["stock"].(type) {
-		case float64:
-			stock = int(v)
-		case int:
-			stock = v
-		case int32:
-			stock = int(v)
-		case int64:
-			stock = int(v)
-		}
-
-		log.Printf("📦 Creating shop item: %s (ID: %s, stock=%d)", name, itemID, stock)
-
-		if err := pg.CreateItemFromInventory(context.Background(), itemID, name, description, price, stock); err != nil {
-			log.Printf("Failed to create shop item from inventory: %v", err)
-			msg.Nak()
-			return
-		}
-
-		log.Printf("✅ Shop item created from inventory: %s (%s)", name, itemID)
-		msg.Ack()
-	}, nats.Durable("shop-inventory-sync"))
-
-	if err != nil {
-		log.Printf("⚠️ Failed to subscribe to inventory events: %v", err)
-	} else {
-		log.Println("✅ Shop successfully subscribed to inventory.item.created")
-	}
-
 	return &shopService{
 		pgRepo:    pg,
 		redisRepo: redis,
 		js:        js,
-		billing:   billingClient,
-		payment:   paymentClient,
+		billing:   billing,
+		payment:   payment,
 	}
 }
 

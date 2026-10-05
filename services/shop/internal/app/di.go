@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -13,7 +14,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/nats-io/nats.go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/Eastwesser/event-horizon/pkg/migrator"
@@ -22,6 +25,7 @@ import (
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
 	"github.com/Eastwesser/event-horizon/platform/pkg/metrics"
 	"github.com/Eastwesser/event-horizon/platform/pkg/tracing"
+	billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/config"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/handler"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/interceptor"
@@ -30,7 +34,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/shop/internal/worker"
 	"github.com/Eastwesser/event-horizon/services/shop/migrations"
 	pb "github.com/Eastwesser/event-horizon/services/shop/proto"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 )
 
 type diContainer struct {
@@ -175,18 +179,77 @@ func (a *App) initKafka(_ context.Context) error {
 
 func (a *App) initDomain(_ context.Context) error {
 	a.di.pgRepo = repository.NewPostgresShopRepo(a.di.db)
-	a.di.svc = service.NewShopService(
-		a.di.pgRepo,
-		a.di.redisRepo,
-		a.di.js,
-		a.cfg.BillingConfig().Addr(),
-		a.cfg.PaymentConfig().Addr(),
-	)
-	if a.di.svc != nil {
-		a.di.svc.SetKafkaProducer(a.di.kafkaProd)
+
+	billingConn, err := grpc.Dial(a.cfg.BillingConfig().Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("dial billing: %w", err)
 	}
+	a.closer.AddNamed("billing grpc", func(context.Context) error { return billingConn.Close() })
+	billingClient := billingPb.NewBillingServiceClient(billingConn)
+
+	var paymentClient paymentPb.PaymentServiceClient
+	if addr := a.cfg.PaymentConfig().Addr(); addr != "" {
+		pconn, perr := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if perr != nil {
+			a.log.Warn("payment dial failed (merch gate degraded)", "err", perr)
+		} else {
+			a.closer.AddNamed("payment grpc", func(context.Context) error { return pconn.Close() })
+			paymentClient = paymentPb.NewPaymentServiceClient(pconn)
+		}
+	}
+
+	subscribeInventorySync(a.di.js, a.di.pgRepo, a.log)
+
+	a.di.svc = service.New(a.di.pgRepo, a.di.redisRepo, a.di.js, billingClient, paymentClient)
+	a.di.svc.SetKafkaProducer(a.di.kafkaProd)
 	a.di.api = handler.NewShopHandler(a.di.svc)
 	return nil
+}
+
+func subscribeInventorySync(js nats.JetStreamContext, pg *repository.PostgresShopRepo, log *slog.Logger) {
+	if js == nil || pg == nil {
+		return
+	}
+	log.Info("subscribing to inventory.item.created")
+	_, err := js.Subscribe("inventory.item.created", func(msg *nats.Msg) {
+		var event map[string]interface{}
+		if err := json.Unmarshal(msg.Data, &event); err != nil {
+			log.Warn("inventory event parse failed", "err", err)
+			_ = msg.Nak()
+			return
+		}
+		itemID, ok := event["item_id"].(string)
+		if !ok || itemID == "" {
+			log.Warn("inventory event missing item_id", "event", event)
+			_ = msg.Nak()
+			return
+		}
+		name, _ := event["name"].(string)
+		description, _ := event["description"].(string)
+		price, _ := event["price"].(float64)
+		stock := 1
+		switch v := event["stock"].(type) {
+		case float64:
+			stock = int(v)
+		case int:
+			stock = v
+		case int32:
+			stock = int(v)
+		case int64:
+			stock = int(v)
+		}
+		if err := pg.CreateItemFromInventory(context.Background(), itemID, name, description, price, stock); err != nil {
+			log.Warn("create shop item from inventory failed", "item_id", itemID, "err", err)
+			_ = msg.Nak()
+			return
+		}
+		_ = msg.Ack()
+	}, nats.Durable("shop-inventory-sync"))
+	if err != nil {
+		log.Warn("inventory.item.created subscribe failed", "err", err)
+		return
+	}
+	log.Info("subscribed to inventory.item.created")
 }
 
 func (a *App) initOutbox(_ context.Context) error {
