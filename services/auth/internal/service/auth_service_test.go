@@ -6,10 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"golang.org/x/crypto/bcrypt"
 
 	jwtauth "github.com/Eastwesser/event-horizon/services/auth/internal/jwt"
 	"github.com/Eastwesser/event-horizon/services/auth/internal/model"
+	"github.com/Eastwesser/event-horizon/services/auth/internal/repository"
 	"github.com/Eastwesser/event-horizon/services/auth/internal/repository/mocks"
 )
 
@@ -397,5 +399,146 @@ func TestWhoamiInvalidToken(t *testing.T) {
 	_, err := newTestServiceWithManager(&mocks.UserRepository{}).Whoami(context.Background(), "bad-token")
 	if !errors.Is(err, model.ErrInvalidToken) {
 		t.Fatalf("got %v", err)
+	}
+}
+
+func TestListUsers_Delegates(t *testing.T) {
+	repo := &mocks.UserRepository{
+		ListUsersFn: func(_ context.Context, query string, limit, offset int) ([]*model.User, int64, error) {
+			if query != "den" || limit != 10 || offset != 5 {
+				t.Fatalf("q=%s limit=%d offset=%d", query, limit, offset)
+			}
+			return []*model.User{{ID: "u1", Email: "den@x.com"}}, 1, nil
+		},
+	}
+	list, total, err := newTestService(repo).ListUsers(context.Background(), "den", 10, 5)
+	if err != nil || total != 1 || len(list) != 1 || list[0].ID != "u1" {
+		t.Fatalf("list=%v total=%d err=%v", list, total, err)
+	}
+}
+
+func TestRegisterRejectsAdminRole(t *testing.T) {
+	repo := &mocks.UserRepository{
+		GetByEmailFn: func(context.Context, string) (*model.User, error) { return nil, nil },
+		CreateFn: func(context.Context, string, string, string) (string, error) {
+			t.Fatal("Create must not run for admin self-register")
+			return "", nil
+		},
+	}
+	_, _, err := newTestService(repo).Register(context.Background(), "a@b.c", "password123", "admin")
+	if !errors.Is(err, model.ErrInvalidRole) {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func withMiniRedis(t *testing.T) (*repository.RedisAuthRepo, func()) {
+	t.Helper()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := repository.NewRedisAuthRepo(mr.Addr(), time.Minute)
+	return cache, func() {
+		_ = cache.Close()
+		mr.Close()
+	}
+}
+
+func TestLogout_WithCacheDeletesSession(t *testing.T) {
+	cache, cleanup := withMiniRedis(t)
+	defer cleanup()
+	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := &mocks.UserRepository{
+		GetByEmailFn: func(_ context.Context, email string) (*model.User, error) {
+			return &model.User{ID: "uid-1", Email: email, PasswordHash: string(hash), Role: "user"}, nil
+		},
+	}
+	mgr := jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour)
+	svc := NewAuthService(repo, cache, mgr)
+	pair, err := svc.Login(context.Background(), "user@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := svc.ValidateToken(context.Background(), pair.AccessToken); err != nil {
+		t.Fatalf("pre-logout validate: %v", err)
+	}
+	if err := svc.Logout(context.Background(), pair.AccessToken); err != nil {
+		t.Fatal(err)
+	}
+	_, _, _, err = svc.ValidateToken(context.Background(), pair.AccessToken)
+	if !errors.Is(err, model.ErrSessionRevoked) {
+		t.Fatalf("want ErrSessionRevoked after logout, got %v", err)
+	}
+}
+
+func TestRefreshToken_RevokesOldRefresh(t *testing.T) {
+	cache, cleanup := withMiniRedis(t)
+	defer cleanup()
+	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := &mocks.UserRepository{
+		GetByEmailFn: func(_ context.Context, email string) (*model.User, error) {
+			return &model.User{ID: "uid-1", Email: email, PasswordHash: string(hash), Role: "user"}, nil
+		},
+	}
+	svc := NewAuthService(repo, cache, jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour))
+	pair, err := svc.Login(context.Background(), "user@example.com", "password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	next, err := svc.RefreshToken(context.Background(), pair.RefreshToken)
+	if err != nil || next.AccessToken == "" {
+		t.Fatalf("refresh=%+v err=%v", next, err)
+	}
+	_, err = svc.RefreshToken(context.Background(), pair.RefreshToken)
+	if !errors.Is(err, model.ErrSessionRevoked) {
+		t.Fatalf("want revoked old refresh, got %v", err)
+	}
+}
+
+func TestGetUser_CacheHit(t *testing.T) {
+	cache, cleanup := withMiniRedis(t)
+	defer cleanup()
+	u := &model.User{ID: "uid-1", Email: "a@b.c", Role: "author"}
+	if err := cache.SetUserCache(context.Background(), u); err != nil {
+		t.Fatal(err)
+	}
+	repo := &mocks.UserRepository{
+		GetByIDFn: func(context.Context, string) (*model.User, error) {
+			t.Fatal("repo must not be called on cache hit")
+			return nil, nil
+		},
+	}
+	got, err := NewAuthService(repo, cache, jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour)).
+		GetUser(context.Background(), "uid-1")
+	if err != nil || got.Role != "author" {
+		t.Fatalf("got=%+v err=%v", got, err)
+	}
+}
+
+func TestUpdateRole_InvalidatesCache(t *testing.T) {
+	cache, cleanup := withMiniRedis(t)
+	defer cleanup()
+	if err := cache.SetUserCache(context.Background(), &model.User{ID: "uid-1", Email: "a@b.c", Role: "user"}); err != nil {
+		t.Fatal(err)
+	}
+	repo := &mocks.UserRepository{
+		UpdateRoleFn: func(context.Context, string, string) error { return nil },
+		GetByIDFn: func(_ context.Context, id string) (*model.User, error) {
+			return &model.User{ID: id, Email: "a@b.c", Role: "author"}, nil
+		},
+	}
+	svc := NewAuthService(repo, cache, jwtauth.NewManager(testJWTSecret, time.Hour, 24*time.Hour))
+	if err := svc.UpdateRole(context.Background(), "uid-1", "author"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := svc.GetUser(context.Background(), "uid-1")
+	if err != nil || got.Role != "author" {
+		t.Fatalf("after invalidate should load author from repo: %+v err=%v", got, err)
 	}
 }
