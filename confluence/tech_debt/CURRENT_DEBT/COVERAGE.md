@@ -13,7 +13,7 @@
 | Service | Total | Service layer notes | Status |
 |---------|------:|---------------------|--------|
 | authors | 13.5% pkg / **93.2% service** | Submit/Approve/Reject/Revert/Upsert covered | ✅ service target met |
-| shop | 2.0% | Purchase/Cancel/ListPurchasesByItemIDs 0% | 🟧 queued |
+| shop | 16.5% pkg / **83.9% service** | Purchase/Cancel/ListPurchasesByItemIDs covered | ✅ service target met |
 | inventory | 7.2% | Search/GetByAuthor/Release 0% | 🟧 queued |
 | auth | 22.7% | Logout/Refresh/ListUsers weak | 🟧 queued |
 | gateway | 8.3% | excluded from gate | — |
@@ -31,6 +31,7 @@
 |------|---------|----------------------------------|-------|
 | 2026-10-05 | — | baseline recorded | plan approved C4_TODO_3 |
 | 2026-10-05 | authors | service 0% → **93.2%** / pkg 0% → 13.5% | mock store+cache; thin `AuthorStore`/`AuthorCache` ports |
+| 2026-10-05 | shop | service ~2% → **83.9%** / pkg 2% → 16.5% | mock store+billing; dial/NATS sync moved to `app`; fixed stale merch_gate assertions |
 
 ## Order
 
