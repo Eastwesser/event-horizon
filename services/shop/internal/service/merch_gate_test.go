@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Eastwesser/event-horizon/services/shop/internal/model"
 	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 	"google.golang.org/grpc"
 )
@@ -43,7 +44,7 @@ func TestCheckMerchAllowed_NilClient(t *testing.T) {
 func TestCheckMerchAllowed_Blocked(t *testing.T) {
 	s := &shopService{payment: stubPayment{allowed: false, reason: "no subscription"}}
 	err := s.checkMerchAllowed(context.Background(), "u1")
-	if err == nil || !strings.Contains(err.Error(), "no subscription") {
+	if !errors.Is(err, model.ErrSubscriptionRequired) {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -66,7 +67,7 @@ func TestCheckMerchAllowed_RPCError(t *testing.T) {
 func TestCheckMerchAllowed_DefaultReason(t *testing.T) {
 	s := &shopService{payment: stubPayment{allowed: false, reason: ""}}
 	err := s.checkMerchAllowed(context.Background(), "u1")
-	if err == nil || !strings.Contains(err.Error(), "active subscription required") {
+	if !errors.Is(err, model.ErrSubscriptionRequired) {
 		t.Fatalf("got %v", err)
 	}
 }
