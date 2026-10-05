@@ -4,6 +4,7 @@ import { useUserRole } from '../../hooks/useUserRole';
 import { clearAuth, getAccessToken } from '../../lib/auth';
 import { Button } from '../ui/Button';
 import { IconLabel, type IconName } from '../ui/Icon';
+import { NotificationBell } from './NotificationBell';
 
 /** Always visible — kids-safe primary destinations. */
 const primaryNav: { label: string; path: string; icon: IconName }[] = [
@@ -93,6 +94,7 @@ export function AppNavbar() {
         </nav>
 
         <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               type="button"

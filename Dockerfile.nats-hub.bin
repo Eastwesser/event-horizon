@@ -1,5 +1,5 @@
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates wget
-COPY services/nats-hub/nats-hub /nats-hub
+COPY services/nats-hub/nats-hub-service /nats-hub
 EXPOSE 9097
 CMD ["/nats-hub"]

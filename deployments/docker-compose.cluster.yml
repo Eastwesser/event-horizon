@@ -727,20 +727,53 @@ services:
       - event-horizon-net
     restart: unless-stopped
 
-  # --- Notification (NATS purchase.*; Kafka optional) ---
+  # --- Notification (inbox gRPC + NATS purchase.*; Kafka optional) ---
+  postgres-notification:
+    image: postgres:16-alpine
+    container_name: event-horizon-postgres-notification
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eventhorizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventhorizon}
+      POSTGRES_DB: eventhorizon_notification
+    ports:
+      - "5470:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    networks:
+      - event-horizon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   notification:
     image: eastwesser/notification:latest
     container_name: deployments-notification-1
     ports:
+      - "50063:50063"
       - "9102:9102"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9102/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
+      - GRPC_PORT=50063
       - METRICS_PORT=9102
+      - DB_HOST=event-horizon-postgres-notification
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-eventhorizon}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
+      - DB_NAME=eventhorizon_notification
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - KAFKA_BROKERS=${KAFKA_BROKERS:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
       - LOG_LEVEL=info
     depends_on:
+      - postgres-notification
       - nats-1
       - nats-2
       - nats-3
@@ -1060,6 +1093,7 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      - NOTIFICATION_ADDR=notification:50063
       # Inventory image uploads (POST /api/uploads). Named volume — not a bind mount;
       # files live in Docker volume `gateway_uploads`, never in the git tree.
       # Local/dev default without compose: UPLOAD_DIR=./data/uploads (gitignored).
@@ -1104,6 +1138,7 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      - NOTIFICATION_ADDR=notification:50063
       - UPLOAD_DIR=/data/uploads
     volumes:
       - gateway_uploads:/data/uploads
@@ -1145,6 +1180,7 @@ services:
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
+      - NOTIFICATION_ADDR=notification:50063
       - UPLOAD_DIR=/data/uploads
     volumes:
       - gateway_uploads:/data/uploads
@@ -1190,6 +1226,7 @@ volumes:
   postgres_payment_data:
   postgres_authors_data:
   postgres_history_data:
+  postgres_notification_data:
   clickhouse_data:
   # Shared across gateway / gateway-2 / gateway-3 so uploads survive recreate
   # and any replica can serve GET /uploads/*. Not a host bind path → not in git.

@@ -20,6 +20,7 @@ export type IconName =
   | 'key'
   | 'frame'
   | 'sparkle'
+  | 'bell'
   | 'check'
   | 'bird'
   | 'hex'
@@ -194,6 +195,15 @@ function Glyph({ name }: { name: IconName }) {
         <g {...stroke}>
           <path d="M12 4.5v4M12 15.5v4M4.5 12h4M15.5 12h4" />
           <path d="M7.5 7.5 9.5 9.5M14.5 14.5l2 2M16.5 7.5 14.5 9.5M9.5 14.5l-2 2" />
+        </g>
+      );
+    case 'bell':
+      return (
+        <g {...stroke}>
+          <path d="M6.5 16.5h11" />
+          <path d="M8 16.5V10a4 4 0 0 1 8 0v6.5" />
+          <path d="M10.5 16.5a1.5 1.5 0 0 0 3 0" />
+          <path d="M12 5.5V4.5" />
         </g>
       );
     case 'check':
