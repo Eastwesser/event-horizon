@@ -8,29 +8,60 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
 import { Icon, IconLabel } from '../ui/Icon';
-import type { InventoryItem } from '../../services/inventoryApi';
+import { inventoryApi, type InventoryItem } from '../../services/inventoryApi';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { itemFallbackIcon } from '../../lib/itemIcons';
 import { stockLabel } from '../../lib/shopItemMap';
 
 interface InventoryItemCardProps {
   item: InventoryItem;
+  /** Author dashboard: soft-delete + restore instead of hard delete. */
+  softManage?: boolean;
+  onChanged?: () => void;
 }
 
-export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) => {
+export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
+  item,
+  softManage = false,
+  onChanged,
+}) => {
   const { isAuthor } = useUserRole();
   const { deleteItem } = useInventory();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const deleted = Boolean(item.deleted || item.attributes?._deleted);
 
   const handleDelete = async () => {
+    if (softManage) {
+      if (!window.confirm(`Снять с публикации «${item.name}»?`)) return;
+      setBusy(true);
+      try {
+        await inventoryApi.softDeleteItem(item.id);
+        onChanged?.();
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (window.confirm(`Удалить товар "${item.name}"?`)) {
-      setIsDeleting(true);
+      setBusy(true);
       try {
         await deleteItem(item.id);
+        onChanged?.();
       } finally {
-        setIsDeleting(false);
+        setBusy(false);
       }
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!window.confirm(`Восстановить «${item.name}»?`)) return;
+    setBusy(true);
+    try {
+      await inventoryApi.restoreItem(item.id);
+      onChanged?.();
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -38,7 +69,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
 
   return (
     <>
-      <Card className="flex h-full flex-col">
+      <Card className={`flex h-full flex-col ${deleted ? 'opacity-70' : ''}`}>
         <Link
           to={`/inventory/${item.id}`}
           className="flex min-h-0 flex-1 flex-col text-inherit no-underline"
@@ -62,6 +93,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
             <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{item.description}</p>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-sm">
               <Badge tone="indigo">{item.type}</Badge>
+              {deleted && <Badge tone="error">Удалено</Badge>}
               <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
                 <Icon name="ticket" className="h-3.5 w-3.5" />
                 {formatTicketPrice(item.price)}
@@ -74,33 +106,53 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item }) =>
         </Link>
         {isAuthor && (
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full min-w-0 px-2"
-              onClick={() => setShowEditModal(true)}
-            >
-              <span className="block truncate">
-                <IconLabel name="pen" iconClassName="h-3 w-3">
-                  Ред.
-                </IconLabel>
-              </span>
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              className="w-full min-w-0 px-2"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? '...' : 'Удалить'}
-            </Button>
+            {!deleted && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full min-w-0 px-2"
+                onClick={() => setShowEditModal(true)}
+              >
+                <span className="block truncate">
+                  <IconLabel name="pen" iconClassName="h-3 w-3">
+                    Ред.
+                  </IconLabel>
+                </span>
+              </Button>
+            )}
+            {softManage && deleted ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="col-span-2 w-full min-w-0 px-2"
+                onClick={() => void handleRestore()}
+                disabled={busy}
+              >
+                {busy ? '...' : 'Восстановить'}
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                size="sm"
+                className={`w-full min-w-0 px-2 ${deleted ? 'col-span-2' : ''}`}
+                onClick={() => void handleDelete()}
+                disabled={busy}
+              >
+                {busy ? '...' : softManage ? 'Снять' : 'Удалить'}
+              </Button>
+            )}
           </div>
         )}
       </Card>
 
-      {showEditModal && isAuthor && (
-        <InventoryEditModal item={item} onClose={() => setShowEditModal(false)} />
+      {showEditModal && isAuthor && !deleted && (
+        <InventoryEditModal
+          item={item}
+          onClose={() => {
+            setShowEditModal(false);
+            onChanged?.();
+          }}
+        />
       )}
     </>
   );

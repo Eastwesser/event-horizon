@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Item struct {
@@ -352,4 +354,70 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
 	}
 
 	return tx.Commit()
+}
+
+// PurchaseRecord is a row from purchases for author sales.
+type PurchaseRecord struct {
+	ID          string
+	UserID      string
+	ItemID      string
+	Price       int
+	Status      string
+	PurchasedAt time.Time
+	RefundedAt  *time.Time
+}
+
+// ListPurchasesByItemIDs returns purchases for the given catalog item ids (newest first).
+func (r *PostgresShopRepo) ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) (rowsOut []PurchaseRecord, total, salesCount, ticketsEarned int64, err error) {
+	if len(itemIDs) == 0 {
+		return nil, 0, 0, 0, nil
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	arr := pq.Array(itemIDs)
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM purchases WHERE item_id::text = ANY($1)`, arr).Scan(&total); err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(SUM(price), 0)
+		FROM purchases
+		WHERE item_id::text = ANY($1)
+		  AND status = 'COMPLETED'
+		  AND refunded_at IS NULL`, arr).Scan(&salesCount, &ticketsEarned); err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id::text, user_id::text, item_id::text, price, COALESCE(status, 'COMPLETED'),
+		       purchased_at, refunded_at
+		FROM purchases
+		WHERE item_id::text = ANY($1)
+		ORDER BY purchased_at DESC
+		LIMIT $2 OFFSET $3`, arr, limit, offset)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	defer rows.Close()
+
+	out := make([]PurchaseRecord, 0)
+	for rows.Next() {
+		var p PurchaseRecord
+		var refunded sql.NullTime
+		if err := rows.Scan(&p.ID, &p.UserID, &p.ItemID, &p.Price, &p.Status, &p.PurchasedAt, &refunded); err != nil {
+			return nil, 0, 0, 0, err
+		}
+		if refunded.Valid {
+			t := refunded.Time
+			p.RefundedAt = &t
+		}
+		out = append(out, p)
+	}
+	return out, total, salesCount, ticketsEarned, rows.Err()
 }

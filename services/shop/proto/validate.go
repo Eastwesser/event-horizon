@@ -35,3 +35,10 @@ func (m *CancelPurchaseRequest) Validate() error {
 	}
 	return nil
 }
+
+func (m *ListPurchasesByItemIDsRequest) Validate() error {
+	if m == nil || len(m.GetItemIds()) == 0 {
+		return fmt.Errorf("item_ids is required")
+	}
+	return nil
+}

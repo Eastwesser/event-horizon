@@ -11,6 +11,8 @@ service ShopService {
     rpc PurchaseItem(PurchaseItemRequest) returns (PurchaseItemResponse);
     rpc CancelPurchase(CancelPurchaseRequest) returns (CancelPurchaseResponse);
     rpc GetInventory(GetInventoryRequest) returns (GetInventoryResponse);
+    // Wave 3 C3 — author sales (purchases of given inventory item ids).
+    rpc ListPurchasesByItemIDs(ListPurchasesByItemIDsRequest) returns (ListPurchasesByItemIDsResponse);
 }
 
 message Item {
@@ -70,4 +72,27 @@ message GetInventoryRequest {
 
 message GetInventoryResponse {
     repeated Item items = 1;
+}
+
+message ListPurchasesByItemIDsRequest {
+    repeated string item_ids = 1 [(validate.rules).repeated = {min_items: 1, max_items: 500}];
+    int32 limit = 2 [(validate.rules).int32 = {gte: 0, lte: 200}];
+    int32 offset = 3 [(validate.rules).int32 = {gte: 0}];
+}
+
+message PurchaseRow {
+    string id = 1;
+    string user_id = 2; // buyer
+    string item_id = 3;
+    int32 price = 4;
+    string status = 5;
+    string purchased_at = 6;
+    string refunded_at = 7;
+}
+
+message ListPurchasesByItemIDsResponse {
+    repeated PurchaseRow purchases = 1;
+    int64 total = 2;
+    int64 sales_count = 3;       // COMPLETED not refunded
+    int64 tickets_earned = 4;    // sum price of non-refunded COMPLETED
 }

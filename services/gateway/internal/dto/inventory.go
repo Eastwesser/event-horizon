@@ -20,7 +20,11 @@ func InventoryItem(item *inventoryPb.Item) gin.H {
 		images = []string{}
 	}
 	attrs := attributesMap(item.GetAttributes())
-	return gin.H{
+	deleted := false
+	if v, ok := attrs["_deleted"].(bool); ok && v {
+		deleted = true
+	}
+	h := gin.H{
 		"id":          item.GetId(),
 		"author_id":   item.GetAuthorId(),
 		"type":        item.GetType(),
@@ -33,7 +37,12 @@ func InventoryItem(item *inventoryPb.Item) gin.H {
 		"created_at":  item.GetCreatedAt(),
 		"updated_at":  item.GetUpdatedAt(),
 		"version":     item.GetVersion(),
+		"deleted":     deleted,
 	}
+	if deletedAt, ok := attrs["_deleted_at"].(string); ok && deletedAt != "" {
+		h["deleted_at"] = deletedAt
+	}
+	return h
 }
 
 // InventoryItemResponse wraps a single item the way FE expects: {"item": {...}}.

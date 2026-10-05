@@ -128,6 +128,34 @@ func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequ
     return &pb.GetInventoryResponse{Items: pbItems}, nil
 }
 
+func (h *ShopHandler) ListPurchasesByItemIDs(ctx context.Context, req *pb.ListPurchasesByItemIDsRequest) (*pb.ListPurchasesByItemIDsResponse, error) {
+    rows, total, salesCount, tickets, err := h.shopService.ListPurchasesByItemIDs(ctx, req.GetItemIds(), int(req.GetLimit()), int(req.GetOffset()))
+    if err != nil {
+        return nil, status.Error(codes.Internal, err.Error())
+    }
+    out := make([]*pb.PurchaseRow, 0, len(rows))
+    for _, p := range rows {
+        row := &pb.PurchaseRow{
+            Id:          p.ID,
+            UserId:      p.UserID,
+            ItemId:      p.ItemID,
+            Price:       int32(p.Price),
+            Status:      p.Status,
+            PurchasedAt: p.PurchasedAt.Format(time.RFC3339),
+        }
+        if p.RefundedAt != nil {
+            row.RefundedAt = p.RefundedAt.Format(time.RFC3339)
+        }
+        out = append(out, row)
+    }
+    return &pb.ListPurchasesByItemIDsResponse{
+        Purchases:     out,
+        Total:         total,
+        SalesCount:    salesCount,
+        TicketsEarned: tickets,
+    }, nil
+}
+
 func mapShopErr(err error) error {
     switch {
     case errors.Is(err, model.ErrSubscriptionRequired):

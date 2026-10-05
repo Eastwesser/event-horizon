@@ -26,7 +26,7 @@ export const shellInner = 'mx-auto box-border w-full max-w-6xl px-6 sm:px-8';
 export function AppNavbar() {
   const navigate = useNavigate();
   const token = getAccessToken();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAuthor } = useUserRole();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -141,6 +141,18 @@ export function AppNavbar() {
                     </button>
                   ))}
                 </div>
+                {isAuthor && (
+                  <div className="border-t border-white/10 py-1">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => go('/author/dashboard')}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
+                    >
+                      <IconLabel name="pen">Автор</IconLabel>
+                    </button>
+                  </div>
+                )}
                 {isAdmin && (
                   <div className="border-t border-white/10 py-1">
                     <button

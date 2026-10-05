@@ -145,8 +145,20 @@ func toMongoFilter(filters map[string]interface{}) bson.M {
 		}
 	}
 
-	// Не показываем мягко удаленные записи
-	m["deleted_at"] = nil
+	includeDeleted := false
+	switch v := filters["include_deleted"].(type) {
+	case string:
+		includeDeleted = v == "1" || v == "true" || v == "TRUE"
+	case bool:
+		includeDeleted = v
+	}
+	if !includeDeleted {
+		m["deleted_at"] = nil
+	}
+
+	if id, ok := filters["id"].(string); ok && id != "" {
+		m["id"] = id
+	}
 
 	return m
 }
@@ -175,6 +187,14 @@ func mapToItem(m bson.M) *model.Item {
 		}
 	} else if attrs, ok := m["attributes"].(map[string]interface{}); ok {
 		item.Attributes = attrs
+	}
+	if item.Attributes == nil {
+		item.Attributes = map[string]interface{}{}
+	}
+	if t := getTimePtr(m, "deleted_at"); t != nil {
+		item.DeletedAt = t
+		item.Attributes["_deleted"] = true
+		item.Attributes["_deleted_at"] = t.Format(time.RFC3339)
 	}
 
 	return item
@@ -233,6 +253,18 @@ func getTime(m bson.M, key string) time.Time {
 		return v.Time()
 	}
 	return time.Time{}
+}
+
+func getTimePtr(m bson.M, key string) *time.Time {
+	if v, ok := m[key].(primitive.DateTime); ok {
+		t := v.Time().UTC()
+		return &t
+	}
+	if v, ok := m[key].(time.Time); ok && !v.IsZero() {
+		t := v.UTC()
+		return &t
+	}
+	return nil
 }
 
 // ---------------------- CRUD-методы (реализация интерфейса) ----------------------

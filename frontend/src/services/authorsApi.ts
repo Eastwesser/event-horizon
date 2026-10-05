@@ -27,10 +27,52 @@ export interface AuthorApplication {
   reviewer_note?: string;
 }
 
+export interface AuthorSaleRow {
+  id: string;
+  item_id: string;
+  item_name?: string;
+  buyer_email: string;
+  price: number;
+  status: string;
+  purchased_at: string;
+  refunded_at?: string;
+}
+
+export interface AuthorSalesResponse {
+  sales_count: number;
+  tickets_earned: number;
+  purchases: AuthorSaleRow[];
+  total: number;
+  author_id: string;
+}
+
 export const authorsApi = {
-  upsertMe: async (body: { display_name: string; bio?: string; avatar_url?: string }): Promise<Author> => {
+  getMe: async (): Promise<Author> => {
+    const { data } = await api.get('/authors/me');
+    return data;
+  },
+  upsertMe: async (body: {
+    display_name: string;
+    bio?: string;
+    avatar_url?: string;
+    portfolio?: string;
+  }): Promise<Author> => {
     const { data } = await api.put('/authors/me', body);
     return data;
+  },
+  getSales: async (params?: {
+    author_id?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<AuthorSalesResponse> => {
+    const { data } = await api.get('/authors/me/sales', { params });
+    return {
+      sales_count: data?.sales_count ?? 0,
+      tickets_earned: data?.tickets_earned ?? 0,
+      purchases: Array.isArray(data?.purchases) ? data.purchases : [],
+      total: data?.total ?? 0,
+      author_id: data?.author_id ?? '',
+    };
   },
   get: async (userId: string): Promise<Author> => {
     const { data } = await api.get(`/authors/${userId}`);

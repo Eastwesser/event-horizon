@@ -36,6 +36,7 @@ type ShopService interface {
 	PurchaseItem(ctx context.Context, userID, itemID string) (int32, error)
 	CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error)
 	GetInventory(ctx context.Context, userID string) ([]repository.Item, error)
+	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
 	SetKafkaProducer(p kafka.Producer)
 }
 
@@ -374,6 +375,10 @@ func (s *shopService) checkMerchAllowed(ctx context.Context, userID string) erro
 		return model.ErrSubscriptionRequired
 	}
 	return nil
+}
+
+func (s *shopService) ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error) {
+	return s.pgRepo.ListPurchasesByItemIDs(ctx, itemIDs, limit, offset)
 }
 
 // SetKafkaProducer attaches an optional Kafka producer for PurchasePaid events (Week 5).
