@@ -863,9 +863,10 @@ func runGateway() {
 		// Catalog cards live in inventory; shop.items.stock is a synced mirror
 		// (often default 999). Decrement the inventory source of truth so the
 		// shop UI "В наличии: N" stays correct. Ignore NotFound (pure shop skins).
+		// Shop purchase already committed — never write 503 from inventory CB here.
 		var remainingStock *int32
 		if req.ItemID != "" {
-			resOut, resErr := throughBreaker(inventoryCB, c, func() (any, error) {
+			resOut, resErr := inventoryCB.Execute(func() (any, error) {
 				return inventoryClient.ReserveItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReserveItemRequest{
 					Id:       req.ItemID,
 					Quantity: 1,
@@ -878,7 +879,7 @@ func runGateway() {
 				}
 			} else if st, ok := status.FromError(resErr); ok && st.Code() == codes.NotFound {
 				// Shop-only item (skin/theme) — no inventory row.
-			} else if resErr != circuit.ErrOpen {
+			} else {
 				log.Printf("shop purchase: inventory reserve failed item=%s: %v", req.ItemID, resErr)
 			}
 		}
@@ -917,7 +918,8 @@ func runGateway() {
 
 		var remainingStock *int32
 		if !resp.GetAlreadyRefunded() && itemID != "" {
-			relOut, relErr := throughBreaker(inventoryCB, c, func() (any, error) {
+			// Shop cancel already committed — never write 503 from inventory CB here.
+			relOut, relErr := inventoryCB.Execute(func() (any, error) {
 				return inventoryClient.ReleaseItem(withUserRole(c.Request.Context(), c), &inventoryPb.ReleaseItemRequest{
 					Id:       itemID,
 					Quantity: 1,
@@ -930,7 +932,7 @@ func runGateway() {
 				}
 			} else if st, ok := status.FromError(relErr); ok && st.Code() == codes.NotFound {
 				// Shop-only item — no inventory catalog row.
-			} else if relErr != circuit.ErrOpen {
+			} else {
 				log.Printf("shop cancel: inventory release failed item=%s: %v", itemID, relErr)
 			}
 		}
