@@ -1,134 +1,158 @@
-# Pre-prod debt checklist — **v1.1.0** (post v1.0.9)
+# Pre-prod debt checklist — **v1.1.0+** (living)
 
 **How to use:** tick `- [ ]` → `- [x]` as you finish items, then update the **Progress** table at the bottom.
 
 Source plan: [`README.md` → Планы на следующие спринты](../../../README.md#-планы-на-следующие-спринты).  
-k6 archive: [`K6_WAVES/`](../../history/2026-10/05.10.2026/K6_WAVES/).
+Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).  
+**Games** backlog (parked): [`GAME_INSIGHTS.md`](../../history/2026-10/06.10.2026/GAME_INSIGHTS.md).  
+**Platform** backlog (active): [`PLATFORM_INSIGHTS.md`](../../history/2026-10/06.10.2026/PLATFORM_INSIGHTS.md).
 
 **Axes:** complexity XS–XL · risk low/med/high · dependency noted inline.
 
-**v1.1.0 focus:** Wave 4.5 — **done 05.10.2026** (Helm chart · Consul skip · OpenAPI sync). C4 payouts stay deferred. Multi-VU purchase latency EXPLAIN — only if a real slow-purchase report appears.
+---
+
+## Wave 1 — Quick wins (XS–S) — ✅ closed
+
+- [x] **PUT 403 investigation** — XS · low · ✅ 03.10.2026
+- [x] **Emoji → SVG / PNG** (app chrome + shop) — S · low · ✅ 03.10.2026 · *In-game emoji still open → see GAME_INSIGHTS*
+- [x] **Retry + jitter (gateway)** — S · low · ✅ 03.10.2026
+- [x] **Alerts → Telegram (Alertmanager)** — S · low · ✅ 03.10.2026
+- [x] **Circuit breaker + Bulkhead** — S · low · ✅ 03.10.2026
+- [x] **Rate limiter** — S · low · ✅ 03.10.2026
 
 ---
 
-## Wave 1 — Quick wins (XS–S, ~5–7 days)
+## Wave 2 — Tech debt + content (M) — ✅ closed (parity leftovers → Track B / insights)
 
-Start here. Low risk, each item independent.
-
-- [x] **PUT 403 investigation** — XS · low · ✅ **Resolved 03.10.2026.** Not a gateway bug. Backfill `login()` preferred `SEED_EMAIL` (author) over `SEED_ADMIN_*` after loading both dotenv files → author JWT; 128/129 set-8 cards are author-owned (OK), Пращник is admin-owned → `you can only edit your own items`. Fix: prefer `SEED_ADMIN_*` in `scripts/backfill-noiz-reviews.py`. Repro: author PUT → 403, admin PUT → 200.
-- [x] **Emoji → SVG / PNG** — S · low · ✅ **Done 03.10.2026** (+ chrome sweep same day). `Icon` / `IconLabel` + `gameIcons`; nav, Home tiles, Profile, Leaderboard, Shop/inventory, headers, Berserk chips. **In-game** UI still emoji → game polish wave. Refund 7d design: [`REFUND_WINDOW_DESIGN.md`](../../history/2026-10/03.10.2026/REFUND_WINDOW_DESIGN.md).
-- [x] **Retry + jitter (gateway)** — S · low · ✅ **Done 03.10.2026.** Unary interceptor + `client.Dial` on all gateway→service gRPC clients: 3 attempts, exp backoff + full jitter; retries only `Unavailable` / `ResourceExhausted`.
-- [x] **Alerts → Telegram (Alertmanager)** — S · low · ✅ **Done 03.10.2026.** `alertmanager` service in compose; Telegram via `TELEGRAM_*` + entrypoint sed; noop receiver if unset; `alerts.yml` mounted (5× Down + HighOrderRate + InventoryDown).
-- [x] **Circuit breaker + Bulkhead** — S · low · ✅ **Done 03.10.2026.** `MaxConcurrent: 32` bulkhead on each service breaker; `ErrBulkheadFull` → HTTP 503.
-- [x] **Rate limiter** — S · low · ✅ **Done 03.10.2026.** Global ~100 req/s per user/token/IP (`AllowGlobal`); keep tighter submit/login/ws limits; `/health` `/ready` `/metrics` skipped.
-
-**Warm-up order (recommended):** PUT 403 → Emoji → SVG → Retry + jitter.
+- [x] **/shop/items thin DTO** — M · low
+- [x] **Реальные товары (cleanup placeholders)** — M · low · ✅ Shop cleanup v2 06.10.2026 · Berserk CCG ~281 untouched · 5 skins + 4 examples
+- [x] **Полиш игр (Wave 2 #6)** — 5/5 classic · ✅ 04.10.2026 · *Further polish → GAME_INSIGHTS*
+- [x] **Лампочки как бусты** — M · med · ✅ Phase 1 allowlist all 8 games (`ee75936`) · *Per-game effects + UX copy → GAME_INSIGHTS §2–11*
+- [x] **Уровни (Flappy 1–10 pilot)** — M · med · ✅ Flappy only · *Towers+ rest → Track B phase 2 / GAME_INSIGHTS*
+- [x] **Достижения** — M · med · ✅ 04.10.2026
+- [x] **3 new games playable** — twenty48 / gears / companion · ✅ (parity ≠ polish)
 
 ---
 
-## Wave 2 — Tech debt + content (M, ~2–3 weeks)
+## Wave 3 — Author registration (XL)
 
-- [x] **/shop/items thin DTO** — M · low · — Logical wrap-up of v1.0.9 catalog work. *(Inventory list DTO already shipped; this is the shop-side twin.)*
-- [x] **Реальные товары** — M · low · 2–3 days. Drop placeholders (Ключница Дракон…); keep Berserk CCG cards. Needs manual keep/delete list + SQL/script.
-- [x] **Полиш игр** — M–L per game · med · ~1 week total. **One game per PR, sequentially** (not 5 games in parallel). ✅ **Wave 2 #6 closed 04.10.2026** (5/5).
-  - [x] Flappy — textures / polish · ✅ **Done 04.10.2026** (draw helpers, parallax, Modal GO, shake/flap; physics untouched)
-  - [x] Towers — animations / GAME OVER · ✅ **Done 04.10.2026** (draw helpers, Modal GO, shake/drop pulse; physics untouched)
-  - [x] Hanoi — drag polish · ✅ **Done 04.10.2026** (target hover valid/invalid, invalid shake, Modal emoji strip; rules untouched)
-  - [x] Memory — flip / skins · ✅ **Done 04.10.2026**
-  - [x] Hexagon — gameplay polish · ✅ **Done 04.10.2026** (valid-hex drag highlight, place/clear pulse, invalid shake, Modal plain labels; rules untouched)
-- [x] **Лампочки как бусты в играх** — M · med · Game service + UI
-- [x] **Уровни сложности (1–20)** — M · med · Game service *(Flappy 1–10 pilot)*
-- [x] **Достижения (achievements)** — M · med · ✅ **Done 04.10.2026.** Profile `achievements` + `user_achievements`; unlock on `score.updated` (+ GetProfile backfill); RU seed; SVG icon names; FE Profile API badges; toast new only (silent first seed).
+### C1. Application (S) — ✅
 
----
+- [x] Route `/register-author` · form · `POST /api/authors/apply` · `pending` · public register → `role=user`
+- [x] `author.application.submitted` → notify admins · ✅ Track A #2
 
-## Wave 3 — Author registration (XL, ~3–4 weeks)
+### C2. Admin approval (M) — ✅
 
-**Before C4:** decide monetization — what does an author get? (% of sales?)  
-C1–C3 can proceed without payouts locked.
+- [x] `/admin` заявки · approve/reject · Auth `role=author`
+- [x] `author.application.approved` → notify author · ✅ Track A #2
+- [x] JWT role refresh without re-login · ✅ Track A #3 (`f784419` lineage)
 
-### C1. Application (S)
+### C3. Author dashboard (L) — ✅
 
-- [x] Route `/register-author` (auth user)
-- [x] Form: name, portfolio, reason
-- [x] `POST /api/authors/apply`
-- [x] DB row: `pending`
-- [x] Public register forced to `role=user` (no self-serve author)
-- Follow-up (later PR): `author.application.submitted` → notify admins
+- [x] `/author/dashboard` · cards · sales · profile · burger link
 
-### C2. Admin approval (M)
-
-- [x] `/admin` → tab «Заявки»
-- [x] List pending · approve / reject (double review → 400)
-- [x] Approve → upsert authors profile + Auth `role=author` (gateway; revert on Auth fail)
-- Follow-up (later PR): `author.application.approved` → notify author
-- Follow-up (UX gap): JWT role refresh — re-login needed after approve until token refresh reloads role from Auth DB
-
-### C3. Author dashboard (L)
-
-- [x] `/author/dashboard` (author|admin)
-- [x] My cards (list + filter + soft-delete visible + restore)
-- [x] Create/edit card (inventory, own items; author_id = me)
-- [x] Sales read-only (`GET /api/authors/me/sales`)
-- [x] Author profile edit (`PUT /api/authors/me` + portfolio)
-- [x] Burger «Автор» link
-
-### C4. Payouts / analytics (L)
+### C4. Payouts / analytics (L) — 🟧 deferred
 
 - [ ] Earnings (lamps / tickets)
 - [ ] Payouts
 - [ ] Monetization model locked
 
----
-
-## Wave 4 — Infrastructure (parallel, M–L)
-
-BEFORE START - CHECK WHAT ALREADY EXISTS 
-
-- [x] **Helm charts for k3s** — M · med · DevOps · ✅ **Wave 4.5 done 05.10.2026.** Chart [`deployments/helm/event-horizon`](../../../deployments/helm/event-horizon/) wraps multi-container app manifests; `make deploy-k3s` prefers Helm. NATS/Postgres StatefulSets still follow-ups in k3s README.
-- [x] **Service Discovery (Consul)** — M · med · Infra · ✅ **Evaluated → skip 05.10.2026.** Compose DNS + k3s CoreDNS enough. See [`CONSUL_EVALUATE.md`](../CONSUL_EVALUATE.md).
-- [x] **k6 load + DB indexes** — M–L · med · ✅ **Wave 4 (2) correctness closed 05.10.2026.** `browse.js` / `purchase.js` (per-VU unowned); browse 5 VU p95 ~355ms; purchase 1 VU 100% checks. Shop N+1 owned → batch `ListOwnedItemIDs`; gateway no 503 after shop commit. Indexes: **not added** (EXPLAIN showed list query fine; multi-VU purchase p95 deferred — not a functional issue). Archive: [`K6_WAVE_6`](../../history/2026-10/05.10.2026/K6_WAVES/WAVES/K6_WAVE_6.md).
-- [x] **Unit tests ≥70%** — M · low · ✅ **Wave 4 (1) done 05.10.2026.** All gated services ≥70% on `internal/service`. `scripts/coverage-gate.sh` + CI `coverage` job on `main` via [PR #2](https://github.com/Eastwesser/event-horizon/pull/2) merged (`f9ff55a`).
-- [x] **OpenAPI docs** — M · low · ✅ **Wave 4.5 sync 05.10.2026.** Gateway-only SoT [`services/gateway/api/openapi.yaml`](../../../services/gateway/api/openapi.yaml) v1.1.0 mirrored to [`docs/openapi.yaml`](../../../docs/openapi.yaml). Added cancel, `/ready`, `/api/admin/users`. Swagger at `/docs`.
-
-### Deploy status (partially done)
-
-- [x] CI/CD GitHub Actions *(incl. coverage gate)*
-- [x] Ansible
-- [x] k3s
-- [x] Helm charts *(app wrap; data-plane StatefulSets still open)*
-- [x] Service Discovery *(evaluated: k3s DNS / Compose DNS — no Consul)*
+**Also closed with Track A #1:** Refund window 7d + fulfilled guard · ✅
 
 ---
 
+## Wave 4 — Infrastructure — ✅ closed (data-plane leftover = Track C)
+
+- [x] Helm charts for k3s (app wrap) · Wave 4.5 · 05.10.2026
+- [x] Consul evaluated → skip · 05.10.2026
+- [x] k6 correctness · 05.10.2026
+- [x] Unit tests ≥70% + CI coverage gate · PR #2
+- [x] OpenAPI sync v1.1.0
+- [x] CI/CD · Ansible · k3s · Compose DNS
+
+### Track C leftover
+
+- [ ] **k3s data plane** — NATS + Postgres StatefulSets in Helm · only if prod demo needs it
+
+---
 
 ## Wave 5 — Longer term
 
-- [ ] **Bottleneck fix — server-side page/filter/sort** — L · med · **Defer until both:**
-  1. Wave 2 #1 (`/shop/items` thin DTO) is done, **and**
-  2. Real catalog pressure (~**500+** cards).  
-  Until then: client catalog + v1.0.9 inventory list DTO is enough. Target: `/inventory/items` (and shop twin) page/filter/sort server-side so the client never loads the full catalog.
-- [x] **Observability alerts** — ✅ wired with Wave 1 Alerts→Telegram (Alertmanager)
-- [x] NATS cluster — works
+- [ ] **Bottleneck — server-side page/filter/sort** — L · med · defer until ~**500+** cards (today ~281)
+- [x] Observability alerts
+- [x] NATS cluster
+
+---
+
+## Track A — Product closure — ✅ 3/3
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Refund window 7d + fulfilled | ✅ |
+| 2 | Author notifications | ✅ |
+| 3 | JWT role refresh | ✅ |
+
+---
+
+## Track B — Games (parked → GAME_INSIGHTS)
+
+| Phase | Item | Status |
+|-------|------|--------|
+| Shop cleanup | Keep Berserk + 5 skins + 4 examples; hide junk | ✅ |
+| Phase 1 Boost | Allowlist 8 games + FE hook | ✅ (`ee75936` + build-fix) |
+| Hotfix → UX → effects → levels | See GAME_INSIGHTS | 🟧 **parked** |
+
+## Track D — Platform (active → PLATFORM_INSIGHTS)
+
+| Phase | Item | Status |
+|-------|------|--------|
+| P1 Shop examples & art | Replace/remove placeholders; unique arts | ✅ |
+| P2 Shop spinner + load | Center spinner; profile slow /shop | 🟧 **next** |
+| P3 Chrome polish | Non-game buttons | 🟧 |
+
+---
+
+## Track C — Infra (later)
+
+- [ ] k3s NATS + Postgres StatefulSets
+
+---
+
+## Deferred (do not start unless Emma OK)
+
+- [ ] C4 payouts / monetization lock
+- [ ] Wave 2 #5b shop/boost achievements
+- [ ] Multi-VU purchase EXPLAIN (only if real slow report)
+- [ ] Catalog bottleneck (500+ cards)
+- [ ] Cursor pull-in
+- [ ] `backfill-noiz-reviews.py` one-shot
+- [ ] 3D / OSS game remakes
+- [ ] Companion daily-gift economy (full)
+- [ ] Mass multi-account LB QA seeding
 
 ---
 
 ## Progress
 
-Update this table when you tick boxes above.
-
-| Wave | Done / Total |
-|------|--------------|
-| 1 Quick wins | 6 / 6 |
-| 2 Content + debt | 6 / 6 (+ 5 / 5 games) |
-| 3 Author reg | 3 / 4 phases (C4 payouts deferred) |
-| 4 Infra | **8 / 8** (CI/Ansible/k3s + unit tests + k6 + Helm + Consul skip + OpenAPI sync) |
-| 5 Long term | 2 / 3 (NATS + alerts done; catalog page/filter still deferred) |
+| Wave / Track | Done / Total |
+|--------------|--------------|
+| 1 Quick wins | **6 / 6** |
+| 2 Content + debt | **7 / 7** (+ 5/5 polish wave; parity → Track B) |
+| 3 Author reg | **3 / 4** phases (C4 deferred) + refund + notif + JWT |
+| 4 Infra | **8 / 8** app; data-plane → Track C |
+| 5 Long term | **2 / 3** (bottleneck deferred) |
+| Track A Product | **3 / 3** |
+| Track B Games | parked (GAME_INSIGHTS) |
+| Track D Platform | **0 / 3** phases (P1 next) |
+| Track C Infra | **0 / 1** |
 
 ---
 
 ## Notes
 
-- Do not mix Author registration (Wave 3) into a “quick commit” — too large.
-- Wave 1–5 here is **future** work; v1.0.9 closed items are not listed (see [`REVIEW_RESULT.md`](../../history/2026-10/03.10.2026/REVIEW_RESULT.md)).
-- Related debt log: [`confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md`](../../tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md)
+- **GAME_INSIGHTS.md** — games only (parked).
+- **PLATFORM_INSIGHTS.md** — shop/chrome/infra (active).
+- Do not mix C4 into a “quick commit”.
+- Berserk CCG cards (~281) = real merch — never mutate without explicit OK.
+- Standing: agent does not push; writes commit messages; Emma OKs push.
+- Related debt: [`STILL_TECH_DEBT.md`](../../tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md)

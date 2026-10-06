@@ -74,7 +74,8 @@ WHERE deleted_at IS NULL
     '5598845d-8126-4041-b4eb-ea59f88bf59e'
   );
 
--- A4) Upsert 4 Event Horizon example catalog items (idempotent).
+-- A4) Upsert Event Horizon example catalog items (idempotent).
+-- Painting example kept soft-deleted (Platform P1 — remove from shop).
 -- author_id = seed admin (not the Berserk card author).
 INSERT INTO inventory_items (id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at, deleted_at, version)
 VALUES
@@ -83,10 +84,10 @@ VALUES
     '1502a3fa-0e64-4873-a329-3d8fa1d5204d',
     'брелок',
     'Космический брелок',
-    'Брелок с силуэтом горизонта событий. Пример физического товара — арт заменим позже.',
+    'Брелок с силуэтом горизонта событий. Пример физического товара.',
     100, 50,
     '{"example": true, "kind": "brelok"}'::jsonb,
-    ARRAY['/images/brand/logo-icon.png'],
+    ARRAY['/images/shop/brelok-cosmic.jpg'],
     NOW(), NOW(), NULL, 1
   ),
   (
@@ -94,11 +95,11 @@ VALUES
     '1502a3fa-0e64-4873-a329-3d8fa1d5204d',
     'картина',
     'Картина «Туманность Horizon»',
-    'Печать космической туманности. Пример картины для витрины.',
+    'Печать космической туманности. Пример картины — скрыт с витрины (P1).',
     100, 20,
     '{"example": true, "kind": "kartina"}'::jsonb,
     ARRAY['/images/brand/planet-hero.png'],
-    NOW(), NOW(), NULL, 1
+    NOW(), NOW(), NOW(), 1
   ),
   (
     'a1111111-1111-4111-8111-111111111103',
@@ -108,7 +109,7 @@ VALUES
     'Плетёная фенечка в тёмных тонах Event Horizon. Пример фенечки.',
     100, 100,
     '{"example": true, "kind": "fenechka"}'::jsonb,
-    ARRAY['/images/brand/logo-minimal.png'],
+    ARRAY['/images/shop/fenechka-orbit.jpg'],
     NOW(), NOW(), NULL, 1
   ),
   (
@@ -116,10 +117,10 @@ VALUES
     '1502a3fa-0e64-4873-a329-3d8fa1d5204d',
     'мерч',
     'Значок Event Horizon',
-    'Металлический значок с логотипом. Пример мерча для витрины.',
+    'Металлический значок с кольцом горизонта событий. Пример мерча.',
     100, 50,
     '{"example": true, "kind": "merch"}'::jsonb,
-    ARRAY['/images/brand/logo-icon.png'],
+    ARRAY['/images/shop/badge-horizon.jpg'],
     NOW(), NOW(), NULL, 1
   )
 ON CONFLICT (id) DO UPDATE SET
@@ -130,7 +131,7 @@ ON CONFLICT (id) DO UPDATE SET
   type = EXCLUDED.type,
   attributes = EXCLUDED.attributes,
   images = EXCLUDED.images,
-  deleted_at = NULL,
+  deleted_at = EXCLUDED.deleted_at,
   updated_at = NOW();
 
 -- Safety report (inventory)
@@ -141,7 +142,6 @@ SELECT 'inventory_examples_active', COUNT(*)::text
 FROM inventory_items
 WHERE id IN (
   'a1111111-1111-4111-8111-111111111101',
-  'a1111111-1111-4111-8111-111111111102',
   'a1111111-1111-4111-8111-111111111103',
   'a1111111-1111-4111-8111-111111111104'
 ) AND deleted_at IS NULL;
@@ -212,32 +212,32 @@ WHERE id IN (
   '6a1de8dd-9457-4aa4-99a7-78267aee731d'  -- Радужные трубы
 );
 
--- B4) Upsert 4 example merch into shop (same ids as inventory).
+-- B4) Upsert example merch (painting hidden — Platform P1).
 INSERT INTO items (id, name, description, price, category, game_id, image_url, available, stock, version)
 VALUES
   (
     'a1111111-1111-4111-8111-111111111101',
     'Космический брелок',
-    'Брелок с силуэтом горизонта событий. Пример физического товара — арт заменим позже.',
-    100, 'merch', '', '/images/brand/logo-icon.png', true, 50, 1
+    'Брелок с силуэтом горизонта событий. Пример физического товара.',
+    100, 'merch', '', '/images/shop/brelok-cosmic.jpg', true, 50, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111102',
     'Картина «Туманность Horizon»',
-    'Печать космической туманности. Пример картины для витрины.',
-    100, 'merch', '', '/images/brand/planet-hero.png', true, 20, 1
+    'Печать космической туманности. Пример — скрыт с витрины (P1).',
+    100, 'merch', '', '/images/brand/planet-hero.png', false, 20, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111103',
     'Фенечка «Орбита»',
     'Плетёная фенечка в тёмных тонах Event Horizon. Пример фенечки.',
-    100, 'merch', '', '/images/brand/logo-minimal.png', true, 100, 1
+    100, 'merch', '', '/images/shop/fenechka-orbit.jpg', true, 100, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111104',
     'Значок Event Horizon',
-    'Металлический значок с логотипом. Пример мерча для витрины.',
-    100, 'merch', '', '/images/brand/logo-icon.png', true, 50, 1
+    'Металлический значок с кольцом горизонта событий. Пример мерча.',
+    100, 'merch', '', '/images/shop/badge-horizon.jpg', true, 50, 1
   )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
@@ -245,7 +245,7 @@ ON CONFLICT (id) DO UPDATE SET
   price = EXCLUDED.price,
   category = EXCLUDED.category,
   image_url = EXCLUDED.image_url,
-  available = true,
+  available = EXCLUDED.available,
   stock = EXCLUDED.stock;
 
 -- Safety report (shop) — cards ≈ merch rows that are NOT in junk/hide/example lists
@@ -261,7 +261,6 @@ FROM items
 WHERE available = true
   AND id IN (
     'a1111111-1111-4111-8111-111111111101',
-    'a1111111-1111-4111-8111-111111111102',
     'a1111111-1111-4111-8111-111111111103',
     'a1111111-1111-4111-8111-111111111104'
   );
