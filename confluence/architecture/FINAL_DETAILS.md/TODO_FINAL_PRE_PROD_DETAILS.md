@@ -107,8 +107,8 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 | Phase | Item | Status |
 |-------|------|--------|
 | P1 Shop examples & art | Replace/remove placeholders; unique arts | ✅ |
-| P2 Shop spinner + load | Center spinner; profile slow /shop | 🟧 **next** |
-| P3 Chrome polish | Non-game buttons | 🟧 |
+| P2 Shop spinner + load | Center spinner; FE waterfall fix | ✅ |
+| P3 Chrome polish | Non-game buttons | 🟧 **next** |
 
 ---
 

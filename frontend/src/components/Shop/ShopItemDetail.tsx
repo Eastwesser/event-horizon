@@ -194,11 +194,7 @@ export function ShopItemDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-void">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner fullscreen />;
   }
 
   if (error || !item) {

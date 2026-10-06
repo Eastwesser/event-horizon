@@ -47,8 +47,8 @@
 | Step | Status |
 |------|--------|
 | **P1 Shop examples & art** | ✅ |
-| P2 Shop spinner + load profile | 🟧 **NEXT** |
-| P3 Chrome polish | 🟧 |
+| **P2 Shop spinner + load** | ✅ |
+| P3 Chrome polish | 🟧 **NEXT** |
 | Berserk cards | 🔒 never without OK |
 
 ---
@@ -68,10 +68,10 @@ C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottleneck 500+ · cursor pull-i
 ## Что делать сейчас
 
 ```text
-NEXT = Track D / PLATFORM_INSIGHTS P2
-  — center /shop spinner; profile slow load
+NEXT = Track D / PLATFORM_INSIGHTS P3
+  — chrome / nav polish (Emma list)
 
-P1 done (example arts + hide картина + C3 smoke shop-hide).
+P2 done (centered spinner + FE catalog waterfall fix).
 Games: GAME_INSIGHTS parked until Emma says back to Track B.
 ```
 
@@ -83,7 +83,7 @@ Games: GAME_INSIGHTS parked until Emma says back to Track B.
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
 Track B    ██░░░░░░░░░░ PARKED (GAME_INSIGHTS)
-Track D    ░░░░░░░░░░░░ ACTIVE → P1 shop art  ← you are here
+Track D    ████░░░░░░░░ ACTIVE → P3 chrome  ← you are here
 Track C    ░░░░░░░░░░░░ later
 Deferred   ░░░░░░░░░░░░
 ```

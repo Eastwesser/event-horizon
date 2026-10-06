@@ -18,7 +18,7 @@
 |------|--------------|
 | P0 Already OK (voice) | 5 / 5 |
 | P1 Shop examples & art | 6 / 6 |
-| P2 Shop UX / load | 0 / 3 |
+| P2 Shop UX / load | 3 / 3 |
 | P3 Chrome / nav | 0 / 2 |
 | P4 Track C infra | 0 / 1 |
 | P5 Deferred product | 0 / 7 |
@@ -50,11 +50,11 @@ Source: voice 06.10 + shop cleanup leftovers.
 
 ---
 
-## P2 — Shop UX / load 🟧 NEXT
+## P2 — Shop UX / load ✅
 
-- [ ] Спиннер загрузки `/shop` — центр экрана (горизонталь **и** вертикаль), не у хедера
-- [ ] Профилировать долгую загрузку магазина (gateway / shop list / FE waterfall)
-- [ ] Если p95 плохой после профиля — тонкий follow-up (не полный Wave 5 bottleneck)
+- [x] Спиннер загрузки `/shop` — центр экрана (`LoadingSpinner fullscreen`; detail + infiniteshop тоже)
+- [x] Профиль load path (code): cold `/shop` = `searchAllItems` (inventory pages ≤100) **после** `fetchInventory` + лишний `fetchItems` (`/shop/items` + ещё inventory); каждый апдейт inventory **перекачивал** весь каталог
+- [x] Thin follow-up: catalog once on mount ∥ balance/inventory; owned patch local; drop `fetchItems` on Shop; `searchAllItems` remaining pages `Promise.all` (не Wave 5 server page/filter)
 
 ---
 
@@ -96,7 +96,7 @@ Source: voice 06.10 + shop cleanup leftovers.
 ## Next action
 
 ```text
-NEXT = P2 Shop spinner + load profile.
+NEXT = P3 Chrome / nav polish (Emma list) — or back to GAME_INSIGHTS if games.
 
-P1 done: example arts + painting/C3 smoke hidden; Berserk 281 untouched.
+P2 done: centered spinner + FE load waterfall fix (no full catalog re-fetch).
 ```

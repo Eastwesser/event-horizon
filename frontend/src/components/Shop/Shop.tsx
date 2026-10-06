@@ -66,9 +66,7 @@ export const Shop: React.FC = () => {
   const {
     inventory,
     balance,
-    loading,
     error,
-    fetchItems,
     fetchInventory,
     fetchBalance,
     clearError,
@@ -145,17 +143,21 @@ export const Shop: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
-    fetchItems();
+    // Grid uses inventory catalog, not /shop/items — skip fetchItems waterfall.
     fetchBalance();
     fetchInventory();
-  }, [fetchItems, fetchBalance, fetchInventory]);
+  }, [fetchBalance, fetchInventory]);
 
+  // Catalog once on mount (parallel with balance/inventory). Do not re-fetch ~N pages
+  // every time purchased inventory changes — that was the slow /shop path.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setCatalogLoading(true);
       try {
-        const ownedIds = new Set(inventory.map((p) => p.item_id));
+        const ownedIds = new Set(
+          useShopStore.getState().inventory.map((p) => p.item_id)
+        );
         const response = await inventoryApi.searchAllItems();
         if (cancelled) return;
         const patches = useShopStore.getState().catalogPatches;
@@ -184,6 +186,22 @@ export const Shop: React.FC = () => {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Patch owned flags locally when purchases load — no catalog network.
+  useEffect(() => {
+    const ownedIds = new Set(inventory.map((p) => p.item_id));
+    setCatalog((prev) => {
+      if (prev.length === 0) return prev;
+      let changed = false;
+      const next = prev.map((item) => {
+        const owned = ownedIds.has(item.id);
+        if (item.owned === owned) return item;
+        changed = true;
+        return { ...item, owned };
+      });
+      return changed ? next : prev;
+    });
   }, [inventory]);
 
   const facets = useMemo(() => collectCatalogFacets(catalog), [catalog]);
@@ -368,12 +386,8 @@ export const Shop: React.FC = () => {
     );
   }
 
-  if ((loading || catalogLoading) && catalog.length === 0) {
-    return (
-      <div className="min-h-screen bg-void">
-        <LoadingSpinner />
-      </div>
-    );
+  if (catalogLoading && catalog.length === 0) {
+    return <LoadingSpinner fullscreen />;
   }
 
   return (
