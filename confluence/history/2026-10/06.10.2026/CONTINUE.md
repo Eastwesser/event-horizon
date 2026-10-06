@@ -1,24 +1,22 @@
-# Continue here — 06.10.2026 evening
-
-Left ~17:35. Back in ~3h.
+# Continue here — 06.10.2026 (evening return)
 
 ## Status
 
-Tracks **A–D actionable = DONE**. Local git **ahead of origin by 11** — **not pushed** (you push).
+Tracks **A–D actionable = DONE**.  
+**Pushed to `origin/main`** through `927d521` (CONTINUE + FINAL_TRACKS).
 
-Latest commits (newest first):
-- `dae1d8e` — Track B polish close (LB order, Hexagon space, GameShell)
-- `5bddca1` — Flappy gap/reward + Companion daily gift
-- `5f41556` — Boost UX, Towers levels, Hanoi/2048/Gears
+Standing: don’t touch Berserk CCG / refund / notifications / auth / C4 unless asked.
 
-Standing rules unchanged: no agent push; don’t touch Berserk CCG / refund / notifications / auth / C4 unless asked.
+## Done this return
+
+1. ✅ **Push** — Track B / platform / k3s / CONTINUE → `origin/main`.
+2. ✅ **CONTINUE.md** on main.
 
 ## Do next (pick one)
 
-1. **Push** — `git push` when ready (11 commits).
-2. **Manual QA** — Flappy LB eye-check; smoke 8 games + boost + Companion «Подарок дня».
-3. **Emma chrome** — platform button list (PLATFORM_INSIGHTS P5, still open).
-4. **Deferred only if wanted** — 3D/art, Companion tickets gift, C4 payouts, LB seeding.
+1. **Manual QA** — Flappy LB eye-check; smoke 8 games + boost + Companion «Подарок дня».
+2. **Emma chrome** — platform button list (PLATFORM_INSIGHTS P5) — blocked until Emma lists buttons.
+3. **Deferred only if wanted** — 3D/art, Companion tickets gift, C4 payouts, LB seeding.
 
 ## Parked (not blockers)
 
