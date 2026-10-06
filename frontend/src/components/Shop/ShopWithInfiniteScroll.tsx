@@ -21,7 +21,6 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   const {
     inventory,
     balance,
-    loading,
     error,
     fetchInventory,
     fetchBalance,
@@ -34,6 +33,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'shop' | 'inventory'>('shop');
@@ -55,12 +55,17 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     { value: 'merch', label: 'Мерч', icon: 'gift' },
   ];
 
-  // Загрузка всех товаров из inventory (карточки + мерч)
+  // Catalog once on mount; owned flags patched when inventory arrives (no re-fetch).
   useEffect(() => {
+    let cancelled = false;
     const loadItems = async () => {
+      setCatalogLoading(true);
       try {
-        const ownedIds = new Set(inventory.map((p) => p.item_id));
+        const ownedIds = new Set(
+          useShopStore.getState().inventory.map((p) => p.item_id)
+        );
         const response = await inventoryApi.searchAllItems();
+        if (cancelled) return;
         const shopItems: ShopItem[] = (response.items ?? []).map((item) =>
           inventoryToShopItem(item, ownedIds.has(item.id))
         );
@@ -71,10 +76,15 @@ export const ShopWithInfiniteScroll: React.FC = () => {
         setHasMore(shopItems.length > ITEMS_PER_PAGE);
       } catch (error) {
         console.error('Failed to load items:', error);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
       }
     };
     loadItems();
-  }, [inventory]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Загрузка инвентаря и баланса
   useEffect(() => {
@@ -99,10 +109,17 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   // Обновляем owned статус из инвентаря
   useEffect(() => {
     const ownedIds = new Set(inventory.map(p => p.item_id));
-    setAllItems(prev => prev.map(item => ({
-      ...item,
-      owned: ownedIds.has(item.id)
-    })));
+    setAllItems(prev => {
+      if (prev.length === 0) return prev;
+      let changed = false;
+      const next = prev.map(item => {
+        const owned = ownedIds.has(item.id);
+        if (item.owned === owned) return item;
+        changed = true;
+        return { ...item, owned };
+      });
+      return changed ? next : prev;
+    });
   }, [inventory]);
 
   // Intersection Observer для бесконечной прокрутки
@@ -199,12 +216,8 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     );
   }
 
-  if (loading && allItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-void">
-        <LoadingSpinner />
-      </div>
-    );
+  if (catalogLoading && allItems.length === 0) {
+    return <LoadingSpinner fullscreen />;
   }
 
   return (

@@ -76,6 +76,7 @@ export const inventoryApi = {
   /**
    * Fetch all matching items by paging with limit≤100.
    * Caps page size at INVENTORY_PAGE_SIZE even if caller asks for more.
+   * After the first page (needed for `total`), remaining pages load in parallel.
    */
   searchAllItems: async (
     params: Omit<SearchItemsRequest, 'limit' | 'offset'> = {}
@@ -88,17 +89,27 @@ export const inventoryApi = {
     });
     const total = first.total ?? 0;
     const items = [...(first.items ?? [])];
-    let offset = items.length;
-    while (offset < total) {
-      const page = await inventoryApi.searchItems({
-        ...params,
-        limit: pageSize,
-        offset,
-      });
+    if (items.length >= total) {
+      return { items, total };
+    }
+
+    const offsets: number[] = [];
+    for (let offset = items.length; offset < total; offset += pageSize) {
+      offsets.push(offset);
+    }
+    const pages = await Promise.all(
+      offsets.map((offset) =>
+        inventoryApi.searchItems({
+          ...params,
+          limit: pageSize,
+          offset,
+        })
+      )
+    );
+    for (const page of pages) {
       const batch = page.items ?? [];
       if (batch.length === 0) break;
       items.push(...batch);
-      offset += batch.length;
     }
     return { items, total };
   },
