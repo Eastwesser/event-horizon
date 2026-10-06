@@ -1,0 +1,106 @@
+{{- if and .Values.dataPlane.enabled .Values.dataPlane.postgres.enabled }}
+{{- range $key, $host := .Values.db.hosts }}
+{{- $dbName := index $.Values.db.names $key }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $host }}
+  labels:
+    {{- include "event-horizon.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: postgres
+    postgres-instance: {{ $host }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: postgres
+    postgres-instance: {{ $host }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $host }}
+  labels:
+    {{- include "event-horizon.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: postgres
+    postgres-instance: {{ $host }}
+spec:
+  serviceName: {{ $host }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: postgres
+      postgres-instance: {{ $host }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "event-horizon.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: postgres
+        postgres-instance: {{ $host }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ $.Values.dataPlane.postgres.image }}
+          imagePullPolicy: {{ $.Values.dataPlane.postgres.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "event-horizon.secretName" $ }}
+                  key: {{ $.Values.db.userSecretKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "event-horizon.secretName" $ }}
+                  key: {{ $.Values.db.passwordSecretKey }}
+            - name: POSTGRES_DB
+              value: {{ $dbName | quote }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          {{- if $.Values.dataPlane.postgres.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          {{- end }}
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ $.Values.secret.postgresUser | quote }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ $.Values.secret.postgresUser | quote }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+  {{- if $.Values.dataPlane.postgres.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $.Values.dataPlane.postgres.persistence.storageClassName }}
+        storageClassName: {{ $.Values.dataPlane.postgres.persistence.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $.Values.dataPlane.postgres.persistence.size }}
+  {{- end }}
+{{- end }}
+{{- end }}

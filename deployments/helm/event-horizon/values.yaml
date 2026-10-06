@@ -1,5 +1,5 @@
-# Default values for event-horizon (Wave 4.5).
-# NATS / Postgres / Redis are still external — see deployments/k3s/README.md.
+# Default values for event-horizon (Wave 4.5 + Track C data plane).
+# App Deployment always rendered. NATS/Postgres STS opt-in via dataPlane.enabled.
 
 nameOverride: ""
 fullnameOverride: ""
@@ -52,6 +52,39 @@ redis:
   shop: "redis-shop:6379"
   inventory: "redis-inventory:6379"
   gateway: "redis:6379"
+
+# Track C — k3s data plane (off by default; compose remains day-to-day).
+# Enable: helm upgrade --install eh … --set dataPlane.enabled=true
+#   or: make deploy-k3s-dataplane
+dataPlane:
+  enabled: false
+  nats:
+    enabled: true
+    image: nats:2.10-alpine
+    pullPolicy: IfNotPresent
+    jetStream: true
+    clusterName: event-horizon
+    # Service DNS names must match natsURL (nats-1..3).
+    nodes:
+      - name: nats-1
+        routes: "nats://nats-2:6222,nats://nats-3:6222"
+      - name: nats-2
+        routes: "nats://nats-1:6222,nats://nats-3:6222"
+      - name: nats-3
+        routes: "nats://nats-1:6222,nats://nats-2:6222"
+    persistence:
+      enabled: true
+      size: 1Gi
+      storageClassName: ""
+  postgres:
+    enabled: true
+    image: postgres:16-alpine
+    pullPolicy: IfNotPresent
+    # Instances derived from db.hosts + db.names (7 DBs used by the app chart).
+    persistence:
+      enabled: true
+      size: 2Gi
+      storageClassName: ""
 
 secret:
   # Generate before real cluster apply — never commit production values.

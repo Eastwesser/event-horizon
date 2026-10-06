@@ -84,46 +84,43 @@ make undeploy-k3s
 
 ## 🐛 ИЗВЕСТНЫЕ ПРОБЛЕМЫ
 
-### 1. Поды падают с ошибкой NATS: no such host
+### 1. NATS / Postgres in-cluster (Track C)
 
-**Проблема:** В k3s нет сервисов nats-1, nats-2, nats-3. NATS не развёрнут в Kubernetes.
+**Было:** поды падали с `no such host` — в k3s не было `nats-1..3` / `postgres*`.
 
-**Решение:** Либо развернуть NATS в k3s, либо использовать внешний NATS.
+**Сейчас:** Helm chart умеет data plane:
 
-**Текущий статус:** ⏳ Запланировано
+```bash
+make deploy-k3s-dataplane
+# или
+helm upgrade --install eh ./deployments/helm/event-horizon --set dataPlane.enabled=true
+```
 
-### 2. Поды не видят PostgreSQL
+Рендерит StatefulSets + headless Services с DNS-именами как в `values.yaml` (`natsURL`, `db.hosts`). Redis по-прежнему внешний / compose.
 
-**Проблема:** В k3s нет StatefulSet для PostgreSQL. БД развёрнута только в Docker Compose.
+### 2. Поды падают с CrashLoopBackOff
 
-**Решение:** Добавить StatefulSet для PostgreSQL в k3s или использовать внешнюю БД.
-
-**Текущий статус:** ⏳ Запланировано
-
-### 3. Поды падают с CrashLoopBackOff
-
-**Причина:** Приложение не может запуститься из-за отсутствия зависимостей (NATS, БД).
+**Причина:** без data plane (или без внешнего NATS/PG/Redis) зависимости недоступны.
 
 **Диагностика:**
 
-kubectl logs deployment/event-horizon -c <имя_контейнера>
+kubectl logs deployment/eh-event-horizon -c <имя_контейнера>
 
 ---
 
 ## 📊 СРАВНЕНИЕ С DOCKER COMPOSE
 
-| Инфраструктура     | Статус                            | Команда           |
-| :----------------- | :-------------------------------- | :---------------- |
-| Docker Compose     | ✅ Работает                       | make deploy       |
-| k3s (Kubernetes)   | 🟡 Запущен, часть подов падает    | make deploy-k3s   |
+| Инфраструктура     | Статус                            | Команда                    |
+| :----------------- | :-------------------------------- | :------------------------- |
+| Docker Compose     | ✅ Day-to-day                     | make deploy                |
+| k3s app only       | 🟡 нужен внешний data plane       | make deploy-k3s            |
+| k3s + data plane   | ✅ NATS + Postgres STS in chart   | make deploy-k3s-dataplane  |
 
 ---
 
 ## 🧠 ДЛЯ СОБЕСЕДОВАНИЯ
 
-«Я настроил k3s кластер и запустил деплой Event Horizon. 
-Обнаружил, что для полноценной работы в Kubernetes нужно добавить StatefulSet для БД и настроить CoreDNS для резолвинга NATS. 
-Это запланировано на следующий спринт.»
+«Я вынес app в Helm (Wave 4.5), а data plane (NATS cluster + per-service Postgres) добавил как opt-in StatefulSets в том же chart — DNS-имена совпадают с compose/`natsURL`, чтобы не переписывать сервисы.»
 
 ---
 
@@ -132,30 +129,34 @@ kubectl logs deployment/event-horizon -c <имя_контейнера>
 # Посмотреть все поды
 kubectl get pods -o wide
 
+# Data plane
+kubectl get sts,svc | grep -E 'nats-|postgres'
+
 # Посмотреть логи всех контейнеров в поде
-kubectl logs deployment/event-horizon --all-containers
+kubectl logs deployment/eh-event-horizon --all-containers
 
 # Перезапустить под
-kubectl rollout restart deployment/event-horizon
+kubectl rollout restart deployment/eh-event-horizon
 
 # Масштабировать (изменить количество реплик)
-kubectl scale deployment/event-horizon --replicas=3
+kubectl scale deployment/eh-event-horizon --replicas=3
 
 # Посмотреть события
 kubectl get events --sort-by='.lastTimestamp'
 
 # Войти в под (если есть shell)
-kubectl exec -it deployment/event-horizon -c auth -- /bin/sh
+kubectl exec -it deployment/eh-event-horizon -c auth -- /bin/sh
 
 ---
 
 ## 🚧 TODO
 
 - [x] Helm chart wrapping app manifests (Wave 4.5 — `deployments/helm/event-horizon`)
-- [ ] Добавить NATS в k3s
-- [ ] Добавить StatefulSet для PostgreSQL
-- [ ] Настроить CoreDNS (usually fine out of the box)
+- [x] NATS StatefulSets in Helm (`dataPlane.enabled`)
+- [x] Postgres StatefulSets in Helm (`dataPlane.enabled`, 7 DBs from `db.hosts`)
 - [x] Ingress для внешнего доступа (Traefik / chart)
+- [ ] Redis in-cluster (optional; not Track C checkbox)
 - [ ] Настроить автоматическое масштабирование (HPA)
+- [ ] Patroni HA (separate — `deployments/patroni/`)
 
-Сделано с ❤️ для Event Horizon"
+Сделано с ❤️ для Event Horizon

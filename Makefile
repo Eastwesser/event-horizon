@@ -229,6 +229,13 @@ deploy-k3s:
 	  kubectl rollout status deployment/event-horizon; \
 	fi
 
+# App chart + Track C data plane (NATS ×3 + Postgres StatefulSets).
+deploy-k3s-dataplane:
+	@echo "🚀 Deploying to k3s with dataPlane.enabled=true..."
+	@command -v helm >/dev/null 2>&1 || { echo "helm required"; exit 1; }
+	helm upgrade --install $(HELM_RELEASE) $(HELM_CHART) --set dataPlane.enabled=true
+	@kubectl get sts,svc -l app.kubernetes.io/instance=$(HELM_RELEASE) || true
+
 undeploy-k3s:
 	@echo "🗑️ Removing from k3s..."
 	@if command -v helm >/dev/null 2>&1 && helm status $(HELM_RELEASE) >/dev/null 2>&1; then \
@@ -242,6 +249,9 @@ undeploy-k3s:
 
 helm-template-k3s:
 	helm template $(HELM_RELEASE) $(HELM_CHART)
+
+helm-template-k3s-dataplane:
+	helm template $(HELM_RELEASE) $(HELM_CHART) --set dataPlane.enabled=true
 
 # ===== DEV SEED (roles: admin | author | user) =====
 # Credentials: scripts/.env.seed.admin (gitignored) + optional .env.seed.author / .env.seed.user
