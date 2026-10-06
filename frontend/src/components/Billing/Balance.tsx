@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { canFetchProtected } from '../../lib/auth';
+import { LAMP_HINT, TICKET_HINT } from '../../lib/currencyGlossary';
+import { Icon } from '../ui/Icon';
 
 interface Balances {
   lamps: number;
@@ -82,11 +84,21 @@ export function Balance() {
 
   return (
     <div className="flex items-center gap-2 font-hud text-sm tabular-nums">
-      <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-2.5 py-1 text-horizon-gold">
-        💡 {balances.lamps}
+      <span
+        className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-2.5 py-1 text-horizon-gold"
+        title={LAMP_HINT}
+        aria-label={`${LAMP_HINT}: ${balances.lamps}`}
+      >
+        <Icon name="lamp" className="h-3.5 w-3.5" />
+        {balances.lamps}
       </span>
-      <span className="flex items-center gap-1.5 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-2.5 py-1 text-photon-cyan">
-        🎫 {balances.tickets}
+      <span
+        className="flex items-center gap-1.5 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-2.5 py-1 text-photon-cyan"
+        title={TICKET_HINT}
+        aria-label={`${TICKET_HINT}: ${balances.tickets}`}
+      >
+        <Icon name="ticket" className="h-3.5 w-3.5" />
+        {balances.tickets}
       </span>
     </div>
   );

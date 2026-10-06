@@ -35,6 +35,7 @@ import { CardImage } from '../ui/CardImage';
 import { CatalogFiltersPanel } from './CatalogFiltersPanel';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { itemFallbackIcon } from '../../lib/itemIcons';
+import { TICKET_HINT } from '../../lib/currencyGlossary';
 
 function isMerchItem(item: ShopItem): boolean {
   const cat = (item.category || '').toLowerCase();
@@ -402,7 +403,11 @@ export const Shop: React.FC = () => {
         onBack={() => navigate('/')}
         backLabel="На главную"
         actions={
-          <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
+          <span
+            className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold"
+            title={TICKET_HINT}
+            aria-label={`${TICKET_HINT}: ${balance}`}
+          >
             <Icon name="ticket" className="h-4 w-4" />
             {balance}
           </span>

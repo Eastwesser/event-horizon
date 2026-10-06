@@ -13,6 +13,7 @@ import { PageShell } from '../ui/PageShell';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
+import { TICKET_HINT } from '../../lib/currencyGlossary';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -232,7 +233,11 @@ export const ShopWithInfiniteScroll: React.FC = () => {
         onBack={handleBack}
         backLabel="На главную"
         actions={
-          <span className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
+          <span
+            className="flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold"
+            title={TICKET_HINT}
+            aria-label={`${TICKET_HINT}: ${balance}`}
+          >
             <Icon name="ticket" className="h-4 w-4" />
             {balance}
           </span>
