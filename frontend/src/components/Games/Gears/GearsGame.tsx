@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 
 type Orb = { id: number; x: number; y: number; vx: number; vy: number; level: number; settled: boolean };
 
@@ -51,16 +53,42 @@ export function GearsGame() {
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
   const scoreRef = useRef(0);
+  const boostedRef = useRef(false);
+  const [runBoosted, setRunBoosted] = useState(false);
+  const [runBoostId, setRunBoostId] = useState<string | null>(null);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('gears');
 
-  const reset = () => {
-    orbsRef.current = [];
-    nextRef.current = spawnLevel();
-    setNextPreview(nextRef.current);
-    scoreRef.current = 0;
-    setScore(0);
-    setWon(false);
-    setLost(false);
-    droppingRef.current = false;
+  useEffect(() => {
+    if (boostError) {
+      setNotif({ message: boostError, type: 'error' });
+      setBoostError(null);
+    }
+  }, [boostError, setBoostError]);
+
+  const reset = async () => {
+    try {
+      const { boostId, boosted } = await armBoost();
+      setRunBoosted(boosted);
+      setRunBoostId(boostId);
+      boostedRef.current = boosted;
+      orbsRef.current = [];
+      nextRef.current = spawnLevel();
+      setNextPreview(nextRef.current);
+      scoreRef.current = 0;
+      setScore(0);
+      setWon(false);
+      setLost(false);
+      droppingRef.current = false;
+    } catch {
+      /* handled */
+    }
   };
 
   const drop = useCallback(() => {
@@ -79,9 +107,11 @@ export function GearsGame() {
     nextRef.current = spawnLevel();
     setNextPreview(nextRef.current);
     droppingRef.current = true;
+    // Boost: drop cadence ×0.8 → longer lockout (easier aim)
+    const lockMs = boostedRef.current ? Math.round(350 / 0.8) : 350;
     setTimeout(() => {
       droppingRef.current = false;
-    }, 350);
+    }, lockMs);
   }, [won, lost]);
 
   useEffect(() => {
@@ -230,7 +260,7 @@ export function GearsGame() {
   const submit = async () => {
     setSaving(true);
     try {
-      await api.post('/game/submit', {
+      const body: Record<string, unknown> = {
         user_id: localStorage.getItem('userId'),
         game_id: 'gears',
         level: 1,
@@ -239,9 +269,20 @@ export function GearsGame() {
         nickname: localStorage.getItem('nickname') || '',
         seed: `gears_${Date.now()}`,
         moves: [],
+      };
+      if (runBoosted && runBoostId) body.boost_id = runBoostId;
+      const response = await api.post('/game/submit', body);
+      const ranked =
+        response.data?.ranked === true &&
+        !runBoosted &&
+        !String(response.data?.message || '').includes('not ranked');
+      setNotif({
+        message: ranked ? 'Счёт сохранён' : boostUnrankedToast(),
+        type: 'success',
       });
-      setNotif({ message: 'Счёт сохранён', type: 'success' });
-      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      if (ranked) {
+        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      }
     } catch {
       setNotif({ message: 'Не удалось сохранить', type: 'error' });
     } finally {
@@ -262,7 +303,8 @@ export function GearsGame() {
       }
       controls={
         <>
-          <Button size="sm" variant="ghost" onClick={reset}>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <Button size="sm" variant="ghost" onClick={() => void reset()} disabled={boostBusy}>
             Заново
           </Button>
           <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
@@ -272,8 +314,7 @@ export function GearsGame() {
       }
       help={
         <p>
-          Кликай / тапай — уронить шестерёнку. Две одного уровня сливаются в большую (до 8). Не
-          пересекай линию сверху. Большие уровни почти не выпадают — без скама.
+          Кликай / тапай — уронить шестерёнку. Boost: чуть медленнее дроп; забег не в лидерборд.
         </p>
       }
     >
@@ -291,7 +332,7 @@ export function GearsGame() {
       <Modal open={won} onClose={() => setWon(false)} title="Собрана 8!">
         <p className="mb-4 text-text-secondary">Счёт {score}. Можно сохранить.</p>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={reset}>
+          <Button variant="ghost" onClick={() => void reset()}>
             Ещё раз
           </Button>
           <Button onClick={() => void submit()} disabled={saving}>
@@ -302,7 +343,7 @@ export function GearsGame() {
       <Modal open={lost} onClose={() => setLost(false)} title="Переполнение">
         <p className="mb-4 text-text-secondary">Счёт {score}.</p>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={reset}>
+          <Button variant="ghost" onClick={() => void reset()}>
             Заново
           </Button>
           <Button onClick={() => void submit()} disabled={saving}>

@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTowerStore } from '../../../store/towerStore';
 import { useSkins } from '../../../hooks/useSkins';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { cn } from '../../../lib/cn';
 import {
   BLOCK_HEIGHT,
@@ -43,6 +45,14 @@ export function TowerGame() {
   );
   const [dropPulse, setDropPulse] = useState(false);
   const [shake, setShake] = useState(false);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('towers');
 
   const {
     towerBlocks,
@@ -52,12 +62,16 @@ export function TowerGame() {
     level,
     combo,
     gameOver,
+    started,
+    boosted,
     direction,
     GAME_WIDTH,
     GAME_HEIGHT,
     startGame,
     dropBlock,
     submitScore,
+    lastSubmitRanked,
+    lastSubmitMessage,
   } = useTowerStore();
 
   useEffect(() => {
@@ -72,12 +86,32 @@ export function TowerGame() {
   };
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-    } else {
-      startGame();
+    if (!token) navigate('/login');
+  }, [token, navigate]);
+
+  useEffect(() => {
+    if (boostError) {
+      setSaveMessage({ type: 'error', text: boostError });
+      setBoostError(null);
     }
-  }, [token, navigate, startGame]);
+  }, [boostError, setBoostError]);
+
+  useEffect(() => {
+    if (lastSubmitMessage == null || lastSubmitRanked == null) return;
+    if (lastSubmitRanked === false) {
+      setSaveMessage({ type: 'success', text: boostUnrankedToast() });
+    }
+  }, [lastSubmitMessage, lastSubmitRanked]);
+
+  const beginRun = async () => {
+    if (boostBusy || (started && !gameOver)) return;
+    try {
+      const { boostId, boosted: isBoosted } = await armBoost();
+      startGame({ boosted: isBoosted, boostId });
+    } catch {
+      /* boostError handled via effect */
+    }
+  };
 
   const pulseDrop = () => {
     setDropPulse(true);
@@ -85,32 +119,27 @@ export function TowerGame() {
   };
 
   const tryDrop = () => {
-    if (gameOver) return;
+    if (gameOver || !started) return;
     const beforeLen = useTowerStore.getState().towerBlocks.length;
-    const beforeOver = useTowerStore.getState().gameOver;
     dropBlock();
     const after = useTowerStore.getState();
-    if (!beforeOver && after.towerBlocks.length > beforeLen) {
-      pulseDrop();
-    }
+    if (after.towerBlocks.length > beforeLen) pulseDrop();
   };
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (gameOver) return;
+        if (!started || gameOver) return;
         const beforeLen = useTowerStore.getState().towerBlocks.length;
         dropBlock();
         const after = useTowerStore.getState();
-        if (after.towerBlocks.length > beforeLen) {
-          pulseDrop();
-        }
+        if (after.towerBlocks.length > beforeLen) pulseDrop();
       }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [gameOver, dropBlock]);
+  }, [gameOver, started, dropBlock]);
 
   useEffect(() => {
     if (gameOver && !prevGameOver.current) {
@@ -124,16 +153,14 @@ export function TowerGame() {
 
   const handleManualSave = async () => {
     await submitScore();
-    setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
+    const { lastSubmitRanked: ranked } = useTowerStore.getState();
+    setSaveMessage({
+      type: 'success',
+      text: ranked === false ? boostUnrankedToast() : 'Рекорд сохранён!',
+    });
   };
 
-  const handleResetGame = () => {
-    startGame();
-  };
-
-  const handleBack = () => {
-    navigate('/');
-  };
+  const handleBack = () => navigate('/');
 
   const rainbow = useRainbowBlocks && skins.towers.hasRainbowBlocks;
 
@@ -156,7 +183,7 @@ export function TowerGame() {
       drawBlock(ctx, blockX, blockY, blockW, h, blockColor(i + 1, rainbow));
     }
 
-    if (!gameOver) {
+    if (started && !gameOver) {
       const currentY = startY - towerBlocks.length * BLOCK_HEIGHT;
       const color = blockColor(towerBlocks.length + 1, rainbow);
       drawMovingBlock(ctx, currentBlockX, currentY, blockWidth, h, color);
@@ -167,6 +194,7 @@ export function TowerGame() {
     currentBlockX,
     blockWidth,
     gameOver,
+    started,
     GAME_WIDTH,
     GAME_HEIGHT,
     rainbow,
@@ -224,10 +252,17 @@ export function TowerGame() {
       }
       controls={
         <>
-          <Button variant="primary" size="sm" onClick={handleResetGame}>
-            Новая игра
+          {(!started || gameOver) && (
+            <BoostCheckbox
+              useBoost={useBoost}
+              onChange={setUseBoost}
+              disabled={boostBusy}
+            />
+          )}
+          <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
+            {boostBusy ? 'Старт…' : started && !gameOver ? 'Идёт…' : 'Старт'}
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleManualSave}>
+          <Button variant="secondary" size="sm" onClick={handleManualSave} disabled={!started}>
             Сохранить рекорд
           </Button>
         </>
@@ -236,11 +271,7 @@ export function TowerGame() {
         <>
           <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы положить блок на башню</p>
           <p>Чем точнее попадание, тем шире будет следующий блок</p>
-          <p>
-            3 блока подряд = x2, 4 = x3, 5+ = x{combo >= 5 ? combo - 2 : 'N'} множитель очков
-          </p>
-          <p>Очки: 10 × уровень × множитель</p>
-          <p>Башня сужается при неточном попадании</p>
+          <p>Boost (10 лампочек): блок движется медленнее; забег не в лидерборд</p>
         </>
       }
     >
@@ -258,12 +289,7 @@ export function TowerGame() {
           shake && 'eh-tower-stage--shake',
         )}
       >
-        <canvas
-          ref={canvasRef}
-          width={GAME_WIDTH}
-          height={GAME_HEIGHT}
-          onClick={tryDrop}
-        />
+        <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} onClick={tryDrop} />
       </div>
 
       <Modal open={gameOver} onClose={() => {}} title="Game Over">
@@ -272,9 +298,14 @@ export function TowerGame() {
         </p>
         <p className="mt-1 text-sm text-text-secondary">Уровень {level}</p>
         <p className="mt-1 text-sm text-text-secondary">Высота: {towerBlocks.length}</p>
-        <p className="mt-1 text-sm text-photon-cyan">Комбо: {getMultiplierDisplay()}</p>
+        {boosted && (
+          <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
+        )}
+        {!boosted && lastSubmitRanked === true && (
+          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+        )}
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" size="sm" onClick={handleResetGame}>
+          <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
             Новая игра
           </Button>
           <Button variant="secondary" size="sm" onClick={handleManualSave}>

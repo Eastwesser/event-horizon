@@ -9,10 +9,13 @@ import { Balance } from '../../Billing/Balance';
 import { Leaderboard } from '../../Leaderboard/Leaderboard';
 import { useGameStore } from '../../../store/gameStore';
 import { useSkins } from '../../../hooks/useSkins';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import { Spinner } from '../../ui/Spinner';
+import Notification from '../../Common/Notification/Notification';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { cn } from '../../../lib/cn';
 
 export function HexagonGame() {
@@ -20,6 +23,18 @@ export function HexagonGame() {
   const token = localStorage.getItem('accessToken');
   const { skins, loading: skinsLoading } = useSkins();
   const [useSpacePancakes, setUseSpacePancakes] = useState(false);
+  const [runReady, setRunReady] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('hexagon');
 
   const {
     score,
@@ -31,6 +46,9 @@ export function HexagonGame() {
     isGameOver,
     finalScore,
     setGameOver,
+    boosted,
+    boostHighlight,
+    lastSubmitRanked,
   } = useGameStore();
 
   useEffect(() => {
@@ -45,12 +63,26 @@ export function HexagonGame() {
   };
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-    } else {
-      initGame();
+    if (!token) navigate('/login');
+  }, [token, navigate]);
+
+  useEffect(() => {
+    if (boostError) {
+      setSaveMessage({ type: 'error', text: boostError });
+      setBoostError(null);
     }
-  }, [token, navigate, initGame]);
+  }, [boostError, setBoostError]);
+
+  const beginRun = async () => {
+    if (boostBusy) return;
+    try {
+      const { boostId, boosted: isBoosted } = await armBoost();
+      initGame({ boosted: isBoosted, boostId });
+      setRunReady(true);
+    } catch {
+      /* handled */
+    }
+  };
 
   const handleDrop = (item: { id: number }, coord: { q: number; r: number }) => {
     addPancakeToHex(item.id, coord);
@@ -112,34 +144,51 @@ export function HexagonGame() {
         }
         controls={
           <>
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+            <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
+              {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
+            </Button>
             <Leaderboard gameId="hexagon" />
-            <Button variant="danger" size="sm" onClick={handleEndGame}>
+            <Button variant="danger" size="sm" onClick={handleEndGame} disabled={!runReady}>
               Завершить
             </Button>
           </>
         }
       >
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 overflow-hidden">
-          <HexGrid
-            tiles={tiles}
-            onDrop={handleDrop}
-            skinMode={spaceActive ? 'space' : 'default'}
+        {saveMessage && (
+          <Notification
+            type={saveMessage.type}
+            message={saveMessage.text}
+            onClose={() => setSaveMessage(null)}
           />
-          <Tray stacks={tray} skinMode={spaceActive ? 'space' : 'default'} />
-        </div>
+        )}
+        {runReady ? (
+          <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 overflow-hidden">
+            <HexGrid
+              tiles={tiles}
+              onDrop={handleDrop}
+              skinMode={spaceActive ? 'space' : 'default'}
+              boostHighlight={boostHighlight}
+            />
+            <Tray stacks={tray} skinMode={spaceActive ? 'space' : 'default'} />
+          </div>
+        ) : (
+          <p className="p-6 text-text-secondary">Выберите boost (опционально) и нажмите Старт</p>
+        )}
       </GameShell>
 
       <Modal open={isGameOver} onClose={() => {}} title="Игра окончена">
         <p className="text-text-secondary">Вы испекли {finalScore} блинов!</p>
-        <p className="mt-1 text-text-secondary">Стопка блинов пополнилась.</p>
-
+        {boosted && <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
+        {!boosted && lastSubmitRanked === true && (
+          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+        )}
         <div className="mt-5 text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Очки</p>
           <p className="font-hud text-3xl font-bold text-horizon-gold">{finalScore}</p>
         </div>
-
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" size="sm" onClick={() => initGame()}>
+          <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
             Новая игра
           </Button>
           <Button variant="ghost" size="sm" onClick={handleBack}>

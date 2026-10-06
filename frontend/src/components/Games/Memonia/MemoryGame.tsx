@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMemoryStore } from '../../../store/memoryStore';
 import { useSkins } from '../../../hooks/useSkins';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { MemoryBoard } from './MemoryBoard';
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
-import api from '../../../services/api';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import './memory.css';
 
 function pluralMoves(n: number): string {
@@ -24,16 +25,26 @@ export function MemoryGame() {
   const token = localStorage.getItem('accessToken');
   const { skins, loading: skinsLoading } = useSkins();
   const [useAnimalCards, setUseAnimalCards] = useState(false);
+  const [runReady, setRunReady] = useState(false);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('memory');
 
   const {
     moves,
     matchedPairs,
     gameOver,
     score,
-    multiplier,
-    combo,
+    boosted,
+    lastSubmitRanked,
     initGame,
     resetGame,
+    submitScore,
   } = useMemoryStore();
 
   const totalPairs = 15;
@@ -49,52 +60,46 @@ export function MemoryGame() {
     const newVal = !useAnimalCards;
     setUseAnimalCards(newVal);
     localStorage.setItem('memory_animal_cards', String(newVal));
-    resetGame();
-    setScoreSaved(false);
   };
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-    } else {
-      initGame();
+    if (!token) navigate('/login');
+  }, [token, navigate]);
+
+  useEffect(() => {
+    if (boostError) {
+      setSaveMessage({ type: 'error', text: boostError });
+      setBoostError(null);
     }
-  }, [token, navigate, initGame]);
+  }, [boostError, setBoostError]);
+
+  const beginRun = async () => {
+    if (boostBusy) return;
+    try {
+      const { boostId, boosted: isBoosted } = await armBoost();
+      initGame({ boosted: isBoosted, boostId });
+      setRunReady(true);
+      setScoreSaved(false);
+    } catch {
+      /* handled */
+    }
+  };
 
   const handleNewGame = () => {
-    resetGame();
-    setScoreSaved(false);
+    void beginRun();
   };
 
-  const handleBack = () => {
-    navigate('/');
-  };
+  const handleBack = () => navigate('/');
 
   const handleSubmitScore = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      const userEmail = localStorage.getItem('userEmail');
-
-      const response = await api.post('/game/submit', {
-        user_id: userId,
-        game_id: 'memory',
-        level: 1,
-        score: score,
-        user_email: userEmail,
-        seed: `memory_seed_${Date.now()}`,
-        moves: [],
-      });
-
-      if (response.data) {
-        setScoreSaved(true);
-        setSaveMessage({ type: 'success', text: 'Рекорд сохранён' });
-        setTimeout(() => setSaveMessage(null), 3000);
-        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
-      }
-    } catch {
-      setSaveMessage({ type: 'error', text: 'Ошибка при сохранении' });
-      setTimeout(() => setSaveMessage(null), 3000);
-    }
+    await submitScore();
+    const ranked = useMemoryStore.getState().lastSubmitRanked;
+    setScoreSaved(true);
+    setSaveMessage({
+      type: 'success',
+      text: ranked === false ? boostUnrankedToast() : 'Рекорд сохранён',
+    });
+    setTimeout(() => setSaveMessage(null), 3000);
   };
 
   if (skinsLoading) {
@@ -126,17 +131,13 @@ export function MemoryGame() {
         <div className="memory-stats">
           <div className="memory-stat">
             <span className="stat-label">Пары</span>
-            <span className="stat-value">{matchedPairs}/{totalPairs}</span>
+            <span className="stat-value">
+              {matchedPairs}/{totalPairs}
+            </span>
           </div>
           <div className="memory-stat">
             <span className="stat-label">Ходы</span>
             <span className="stat-value">{moves}</span>
-          </div>
-          <div className="memory-stat memory-stat--combo">
-            <span className="stat-label">Комбо</span>
-            <span className="stat-value">
-              {combo > 0 ? `x${multiplier} (${combo})` : '—'}
-            </span>
           </div>
           <div className="memory-stat memory-stat--score">
             <span className="stat-label">Очки</span>
@@ -155,40 +156,46 @@ export function MemoryGame() {
           )}
         </div>
 
-        <div className="memory-buttons">
-          <button type="button" onClick={handleNewGame} className="memory-btn memory-btn--new">
-            Новая игра
-          </button>
-          <button type="button" onClick={handleBack} className="memory-btn memory-btn--back">
-            На главную
-          </button>
+        <div className="memory-buttons" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleNewGame}
+              className="memory-btn memory-btn--new"
+              disabled={boostBusy}
+            >
+              {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
+            </button>
+            <button type="button" onClick={handleBack} className="memory-btn memory-btn--back">
+              На главную
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="memory-board-wrapper">
-        <MemoryBoard skin={useAnimalCards && skins.memory.hasAnimalCards ? 'animals' : 'default'} />
+        {runReady ? (
+          <MemoryBoard skin={useAnimalCards && skins.memory.hasAnimalCards ? 'animals' : 'default'} />
+        ) : (
+          <p className="text-text-secondary p-6">Выберите boost (опционально) и нажмите Старт</p>
+        )}
       </div>
 
-      <Modal
-        open={gameOver}
-        onClose={() => {
-          /* dismiss via actions below */
-        }}
-        title="Победа"
-      >
+      <Modal open={gameOver} onClose={() => {}} title="Победа">
         <p className="text-text-secondary">
           Вы нашли все {totalPairs} пар за {pluralMoves(moves)}
         </p>
-
         <div className="mt-5 text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Очки</p>
           <p className="font-hud text-3xl font-bold text-horizon-gold">{score}</p>
         </div>
-
-        <p className="mt-4 text-sm text-text-muted">
-          Формула: 1000 − (лишние ходы × 20), минимум 100
-        </p>
-
+        {boosted && (
+          <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
+        )}
+        {!boosted && lastSubmitRanked === true && (
+          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+        )}
         <div className="mt-6 flex flex-wrap gap-3">
           <Button variant="primary" size="sm" onClick={handleSubmitScore} disabled={scoreSaved}>
             {scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
@@ -206,10 +213,7 @@ export function MemoryGame() {
         <details>
           <summary>Как считаются очки?</summary>
           <p>Идеально: 15 ходов → 1000 очков</p>
-          <p>Каждый лишний ход: −20 очков</p>
-          <p>Минимум: 100 очков</p>
-          <p>Комбо: 2 пары подряд → x2, 4+ пар подряд → x3</p>
-          <p>Совет: запоминайте, где лежат парные карты!</p>
+          <p>Boost: краткая подсказка одной пары; забег не в лидерборд</p>
         </details>
       </div>
     </div>

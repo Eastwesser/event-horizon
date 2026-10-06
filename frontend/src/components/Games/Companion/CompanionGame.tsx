@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 
 type Species = 'звезда' | 'кот' | 'дракон' | 'кактус';
 type Mood = 'happy' | 'ok' | 'sad' | 'critical';
@@ -77,6 +79,21 @@ export function CompanionGame() {
   const [draftColor, setDraftColor] = useState(COLORS[0]);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('companion');
+
+  useEffect(() => {
+    if (boostError) {
+      setNotif({ message: boostError, type: 'error' });
+      setBoostError(null);
+    }
+  }, [boostError, setBoostError]);
 
   useEffect(() => {
     if (!pet) return;
@@ -126,7 +143,8 @@ export function CompanionGame() {
     if (!pet) return;
     setSaving(true);
     try {
-      await api.post('/game/submit', {
+      const { boostId, boosted } = await armBoost();
+      const body: Record<string, unknown> = {
         user_id: localStorage.getItem('userId'),
         game_id: 'companion',
         level: 1,
@@ -135,9 +153,20 @@ export function CompanionGame() {
         nickname: localStorage.getItem('nickname') || '',
         seed: `companion_${pet.name}_${Date.now()}`,
         moves: [],
+      };
+      if (boosted && boostId) body.boost_id = boostId;
+      const response = await api.post('/game/submit', body);
+      const ranked =
+        response.data?.ranked === true &&
+        !boosted &&
+        !String(response.data?.message || '').includes('not ranked');
+      setNotif({
+        message: ranked ? 'Забота сохранена в счёт' : boostUnrankedToast(),
+        type: 'success',
       });
-      setNotif({ message: 'Забота сохранена в счёт', type: 'success' });
-      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      if (ranked) {
+        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      }
     } catch {
       setNotif({ message: 'Не удалось сохранить', type: 'error' });
     } finally {
@@ -163,6 +192,7 @@ export function CompanionGame() {
       controls={
         pet ? (
           <>
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy || saving} />
             <Button size="sm" onClick={() => care('feed')}>
               Кормить
             </Button>
@@ -172,7 +202,7 @@ export function CompanionGame() {
             <Button size="sm" onClick={() => care('rest')}>
               Сон
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => void submit()} disabled={saving}>
+            <Button size="sm" variant="ghost" onClick={() => void submit()} disabled={saving || boostBusy}>
               Сохранить счёт
             </Button>
           </>
@@ -180,8 +210,7 @@ export function CompanionGame() {
       }
       help={
         <p>
-          Мягкий тамагочи Event Horizon: без смерти. Если не заходить неделю — критическая тоска.
-          Кастомизируй вид, заботься каждый день — растёт streak.
+          Мягкий тамагочи: без смерти. Boost при сохранении — счёт не в лидерборд.
         </p>
       }
     >

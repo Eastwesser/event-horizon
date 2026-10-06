@@ -30,11 +30,13 @@ interface GameState {
   targetScore: number;
   isGameOver: boolean;
   finalScore: number;
-  // gameMoves: any[];
   gameMoves: GameMove[];
+  boosted: boolean;
+  boostId: string | null;
+  boostHighlight: boolean;
+  lastSubmitRanked: boolean | null;
 
-  // Actions
-  initGame: () => void;
+  initGame: (opts?: { boosted?: boolean; boostId?: string | null }) => void;
   addPancakeToHex: (trayId: number, coord: HexCoord) => void;
   mergeStacks: (coord: HexCoord) => Promise<void>;
   checkAndClearStack: (coord: HexCoord) => void;
@@ -43,7 +45,7 @@ interface GameState {
   checkLevelUp: () => void;
   checkGameOver: () => void;
   submitScore: () => Promise<void>;
-  setGameOver: (finalScore: number) => void;  // 👈 новый метод
+  setGameOver: (finalScore: number) => void;
 }
 
 // Флаг для предотвращения гонки (вне store)
@@ -58,8 +60,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   isGameOver: false,
   finalScore: 0,
   gameMoves: [],
+  boosted: false,
+  boostId: null,
+  boostHighlight: false,
+  lastSubmitRanked: null,
 
-  initGame: () => {
+  initGame: (opts) => {
     // Создаём пустое поле
     const tiles: HexTile[] = HEX_GRID.map(coord => ({
       coord,
@@ -78,12 +84,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ 
       tiles, 
       tray, 
-      score: 0, 
-      level: 1, 
+      score: 0,
+      level: 1,
       targetScore: 100,
       isGameOver: false,
       finalScore: 0,
-      gameMoves: []
+      gameMoves: [],
+      boosted: opts?.boosted ?? false,
+      boostId: opts?.boostId ?? null,
+      boostHighlight: opts?.boosted ?? false,
+      lastSubmitRanked: null,
     });
   },
 
@@ -476,7 +486,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             moves: get().gameMoves,
         });
 
-        const response = await api.post('/game/submit', {
+        const response = await api.post('/game/submit', (() => {
+          const { boosted, boostId } = get();
+          const body: Record<string, unknown> = {
             user_id: userId,
             game_id: 'hexagon',
             level: level,
@@ -485,9 +497,21 @@ export const useGameStore = create<GameState>((set, get) => ({
             nickname: nickname,
             seed: 'game_seed_' + Date.now(),
             moves: [],
-        });
+          };
+          if (boosted && boostId) body.boost_id = boostId;
+          return body;
+        })());
 
         if (response.status === 200 || response.data) {
+            const ranked =
+              response.data?.ranked === true &&
+              !get().boosted &&
+              !String(response.data?.message || '').includes('not ranked');
+            set({ lastSubmitRanked: ranked });
+            if (!ranked) {
+              set({ gameMoves: [] });
+              return;
+            }
             // 💾 Сохраняем статистику в localStorage с привязкой к userId
             // Используем существующий userId, НЕ объявляем новый!
             const storageKey = `gameScores_${userId}`;
@@ -510,11 +534,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         }
 
-        alert('✅ Score submitted: ' + JSON.stringify(response.data));
         console.log('✅ Score submitted:', response.data);
         set({ gameMoves: [] });
     } catch (err: any) {
-        alert('❌ Failed: ' + (err.message || JSON.stringify(err)));
         console.error('❌ Failed to submit score:', err);
     }   
   },
