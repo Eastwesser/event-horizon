@@ -19,9 +19,9 @@
 | P0 Already OK (voice) | 5 / 5 |
 | P1 Shop examples & art | 6 / 6 |
 | P2 Shop UX / load | 3 / 3 |
-| P3 Chrome / nav | 0 / 2 |
-| P4 Track C infra | 0 / 1 |
-| P5 Deferred product | 0 / 7 |
+| P3 Chrome / nav | 2 / 2 |
+| P4 Track C infra | 0 / 1 *(later)* |
+| P5 Deferred product | 0 / 8 *(Emma OK)* |
 
 ---
 
@@ -58,10 +58,14 @@ Source: voice 06.10 + shop cleanup leftovers.
 
 ---
 
-## P3 — Chrome / nav (final polishing, non-game)
+## P3 — Chrome / nav ✅
 
-- [ ] Мелкий UX «кнопок платформы» вне игр (после P1–P2) — список уточнит Emma
-- [ ] Glossary RU в UI chrome: лампы / билеты (иконки уже в shop; игры — в GAME_INSIGHTS)
+Actionable without Emma button list:
+
+- [x] Glossary RU на currency chips: `LAMP_HINT` / `TICKET_HINT` (`currencyGlossary.ts`) — Balance, Profile, Shop
+- [x] Balance header: emoji → SVG (`lamp` / `ticket`); toast Notification: emoji → SVG (`check` / `x` / `info` / `warning`)
+
+**Parked → P5:** мелкий UX «кнопок платформы» вне игр — нужен список Emma.
 
 ---
 
@@ -74,6 +78,7 @@ Source: voice 06.10 + shop cleanup leftovers.
 
 ## P5 — Deferred product (Emma OK only)
 
+- [ ] Мелкий UX «кнопок платформы» (список Emma)
 - [ ] C4 payouts / monetization model lock
 - [ ] Wave 2 #5b shop/boost achievements
 - [ ] Multi-VU purchase EXPLAIN (только при реальном slow report)
@@ -96,7 +101,10 @@ Source: voice 06.10 + shop cleanup leftovers.
 ## Next action
 
 ```text
-NEXT = P3 Chrome / nav polish (Emma list) — or back to GAME_INSIGHTS if games.
+Platform Track D P1–P3 DONE.
 
-P2 done: centered spinner + FE load waterfall fix (no full catalog re-fetch).
+NEXT (pick):
+  — GAME_INSIGHTS / Track B (games) when Emma says
+  — Track C k3s data plane only if prod demo needs it
+  — P5 deferred only with Emma OK
 ```

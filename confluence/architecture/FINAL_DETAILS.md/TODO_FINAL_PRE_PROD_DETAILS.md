@@ -108,7 +108,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 |-------|------|--------|
 | P1 Shop examples & art | Replace/remove placeholders; unique arts | ✅ |
 | P2 Shop spinner + load | Center spinner; FE waterfall fix | ✅ |
-| P3 Chrome polish | Non-game buttons | 🟧 **next** |
+| P3 Chrome polish | Glossary + Balance/toast SVG | ✅ |
 
 ---
 
@@ -120,6 +120,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 
 ## Deferred (do not start unless Emma OK)
 
+- [ ] Мелкий UX «кнопок платформы» (список Emma)
 - [ ] C4 payouts / monetization lock
 - [ ] Wave 2 #5b shop/boost achievements
 - [ ] Multi-VU purchase EXPLAIN (only if real slow report)
@@ -143,7 +144,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 | 5 Long term | **2 / 3** (bottleneck deferred) |
 | Track A Product | **3 / 3** |
 | Track B Games | parked (GAME_INSIGHTS) |
-| Track D Platform | **0 / 3** phases (P1 next) |
+| Track D Platform | **3 / 3** phases (P1–P3) |
 | Track C Infra | **0 / 1** |
 
 ---

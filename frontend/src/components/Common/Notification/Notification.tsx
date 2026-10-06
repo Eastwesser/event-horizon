@@ -1,6 +1,7 @@
 // src/components/common/Notification.tsx
 import { useEffect, useState } from 'react';
 import { cn } from '../../../lib/cn';
+import { Icon, type IconName } from '../../ui/Icon';
 
 interface NotificationProps {
   /** Warning must always pair hue with an icon (never color-only). */
@@ -17,11 +18,11 @@ const toneClasses: Record<NotificationProps['type'], string> = {
   warning: 'border-warning/40 bg-warning/10 text-warning',
 };
 
-const icons: Record<NotificationProps['type'], string> = {
-  success: '✅',
-  error: '❌',
-  info: 'ℹ️',
-  warning: '⚠️',
+const icons: Record<NotificationProps['type'], IconName> = {
+  success: 'check',
+  error: 'x',
+  info: 'info',
+  warning: 'warning',
 };
 
 function Notification({
@@ -56,14 +57,14 @@ function Notification({
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0',
       )}
     >
-      <span className="text-lg">{icons[type]}</span>
+      <Icon name={icons[type]} className="h-5 w-5 shrink-0" aria-hidden />
       <span className="text-sm text-text-primary">{message}</span>
       <button
         onClick={handleClose}
         aria-label="Закрыть уведомление"
-        className="ml-2 text-lg text-text-secondary transition-colors hover:text-text-primary"
+        className="ml-2 text-text-secondary transition-colors hover:text-text-primary"
       >
-        ×
+        <Icon name="x" className="h-4 w-4" />
       </button>
     </div>
   );

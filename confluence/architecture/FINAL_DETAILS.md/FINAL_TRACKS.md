@@ -5,7 +5,7 @@
 | Doc | Role |
 |-----|------|
 | [`GAME_INSIGHTS.md`](../../history/2026-10/06.10.2026/GAME_INSIGHTS.md) | **Games only** — parked; tick there when on Track B |
-| [`PLATFORM_INSIGHTS.md`](../../history/2026-10/06.10.2026/PLATFORM_INSIGHTS.md) | **Shop / chrome / infra** — active non-game map |
+| [`PLATFORM_INSIGHTS.md`](../../history/2026-10/06.10.2026/PLATFORM_INSIGHTS.md) | **Shop / chrome / infra** — P1–P3 done |
 | [`TODO_FINAL_PRE_PROD_DETAILS.md`](./TODO_FINAL_PRE_PROD_DETAILS.md) | Wave 1–5 checklist |
 
 ---
@@ -19,6 +19,7 @@
 | **Track A 3/3** | refund · notifications · JWT refresh |
 | **Shop cleanup v2** | 281 Berserk untouched · 5 skins · 4 examples |
 | **8 games playable** · Boost Phase 1 allowlist | games polish → GAME_INSIGHTS |
+| **Track D P1–P3** | shop art · spinner/load · chrome glossary |
 
 ---
 
@@ -40,7 +41,7 @@
 
 ---
 
-## Track D — Platform (shop / chrome) — ACTIVE
+## Track D — Platform (shop / chrome) — ✅ P1–P3
 
 Чеклист: **PLATFORM_INSIGHTS.md**
 
@@ -48,7 +49,7 @@
 |------|--------|
 | **P1 Shop examples & art** | ✅ |
 | **P2 Shop spinner + load** | ✅ |
-| P3 Chrome polish | 🟧 **NEXT** |
+| **P3 Chrome polish** | ✅ (glossary + SVG; button list → P5/Emma) |
 | Berserk cards | 🔒 never without OK |
 
 ---
@@ -61,18 +62,18 @@
 
 ## Deferred (Emma OK only)
 
-C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottleneck 500+ · cursor pull-in · backfill-noiz · 3D/OSS games
+Platform button list · C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottleneck 500+ · cursor pull-in · backfill-noiz · 3D/OSS games
 
 ---
 
 ## Что делать сейчас
 
 ```text
-NEXT = Track D / PLATFORM_INSIGHTS P3
-  — chrome / nav polish (Emma list)
+Track D P1–P3 DONE.
 
-P2 done (centered spinner + FE catalog waterfall fix).
-Games: GAME_INSIGHTS parked until Emma says back to Track B.
+NEXT = GAME_INSIGHTS / Track B when Emma says back to games
+  — or Track C k3s if prod demo needs data plane
+  — or P5 deferred with Emma OK
 ```
 
 ---
@@ -82,8 +83,8 @@ Games: GAME_INSIGHTS parked until Emma says back to Track B.
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ██░░░░░░░░░░ PARKED (GAME_INSIGHTS)
-Track D    ████░░░░░░░░ ACTIVE → P3 chrome  ← you are here
+Track B    ██░░░░░░░░░░ PARKED (GAME_INSIGHTS)  ← natural next
+Track D    ████████████ P1–P3 DONE
 Track C    ░░░░░░░░░░░░ later
-Deferred   ░░░░░░░░░░░░
+Deferred   ░░░░░░░░░░░░ Emma OK
 ```

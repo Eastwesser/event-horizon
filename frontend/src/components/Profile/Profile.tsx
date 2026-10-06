@@ -10,6 +10,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { gameIcon } from '../../lib/gameIcons';
+import { LAMP_HINT, TICKET_HINT } from '../../lib/currencyGlossary';
 import {
   achievementIcon,
   syncAchievements,
@@ -214,11 +215,19 @@ export function Profile() {
       )}
 
       <div className="mb-8 flex flex-wrap gap-3">
-        <span className="inline-flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-sm border border-horizon-gold/30 bg-horizon-gold/10 px-3 py-1.5 font-hud text-sm tabular-nums text-horizon-gold"
+          title={LAMP_HINT}
+          aria-label={`${LAMP_HINT}: ${balance.lamps}`}
+        >
           <Icon name="lamp" className="h-4 w-4" />
           {balance.lamps}
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-3 py-1.5 font-hud text-sm tabular-nums text-photon-cyan">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-sm border border-photon-cyan/30 bg-photon-cyan/10 px-3 py-1.5 font-hud text-sm tabular-nums text-photon-cyan"
+          title={TICKET_HINT}
+          aria-label={`${TICKET_HINT}: ${balance.tickets}`}
+        >
           <Icon name="ticket" className="h-4 w-4" />
           {balance.tickets}
         </span>
