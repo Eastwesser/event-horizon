@@ -81,12 +81,20 @@ func (s *profileService) EvaluateAndUnlock(ctx context.Context, userID string, b
 		return nil
 	}
 	codes := EvaluateAchievements(bestScores, totalScore, gameID, level)
+	return s.UnlockCodes(ctx, userID, codes)
+}
+
+// UnlockCodes inserts catalog codes for the user (idempotent via ON CONFLICT).
+func (s *profileService) UnlockCodes(ctx context.Context, userID string, codes []string) error {
+	if s.achievements == nil || userID == "" || len(codes) == 0 {
+		return nil
+	}
 	n, err := s.achievements.Unlock(ctx, userID, codes)
 	if err != nil {
 		return fmt.Errorf("unlock achievements: %w", err)
 	}
 	if n > 0 {
-		log.Printf("achievements unlocked user=%s count=%d", userID, n)
+		log.Printf("achievements unlocked user=%s count=%d codes=%v", userID, n, codes)
 	}
 	return nil
 }

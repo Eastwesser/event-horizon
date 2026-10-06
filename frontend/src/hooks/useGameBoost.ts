@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import api from '../services/api';
 import { invalidateBalanceCache } from '../components/Billing/Balance';
+import { syncAchievements } from '../lib/achievements';
 
 export const BOOST_COST = 10;
 
@@ -39,6 +40,7 @@ export function useGameBoost(gameId: string) {
       invalidateBalanceCache();
       setBoostId(id);
       setBoosted(true);
+      void syncAchievements();
       return { boostId: id, boosted: true };
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string; message?: string } }; message?: string };

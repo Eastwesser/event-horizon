@@ -30,6 +30,7 @@ type Consumer interface {
 const (
 	TopicPurchasePaid       = "purchase.paid"
 	TopicPurchaseFulfilled  = "purchase.fulfilled"
+	TopicBoostStarted       = "boost.started"
 	ConsumerGroupFulfillment = "fulfillment-service"
 	ConsumerGroupShop       = "shop-service"
 	ConsumerGroupNotify     = "notification-service"

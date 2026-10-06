@@ -57,6 +57,7 @@ func New(ctx context.Context) (*App, error) {
 			"payment.completed",
 			"purchase.paid",
 			"purchase.fulfilled",
+			"boost.started",
 			"author.upserted",
 			"author.application.submitted",
 			"author.application.approved",
