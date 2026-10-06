@@ -404,6 +404,8 @@ func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*
         return nil, status.Errorf(codes.Internal, "record boost: %v", err)
     }
 
+    s.publishBoostStarted(boostID, userID, gameID)
+
     newBalance := 0
     if spendResp != nil {
         newBalance = int(spendResp.GetNewBalance())
@@ -415,6 +417,29 @@ func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*
         NewBalance: newBalance,
         Message:    "boost armed — this run will not be ranked",
     }, nil
+}
+
+func (s *gameService) publishBoostStarted(boostID, userID, gameID string) {
+    if s.js == nil {
+        return
+    }
+    body, err := json.Marshal(map[string]any{
+        "event_uuid": uuid.NewString(),
+        "event_type": "BoostStarted",
+        "user_uuid":  userID,
+        "game_id":    gameID,
+        "boost_uuid": boostID,
+        "cost_lamps": boostCostLamps,
+    })
+    if err != nil {
+        log.Printf("boost.started marshal: %v", err)
+        return
+    }
+    if _, err := s.js.Publish("boost.started", body); err != nil {
+        log.Printf("boost.started publish: %v", err)
+        return
+    }
+    log.Printf("📡 Published boost.started: user=%s game=%s boost=%s", userID, gameID, boostID)
 }
 
 // publishScoreUpdatedDirect is the legacy path (kept for fallback / tests).

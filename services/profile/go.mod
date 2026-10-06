@@ -57,7 +57,10 @@ replace github.com/Eastwesser/event-horizon/pkg/migrator => ../../pkg/migrator
 
 replace github.com/Eastwesser/event-horizon/platform => ../../platform
 
+replace github.com/Eastwesser/event-horizon/contracts/events => ../../contracts/events
+
 require (
+	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/platform v0.0.0-00010101000000-000000000000
 	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-00010101000000-000000000000

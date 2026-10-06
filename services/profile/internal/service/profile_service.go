@@ -12,6 +12,7 @@ type ProfileService interface {
 	GetProfile(ctx context.Context, userID string) (*repository.UserProfile, error)
 	UpdateProfile(ctx context.Context, profile *repository.UserProfile) error
 	EvaluateAndUnlock(ctx context.Context, userID string, bestScores map[string]int32, totalScore int32, gameID string, level int) error
+	UnlockCodes(ctx context.Context, userID string, codes []string) error
 	ListAchievements(ctx context.Context, userID string) ([]repository.Achievement, error)
 }
 

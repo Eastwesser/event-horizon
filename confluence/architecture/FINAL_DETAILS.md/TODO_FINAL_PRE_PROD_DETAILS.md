@@ -112,21 +112,19 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 
 ---
 
-## Track C — Infra (later)
+## Track C — Infra — ✅
 
-- [ ] k3s NATS + Postgres StatefulSets
+- [x] k3s NATS + Postgres StatefulSets (`dataPlane.enabled`)
 
 ---
 
-## Deferred (do not start unless Emma OK)
+## Deferred (mostly closed 06.10 — see PLATFORM_INSIGHTS P5)
 
 - [ ] Мелкий UX «кнопок платформы» (список Emma)
-- [ ] C4 payouts / monetization lock
-- [ ] Wave 2 #5b shop/boost achievements
-- [ ] Multi-VU purchase EXPLAIN (only if real slow report)
-- [ ] Catalog bottleneck (500+ cards)
-- [ ] Cursor pull-in
-- [ ] `backfill-noiz-reviews.py` one-shot
+- [x] C4 monetization = D defer ([`TRACK_C4_MONETIZATION_LOCK.md`](./TRACK_C4_MONETIZATION_LOCK.md))
+- [x] Wave 2 #5b first_purchase + first_boost
+- [x] Multi-VU EXPLAIN / bottleneck 500+ / cursor pull-in / authors content — skipped with reason
+- [x] `backfill-noiz-reviews.py` dry-run OK; live = ops
 - [ ] 3D / OSS game remakes
 - [ ] Companion daily-gift economy (full)
 - [ ] Mass multi-account LB QA seeding
@@ -145,7 +143,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 | Track A Product | **3 / 3** |
 | Track B Games | parked (GAME_INSIGHTS) |
 | Track D Platform | **3 / 3** phases (P1–P3) |
-| Track C Infra | **0 / 1** |
+| Track C Infra | **1 / 1** |
 
 ---
 

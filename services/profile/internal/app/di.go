@@ -15,8 +15,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/Eastwesser/event-horizon/contracts/events"
 	"github.com/Eastwesser/event-horizon/pkg/migrator"
 	"github.com/Eastwesser/event-horizon/platform/pkg/closer"
+	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
 	"github.com/Eastwesser/event-horizon/platform/pkg/logger"
 	"github.com/Eastwesser/event-horizon/services/profile/internal/config"
 	"github.com/Eastwesser/event-horizon/services/profile/internal/handler"
@@ -367,6 +369,57 @@ func (a *App) initSubscriptions(_ context.Context) error {
 	} else {
 		a.log.Info("subscribed to nats", "subject", "score.updated")
 	}
+
+	// Wave 2 #5b — first shop purchase.
+	_, err = js.Subscribe(kafka.TopicPurchasePaid, func(msg *nats.Msg) {
+		paid, err := events.UnmarshalPurchasePaid(msg.Data)
+		if err != nil {
+			a.log.Error("failed to unmarshal purchase.paid", "err", err)
+			_ = msg.Ack()
+			return
+		}
+		userID := paid.UserUUID
+		if userID == "" {
+			_ = msg.Ack()
+			return
+		}
+		ctx := context.Background()
+		if err := svc.UnlockCodes(ctx, userID, []string{"first_purchase"}); err != nil {
+			a.log.Error("first_purchase unlock failed", "user", userID, "err", err)
+		}
+		_ = msg.Ack()
+	}, nats.Durable("profile-purchase-paid"), nats.ManualAck())
+	if err != nil {
+		a.log.Warn("failed to subscribe to purchase.paid", "err", err)
+	} else {
+		a.log.Info("subscribed to nats", "subject", kafka.TopicPurchasePaid)
+	}
+
+	// Wave 2 #5b — first boost spend.
+	_, err = js.Subscribe(kafka.TopicBoostStarted, func(msg *nats.Msg) {
+		started, err := events.UnmarshalBoostStarted(msg.Data)
+		if err != nil {
+			a.log.Error("failed to unmarshal boost.started", "err", err)
+			_ = msg.Ack()
+			return
+		}
+		userID := started.UserUUID
+		if userID == "" {
+			_ = msg.Ack()
+			return
+		}
+		ctx := context.Background()
+		if err := svc.UnlockCodes(ctx, userID, []string{"first_boost"}); err != nil {
+			a.log.Error("first_boost unlock failed", "user", userID, "err", err)
+		}
+		_ = msg.Ack()
+	}, nats.Durable("profile-boost-started"), nats.ManualAck())
+	if err != nil {
+		a.log.Warn("failed to subscribe to boost.started", "err", err)
+	} else {
+		a.log.Info("subscribed to nats", "subject", kafka.TopicBoostStarted)
+	}
+
 	return nil
 }
 

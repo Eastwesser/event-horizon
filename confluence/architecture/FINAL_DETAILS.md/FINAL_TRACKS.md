@@ -60,18 +60,18 @@
 
 ---
 
-## Deferred (Emma path — P5 next)
+## Deferred (P5 slice done — see PLATFORM_INSIGHTS)
 
-Platform button list · C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottleneck 500+ · cursor pull-in · backfill-noiz · 3D/OSS games
+Open: platform button list (Emma). Locked/skipped: C4=D, #5b shipped, EXPLAIN/bottleneck/cursor/authors content, backfill dry-run OK.
 
 ---
 
 ## Что делать сейчас
 
 ```text
-P4 Track C DONE.
+P4 + P5 actionable DONE.
 
-NEXT = P5 deferred product, then GAME_INSIGHTS / Track B games.
+NEXT = GAME_INSIGHTS / Track B games (hotfix → boost UX → effects).
 ```
 
 ---
@@ -81,8 +81,8 @@ NEXT = P5 deferred product, then GAME_INSIGHTS / Track B games.
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ██░░░░░░░░░░ PARKED → after P5
+Track B    ██░░░░░░░░░░ NEXT (GAME_INSIGHTS)  ← you are here
 Track D    ████████████ P1–P3 DONE
-Track C    ████████████ DONE (data plane opt-in)
-Deferred   ░░░░░░░░░░░░ P5 NEXT
+Track C    ████████████ DONE
+Deferred   ████████░░░░ P5 slice done (Emma button list open)
 ```

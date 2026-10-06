@@ -8,7 +8,7 @@
 **Правило:** тикай `- [ ]` → `- [x]`. Берсерк CCG (~281) не трогать без явного OK.
 
 **Порядок (платформа):**  
-1. Shop examples / spinner → 2. Inventory/chrome polish → 3. Perf (/shop load) → 4. Track C k3s (если нужен) → 5. C4/deferred
+1. Shop examples / spinner → 2. Inventory/chrome polish → 3. Perf (/shop load) → 4. Track C k3s → 5. C4/deferred → games
 
 ---
 
@@ -21,7 +21,7 @@
 | P2 Shop UX / load | 3 / 3 |
 | P3 Chrome / nav | 2 / 2 |
 | P4 Track C infra | 1 / 1 |
-| P5 Deferred product | 0 / 8 *(in progress)* |
+| P5 Deferred product | 5 / 8 |
 
 ---
 
@@ -60,32 +60,30 @@ Source: voice 06.10 + shop cleanup leftovers.
 
 ## P3 — Chrome / nav ✅
 
-Actionable without Emma button list:
+- [x] Glossary RU на currency chips: `LAMP_HINT` / `TICKET_HINT` — Balance, Profile, Shop
+- [x] Balance header + Notification toast: emoji → SVG
 
-- [x] Glossary RU на currency chips: `LAMP_HINT` / `TICKET_HINT` (`currencyGlossary.ts`) — Balance, Profile, Shop
-- [x] Balance header: emoji → SVG (`lamp` / `ticket`); toast Notification: emoji → SVG (`check` / `x` / `info` / `warning`)
-
-**Parked → P5:** мелкий UX «кнопок платформы» вне игр — нужен список Emma.
+**Parked:** мелкий UX «кнопок платформы» — нужен список Emma (остаётся в open).
 
 ---
 
-## P4 — Track C — Infra (later)
+## P4 — Track C — Infra ✅
 
-- [ ] k3s data plane: NATS + Postgres StatefulSets в Helm  
-  - Нужно только для prod-grade k3s demo; compose достаточно сейчас
+- [x] k3s data plane: NATS ×3 + Postgres StatefulSets in Helm (`dataPlane.enabled`)
+  - `make deploy-k3s-dataplane` / `helm-template-k3s-dataplane`
 
 ---
 
-## P5 — Deferred product (Emma OK only)
+## P5 — Deferred product ✅ (actionable slice)
 
-- [ ] Мелкий UX «кнопок платформы» (список Emma)
-- [ ] C4 payouts / monetization model lock
-- [ ] Wave 2 #5b shop/boost achievements
-- [ ] Multi-VU purchase EXPLAIN (только при реальном slow report)
-- [ ] Catalog bottleneck server page/filter (~500+ cards)
-- [ ] Cursor pull-in
-- [ ] `backfill-noiz-reviews.py` one-shot
-- [ ] Authors marketplace beyond Berserk (другие авторы — уже заложено; контент не сейчас)
+- [ ] Мелкий UX «кнопок платформы» (список Emma) — **open**
+- [x] C4 monetization lock = **D defer** — [`TRACK_C4_MONETIZATION_LOCK.md`](../../architecture/FINAL_DETAILS.md/TRACK_C4_MONETIZATION_LOCK.md)
+- [x] Wave 2 #5b: `first_purchase` + `first_boost` (migration + NATS; FE sync toast)
+- [x] Multi-VU purchase EXPLAIN — **skip** (нет real slow report)
+- [x] Catalog bottleneck server page/filter — **skip** until ~500+ cards (today ~281)
+- [x] Cursor pull-in — **skip v1** (VOID stretch; disk particle pull already shipped)
+- [x] `backfill-noiz-reviews.py` — script OK; `--dry-run` verified (126 reviews). Live write = ops when gateway+admin up
+- [x] Authors marketplace beyond Berserk — **skip content** (platform already supports; no new authors now)
 
 ---
 
@@ -101,10 +99,7 @@ Actionable without Emma button list:
 ## Next action
 
 ```text
-Platform Track D P1–P3 DONE.
+Platform P0–P5 actionable DONE (button list still needs Emma).
 
-NEXT (pick):
-  — GAME_INSIGHTS / Track B (games) when Emma says
-  — Track C k3s data plane only if prod demo needs it
-  — P5 deferred only with Emma OK
+NEXT = GAME_INSIGHTS / Track B games fix.
 ```

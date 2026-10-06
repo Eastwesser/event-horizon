@@ -36,6 +36,7 @@ import { CatalogFiltersPanel } from './CatalogFiltersPanel';
 import { Icon, IconLabel, type IconName } from '../ui/Icon';
 import { itemFallbackIcon } from '../../lib/itemIcons';
 import { TICKET_HINT } from '../../lib/currencyGlossary';
+import { syncAchievements } from '../../lib/achievements';
 
 function isMerchItem(item: ShopItem): boolean {
   const cat = (item.category || '').toLowerCase();
@@ -323,6 +324,7 @@ export const Shop: React.FC = () => {
       });
       setShowModal(false);
       setSelectedItem(null);
+      void syncAchievements();
     } catch (error: any) {
       setNotification({
         type: 'error',
