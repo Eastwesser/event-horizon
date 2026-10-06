@@ -3,13 +3,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlappyStore } from '../../../store/flappyStore';
 import { useSkins } from '../../../hooks/useSkins';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import api from '../../../services/api';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
 import { Modal } from '../../ui/Modal';
+import { Icon } from '../../ui/Icon';
 import Notification from '../../Common/Notification/Notification';
-import { Balance, invalidateBalanceCache } from '../../Billing/Balance';
+import { Balance } from '../../Billing/Balance';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 import { cn } from '../../../lib/cn';
 import {
   FLAPPY_H,
@@ -24,7 +29,6 @@ import {
 } from './flappyDraw';
 import './FlappyGame.css';
 
-const BOOST_COST = 10;
 const BIRD_SIZE = 30;
 
 function IconBird({ golden }: { golden: boolean }) {
@@ -37,13 +41,13 @@ function IconBird({ golden }: { golden: boolean }) {
   );
 }
 
-function IconPipes({ rainbow }: { rainbow: boolean }) {
+function IconPipes({ cosmic }: { cosmic: boolean }) {
   return (
     <svg className="eh-flappy-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
       <defs>
         <linearGradient id="eh-pipe-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={rainbow ? '#FF6B6B' : '#2E7D32'} />
-          <stop offset="100%" stopColor={rainbow ? '#818CF8' : '#1B5E20'} />
+          <stop offset="0%" stopColor={cosmic ? '#FF6B6B' : '#2E7D32'} />
+          <stop offset="100%" stopColor={cosmic ? '#818CF8' : '#1B5E20'} />
         </linearGradient>
       </defs>
       <rect x="4" y="1" width="8" height="6" rx="1" fill="url(#eh-pipe-grad)" />
@@ -63,13 +67,18 @@ export function FlappyGame() {
   const prevGameOver = useRef(false);
   const { skins, loading: skinsLoading } = useSkins();
 
-  const [useRainbowPipes, setUseRainbowPipes] = useState(false);
+  const [useCosmicPipes, setUseCosmicPipes] = useState(false);
   const [useGoldenBird, setUseGoldenBird] = useState(false);
-  const [useBoost, setUseBoost] = useState(false);
-  const [boostBusy, setBoostBusy] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(1);
-  const [flapPulse, setFlapPulse] = useState(false);
   const [shake, setShake] = useState(false);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('flappy');
 
   const {
     birdY,
@@ -89,11 +98,10 @@ export function FlappyGame() {
     lastSubmitMessage,
   } = useFlappyStore();
 
-  // Загружаем настройки скинов / уровня из localStorage
   useEffect(() => {
     const savedPipes = localStorage.getItem('flappy_rainbow_pipes');
     const savedBird = localStorage.getItem('flappy_golden_bird');
-    if (savedPipes !== null) setUseRainbowPipes(savedPipes === 'true');
+    if (savedPipes !== null) setUseCosmicPipes(savedPipes === 'true');
     if (savedBird !== null) setUseGoldenBird(savedBird === 'true');
     const savedLevel = parseInt(localStorage.getItem('flappy_level') || '1', 10);
     const lv = Number.isFinite(savedLevel) ? Math.min(10, Math.max(1, savedLevel)) : 1;
@@ -101,10 +109,9 @@ export function FlappyGame() {
     setLevel(lv);
   }, [setLevel]);
 
-  // Сохраняем настройки скинов
-  const toggleRainbowPipes = () => {
-    const newVal = !useRainbowPipes;
-    setUseRainbowPipes(newVal);
+  const toggleCosmicPipes = () => {
+    const newVal = !useCosmicPipes;
+    setUseCosmicPipes(newVal);
     localStorage.setItem('flappy_rainbow_pipes', String(newVal));
   };
 
@@ -114,7 +121,6 @@ export function FlappyGame() {
     localStorage.setItem('flappy_golden_bird', String(newVal));
   };
 
-  // Проверка авторизации
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -123,37 +129,26 @@ export function FlappyGame() {
 
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  useEffect(() => {
+    if (boostError) {
+      setSaveMessage({ type: 'error', text: boostError });
+      setBoostError(null);
+    }
+  }, [boostError, setBoostError]);
+
   const beginRun = async () => {
     if (boostBusy || started) return;
     const lv = Math.min(10, Math.max(1, selectedLevel));
     localStorage.setItem('flappy_level', String(lv));
     setLevel(lv);
-    if (!useBoost) {
-      startGame({ boosted: false, boostId: null, level: lv });
-      return;
-    }
-    setBoostBusy(true);
     try {
-      const response = await api.post('/game/boost/start', { game_id: 'flappy' });
-      const boostId = response.data?.boost_id as string | undefined;
-      if (!boostId) {
-        throw new Error(response.data?.message || 'boost_id missing');
-      }
-      invalidateBalanceCache();
-      startGame({ boosted: true, boostId, level: lv });
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.error ||
-        e?.response?.data?.message ||
-        e?.message ||
-        'Недостаточно лампочек для boost';
-      setSaveMessage({ type: 'error', text: String(msg) });
-    } finally {
-      setBoostBusy(false);
+      const { boostId, boosted: isBoosted } = await armBoost();
+      startGame({ boosted: isBoosted, boostId, level: lv });
+    } catch {
+      /* handled */
     }
   };
 
-  // Обработка кликов и пробела для прыжка / старта
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -165,7 +160,6 @@ export function FlappyGame() {
         }
         if (isOver) return;
         jump();
-        pulseFlap();
       }
     };
 
@@ -178,7 +172,7 @@ export function FlappyGame() {
     if (lastSubmitRanked === false) {
       setSaveMessage({
         type: 'success',
-        text: 'Забег с boost — не попал в лидерборд',
+        text: boostUnrankedToast(),
       });
     }
   }, [lastSubmitMessage, lastSubmitRanked]);
@@ -188,7 +182,7 @@ export function FlappyGame() {
     const { score, boostId, boosted: runBoosted, level: runLevel } = state;
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    const token = localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem('accessToken');
 
     try {
       const body: Record<string, unknown> = {
@@ -204,7 +198,7 @@ export function FlappyGame() {
         body.boost_id = boostId;
       }
       const response = await api.post('/game/submit', body, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (response.status === 200) {
@@ -225,23 +219,17 @@ export function FlappyGame() {
           localStorage.setItem(`flappyGamesPlayed_${userId}`, String(played + 1));
           const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
           localStorage.setItem(totalScoreKey, String(totalScore + score));
-          setSaveMessage({ type: 'success', text: 'Рекорд сохранён!' });
+          setSaveMessage({ type: 'success', text: 'Счёт сохранён · рекорд в лидерборд' });
           void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         } else {
-          setSaveMessage({ type: 'success', text: 'Забег с boost — не попал в лидерборд' });
+          setSaveMessage({ type: 'success', text: boostUnrankedToast() });
         }
       }
-    } catch (err) {
+    } catch {
       setSaveMessage({ type: 'error', text: 'Ошибка сохранения' });
     }
   };
 
-  const pulseFlap = () => {
-    setFlapPulse(true);
-    window.setTimeout(() => setFlapPulse(false), 90);
-  };
-
-  // Shake once when run ends
   useEffect(() => {
     if (gameOver && !prevGameOver.current) {
       setShake(true);
@@ -252,7 +240,6 @@ export function FlappyGame() {
     if (!gameOver) prevGameOver.current = false;
   }, [gameOver]);
 
-  // Draw loop (cosmetic) — physics stay in flappyStore
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -269,11 +256,11 @@ export function FlappyGame() {
     drawStars(ctx, FLAPPY_W, FLAPPY_H, starScrollRef.current);
     drawClouds(ctx, FLAPPY_W, cloudScrollRef.current);
 
-    const rainbow = useRainbowPipes && skins.flappy.hasRainbowPipes;
+    const cosmic = useCosmicPipes && skins.flappy.hasRainbowPipes;
     const golden = useGoldenBird && skins.flappy.hasGoldenBird;
 
     for (const pipe of pipes) {
-      drawPipe(ctx, pipe, 60, FLAPPY_H, rainbow);
+      drawPipe(ctx, pipe, 60, FLAPPY_H, cosmic);
     }
 
     drawBird(ctx, birdY, BIRD_SIZE, birdVelocity, golden);
@@ -290,7 +277,7 @@ export function FlappyGame() {
     gameOver,
     started,
     skins,
-    useRainbowPipes,
+    useCosmicPipes,
     useGoldenBird,
     PIPE_SPEED,
   ]);
@@ -303,11 +290,14 @@ export function FlappyGame() {
     }
     if (isOver) return;
     jump();
-    pulseFlap();
   };
 
-  const handleBack = () => {
-    navigate('/');
+  const handleBack = () => navigate('/#games');
+
+  const handleNewGame = () => {
+    cloudScrollRef.current = 0;
+    starScrollRef.current = 0;
+    resetGame();
   };
 
   if (skinsLoading) {
@@ -330,7 +320,7 @@ export function FlappyGame() {
           <ScoreChip label="Уровень" value={started || gameOver ? level : selectedLevel} />
           {boosted && (
             <span className="rounded-sm border border-horizon-gold/40 bg-horizon-gold/10 px-3 py-1.5 text-sm text-horizon-gold">
-              Boost 5с
+              Boost
             </span>
           )}
           {skins.flappy.hasGoldenBird && (
@@ -352,16 +342,16 @@ export function FlappyGame() {
           {skins.flappy.hasRainbowPipes && (
             <button
               type="button"
-              onClick={toggleRainbowPipes}
-              title="Радужные трубы"
+              onClick={toggleCosmicPipes}
+              title="Космические трубы"
               className={cn(
                 'rounded-sm border px-3 py-1.5 text-sm transition-colors',
-                useRainbowPipes
+                useCosmicPipes
                   ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
                   : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
               )}
             >
-              <IconPipes rainbow={useRainbowPipes} />
+              <IconPipes cosmic={useCosmicPipes} />
               Трубы
             </button>
           )}
@@ -384,41 +374,14 @@ export function FlappyGame() {
                 }}
               >
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
-                  <option key={lv} value={lv}>
+                  <option key={lv} value={lv} className="bg-void text-text-primary">
                     {lv}
                   </option>
                 ))}
               </select>
             </label>
           )}
-          {!started && (
-            <label className="flex max-w-md cursor-pointer flex-col gap-1 text-sm text-text-secondary">
-              <span className="inline-flex items-center gap-2 text-text-primary">
-                <input
-                  type="checkbox"
-                  checked={useBoost}
-                  disabled={boostBusy}
-                  onChange={(e) => setUseBoost(e.target.checked)}
-                />
-                Использовать boost ({BOOST_COST} лампочек)
-              </span>
-              {useBoost && (
-                <span className="text-xs text-horizon-gold/90">
-                  Этот забег не попадёт в лидерборд — boost считается нечестным преимуществом
-                </span>
-              )}
-            </label>
-          )}
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              cloudScrollRef.current = 0;
-              starScrollRef.current = 0;
-              resetGame();
-            }}
-            disabled={boostBusy}
-          >
+          <Button variant="primary" size="sm" onClick={handleNewGame} disabled={boostBusy}>
             Новая игра
           </Button>
           {!started && (
@@ -429,6 +392,9 @@ export function FlappyGame() {
           <Button variant="secondary" size="sm" onClick={handleManualSave} disabled={!gameOver && !started}>
             Сохранить рекорд
           </Button>
+          {!started && (
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          )}
         </>
       }
       help={
@@ -436,8 +402,10 @@ export function FlappyGame() {
           <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
           <p>Не врезайтесь в трубы и не падайте на землю</p>
           <p>Уровни 1–10: выше уровень — уже щель и быстрее трубы</p>
-          <p>Boost (10 лампочек): 5 сек slow-mo в начале; забег не в лидерборд</p>
           <p>Лидерборд отдельный на каждый уровень</p>
+          {boostHelpLines('flappy').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </>
       }
     >
@@ -448,13 +416,7 @@ export function FlappyGame() {
           onClose={() => setSaveMessage(null)}
         />
       )}
-      <div
-        className={cn(
-          'eh-flappy-stage',
-          flapPulse && 'eh-flappy-stage--flap',
-          shake && 'eh-flappy-stage--shake',
-        )}
-      >
+      <div className={cn('eh-flappy-stage', shake && 'eh-flappy-stage--shake')}>
         <canvas
           ref={canvasRef}
           width={FLAPPY_W}
@@ -463,47 +425,30 @@ export function FlappyGame() {
         />
       </div>
 
-      <Modal
-        open={gameOver}
-        onClose={() => {
-          /* keep run state; dismiss overlay only via buttons below if needed */
-        }}
-        title="Game Over"
-      >
+      <Modal open={gameOver} onClose={() => {}} title="Game Over">
         <p className="text-lg text-text-primary">
           Счёт: <span className="font-display font-semibold text-horizon-gold">{score}</span>
         </p>
         <p className="mt-1 text-sm text-text-secondary">Уровень {level}</p>
         {boosted && (
-          <p className="mt-3 text-sm text-horizon-gold">
-            Забег с boost — не попал в лидерборд
-          </p>
+          <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
         )}
         {!boosted && lastSubmitRanked === true && (
-          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
         )}
         {!boosted && lastSubmitRanked === false && lastSubmitMessage && (
           <p className="mt-3 text-sm text-text-secondary">{lastSubmitMessage}</p>
         )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              cloudScrollRef.current = 0;
-              starScrollRef.current = 0;
-              resetGame();
-            }}
-          >
-            Новая игра
-          </Button>
-          <Button variant="secondary" size="sm" onClick={handleManualSave}>
-            Сохранить рекорд
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            На главную
-          </Button>
-        </div>
+        <GameOverActions
+          onNewGame={handleNewGame}
+          onHome={handleBack}
+          onSave={() => void handleManualSave()}
+          saveLabel="Сохранить рекорд"
+          busy={boostBusy}
+        />
       </Modal>
     </GameShell>
   );

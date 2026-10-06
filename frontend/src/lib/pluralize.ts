@@ -7,3 +7,13 @@ export function pluralCards(n: number): string {
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${abs} карты`;
   return `${abs} карт`;
 }
+
+/** 1 блин / 2–4 блина / 5+ блинов */
+export function pluralBliny(n: number): string {
+  const abs = Math.abs(Math.trunc(n));
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${abs} блин`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${abs} блина`;
+  return `${abs} блинов`;
+}

@@ -22,6 +22,33 @@ interface GameMove {
     timestamp: number;
 }
 
+const PANCAKE_TYPES: PancakeType[] = [
+  'nutella',
+  'strawberry',
+  'fish',
+  'sausage',
+  'chicken',
+  'caesar',
+  'cranberry',
+  'pancake',
+];
+
+/** Boost: all tray slots share one type; otherwise random per slot. */
+function makeTrayStacks(boosted: boolean): TrayStack[] {
+  const mono =
+    PANCAKE_TYPES[Math.floor(Math.random() * PANCAKE_TYPES.length)];
+  const pick = (): PancakeType =>
+    boosted
+      ? mono
+      : PANCAKE_TYPES[Math.floor(Math.random() * PANCAKE_TYPES.length)];
+  const now = Date.now();
+  return [0, 1, 2].map((i) => ({
+    id: now + i,
+    type: pick(),
+    count: 3 + Math.floor(Math.random() * 5),
+  }));
+}
+
 interface GameState {
   score: number;
   level: number;
@@ -72,14 +99,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       type: 'empty' as const,
       count: 0,
     }));
-    
-    // Создаём 3 случайные стопки для подноса
-    const pancakeTypes: PancakeType[] = ['nutella', 'strawberry', 'fish', 'sausage', 'chicken', 'caesar', 'cranberry', 'pancake'];
-    const tray: TrayStack[] = [
-      { id: Date.now(), type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-      { id: Date.now() + 1, type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-      { id: Date.now() + 2, type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-    ];
+
+    const boosted = opts?.boosted ?? false;
+    const tray = makeTrayStacks(boosted);
     
     set({ 
       tiles, 
@@ -90,9 +112,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       isGameOver: false,
       finalScore: 0,
       gameMoves: [],
-      boosted: opts?.boosted ?? false,
+      boosted,
       boostId: opts?.boostId ?? null,
-      boostHighlight: opts?.boosted ?? false,
+      boostHighlight: boosted,
       lastSubmitRanked: null,
     });
   },
@@ -292,16 +314,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   refreshTray: () => {
-    const { isGameOver } = get();
+    const { isGameOver, boosted } = get();
     if (isGameOver) return;
-    
-    const pancakeTypes: PancakeType[] = ['nutella', 'strawberry', 'fish', 'sausage', 'chicken', 'caesar', 'cranberry', 'pancake'];
-    const newTray: TrayStack[] = [
-      { id: Date.now(), type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-      { id: Date.now() + 1, type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-      { id: Date.now() + 2, type: pancakeTypes[Math.floor(Math.random() * pancakeTypes.length)], count: 3 + Math.floor(Math.random() * 5) },
-    ];
-    set({ tray: newTray });
+    set({ tray: makeTrayStacks(boosted) });
   },
 
   // Новая формула очков (менее щадящая)

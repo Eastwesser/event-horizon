@@ -6,9 +6,11 @@ import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { MemoryBoard } from './MemoryBoard';
 import { Modal } from '../../ui/Modal';
-import { Button } from '../../ui/Button';
+import { Icon } from '../../ui/Icon';
 import Notification from '../../Common/Notification/Notification';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 import './memory.css';
 
 function pluralMoves(n: number): string {
@@ -88,7 +90,7 @@ export function MemoryGame() {
     void beginRun();
   };
 
-  const handleBack = () => navigate('/');
+  const handleBack = () => navigate('/#games');
 
   const handleSubmitScore = async () => {
     await submitScore();
@@ -96,7 +98,7 @@ export function MemoryGame() {
     setScoreSaved(true);
     setSaveMessage({
       type: 'success',
-      text: ranked === false ? boostUnrankedToast() : 'Рекорд сохранён',
+      text: ranked === false ? boostUnrankedToast() : 'Счёт сохранён · рекорд в лидерборд',
     });
     setTimeout(() => setSaveMessage(null), 3000);
   };
@@ -156,7 +158,6 @@ export function MemoryGame() {
         </div>
 
         <div className="memory-buttons" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               type="button"
@@ -170,6 +171,7 @@ export function MemoryGame() {
               На главную
             </button>
           </div>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </div>
       </div>
 
@@ -177,7 +179,7 @@ export function MemoryGame() {
         {runReady ? (
           <MemoryBoard skin={useAnimalCards && skins.memory.hasAnimalCards ? 'animals' : 'default'} />
         ) : (
-          <p className="text-text-secondary p-6">Выберите boost (опционально) и нажмите Старт</p>
+          <p className="text-text-secondary p-6">Нажмите Старт — boost по желанию (ниже / в «Как играть»)</p>
         )}
       </div>
 
@@ -193,26 +195,30 @@ export function MemoryGame() {
           <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
         )}
         {!boosted && lastSubmitRanked === true && (
-          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
         )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" size="sm" onClick={handleSubmitScore} disabled={scoreSaved}>
-            {scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={handleNewGame}>
-            Сыграть ещё
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            На главную
-          </Button>
-        </div>
+        <GameOverActions
+          onNewGame={handleNewGame}
+          onHome={handleBack}
+          onSave={() => {
+            if (!scoreSaved) void handleSubmitScore();
+          }}
+          saveLabel={scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
+          busy={boostBusy}
+        />
       </Modal>
 
       <div className="memory-rules">
         <details>
-          <summary>Как считаются очки?</summary>
+          <summary>Как играть?</summary>
+          <p>Найди все пары карточек за минимум ходов.</p>
           <p>Идеально: 15 ходов → 1000 очков</p>
-          <p>Boost: краткая подсказка одной пары; забег не в лидерборд</p>
+          {boostHelpLines('memory').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </details>
       </div>
     </div>

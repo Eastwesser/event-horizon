@@ -1,5 +1,5 @@
 // frontend/src/components/Games/Gears/GearsGame.tsx
-// Merge-up: drop levelled orbs (1→8). Two same levels merge into next. Goal: make an 8.
+// Merge-up: drop levelled gears (1→MAX). Two same levels merge into next.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
@@ -8,14 +8,19 @@ import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 
 type Orb = { id: number; x: number; y: number; vx: number; vy: number; level: number; settled: boolean };
 
 const W = 320;
 const H = 420;
-const MAX_LEVEL = 8;
-const RADIUS = [0, 14, 18, 22, 26, 30, 34, 38, 44];
+const MAX_LEVEL = 10;
+/** Top 10% is the danger / spawn band. */
+const DANGER_Y = Math.round(H * 0.1);
+const RADIUS = [0, 14, 17, 20, 23, 26, 29, 32, 36, 40, 44];
 const COLORS = [
   '',
   '#6b8cae',
@@ -25,18 +30,60 @@ const COLORS = [
   '#a66bb5',
   '#5a8fc4',
   '#d4c05a',
-  '#e8e8f0',
+  '#c9c9d8',
+  '#e0c070',
+  '#f2f2f8',
 ];
 
 let idSeq = 1;
 
 function spawnLevel(): number {
-  // Bias small; never spawn 7/8 (no scam)
   const r = Math.random();
-  if (r < 0.45) return 1;
-  if (r < 0.75) return 2;
-  if (r < 0.92) return 3;
+  if (r < 0.42) return 1;
+  if (r < 0.72) return 2;
+  if (r < 0.9) return 3;
   return 4;
+}
+
+function drawGear(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  color: string,
+  level: number,
+  alpha = 1,
+) {
+  const teeth = 5 + level;
+  const tip = r;
+  const valley = r * 0.78;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  for (let i = 0; i < teeth * 2; i++) {
+    const ang = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
+    const rad = i % 2 === 0 ? tip : valley;
+    const px = x + Math.cos(ang) * rad;
+    const py = y + Math.sin(ang) * rad;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.32, 0, Math.PI * 2);
+  ctx.fillStyle = '#0c0e16';
+  ctx.fill();
+  ctx.fillStyle = '#e8e8f0';
+  ctx.font = 'bold 11px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(level), x, y);
+  ctx.restore();
 }
 
 export function GearsGame() {
@@ -52,6 +99,7 @@ export function GearsGame() {
   const [lost, setLost] = useState(false);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [lastRanked, setLastRanked] = useState<boolean | null>(null);
   const scoreRef = useRef(0);
   const boostedRef = useRef(false);
   const [runBoosted, setRunBoosted] = useState(false);
@@ -85,6 +133,7 @@ export function GearsGame() {
       setScore(0);
       setWon(false);
       setLost(false);
+      setLastRanked(null);
       droppingRef.current = false;
     } catch {
       /* handled */
@@ -92,26 +141,25 @@ export function GearsGame() {
   };
 
   const drop = useCallback(() => {
-    if (droppingRef.current || won || lost) return;
+    if (won || lost || droppingRef.current) return;
     const level = nextRef.current;
     const r = RADIUS[level];
+    const jitter = (Math.random() - 0.5) * 8;
     orbsRef.current.push({
       id: idSeq++,
-      x: Math.min(W - r, Math.max(r, aimXRef.current)),
-      y: r + 4,
+      x: Math.min(W - r, Math.max(r, aimXRef.current + jitter)),
+      y: r + 6,
       vx: 0,
       vy: 0.4,
       level,
       settled: false,
     });
-    nextRef.current = spawnLevel();
+    nextRef.current = boostedRef.current ? level : spawnLevel();
     setNextPreview(nextRef.current);
     droppingRef.current = true;
-    // Boost: drop cadence ×0.8 → longer lockout (easier aim)
-    const lockMs = boostedRef.current ? Math.round(350 / 0.8) : 350;
     setTimeout(() => {
       droppingRef.current = false;
-    }, lockMs);
+    }, 480);
   }, [won, lost]);
 
   useEffect(() => {
@@ -120,11 +168,10 @@ export function GearsGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let raf = 0;
-    const dangerY = 56;
+    const dangerY = DANGER_Y;
 
     const tick = () => {
       const orbs = orbsRef.current;
-      // physics
       for (const o of orbs) {
         o.vy += 0.18;
         o.x += o.vx;
@@ -148,7 +195,7 @@ export function GearsGame() {
           }
         }
       }
-      // collisions + merges
+
       const remove = new Set<number>();
       const add: Orb[] = [];
       for (let i = 0; i < orbs.length; i++) {
@@ -161,7 +208,9 @@ export function GearsGame() {
           const dist = Math.hypot(dx, dy) || 0.001;
           const min = RADIUS[a.level] + RADIUS[b.level];
           if (dist < min) {
-            if (a.level === b.level && a.level < MAX_LEVEL) {
+            const aSlow = Math.hypot(a.vx, a.vy) < 1.35;
+            const bSlow = Math.hypot(b.vx, b.vy) < 1.35;
+            if (a.level === b.level && a.level < MAX_LEVEL && aSlow && bSlow) {
               remove.add(a.id);
               remove.add(b.id);
               const nl = a.level + 1;
@@ -204,47 +253,33 @@ export function GearsGame() {
         orbsRef.current = orbs.concat(add);
       }
 
-      // lose: settled orb above danger line
       if (
         !won &&
-        orbsRef.current.some((o) => o.settled && o.y - RADIUS[o.level] < dangerY)
+        orbsRef.current.some((o) => {
+          const top = o.y - RADIUS[o.level];
+          return o.settled && top < dangerY;
+        })
       ) {
         setLost(true);
       }
 
-      // draw
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = 'rgba(12,14,22,0.95)';
       ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.strokeStyle = 'rgba(255,80,80,0.35)';
+      ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(0, dangerY);
       ctx.lineTo(W, dangerY);
       ctx.stroke();
-      // aim ghost
+      ctx.setLineDash([]);
       if (!droppingRef.current && !lost && !won) {
         const lvl = nextRef.current;
         const r = RADIUS[lvl];
-        ctx.globalAlpha = 0.35;
-        ctx.beginPath();
-        ctx.arc(aimXRef.current, r + 8, r, 0, Math.PI * 2);
-        ctx.fillStyle = COLORS[lvl];
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        drawGear(ctx, aimXRef.current, r + 8, r, COLORS[lvl], lvl, 0.35);
       }
       for (const o of orbsRef.current) {
-        const r = RADIUS[o.level];
-        ctx.beginPath();
-        ctx.arc(o.x, o.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = COLORS[o.level];
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-        ctx.stroke();
-        ctx.fillStyle = '#0c0e16';
-        ctx.font = 'bold 12px ui-monospace, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(o.level), o.x, o.y);
+        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -276,8 +311,9 @@ export function GearsGame() {
         response.data?.ranked === true &&
         !runBoosted &&
         !String(response.data?.message || '').includes('not ranked');
+      setLastRanked(ranked);
       setNotif({
-        message: ranked ? 'Счёт сохранён' : boostUnrankedToast(),
+        message: ranked ? 'Счёт сохранён · рекорд в лидерборд' : boostUnrankedToast(),
         type: 'success',
       });
       if (ranked) {
@@ -290,66 +326,77 @@ export function GearsGame() {
     }
   };
 
+  const handleBack = () => navigate('/#games');
+
   return (
     <GameShell
-      title="Орбиты"
-      onBack={() => navigate('/')}
+      title="Gears"
+      onBack={handleBack}
       width="narrow"
       stats={
         <>
           <ScoreChip label="Счёт" value={score} />
           <ScoreChip label="След." value={nextPreview} />
+          <ScoreChip label="Цель" value={MAX_LEVEL} />
         </>
       }
       controls={
         <>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
           <Button size="sm" variant="ghost" onClick={() => void reset()} disabled={boostBusy}>
             Заново
           </Button>
           <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
             Сохранить
           </Button>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </>
       }
       help={
-        <p>
-          Кликай / тапай — уронить шестерёнку. Boost: чуть медленнее дроп; забег не в лидерборд.
-        </p>
+        <>
+          <p>
+            Соединяй шестерёнки одного уровня — они сливаются в следующий. Цель: собрать самую
+            большую (уровень {MAX_LEVEL}).
+          </p>
+          <p>Не заполняй поле выше красной линии — иначе переполнение.</p>
+          {boostHelpLines('gears').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </>
       }
     >
       <canvas
         ref={canvasRef}
         width={W}
         height={H}
-        className="max-h-full w-full max-w-sm touch-none rounded-md border border-white/10"
+        className="mx-auto max-w-full touch-none rounded-md border border-white/10"
         onPointerMove={(e) => onPointer(e.clientX, e.currentTarget.getBoundingClientRect())}
-        onPointerUp={(e) => {
-          onPointer(e.clientX, e.currentTarget.getBoundingClientRect());
-          drop();
-        }}
+        onClick={() => drop()}
       />
-      <Modal open={won} onClose={() => setWon(false)} title="Собрана 8!">
-        <p className="mb-4 text-text-secondary">Счёт {score}. Можно сохранить.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => void reset()}>
-            Ещё раз
-          </Button>
-          <Button onClick={() => void submit()} disabled={saving}>
-            Сохранить
-          </Button>
-        </div>
+      <Modal open={won} onClose={() => setWon(false)} title={`Собрана ${MAX_LEVEL}!`}>
+        <p className="mb-4 text-text-secondary">Счёт: {score}.</p>
+        {runBoosted && <p className="mb-4 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
+        {!runBoosted && lastRanked === true && (
+          <p className="mb-4 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
+        )}
+        <GameOverActions
+          onNewGame={() => void reset()}
+          onHome={handleBack}
+          onSave={() => void submit()}
+          busy={saving || boostBusy}
+        />
       </Modal>
       <Modal open={lost} onClose={() => setLost(false)} title="Переполнение">
-        <p className="mb-4 text-text-secondary">Счёт {score}.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => void reset()}>
-            Заново
-          </Button>
-          <Button onClick={() => void submit()} disabled={saving}>
-            Сохранить
-          </Button>
-        </div>
+        <p className="mb-4 text-text-secondary">Поле забито до линии спавна. Счёт: {score}.</p>
+        {runBoosted && <p className="mb-4 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
+        <GameOverActions
+          onNewGame={() => void reset()}
+          onHome={handleBack}
+          onSave={() => void submit()}
+          busy={saving || boostBusy}
+        />
       </Modal>
       {notif && (
         <Notification message={notif.message} type={notif.type} onClose={() => setNotif(null)} />
