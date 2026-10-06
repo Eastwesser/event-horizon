@@ -155,7 +155,7 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = 
   const [{ isOver, dragItem }, dropRef] = useDrop(
     () => ({
       accept: 'pancake',
-      hover: (item: DragPancake, monitor) => {
+      hover: (_item: DragPancake, monitor) => {
         const clientOffset = monitor.getClientOffset();
         if (!clientOffset) {
           setHoverCoord(null);
