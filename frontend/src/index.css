@@ -58,6 +58,12 @@
   filter: brightness(1.12);
 }
 
+.hex-cell--valid-boost polygon {
+  stroke: #86efac;
+  stroke-width: 3.5;
+  filter: brightness(1.35) drop-shadow(0 0 6px rgba(74, 222, 128, 0.55));
+}
+
 .hex-cell--hover-valid polygon {
   stroke: #67e8f9;
   stroke-width: 3.5;

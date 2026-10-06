@@ -20,9 +20,20 @@ import (
 )
 
 const (
-    flappyBoostGameID = "flappy"
-    flappyBoostCost   = 10
+    boostCostLamps = 10
 )
+
+// boostAllowedGames — games that can arm a lamp boost (boosted runs are not ranked).
+var boostAllowedGames = map[string]struct{}{
+    "hexagon":   {},
+    "flappy":    {},
+    "memory":    {},
+    "towers":    {},
+    "hanoi":     {},
+    "twenty48":  {},
+    "gears":     {},
+    "companion": {},
+}
 
 type SubmitScoreRequest struct {
     UserID    string
@@ -344,8 +355,8 @@ func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*
     if userID == "" || gameID == "" {
         return nil, status.Error(codes.InvalidArgument, "user_id and game_id are required")
     }
-    if gameID != flappyBoostGameID {
-        return nil, status.Errorf(codes.FailedPrecondition, "boosts not available for game %s yet", gameID)
+    if _, ok := boostAllowedGames[gameID]; !ok {
+        return nil, status.Errorf(codes.FailedPrecondition, "boosts not available for game %s", gameID)
     }
     if s.billingClient == nil {
         return nil, status.Error(codes.Unavailable, "billing unavailable")
@@ -368,7 +379,7 @@ func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*
     spendResp, err := s.billingClient.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
         UserId:      userID,
         Currency:    billingPb.CurrencyType_LAMPS,
-        Amount:      flappyBoostCost,
+        Amount:      boostCostLamps,
         Reason:      "game_boost",
         ReferenceId: "boost:" + boostID,
     })
@@ -400,7 +411,7 @@ func (s *gameService) StartBoost(ctx context.Context, req *StartBoostRequest) (*
     return &StartBoostResponse{
         BoostID:    boostID,
         Boosted:    true,
-        Cost:       flappyBoostCost,
+        Cost:       boostCostLamps,
         NewBalance: newBalance,
         Message:    "boost armed — this run will not be ranked",
     }, nil

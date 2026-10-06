@@ -18,11 +18,15 @@ interface MemoryState {
   multiplier: number;
   gameOver: boolean;
   score: number;
-  
-  initGame: () => void;
+  boosted: boolean;
+  boostId: string | null;
+  lastSubmitRanked: boolean | null;
+
+  initGame: (opts?: { boosted?: boolean; boostId?: string | null }) => void;
   flipCard: (index: number) => void;
   checkMatch: () => void;
-  resetGame: () => void;
+  resetGame: (opts?: { boosted?: boolean; boostId?: string | null }) => void;
+  flashBoostHint: () => void;
   calculateFinalScore: () => number;
   submitScore: () => Promise<void>;
 }
@@ -83,8 +87,11 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
   multiplier: 1,
   gameOver: false,
   score: 0,
-  
-  initGame: () => {
+  boosted: false,
+  boostId: null,
+  lastSubmitRanked: null,
+
+  initGame: (opts) => {
     const deck = createDeck();
     set({
       cards: deck,
@@ -95,7 +102,47 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
       multiplier: 1,
       gameOver: false,
       score: 0,
+      boosted: opts?.boosted ?? false,
+      boostId: opts?.boostId ?? null,
+      lastSubmitRanked: null,
     });
+    if (opts?.boosted) {
+      // Defer so cards paint face-down first, then flash one pair.
+      setTimeout(() => get().flashBoostHint(), 80);
+    }
+  },
+
+  flashBoostHint: () => {
+    const { cards, boosted } = get();
+    if (!boosted || cards.length === 0) return;
+    const byEmoji = new Map<string, number[]>();
+    cards.forEach((c, i) => {
+      if (c.matched) return;
+      const list = byEmoji.get(c.emoji) || [];
+      list.push(i);
+      byEmoji.set(c.emoji, list);
+    });
+    let pair: number[] | null = null;
+    for (const idxs of byEmoji.values()) {
+      if (idxs.length >= 2) {
+        pair = idxs.slice(0, 2);
+        break;
+      }
+    }
+    if (!pair) return;
+    const [a, b] = pair;
+    const shown = cards.map((c, i) =>
+      i === a || i === b ? { ...c, flipped: true } : c,
+    );
+    set({ cards: shown });
+    setTimeout(() => {
+      const cur = get().cards;
+      set({
+        cards: cur.map((c, i) =>
+          i === a || i === b ? { ...c, flipped: false } : c,
+        ),
+      });
+    }, 1200);
   },
   
   flipCard: (index: number) => {
@@ -210,8 +257,8 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     });
   },
   
-  resetGame: () => {
-    get().initGame();
+  resetGame: (opts) => {
+    get().initGame(opts);
   },
   
   calculateFinalScore: () => {
@@ -220,7 +267,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
   },
   
   submitScore: async () => {
-    const { score } = get();
+    const { score, boosted, boostId } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail') || '';
     const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0] || 'Игрок';
@@ -228,43 +275,45 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     if (!userId || !userEmail) return;
 
     try {
-        const response = await api.post('/game/submit', {
-                user_id: userId,
-                game_id: 'memory',
-                level: 1,
-                score: score,
-                user_email: userEmail,
-                nickname: nickname,
-                seed: `memory_seed_${Date.now()}`,
-                moves: [],
-        });
+      const body: Record<string, unknown> = {
+        user_id: userId,
+        game_id: 'memory',
+        level: 1,
+        score,
+        user_email: userEmail,
+        nickname,
+        seed: `memory_seed_${Date.now()}`,
+        moves: [],
+      };
+      if (boosted && boostId) body.boost_id = boostId;
 
-        if (response.status >= 200 && response.status < 300) {
-            console.log(`✅ Memory score submitted: ${score}`);
-            
-            // 💾 Сохраняем статистику с привязкой к userId
-            // Используем существующий userId
-            const storageKey = `gameScores_${userId}`;
-            const totalScoreKey = `totalScore_${userId}`;
-            const playedKey = `memoryGamesPlayed_${userId}`;
-            
-            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-            const currentBest = savedScores.memory || 0;
-            
-            if (score > currentBest) {
-                savedScores.memory = score;
-                localStorage.setItem(storageKey, JSON.stringify(savedScores));
-            }
-            
-            const played = parseInt(localStorage.getItem(playedKey) || '0');
-            localStorage.setItem(playedKey, String(played + 1));
-            
-            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
-            localStorage.setItem(totalScoreKey, String(totalScore + score));
-            void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      const response = await api.post('/game/submit', body);
+
+      if (response.status >= 200 && response.status < 300) {
+        const ranked =
+          response.data?.ranked === true &&
+          !boosted &&
+          !String(response.data?.message || '').includes('not ranked');
+        set({ lastSubmitRanked: ranked });
+        if (!ranked) return;
+
+        const storageKey = `gameScores_${userId}`;
+        const totalScoreKey = `totalScore_${userId}`;
+        const playedKey = `memoryGamesPlayed_${userId}`;
+        const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        const currentBest = savedScores.memory || 0;
+        if (score > currentBest) {
+          savedScores.memory = score;
+          localStorage.setItem(storageKey, JSON.stringify(savedScores));
         }
+        const played = parseInt(localStorage.getItem(playedKey) || '0', 10);
+        localStorage.setItem(playedKey, String(played + 1));
+        const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0', 10);
+        localStorage.setItem(totalScoreKey, String(totalScore + score));
+        void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      }
     } catch (err) {
-        console.error('Failed to submit memory score:', err);
+      console.error('Failed to submit memory score:', err);
     }
   },
 }));

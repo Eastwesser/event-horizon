@@ -28,6 +28,7 @@ interface HexGridProps {
   tiles: HexTile[];
   onDrop: (item: DragPancake, coord: HexCoord) => void;
   skinMode?: 'default' | 'space';
+  boostHighlight?: boolean;
 }
 
 const spaceEmojis: Record<string, string> = {
@@ -62,7 +63,7 @@ function sameCoord(a: HexCoord | null | undefined, b: HexCoord): boolean {
   return !!a && a.q === b.q && a.r === b.r;
 }
 
-export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
+export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = false }: HexGridProps) {
   const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -243,6 +244,7 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default' }: HexGridProps) {
           const cellClass = [
             'hex-cell',
             validTarget ? 'hex-cell--valid' : '',
+            validTarget && boostHighlight ? 'hex-cell--valid-boost' : '',
             dragging && hovered && validTarget ? 'hex-cell--hover-valid' : '',
             dragging && hovered && !validTarget ? 'hex-cell--hover-invalid' : '',
             pulseKeys.has(key) ? 'hex-cell--pulse' : '',

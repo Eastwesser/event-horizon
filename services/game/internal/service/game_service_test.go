@@ -254,17 +254,23 @@ func TestStartBoost_BillingUnavailableAndSpendFail(t *testing.T) {
 	}
 }
 
-func TestStartBoost_Flappy(t *testing.T) {
+func TestStartBoost_AllowedGames(t *testing.T) {
 	repo := &mockGameRepo{}
 	billing := &stubBilling{spendOK: true, spendBal: 90}
 	svc := NewGameService(repo, nil, billing)
 	resp, err := svc.StartBoost(context.Background(), &StartBoostRequest{UserID: "u1", GameID: "flappy"})
 	if err != nil || !resp.Boosted || resp.Cost != 10 || !repo.createBoost {
-		t.Fatalf("%+v err=%v", resp, err)
+		t.Fatalf("flappy: %+v err=%v", resp, err)
 	}
-	_, err = svc.StartBoost(context.Background(), &StartBoostRequest{UserID: "u1", GameID: "towers"})
+	repo2 := &mockGameRepo{}
+	svc2 := NewGameService(repo2, nil, billing)
+	resp, err = svc2.StartBoost(context.Background(), &StartBoostRequest{UserID: "u1", GameID: "towers"})
+	if err != nil || !resp.Boosted || resp.Cost != 10 || !repo2.createBoost {
+		t.Fatalf("towers: %+v err=%v", resp, err)
+	}
+	_, err = svc.StartBoost(context.Background(), &StartBoostRequest{UserID: "u1", GameID: "unknown_game"})
 	if err == nil {
-		t.Fatal("boost only flappy")
+		t.Fatal("expected unknown game rejected")
 	}
 }
 

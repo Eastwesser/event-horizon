@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 
 type Board = number[][];
 
@@ -122,12 +124,40 @@ export function Twenty48Game() {
   const [won, setWon] = useState(false);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [runBoosted, setRunBoosted] = useState(false);
+  const [runBoostId, setRunBoostId] = useState<string | null>(null);
+  const [undoSnap, setUndoSnap] = useState<{ board: Board; score: number } | null>(null);
+  const [undoUsed, setUndoUsed] = useState(false);
+  const {
+    useBoost,
+    setUseBoost,
+    boostBusy,
+    armBoost,
+    boostError,
+    setBoostError,
+  } = useGameBoost('twenty48');
 
-  const reset = () => {
-    setBoard(spawn(spawn(emptyBoard())));
-    setScore(0);
-    setOver(false);
-    setWon(false);
+  useEffect(() => {
+    if (boostError) {
+      setNotif({ message: boostError, type: 'error' });
+      setBoostError(null);
+    }
+  }, [boostError, setBoostError]);
+
+  const reset = async () => {
+    try {
+      const { boostId, boosted } = await armBoost();
+      setRunBoosted(boosted);
+      setRunBoostId(boostId);
+      setBoard(spawn(spawn(emptyBoard())));
+      setScore(0);
+      setOver(false);
+      setWon(false);
+      setUndoSnap(null);
+      setUndoUsed(false);
+    } catch {
+      /* handled */
+    }
   };
 
   const applyMove = useCallback(
@@ -135,6 +165,9 @@ export function Twenty48Game() {
       if (over) return;
       const res = move(board, dir);
       if (!res.moved) return;
+      if (runBoosted && !undoUsed) {
+        setUndoSnap({ board: clone(board), score });
+      }
       const next = spawn(res.board);
       const nextScore = score + res.gained;
       setBoard(next);
@@ -146,8 +179,17 @@ export function Twenty48Game() {
       if (!won && maxTile(next) >= 2048) setWon(true);
       if (!canMove(next)) setOver(true);
     },
-    [board, score, best, over, won],
+    [board, score, best, over, won, runBoosted, undoUsed],
   );
+
+  const undoOnce = () => {
+    if (!runBoosted || undoUsed || !undoSnap) return;
+    setBoard(undoSnap.board);
+    setScore(undoSnap.score);
+    setUndoSnap(null);
+    setUndoUsed(true);
+    setOver(false);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -173,7 +215,7 @@ export function Twenty48Game() {
   const submit = async () => {
     setSaving(true);
     try {
-      await api.post('/game/submit', {
+      const body: Record<string, unknown> = {
         user_id: localStorage.getItem('userId'),
         game_id: 'twenty48',
         level: 1,
@@ -182,9 +224,20 @@ export function Twenty48Game() {
         nickname: localStorage.getItem('nickname') || '',
         seed: `twenty48_${Date.now()}`,
         moves: [],
+      };
+      if (runBoosted && runBoostId) body.boost_id = runBoostId;
+      const response = await api.post('/game/submit', body);
+      const ranked =
+        response.data?.ranked === true &&
+        !runBoosted &&
+        !String(response.data?.message || '').includes('not ranked');
+      setNotif({
+        message: ranked ? 'Счёт сохранён' : boostUnrankedToast(),
+        type: 'success',
       });
-      setNotif({ message: 'Счёт сохранён', type: 'success' });
-      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      if (ranked) {
+        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+      }
     } catch {
       setNotif({ message: 'Не удалось сохранить счёт', type: 'error' });
     } finally {
@@ -205,16 +258,24 @@ export function Twenty48Game() {
       }
       controls={
         <>
-          <Button size="sm" variant="ghost" onClick={reset}>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <Button size="sm" variant="ghost" onClick={() => void reset()} disabled={boostBusy}>
             Заново
           </Button>
+          {runBoosted && !undoUsed && (
+            <Button size="sm" variant="secondary" onClick={undoOnce} disabled={!undoSnap}>
+              Undo (1)
+            </Button>
+          )}
           <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
             {saving ? '…' : 'Сохранить'}
           </Button>
         </>
       }
       help={
-        <p>Стрелки или WASD — сдвиг плиток. Соединяй одинаковые, доберись до 2048. Плавный сдвиг без лагов.</p>
+        <p>
+          Стрелки или WASD — сдвиг. Boost: один undo; забег не в лидерборд.
+        </p>
       }
     >
       <div className="grid w-full max-w-sm grid-cols-4 gap-2 rounded-md border border-white/10 bg-nebula p-2">
@@ -238,9 +299,10 @@ export function Twenty48Game() {
       </div>
 
       <Modal open={over} onClose={() => setOver(false)} title="Ходов больше нет">
-        <p className="mb-4 text-text-secondary">Счёт: {score}. Сохрани результат в лидерборд?</p>
+        <p className="mb-4 text-text-secondary">Счёт: {score}.</p>
+        {runBoosted && <p className="mb-4 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={reset}>
+          <Button variant="ghost" onClick={() => void reset()}>
             Ещё раз
           </Button>
           <Button onClick={() => void submit()} disabled={saving}>
