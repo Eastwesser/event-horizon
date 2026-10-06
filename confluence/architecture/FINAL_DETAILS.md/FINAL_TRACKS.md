@@ -4,7 +4,7 @@
 
 | Doc | Role |
 |-----|------|
-| [`GAME_INSIGHTS.md`](../../history/2026-10/06.10.2026/GAME_INSIGHTS.md) | **Games only** — parked; tick there when on Track B |
+| [`GAME_INSIGHTS.md`](../../history/2026-10/06.10.2026/GAME_INSIGHTS.md) | **Games** — Track B closed; deferred art parked |
 | [`PLATFORM_INSIGHTS.md`](../../history/2026-10/06.10.2026/PLATFORM_INSIGHTS.md) | **Shop / chrome / infra** — P1–P3 done |
 | [`TODO_FINAL_PRE_PROD_DETAILS.md`](./TODO_FINAL_PRE_PROD_DETAILS.md) | Wave 1–5 checklist |
 
@@ -18,8 +18,9 @@
 | Wave 3 C1–C3 | |
 | **Track A 3/3** | refund · notifications · JWT refresh |
 | **Shop cleanup v2** | 281 Berserk untouched · 5 skins · 4 examples |
-| **8 games playable** · Boost Phase 1 + hotfix + boost UX | levels/polish → GAME_INSIGHTS |
+| **8 games** · Boost · hotfix · UX · levels · polish | GAME_INSIGHTS |
 | **Track D P1–P3** | shop art · spinner/load · chrome glossary |
+| **Track C** | k3s data plane |
 
 ---
 
@@ -29,16 +30,18 @@
 
 ---
 
-## Track B — Games — IN PROGRESS
+## Track B — Games — ✅ DONE
 
-Полный чеклист: **GAME_INSIGHTS.md** (не править структуру без нужды).
+Полный чеклист: **GAME_INSIGHTS.md**.
 
 | Step | Status |
 |------|--------|
-| Shop cleanup (catalog) | ✅ (platform-adjacent; done) |
+| Shop cleanup (catalog) | ✅ |
 | Boost Phase 1 allowlist | ✅ |
-| Hotfix + Boost UX + per-game effects | ✅ (BoostCheckbox, gameBoostCopy, GameOverActions) |
-| Levels + deferred polish | ✅ Flappy gap/feel + Companion daily gift; deferred art left |
+| Hotfix + Boost UX + per-game effects | ✅ |
+| Levels + Flappy/Companion + Gears polish | ✅ |
+| GameShell order + LB tabs + space skin | ✅ |
+| Deferred art / 3D / tickets gift | 🟧 parked |
 
 ---
 
@@ -50,7 +53,7 @@
 |------|--------|
 | **P1 Shop examples & art** | ✅ |
 | **P2 Shop spinner + load** | ✅ |
-| **P3 Chrome polish** | ✅ (glossary + SVG; button list → P5/Emma) |
+| **P3 Chrome polish** | ✅ (glossary + SVG; button list → Emma) |
 | Berserk cards | 🔒 never without OK |
 
 ---
@@ -61,18 +64,19 @@
 
 ---
 
-## Deferred (P5 slice done — see PLATFORM_INSIGHTS)
+## Deferred
 
-Open: platform button list (Emma). Locked/skipped: C4=D, #5b shipped, EXPLAIN/bottleneck/cursor/authors content, backfill dry-run OK.
+Open: platform button list (Emma). Art/3D, Companion tickets economy.
+Locked/skipped: C4=D, EXPLAIN/bottleneck/cursor/authors content, live backfill.
 
 ---
 
 ## Что делать сейчас
 
 ```text
-Track B gameplay slice DONE (hotfix → boost UX → levels → Flappy/Companion).
+Tracks A–D gameplay/platform DONE.
 
-NEXT = deferred polish (emoji icons, GameShell unify, art/3D) or platform Emma list.
+NEXT = push when ready · Emma chrome list · or deferred art when wanted.
 ```
 
 ---
@@ -82,8 +86,8 @@ NEXT = deferred polish (emoji icons, GameShell unify, art/3D) or platform Emma l
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ████████████ gameplay done; deferred art  ← you are here
+Track B    ████████████ DONE (deferred art parked)
 Track D    ████████████ P1–P3 DONE
 Track C    ████████████ DONE
-Deferred   ████████░░░░ P5 slice done (Emma button list open)
+Deferred   ████████░░░░ Emma + art/3D
 ```
