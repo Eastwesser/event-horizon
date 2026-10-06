@@ -54,13 +54,13 @@
 
 ---
 
-## Track C — Infra — LATER
+## Track C — Infra — ✅ DONE
 
-- [ ] k3s NATS + Postgres StatefulSets (Helm data plane)
+- [x] k3s NATS + Postgres StatefulSets (Helm `dataPlane.enabled`; `make deploy-k3s-dataplane`)
 
 ---
 
-## Deferred (Emma OK only)
+## Deferred (Emma path — P5 next)
 
 Platform button list · C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottleneck 500+ · cursor pull-in · backfill-noiz · 3D/OSS games
 
@@ -69,11 +69,9 @@ Platform button list · C4 payouts · Wave 2 #5b · multi-VU EXPLAIN · bottlene
 ## Что делать сейчас
 
 ```text
-Track D P1–P3 DONE.
+P4 Track C DONE.
 
-NEXT = GAME_INSIGHTS / Track B when Emma says back to games
-  — or Track C k3s if prod demo needs data plane
-  — or P5 deferred with Emma OK
+NEXT = P5 deferred product, then GAME_INSIGHTS / Track B games.
 ```
 
 ---
@@ -83,8 +81,8 @@ NEXT = GAME_INSIGHTS / Track B when Emma says back to games
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ██░░░░░░░░░░ PARKED (GAME_INSIGHTS)  ← natural next
+Track B    ██░░░░░░░░░░ PARKED → after P5
 Track D    ████████████ P1–P3 DONE
-Track C    ░░░░░░░░░░░░ later
-Deferred   ░░░░░░░░░░░░ Emma OK
+Track C    ████████████ DONE (data plane opt-in)
+Deferred   ░░░░░░░░░░░░ P5 NEXT
 ```

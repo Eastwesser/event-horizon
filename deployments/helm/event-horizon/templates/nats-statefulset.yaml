@@ -1,0 +1,106 @@
+{{- if and .Values.dataPlane.enabled .Values.dataPlane.nats.enabled }}
+{{- range $node := .Values.dataPlane.nats.nodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $node.name }}
+  labels:
+    {{- include "event-horizon.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: nats
+    nats-node: {{ $node.name }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: nats
+    nats-node: {{ $node.name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  ports:
+    - name: client
+      port: 4222
+      targetPort: 4222
+    - name: cluster
+      port: 6222
+      targetPort: 6222
+    - name: monitor
+      port: 8222
+      targetPort: 8222
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $node.name }}
+  labels:
+    {{- include "event-horizon.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: nats
+    nats-node: {{ $node.name }}
+spec:
+  serviceName: {{ $node.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: nats
+      nats-node: {{ $node.name }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "event-horizon.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: nats
+        nats-node: {{ $node.name }}
+    spec:
+      containers:
+        - name: nats
+          image: {{ $.Values.dataPlane.nats.image }}
+          imagePullPolicy: {{ $.Values.dataPlane.nats.pullPolicy }}
+          args:
+            {{- if $.Values.dataPlane.nats.jetStream }}
+            - "-js"
+            - "-sd=/data"
+            {{- end }}
+            - "--server_name={{ $node.name }}"
+            - "--cluster_name={{ $.Values.dataPlane.nats.clusterName }}"
+            - "-m=8222"
+            - "-cluster=nats://0.0.0.0:6222"
+            - "-routes={{ $node.routes }}"
+          ports:
+            - name: client
+              containerPort: 4222
+            - name: cluster
+              containerPort: 6222
+            - name: monitor
+              containerPort: 8222
+          {{- if $.Values.dataPlane.nats.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: monitor
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: monitor
+            initialDelaySeconds: 10
+            periodSeconds: 10
+  {{- if $.Values.dataPlane.nats.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if $.Values.dataPlane.nats.persistence.storageClassName }}
+        storageClassName: {{ $.Values.dataPlane.nats.persistence.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $.Values.dataPlane.nats.persistence.size }}
+  {{- end }}
+{{- end }}
+{{- end }}

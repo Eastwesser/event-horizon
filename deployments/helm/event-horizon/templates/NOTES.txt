@@ -8,4 +8,12 @@
 
 2. Secrets: edit values (secret.jwtSecret / postgresPassword) before any real cluster.
 
-3. Data plane (NATS, Postgres, Redis) is still external — see deployments/k3s/README.md.
+{{- if .Values.dataPlane.enabled }}
+3. Data plane ON — NATS (nats-1..3) + Postgres StatefulSets for db.hosts.
+   Verify: kubectl get sts,svc | grep -E 'nats-|postgres'
+{{- else }}
+3. Data plane OFF (default). For in-cluster NATS + Postgres:
+   make deploy-k3s-dataplane
+   # or: helm upgrade --install eh ./deployments/helm/event-horizon --set dataPlane.enabled=true
+   See deployments/k3s/README.md.
+{{- end }}

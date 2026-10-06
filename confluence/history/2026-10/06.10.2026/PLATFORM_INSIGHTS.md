@@ -20,8 +20,8 @@
 | P1 Shop examples & art | 6 / 6 |
 | P2 Shop UX / load | 3 / 3 |
 | P3 Chrome / nav | 2 / 2 |
-| P4 Track C infra | 0 / 1 *(later)* |
-| P5 Deferred product | 0 / 8 *(Emma OK)* |
+| P4 Track C infra | 1 / 1 |
+| P5 Deferred product | 0 / 8 *(in progress)* |
 
 ---
 

@@ -72,7 +72,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 
 ### Track C leftover
 
-- [ ] **k3s data plane** — NATS + Postgres StatefulSets in Helm · only if prod demo needs it
+- [x] **k3s data plane** — NATS + Postgres StatefulSets in Helm · `dataPlane.enabled` / `make deploy-k3s-dataplane` · ✅ 06.10.2026
 
 ---
 
