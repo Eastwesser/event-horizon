@@ -44,15 +44,15 @@ const spaceEmojis: Record<string, string> = {
 };
 
 const spaceColors: Record<string, string> = {
-  nutella: '#4A2C6B',
-  strawberry: '#A29BFE',
-  fish: '#6C5CE7',
-  sausage: '#74B9FF',
-  chicken: '#E17055',
-  caesar: '#FDA7DF',
-  cranberry: '#00B894',
-  pancake: '#FDCB6E',
-  default: '#6C5CE7',
+  nutella: '#1a1228',
+  strawberry: '#1c1830',
+  fish: '#12182a',
+  sausage: '#0f1a2e',
+  chicken: '#1c1410',
+  caesar: '#1a1220',
+  cranberry: '#0e1a18',
+  pancake: '#1a1810',
+  default: '#12141c',
 };
 
 function coordKey(c: HexCoord): string {

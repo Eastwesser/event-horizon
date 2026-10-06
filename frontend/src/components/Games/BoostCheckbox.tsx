@@ -30,8 +30,10 @@ export function BoostCheckbox({
         Boost (−{BOOST_COST})
       </span>
       {useBoost && (
-        <span className="pl-6 text-[11px] leading-snug text-horizon-gold/90">
-          Не в лидерборд · без награды билетиками
+        <span className="inline-flex items-center gap-1 pl-6 text-[11px] leading-snug text-horizon-gold/90">
+          Не в лидерборд · без награды
+          <Icon name="ticket" className="h-3 w-3" aria-hidden />
+          билетиками
         </span>
       )}
     </label>

@@ -18,6 +18,9 @@ interface GameShellProps {
 /**
  * Fit-to-viewport: outer shell is exactly 100dvh with no page scroll.
  * Stage flexes into leftover space after header/stats/controls/help.
+ *
+ * Control order convention (all games):
+ *   primary (Старт / Новая) → secondary (Завершить / Сохранить) → extras (LB / skin) → Boost last
  */
 export function GameShell({
   title,
