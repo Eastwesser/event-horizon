@@ -8,6 +8,7 @@ import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 
 type Species = 'звезда' | 'кот' | 'дракон' | 'кактус';
 type Mood = 'happy' | 'ok' | 'sad' | 'critical';
@@ -176,23 +177,24 @@ export function CompanionGame() {
 
   const moodLine =
     mood === 'critical'
-      ? `${pet?.name} скучал(а) по тебе… Критично нужна забота (смерти нет — только тоска).`
+      ? `${pet?.name} скучал(а) по тебе… Нужна забота.`
       : mood === 'sad'
         ? `${pet?.name} грустит. Покорми, поиграй или дай отдохнуть.`
         : mood === 'happy'
           ? `${pet?.name} светится от счастья!`
           : `${pet?.name} в порядке.`;
 
+  const handleBack = () => navigate('/#games');
+
   return (
     <GameShell
       title="Компаньон"
-      onBack={() => navigate('/')}
+      onBack={handleBack}
       width="narrow"
       stats={pet ? <ScoreChip label="Забота" value={score} /> : undefined}
       controls={
         pet ? (
           <>
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy || saving} />
             <Button size="sm" onClick={() => care('feed')}>
               Кормить
             </Button>
@@ -205,13 +207,17 @@ export function CompanionGame() {
             <Button size="sm" variant="ghost" onClick={() => void submit()} disabled={saving || boostBusy}>
               Сохранить счёт
             </Button>
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy || saving} />
           </>
         ) : undefined
       }
       help={
-        <p>
-          Мягкий тамагочи: без смерти. Boost при сохранении — счёт не в лидерборд.
-        </p>
+        <>
+          <p>Мягкий компаньон: корми, играй, дай отдохнуть. Без давления и дедлайнов.</p>
+          {boostHelpLines('companion').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </>
       }
     >
       {!pet ? (

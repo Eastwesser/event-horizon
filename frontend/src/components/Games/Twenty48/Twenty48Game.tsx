@@ -1,5 +1,5 @@
 // frontend/src/components/Games/Twenty48/Twenty48Game.tsx
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useGameBoost } from '../../../hooks/useGameBoost';
@@ -7,11 +7,15 @@ import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 
 type Board = number[][];
 
 const SIZE = 4;
+const SWIPE_MIN_PX = 28;
 const TILE_COLORS: Record<number, string> = {
   0: 'bg-white/5 text-transparent',
   2: 'bg-[#1e2a44] text-indigo-soft',
@@ -124,10 +128,12 @@ export function Twenty48Game() {
   const [won, setWon] = useState(false);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [lastRanked, setLastRanked] = useState<boolean | null>(null);
   const [runBoosted, setRunBoosted] = useState(false);
   const [runBoostId, setRunBoostId] = useState<string | null>(null);
   const [undoSnap, setUndoSnap] = useState<{ board: Board; score: number } | null>(null);
   const [undoUsed, setUndoUsed] = useState(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const {
     useBoost,
     setUseBoost,
@@ -155,6 +161,7 @@ export function Twenty48Game() {
       setWon(false);
       setUndoSnap(null);
       setUndoUsed(false);
+      setLastRanked(null);
     } catch {
       /* handled */
     }
@@ -212,6 +219,28 @@ export function Twenty48Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [applyMove]);
 
+  const onTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const onTouchEnd = (e: TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN_PX) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      applyMove(dx > 0 ? 'right' : 'left');
+    } else {
+      applyMove(dy > 0 ? 'down' : 'up');
+    }
+  };
+
   const submit = async () => {
     setSaving(true);
     try {
@@ -231,8 +260,9 @@ export function Twenty48Game() {
         response.data?.ranked === true &&
         !runBoosted &&
         !String(response.data?.message || '').includes('not ranked');
+      setLastRanked(ranked);
       setNotif({
-        message: ranked ? 'Счёт сохранён' : boostUnrankedToast(),
+        message: ranked ? 'Счёт сохранён · рекорд в лидерборд' : boostUnrankedToast(),
         type: 'success',
       });
       if (ranked) {
@@ -245,10 +275,12 @@ export function Twenty48Game() {
     }
   };
 
+  const handleBack = () => navigate('/#games');
+
   return (
     <GameShell
-      title="Горизонт 2048"
-      onBack={() => navigate('/')}
+      title="2048"
+      onBack={handleBack}
       width="narrow"
       stats={
         <>
@@ -258,7 +290,6 @@ export function Twenty48Game() {
       }
       controls={
         <>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
           <Button size="sm" variant="ghost" onClick={() => void reset()} disabled={boostBusy}>
             Заново
           </Button>
@@ -270,15 +301,23 @@ export function Twenty48Game() {
           <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
             {saving ? '…' : 'Сохранить'}
           </Button>
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </>
       }
       help={
-        <p>
-          Стрелки или WASD — сдвиг. Boost: один undo; забег не в лидерборд.
-        </p>
+        <>
+          <p>Стрелки, WASD или свайп по полю — сдвиг плиток. Собери плитку 2048.</p>
+          {boostHelpLines('twenty48').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </>
       }
     >
-      <div className="grid w-full max-w-sm grid-cols-4 gap-2 rounded-md border border-white/10 bg-nebula p-2">
+      <div
+        className="grid w-full max-w-sm touch-none grid-cols-4 gap-2 rounded-md border border-white/10 bg-nebula p-2"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         {board.flatMap((row, r) =>
           row.map((v, c) => (
             <div
@@ -301,25 +340,29 @@ export function Twenty48Game() {
       <Modal open={over} onClose={() => setOver(false)} title="Ходов больше нет">
         <p className="mb-4 text-text-secondary">Счёт: {score}.</p>
         {runBoosted && <p className="mb-4 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => void reset()}>
-            Ещё раз
-          </Button>
-          <Button onClick={() => void submit()} disabled={saving}>
-            Сохранить
-          </Button>
-        </div>
+        {!runBoosted && lastRanked === true && (
+          <p className="mb-4 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
+        )}
+        <GameOverActions
+          onNewGame={() => void reset()}
+          onHome={handleBack}
+          onSave={() => void submit()}
+          newLabel="Ещё раз"
+          busy={saving || boostBusy}
+        />
       </Modal>
       <Modal open={won && !over} onClose={() => setWon(false)} title="2048!">
         <p className="mb-4 text-text-secondary">Можно продолжать или сохранить счёт {score}.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setWon(false)}>
-            Играть дальше
-          </Button>
-          <Button onClick={() => void submit()} disabled={saving}>
-            Сохранить
-          </Button>
-        </div>
+        <GameOverActions
+          onNewGame={() => setWon(false)}
+          onHome={handleBack}
+          onSave={() => void submit()}
+          newLabel="Играть дальше"
+          busy={saving || boostBusy}
+        />
       </Modal>
       {notif && (
         <Notification message={notif.message} type={notif.type} onClose={() => setNotif(null)} />

@@ -60,14 +60,14 @@ const games: {
   {
     id: 'memory',
     name: 'Memonia',
-    description: 'Найди пары фруктов',
+    description: 'Найди пары',
     icon: gameIcon('memory'),
     path: '/game/memory',
     available: true,
   },
   {
     id: 'twenty48',
-    name: 'Горизонт 2048',
+    name: '2048',
     description: 'Сдвинь плитки — собери 2048',
     icon: gameIcon('twenty48'),
     path: '/game/twenty48',
@@ -75,7 +75,7 @@ const games: {
   },
   {
     id: 'gears',
-    name: 'Орбиты',
+    name: 'Gears',
     description: 'Сливай шестерёнки до восьмой',
     icon: gameIcon('gears'),
     path: '/game/gears',
@@ -84,7 +84,7 @@ const games: {
   {
     id: 'companion',
     name: 'Компаньон',
-    description: 'Мягкий тамагочи без FOMO-смерти',
+    description: 'Мягкий тамагочи без давления',
     icon: gameIcon('companion'),
     path: '/game/companion',
     available: true,
@@ -175,13 +175,19 @@ export function Home() {
   };
 
   const scrollToChoose = () => {
-    const el = document.getElementById('choose');
+    const el = document.getElementById('games') || document.getElementById('choose');
     if (!el) return;
     el.scrollIntoView({
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
       block: 'start',
     });
   };
+
+  useEffect(() => {
+    if (window.location.hash === '#games' || window.location.hash === '#choose') {
+      requestAnimationFrame(() => scrollToChoose());
+    }
+  }, []);
 
   const clearHotTimer = () => {
     if (hotTimerRef.current) {

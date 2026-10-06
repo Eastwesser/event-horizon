@@ -9,7 +9,10 @@ interface TowerState {
   blockWidth: number;
   direction: 1 | -1;
   score: number;
-  level: number;
+  /** In-run floor height (UI only — never sent as submit level). */
+  floor: number;
+  /** Difficulty 1–10 (leaderboard partition + physics). */
+  difficulty: number;
   combo: number;
   gameOver: boolean;
   started: boolean;
@@ -20,7 +23,11 @@ interface TowerState {
   GAME_WIDTH: number;
   GAME_HEIGHT: number;
   BASE_SPEED: number;
-  startGame: (opts?: { boosted?: boolean; boostId?: string | null }) => void;
+  startGame: (opts?: {
+    boosted?: boolean;
+    boostId?: string | null;
+    difficulty?: number;
+  }) => void;
   stopLoop: () => void;
   dropBlock: () => void;
   update: () => void;
@@ -31,16 +38,36 @@ interface TowerState {
 const GAME_WIDTH = 400;
 const GAME_HEIGHT = 500;
 const BASE_SPEED = 3;
-const INITIAL_BLOCK_WIDTH = 100;
+
+function clampDiff(d: number): number {
+  if (!Number.isFinite(d)) return 1;
+  return Math.min(10, Math.max(1, Math.round(d)));
+}
+
+/** L1 ≈ 100px start, L10 ≈ 55px. */
+function startWidthForDifficulty(d: number): number {
+  return Math.max(55, 100 - (clampDiff(d) - 1) * 5);
+}
+
+/** Extra overhang (px) still counted as a hit. L1=14, L10=0. */
+function softFailPx(d: number): number {
+  return Math.max(0, Math.round(14 - (clampDiff(d) - 1) * 1.55));
+}
+
+/** Min block width before hard fail. L1=6, L10=12. */
+function minWidthForDifficulty(d: number): number {
+  return Math.min(12, 6 + Math.floor((clampDiff(d) - 1) * 0.67));
+}
 
 export const useTowerStore = create<TowerState>((set, get) => ({
   towerBlocks: [],
   towerHeight: 0,
-  currentBlockX: (GAME_WIDTH - INITIAL_BLOCK_WIDTH) / 2,
-  blockWidth: INITIAL_BLOCK_WIDTH,
+  currentBlockX: (GAME_WIDTH - 100) / 2,
+  blockWidth: 100,
   direction: 1,
   score: 0,
-  level: 1,
+  floor: 1,
+  difficulty: 1,
   combo: 0,
   gameOver: false,
   started: false,
@@ -61,15 +88,18 @@ export const useTowerStore = create<TowerState>((set, get) => ({
 
   startGame: (opts) => {
     get().stopLoop();
+    const difficulty = clampDiff(opts?.difficulty ?? get().difficulty);
+    const w = startWidthForDifficulty(difficulty);
 
     set({
-      towerBlocks: [INITIAL_BLOCK_WIDTH],
+      towerBlocks: [w],
       towerHeight: 1,
-      currentBlockX: (GAME_WIDTH - INITIAL_BLOCK_WIDTH) / 2,
-      blockWidth: INITIAL_BLOCK_WIDTH,
+      currentBlockX: (GAME_WIDTH - w) / 2,
+      blockWidth: w,
       direction: 1,
       score: 0,
-      level: 1,
+      floor: 1,
+      difficulty,
       combo: 0,
       gameOver: false,
       started: true,
@@ -90,10 +120,10 @@ export const useTowerStore = create<TowerState>((set, get) => ({
   },
 
   update: () => {
-    const { currentBlockX, blockWidth, direction, BASE_SPEED, GAME_WIDTH, level, boosted } = get();
-    // Boost: horizontal block speed ×0.8 (easier aim)
-    const speedMul = boosted ? 0.8 : 1;
-    const speed = (BASE_SPEED + Math.floor(level / 5)) * speedMul;
+    const { currentBlockX, blockWidth, direction, BASE_SPEED, GAME_WIDTH, difficulty, boosted } =
+      get();
+    const speedMul = boosted ? 0.55 : 1;
+    const speed = (BASE_SPEED + (difficulty - 1) * 0.4) * speedMul;
 
     let newX = currentBlockX + direction * speed;
     let newDirection = direction;
@@ -113,19 +143,29 @@ export const useTowerStore = create<TowerState>((set, get) => ({
   },
 
   dropBlock: () => {
-    const { currentBlockX, blockWidth, towerBlocks, GAME_WIDTH, score, combo, gameOver, started } =
-      get();
+    const {
+      currentBlockX,
+      blockWidth,
+      towerBlocks,
+      GAME_WIDTH,
+      score,
+      combo,
+      gameOver,
+      started,
+      difficulty,
+    } = get();
 
     if (gameOver || !started) return;
 
     const lastBlockWidth = towerBlocks[towerBlocks.length - 1];
     const towerLeft = (GAME_WIDTH - lastBlockWidth) / 2;
     const towerRight = towerLeft + lastBlockWidth;
+    const grace = softFailPx(difficulty);
     const blockLeft = currentBlockX;
     const blockRight = currentBlockX + blockWidth;
 
-    const overlapLeft = Math.max(blockLeft, towerLeft);
-    const overlapRight = Math.min(blockRight, towerRight);
+    const overlapLeft = Math.max(blockLeft, towerLeft - grace);
+    const overlapRight = Math.min(blockRight, towerRight + grace);
     const overlap = overlapRight - overlapLeft;
 
     if (overlap <= 0) {
@@ -134,11 +174,15 @@ export const useTowerStore = create<TowerState>((set, get) => ({
       return;
     }
 
-    const newBlockWidth = Math.max(overlap, 5);
+    // Soft-fail: grace hit keeps a thin slab; perfect stack keeps real overlap.
+    const realOverlapLeft = Math.max(blockLeft, towerLeft);
+    const realOverlapRight = Math.min(blockRight, towerRight);
+    const realOverlap = realOverlapRight - realOverlapLeft;
+    const newBlockWidth = Math.max(realOverlap > 0 ? realOverlap : Math.min(overlap, 8), 5);
+
     const blockScore = get().calculateBlockScore();
     const newScore = score + blockScore;
     const newCombo = combo + 1;
-    const newLevel = Math.floor(newScore / 100) + 1;
     const newTowerBlocks = [...towerBlocks, newBlockWidth];
 
     set({
@@ -147,27 +191,27 @@ export const useTowerStore = create<TowerState>((set, get) => ({
       blockWidth: newBlockWidth,
       currentBlockX: (GAME_WIDTH - newBlockWidth) / 2,
       score: newScore,
-      level: newLevel,
+      floor: newTowerBlocks.length,
       combo: newCombo,
     });
 
-    if (newBlockWidth < 10) {
+    if (newBlockWidth < minWidthForDifficulty(difficulty)) {
       set({ gameOver: true });
       void get().submitScore();
     }
   },
 
   calculateBlockScore: () => {
-    const { level, combo } = get();
+    const { difficulty, combo } = get();
     let multiplier = 1;
     if (combo >= 5) multiplier = combo - 2;
     else if (combo >= 4) multiplier = 3;
     else if (combo >= 3) multiplier = 2;
-    return 10 * level * multiplier;
+    return 10 * difficulty * multiplier;
   },
 
   submitScore: async () => {
-    const { score, boosted, boostId } = get();
+    const { score, boosted, boostId, difficulty } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
@@ -178,7 +222,7 @@ export const useTowerStore = create<TowerState>((set, get) => ({
       const body: Record<string, unknown> = {
         user_id: userId,
         game_id: 'towers',
-        level: 1,
+        level: difficulty,
         score,
         user_email: userEmail,
         nickname,

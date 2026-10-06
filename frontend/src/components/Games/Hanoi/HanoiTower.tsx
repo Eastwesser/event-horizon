@@ -7,7 +7,10 @@ import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 import './HanoiTower.css';
 
 type Pegs = [number[], number[], number[]];
@@ -96,11 +99,13 @@ export function HanoiTower() {
   const [selectedPeg, setSelectedPeg] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
   const [won, setWon] = useState(false);
-  const [startTime, setStartTime] = useState<number>(() => performance.now());
+  const [started, setStarted] = useState(false);
+  const [startTime, setStartTime] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [autoSolving, setAutoSolving] = useState(false);
   const [animating, setAnimating] = useState<{ disk: number; from: number; to: number } | null>(null);
   const [scoreSaved, setScoreSaved] = useState(false);
+  const [lastRanked, setLastRanked] = useState<boolean | null>(null);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [hoverPeg, setHoverPeg] = useState<number | null>(null);
   const [boardShake, setBoardShake] = useState(false);
@@ -125,6 +130,8 @@ export function HanoiTower() {
     if (!token) navigate('/login');
   }, [token, navigate]);
 
+  const handleBack = () => navigate('/#games');
+
   useEffect(() => {
     if (boostError) {
       setSaveMessage({ type: 'error', text: boostError });
@@ -133,17 +140,16 @@ export function HanoiTower() {
   }, [boostError, setBoostError]);
 
   useEffect(() => {
-    if (won) return;
+    if (!started || won) return;
     const id = setInterval(() => setElapsedMs(performance.now() - startTime), 100);
     return () => clearInterval(id);
-  }, [startTime, won]);
+  }, [startTime, won, started]);
 
   useEffect(() => {
-    if (pegs[2].length === diskCount && diskCount > 0 && !animating) {
-      setWon(true);
-      setElapsedMs(performance.now() - startTime);
-    }
-  }, [pegs, diskCount, animating, startTime]);
+    if (!started || pegs[2].length !== diskCount || diskCount <= 0 || animating) return;
+    setWon(true);
+    setElapsedMs(performance.now() - startTime);
+  }, [pegs, diskCount, animating, startTime, started]);
 
   useEffect(() => {
     return () => {
@@ -151,7 +157,7 @@ export function HanoiTower() {
     };
   }, []);
 
-  const resetGame = useCallback(async (count = diskCount) => {
+  const beginRun = useCallback(async (count = diskCount) => {
     if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
     setAutoSolving(false);
     setAnimating(null);
@@ -168,13 +174,33 @@ export function HanoiTower() {
     setMoves(0);
     setWon(false);
     setScoreSaved(false);
+    setLastRanked(null);
+    setStarted(true);
     setStartTime(performance.now());
     setElapsedMs(0);
   }, [diskCount, armBoost]);
 
   const handleDiskCountChange = (count: number) => {
+    // Pre-game only: pick rings, then «Старт» starts the timer.
+    if (started) return;
     setDiskCount(count);
-    void resetGame(count);
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    setAutoSolving(false);
+    setAnimating(null);
+    setPegs(createInitialPegs(count));
+    setSelectedPeg(null);
+    setHoverPeg(null);
+    setMoves(0);
+    setWon(false);
+    setElapsedMs(0);
+    setStartTime(0);
+  };
+
+  const stopAutoSolve = () => {
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    autoTimerRef.current = null;
+    setAutoSolving(false);
+    setAnimating(null);
   };
 
   const applyMove = useCallback((from: number, to: number, countMove = true) => {
@@ -215,7 +241,7 @@ export function HanoiTower() {
   };
 
   const handlePegClick = async (pegIndex: number) => {
-    if (autoSolving || animating || won) return;
+    if (!started || autoSolving || animating || won) return;
 
     if (selectedPeg === null) {
       if (pegs[pegIndex].length > 0) setSelectedPeg(pegIndex);
@@ -247,10 +273,17 @@ export function HanoiTower() {
   };
 
   const runAutoSolve = async () => {
-    if (autoSolving || won) return;
-    resetGame();
-    setAutoSolving(true);
+    if (autoSolving || won || !runBoosted) return;
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    setAnimating(null);
+    setPegs(createInitialPegs(diskCount));
     setSelectedPeg(null);
+    setHoverPeg(null);
+    setMoves(0);
+    setWon(false);
+    setStartTime(performance.now());
+    setElapsedMs(0);
+    setAutoSolving(true);
 
     const solution = solveHanoi(diskCount, 0, 2, 1);
 
@@ -296,9 +329,10 @@ export function HanoiTower() {
         !runBoosted &&
         !String(response.data?.message || '').includes('not ranked');
       setScoreSaved(true);
+      setLastRanked(ranked);
       setSaveMessage({
         type: 'success',
-        text: ranked ? 'Рекорд сохранён!' : boostUnrankedToast(),
+        text: ranked ? 'Счёт сохранён · рекорд в лидерборд' : boostUnrankedToast(),
       });
       if (ranked) {
         void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
@@ -368,7 +402,7 @@ export function HanoiTower() {
   return (
     <GameShell
       title="Hanoi"
-      onBack={() => navigate('/')}
+      onBack={handleBack}
       width="narrow"
       stats={
         <>
@@ -379,33 +413,64 @@ export function HanoiTower() {
       }
       controls={
         <>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy || autoSolving} />
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            Колец:
-            <select
-              value={diskCount}
-              disabled={autoSolving || moves > 0 || boostBusy}
-              onChange={(e) => handleDiskCountChange(Number(e.target.value))}
-              className="rounded-sm border border-horizon-gold/30 bg-black/30 px-3 py-1.5 text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-photon-cyan"
+          {!started && (
+            <label className="flex items-center gap-2 text-sm text-text-secondary">
+              Колец:
+              <select
+                value={diskCount}
+                disabled={boostBusy}
+                onChange={(e) => handleDiskCountChange(Number(e.target.value))}
+                className="eh-hanoi-disk-select rounded-sm border border-white/15 bg-void px-3 py-1.5 text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-horizon-gold"
+              >
+                {DISK_OPTIONS.map((n) => (
+                  <option key={n} value={n} className="bg-void text-text-primary">
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {started && (
+            <span className="rounded-sm border border-white/10 px-3 py-1.5 text-sm text-text-secondary">
+              Колец: <span className="text-text-primary">{diskCount}</span>
+            </span>
+          )}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => void beginRun()}
+            disabled={autoSolving || boostBusy}
+          >
+            {boostBusy ? 'Старт…' : started ? 'Сброс' : 'Старт'}
+          </Button>
+          {runBoosted && started && !autoSolving && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void runAutoSolve()}
+              disabled={won}
             >
-              {DISK_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </label>
-          <Button variant="secondary" size="sm" onClick={() => void resetGame()} disabled={autoSolving || boostBusy}>
-            Сброс
-          </Button>
-          <Button variant="ghost" size="sm" onClick={runAutoSolve} disabled={autoSolving || won}>
-            {autoSolving ? 'Решаю…' : 'Авто-решение'}
-          </Button>
+              Авто-решение
+            </Button>
+          )}
+          {autoSolving && (
+            <Button variant="secondary" size="sm" onClick={stopAutoSolve}>
+              Стоп
+            </Button>
+          )}
+          {!started && (
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          )}
         </>
       }
       help={
         <>
+          <p>Выберите число колец (3–8), затем нажмите «Старт» — таймер пойдёт с этой кнопки.</p>
           <p>Перенесите все кольца со стержня A на стержень C</p>
           <p>Нельзя класть большее кольцо на меньшее</p>
-          <p>Boost (10 лампочек): забег не в лидерборд</p>
+          {boostHelpLines('hanoi').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </>
       }
     >
@@ -417,9 +482,15 @@ export function HanoiTower() {
         />
       )}
 
+      {!started && (
+        <p className="mb-3 text-center text-sm text-text-secondary">
+          Выберите число колец и нажмите «Старт» — таймер запустится с этой кнопки.
+        </p>
+      )}
       <div
         className={[
           'hanoi-board',
+          !started ? 'hanoi-board--pregame' : '',
           boardShake ? 'hanoi-board--shake' : '',
           boardPulse ? 'hanoi-board--pulse' : '',
         ]
@@ -508,17 +579,21 @@ export function HanoiTower() {
         {runBoosted && (
           <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
         )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" size="sm" onClick={handleSubmitScore} disabled={scoreSaved}>
-            {scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => void resetGame()}>
-            Новая игра
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-            На главную
-          </Button>
-        </div>
+        {!runBoosted && lastRanked === true && (
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
+        )}
+        <GameOverActions
+          onNewGame={() => void resetGame()}
+          onHome={handleBack}
+          onSave={() => {
+            if (!scoreSaved) void handleSubmitScore();
+          }}
+          saveLabel={scoreSaved ? 'Сохранено' : 'Сохранить рекорд'}
+          busy={boostBusy}
+        />
       </Modal>
     </GameShell>
   );

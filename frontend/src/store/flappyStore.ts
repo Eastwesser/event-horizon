@@ -14,7 +14,6 @@ const BASE_PIPE_SPEED = 3;
 const BASE_GRAVITY = 0.3;
 const BASE_PIPE_GAP = 150;
 const BASE_PIPE_SPACING = 300;
-const BOOST_DURATION_MS = 5000;
 
 function clampLevel(level: number): number {
   if (!Number.isFinite(level)) return 1;
@@ -130,20 +129,13 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       lastSubmitMessage: null,
       PIPE_GAP: phys.PIPE_GAP,
       PIPE_SPACING: phys.PIPE_SPACING,
-      PIPE_SPEED: boosted ? phys.PIPE_SPEED / 2 : phys.PIPE_SPEED,
-      GRAVITY: boosted ? phys.GRAVITY / 2 : phys.GRAVITY,
+      // Boost: world/pipes slower; bird gravity stays normal (flap feel intact).
+      PIPE_SPEED: boosted ? phys.PIPE_SPEED * 0.55 : phys.PIPE_SPEED,
+      GRAVITY: phys.GRAVITY,
     });
 
     const firstPipe = get().generatePipe();
     set({ pipes: [firstPipe] });
-
-    if (boosted) {
-      const boostTimer = setTimeout(() => {
-        const p = physicsForLevel(get().level);
-        set({ PIPE_SPEED: p.PIPE_SPEED, GRAVITY: p.GRAVITY });
-      }, BOOST_DURATION_MS);
-      (get() as any).boostTimer = boostTimer;
-    }
 
     const gameLoop = setInterval(() => {
       const { gameOver, started } = get();

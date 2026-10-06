@@ -18,7 +18,7 @@
 | Wave 3 C1–C3 | |
 | **Track A 3/3** | refund · notifications · JWT refresh |
 | **Shop cleanup v2** | 281 Berserk untouched · 5 skins · 4 examples |
-| **8 games playable** · Boost Phase 1 allowlist | games polish → GAME_INSIGHTS |
+| **8 games playable** · Boost Phase 1 + hotfix + boost UX | levels/polish → GAME_INSIGHTS |
 | **Track D P1–P3** | shop art · spinner/load · chrome glossary |
 
 ---
@@ -29,7 +29,7 @@
 
 ---
 
-## Track B — Games — PARKED
+## Track B — Games — IN PROGRESS
 
 Полный чеклист: **GAME_INSIGHTS.md** (не править структуру без нужды).
 
@@ -37,7 +37,8 @@
 |------|--------|
 | Shop cleanup (catalog) | ✅ (platform-adjacent; done) |
 | Boost Phase 1 allowlist | ✅ |
-| Hotfix → Boost UX → per-game effects → Levels | 🟧 hotfix ✅ · UX/effects/levels next |
+| Hotfix + Boost UX + per-game effects | ✅ (BoostCheckbox, gameBoostCopy, GameOverActions) |
+| Levels + deferred polish | 🟧 Towers/Hanoi/2048/Gears done; Flappy gap + Companion gift open |
 
 ---
 
@@ -70,8 +71,10 @@ Open: platform button list (Emma). Locked/skipped: C4=D, #5b shipped, EXPLAIN/bo
 
 ```text
 P4 + P5 actionable DONE.
+Track B hotfix + boost UX + per-game effects DONE.
+Towers levels + Hanoi pre-game + 2048 swipe + Gears visual DONE.
 
-NEXT = GAME_INSIGHTS / Track B games (hotfix → boost UX → effects).
+NEXT = Flappy gap/feel + Companion daily gift (or park) + deferred art.
 ```
 
 ---
@@ -81,7 +84,7 @@ NEXT = GAME_INSIGHTS / Track B games (hotfix → boost UX → effects).
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ██░░░░░░░░░░ NEXT (GAME_INSIGHTS)  ← you are here
+Track B    ██████████░░ Flappy gap / Companion gift  ← you are here
 Track D    ████████████ P1–P3 DONE
 Track C    ████████████ DONE
 Deferred   ████████░░░░ P5 slice done (Emma button list open)

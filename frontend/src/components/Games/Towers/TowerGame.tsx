@@ -10,7 +10,10 @@ import { Button } from '../../ui/Button';
 import { Spinner } from '../../ui/Spinner';
 import { Modal } from '../../ui/Modal';
 import Notification from '../../Common/Notification/Notification';
+import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
+import { GameOverActions } from '../GameOverActions';
+import { boostHelpLines } from '../../../lib/gameBoostCopy';
 import { cn } from '../../../lib/cn';
 import {
   BLOCK_HEIGHT,
@@ -40,10 +43,10 @@ export function TowerGame() {
   const prevGameOver = useRef(false);
   const { skins, loading: skinsLoading } = useSkins();
   const [useRainbowBlocks, setUseRainbowBlocks] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(1);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   );
-  const [dropPulse, setDropPulse] = useState(false);
   const [shake, setShake] = useState(false);
   const {
     useBoost,
@@ -59,7 +62,8 @@ export function TowerGame() {
     currentBlockX,
     blockWidth,
     score,
-    level,
+    floor,
+    difficulty,
     combo,
     gameOver,
     started,
@@ -77,6 +81,10 @@ export function TowerGame() {
   useEffect(() => {
     const saved = localStorage.getItem('towers_rainbow_blocks');
     if (saved !== null) setUseRainbowBlocks(saved === 'true');
+    const savedDiff = parseInt(localStorage.getItem('towers_difficulty') || '1', 10);
+    if (Number.isFinite(savedDiff)) {
+      setSelectedDifficulty(Math.min(10, Math.max(1, savedDiff)));
+    }
   }, []);
 
   const toggleRainbowBlocks = () => {
@@ -105,25 +113,19 @@ export function TowerGame() {
 
   const beginRun = async () => {
     if (boostBusy || (started && !gameOver)) return;
+    const lv = Math.min(10, Math.max(1, selectedDifficulty));
+    localStorage.setItem('towers_difficulty', String(lv));
     try {
       const { boostId, boosted: isBoosted } = await armBoost();
-      startGame({ boosted: isBoosted, boostId });
+      startGame({ boosted: isBoosted, boostId, difficulty: lv });
     } catch {
       /* boostError handled via effect */
     }
   };
 
-  const pulseDrop = () => {
-    setDropPulse(true);
-    window.setTimeout(() => setDropPulse(false), 90);
-  };
-
   const tryDrop = () => {
     if (gameOver || !started) return;
-    const beforeLen = useTowerStore.getState().towerBlocks.length;
     dropBlock();
-    const after = useTowerStore.getState();
-    if (after.towerBlocks.length > beforeLen) pulseDrop();
   };
 
   useEffect(() => {
@@ -131,10 +133,7 @@ export function TowerGame() {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
         if (!started || gameOver) return;
-        const beforeLen = useTowerStore.getState().towerBlocks.length;
         dropBlock();
-        const after = useTowerStore.getState();
-        if (after.towerBlocks.length > beforeLen) pulseDrop();
       }
     };
     window.addEventListener('keydown', handleKeyPress);
@@ -156,11 +155,12 @@ export function TowerGame() {
     const { lastSubmitRanked: ranked } = useTowerStore.getState();
     setSaveMessage({
       type: 'success',
-      text: ranked === false ? boostUnrankedToast() : 'Рекорд сохранён!',
+      text: ranked === false ? boostUnrankedToast() : 'Счёт сохранён · рекорд в лидерборд',
     });
   };
 
-  const handleBack = () => navigate('/');
+  const handleBack = () => navigate('/#games');
+  const midRun = started && !gameOver;
 
   const rainbow = useRainbowBlocks && skins.towers.hasRainbowBlocks;
 
@@ -225,13 +225,16 @@ export function TowerGame() {
       stats={
         <>
           <ScoreChip label="Счёт" value={score} className="[&_span:last-child]:text-horizon-gold" />
-          <ScoreChip label="Уровень" value={level} />
+          <ScoreChip
+            label="Уровень"
+            value={started || gameOver ? difficulty : selectedDifficulty}
+          />
+          <ScoreChip label="Этаж" value={floor} />
           <ScoreChip
             label="Комбо"
             value={getMultiplierDisplay()}
             className="border-photon-cyan/30 [&_span:last-child]:text-photon-cyan"
           />
-          <ScoreChip label="Высота" value={towerBlocks.length} />
           {skins.towers.hasRainbowBlocks && (
             <button
               type="button"
@@ -252,26 +255,53 @@ export function TowerGame() {
       }
       controls={
         <>
-          {(!started || gameOver) && (
-            <BoostCheckbox
-              useBoost={useBoost}
-              onChange={setUseBoost}
-              disabled={boostBusy}
-            />
+          {!midRun && (
+            <label className="flex items-center gap-2 text-sm text-text-primary">
+              Уровень
+              <select
+                className="rounded-sm border border-white/15 bg-void px-2 py-1 text-text-primary"
+                value={selectedDifficulty}
+                disabled={boostBusy}
+                onChange={(e) => {
+                  const lv = Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1));
+                  setSelectedDifficulty(lv);
+                  localStorage.setItem('towers_difficulty', String(lv));
+                }}
+              >
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+                  <option key={lv} value={lv} className="bg-void text-text-primary">
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
-          <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
-            {boostBusy ? 'Старт…' : started && !gameOver ? 'Идёт…' : 'Старт'}
-          </Button>
+          {midRun ? (
+            <Button variant="primary" size="sm" disabled>
+              В игре
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
+              {boostBusy ? 'Старт…' : gameOver ? 'Новая игра' : 'Старт'}
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={handleManualSave} disabled={!started}>
             Сохранить рекорд
           </Button>
+          {!midRun && (
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          )}
         </>
       }
       help={
         <>
           <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы положить блок на башню</p>
-          <p>Чем точнее попадание, тем шире будет следующий блок</p>
-          <p>Boost (10 лампочек): блок движется медленнее; забег не в лидерборд</p>
+          <p>Чем точнее попадание, тем шире будет следующий блок. Комбо растёт за точные укладки.</p>
+          <p>Уровни 1–10: выше уровень — быстрее блок и уже старт. Этаж — высота башни (не в лидерборд).</p>
+          <p>Промах — игра окончена. На низких уровнях есть небольшой запас на ошибку.</p>
+          {boostHelpLines('towers').map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </>
       }
     >
@@ -282,13 +312,7 @@ export function TowerGame() {
           onClose={() => setSaveMessage(null)}
         />
       )}
-      <div
-        className={cn(
-          'eh-tower-stage',
-          dropPulse && 'eh-tower-stage--drop',
-          shake && 'eh-tower-stage--shake',
-        )}
-      >
+      <div className={cn('eh-tower-stage', shake && 'eh-tower-stage--shake')}>
         <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} onClick={tryDrop} />
       </div>
 
@@ -296,25 +320,24 @@ export function TowerGame() {
         <p className="text-lg text-text-primary">
           Счёт: <span className="font-display font-semibold text-horizon-gold">{score}</span>
         </p>
-        <p className="mt-1 text-sm text-text-secondary">Уровень {level}</p>
-        <p className="mt-1 text-sm text-text-secondary">Высота: {towerBlocks.length}</p>
+        <p className="mt-1 text-sm text-text-secondary">Уровень {difficulty}</p>
+        <p className="mt-1 text-sm text-text-secondary">Этаж: {floor}</p>
         {boosted && (
           <p className="mt-3 text-sm text-horizon-gold">{boostUnrankedToast()}</p>
         )}
         {!boosted && lastSubmitRanked === true && (
-          <p className="mt-3 text-sm text-photon-cyan">Рекорд отправлен в лидерборд</p>
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-success">
+            <Icon name="check" className="h-4 w-4" aria-hidden />
+            Счёт сохранён · рекорд в лидерборд
+          </p>
         )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
-            Новая игра
-          </Button>
-          <Button variant="secondary" size="sm" onClick={handleManualSave}>
-            Сохранить рекорд
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            На главную
-          </Button>
-        </div>
+        <GameOverActions
+          onNewGame={() => void beginRun()}
+          onHome={handleBack}
+          onSave={() => void handleManualSave()}
+          saveLabel="Сохранить рекорд"
+          busy={boostBusy}
+        />
       </Modal>
     </GameShell>
   );
