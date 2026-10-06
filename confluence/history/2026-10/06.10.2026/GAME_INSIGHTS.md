@@ -17,13 +17,13 @@
 | 2 Economy / boost philosophy | 8 / 8 | ✅ gameBoostCopy + BE 0 rewards |
 | 3 Hotfix bugs | 6 / 6 | ✅ 06.10 |
 | 4 Hexagon / Pancaker | 14 / 22 | levels art/polish open |
-| 5 Flappy | 13 / 20 | gap/reward/feel later |
+| 5 Flappy | 18 / 20 | LB eye-check open |
 | 6 Towers / Builder | 12 / 12 | levels done |
 | 7 Hanoi | 13 / 14 | 3D deferred |
 | 8 Memory / Memonia | 8 / 12 | art polish open |
 | 9 Twenty48 | 8 / 8 | swipe done |
 | 10 Gears / Орбиты | 10 / 12 | lag check open |
-| 11 Companion | 4 / 10 | daily gift / EN name open |
+| 11 Companion | 7 / 10 | tickets gift later; EN name open |
 | 12 Leaderboard (cross) | 5 / 6 | select order cosmetic |
 | 13 Shop / inventory / chrome | 12 / 12 | ✅ Track D |
 | 14 Naming / copy | 5 / 6 | glossary open |
@@ -127,7 +127,7 @@
 
 ### Must / UX
 - [x] «Радужные трубы» → **космические трубы** (звёзды / не rainbow-ассоциации)
-- [ ] Центрировать оверлей «Нажмите пробел / кликните мышкой» относительно счёта
+- [x] Центрировать оверлей «Нажмите пробел / кликните мышкой» относительно счёта
 - [x] Убрать/ослабить pulse «экран расширяется» на клик
 - [x] Checkbox boost — увести с глаз (вниз / в help)
 - [x] GO-кнопки одинаковой ширины / один ряд
@@ -139,12 +139,12 @@
 - [x] Не привязывать птицу к курсору (идея отвергнута)
 
 ### Levels / rewards
-- [ ] Gap между трубами: варьировать (то уже, то шире), не ощущение «всегда L5 на L1»
-- [ ] Проверить reward: очки/билеты × level (L1 pipe ≠ L10 pipe) — баланс, не pay-to-win
+- [x] Gap между трубами: варьировать (то уже, то шире), не ощущение «всегда L5 на L1»
+- [x] Проверить reward: очки/билеты × level (L1 pipe ≠ L10 pipe) — баланс, не pay-to-win
 - [x] Сверить help-текст с фактическим бустом после смены эффекта
 
 ### Прочее
-- [ ] Птичка «тяжёлая» — возможно подкрутить feel (осторожно, physics)
+- [x] Птичка «тяжёлая» — возможно подкрутить feel (осторожно, physics)
 - [ ] После всех игр — сверить Flappy LB глазами
 
 ---
@@ -269,14 +269,15 @@
 
 ### Must
 - [x] Copy: убрать «смерть/бессмертие» из help → «Играй со своим питомцем» / soft daily care
-- [ ] Буст при save → unranked выглядит странно; либо убрать буст, либо = daily gift / care boost с понятным эффектом
-- [ ] Это не LB-игра: daily gift (~+1000 билетов/очков за заботу) важнее спама очков
+- [x] Буст при save → unranked выглядит странно; либо убрать буст, либо = daily gift / care boost с понятным эффектом
+- [x] Это не LB-игра: daily gift (~+1000 билетов/очков за заботу) важнее спама очков
 - [x] Help переписать под милоту, не под «забег»
 
 ### Wish
 - [ ] Комната + милый пет (арт)
 - [ ] Название EN «Tamagotchi» vs Companion — решить
 - [ ] Экономика: 10 дней заботы ≈ подписка/карта (~10₽ equiv) — продуктовая заметка
+- [ ] Билетики в daily gift (сейчас +1000 к счёту заботы локально) — when billing OK
 
 ---
 
@@ -346,6 +347,6 @@
 
 ## Next action
 
-Сейчас: Flappy gap/feel + Companion daily gift (продукт) + deferred art/3D.
-Закрыто в этой волне: Towers levels, Hanoi pre-game/timer/stop, 2048 swipe, Gears visual/anti-abuse.
+Сейчас: deferred art/3D, emoji→icons, GameShell unify, Flappy LB eye-check, Companion tickets gift later.
+Закрыто: Flappy gap/reward/feel + Companion daily gift (points, boost removed).
 Не начинать 3D / OSS без ОК.

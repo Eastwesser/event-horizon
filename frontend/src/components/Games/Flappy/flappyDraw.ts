@@ -266,13 +266,18 @@ export function drawScore(ctx: CanvasRenderingContext2D, score: number, w: numbe
 
 export function drawStartHint(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Center under the score chip (score sits ~y=60).
+  const cx = w / 2;
+  const cy = h / 2 + 10;
   ctx.font = 'bold 24px "Press Start 2P", monospace';
   ctx.fillStyle = '#FFF';
   ctx.shadowColor = '#000';
   ctx.shadowBlur = 6;
-  ctx.fillText('НАЖМИТЕ ПРОБЕЛ', w / 2 - 150, h / 2);
+  ctx.fillText('НАЖМИТЕ ПРОБЕЛ', cx, cy);
   ctx.font = '16px monospace';
   ctx.shadowBlur = 0;
-  ctx.fillText('или кликните мышкой', w / 2 - 110, h / 2 + 50);
+  ctx.fillText('или кликните мышкой', cx, cy + 36);
   ctx.restore();
 }

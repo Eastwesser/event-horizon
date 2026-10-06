@@ -1,14 +1,12 @@
 // frontend/src/components/Games/Companion/CompanionGame.tsx
 // Soft tamagotchi MVP: customize, feed/play/rest. No death — critical loneliness after neglect.
+// Not an LB chase: daily care gift (+points) matters more than boost/rank.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
-import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
 
 type Species = 'звезда' | 'кот' | 'дракон' | 'кактус';
 type Mood = 'happy' | 'ok' | 'sad' | 'critical';
@@ -25,6 +23,9 @@ interface Pet {
 }
 
 const STORAGE_KEY = 'eh_companion_pet_v1';
+const DAILY_GIFT_KEY = 'eh_companion_daily_gift_v1';
+const DAILY_GIFT_POINTS = 1000;
+
 const SPECIES: { id: Species; emoji: string; label: string }[] = [
   { id: 'звезда', emoji: '⭐', label: 'Звезда' },
   { id: 'кот', emoji: '🐱', label: 'Кот' },
@@ -34,6 +35,14 @@ const SPECIES: { id: Species; emoji: string; label: string }[] = [
 const COLORS = ['#c9a227', '#7c9cff', '#5ec8b8', '#e07a5f', '#b388ff'];
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dailyGiftClaimedToday(): boolean {
+  return localStorage.getItem(DAILY_GIFT_KEY) === todayKey();
+}
 
 function loadPet(): Pet | null {
   try {
@@ -80,21 +89,9 @@ export function CompanionGame() {
   const [draftColor, setDraftColor] = useState(COLORS[0]);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [saving, setSaving] = useState(false);
-  const {
-    useBoost,
-    setUseBoost,
-    boostBusy,
-    armBoost,
-    boostError,
-    setBoostError,
-  } = useGameBoost('companion');
-
-  useEffect(() => {
-    if (boostError) {
-      setNotif({ message: boostError, type: 'error' });
-      setBoostError(null);
-    }
-  }, [boostError, setBoostError]);
+  const [giftClaimed, setGiftClaimed] = useState(() => dailyGiftClaimedToday());
+  /** Points from today's gift — included in save score. */
+  const [giftPoints, setGiftPoints] = useState(() => (dailyGiftClaimedToday() ? DAILY_GIFT_POINTS : 0));
 
   useEffect(() => {
     if (!pet) return;
@@ -104,12 +101,16 @@ export function CompanionGame() {
   useEffect(() => {
     const t = setInterval(() => {
       setPet((p) => (p ? decay(p) : p));
+      const claimed = dailyGiftClaimedToday();
+      setGiftClaimed(claimed);
+      if (!claimed) setGiftPoints(0);
     }, 60_000);
     return () => clearInterval(t);
   }, []);
 
   const mood = useMemo(() => (pet ? moodOf(pet) : 'ok'), [pet]);
-  const score = pet ? careScore(pet) : 0;
+  const baseScore = pet ? careScore(pet) : 0;
+  const score = Math.min(10000, baseScore + giftPoints);
   const speciesMeta = SPECIES.find((s) => s.id === pet?.species);
 
   const create = () => {
@@ -140,34 +141,54 @@ export function CompanionGame() {
     setPet(next);
   };
 
+  const claimDailyGift = () => {
+    if (!pet || giftClaimed || dailyGiftClaimedToday()) {
+      setNotif({ message: 'Подарок сегодня уже получен', type: 'error' });
+      return;
+    }
+    localStorage.setItem(DAILY_GIFT_KEY, todayKey());
+    setGiftClaimed(true);
+    setGiftPoints(DAILY_GIFT_POINTS);
+    // Soft care bump from the gift itself.
+    setPet((p) =>
+      p
+        ? {
+            ...p,
+            hunger: Math.min(100, p.hunger + 12),
+            energy: Math.min(100, p.energy + 12),
+            joy: Math.min(100, p.joy + 12),
+          }
+        : p,
+    );
+    setNotif({
+      message: `Подарок дня: +${DAILY_GIFT_POINTS} к заботе. Загляни завтра снова.`,
+      type: 'success',
+    });
+  };
+
   const submit = async () => {
     if (!pet) return;
     setSaving(true);
     try {
-      const { boostId, boosted } = await armBoost();
       const body: Record<string, unknown> = {
         user_id: localStorage.getItem('userId'),
         game_id: 'companion',
         level: 1,
-        score: Math.min(10000, careScore(pet)),
+        score: Math.min(10000, careScore(pet) + giftPoints),
         user_email: localStorage.getItem('userEmail'),
         nickname: localStorage.getItem('nickname') || '',
         seed: `companion_${pet.name}_${Date.now()}`,
         moves: [],
       };
-      if (boosted && boostId) body.boost_id = boostId;
-      const response = await api.post('/game/submit', body);
-      const ranked =
-        response.data?.ranked === true &&
-        !boosted &&
-        !String(response.data?.message || '').includes('not ranked');
+      await api.post('/game/submit', body);
       setNotif({
-        message: ranked ? 'Забота сохранена в счёт' : boostUnrankedToast(),
+        message:
+          giftPoints > 0
+            ? `Забота сохранена (+${giftPoints} подарок дня)`
+            : 'Забота сохранена',
         type: 'success',
       });
-      if (ranked) {
-        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
-      }
+      void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
     } catch {
       setNotif({ message: 'Не удалось сохранить', type: 'error' });
     } finally {
@@ -191,7 +212,14 @@ export function CompanionGame() {
       title="Компаньон"
       onBack={handleBack}
       width="narrow"
-      stats={pet ? <ScoreChip label="Забота" value={score} /> : undefined}
+      stats={
+        pet ? (
+          <>
+            <ScoreChip label="Забота" value={score} />
+            <ScoreChip label="Серия" value={pet.careStreak} />
+          </>
+        ) : undefined
+      }
       controls={
         pet ? (
           <>
@@ -204,19 +232,24 @@ export function CompanionGame() {
             <Button size="sm" onClick={() => care('rest')}>
               Сон
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => void submit()} disabled={saving || boostBusy}>
+            {!giftClaimed && (
+              <Button size="sm" variant="secondary" onClick={claimDailyGift}>
+                Подарок дня (+{DAILY_GIFT_POINTS})
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => void submit()} disabled={saving}>
               Сохранить счёт
             </Button>
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy || saving} />
           </>
         ) : undefined
       }
       help={
         <>
-          <p>Мягкий компаньон: корми, играй, дай отдохнуть. Без давления и дедлайнов.</p>
-          {boostHelpLines('companion').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
+          <p>Играй со своим питомцем: корми, играй, дай отдохнуть. Без давления и дедлайнов.</p>
+          <p>
+            Это не гонка за лидербордом. Раз в день — подарок заботы (+{DAILY_GIFT_POINTS} к счёту
+            заботы). Билетики за подарок — later.
+          </p>
         </>
       }
     >
@@ -277,6 +310,15 @@ export function CompanionGame() {
             <span className="mt-1 font-display text-lg text-text-primary">{pet.name}</span>
           </div>
           <p className="text-center text-sm text-text-secondary">{moodLine}</p>
+          {giftClaimed ? (
+            <p className="text-center text-xs text-horizon-gold">
+              Подарок дня получен{giftPoints > 0 ? ` (+${giftPoints})` : ''}
+            </p>
+          ) : (
+            <p className="text-center text-xs text-text-muted">
+              Можно забрать подарок дня — +{DAILY_GIFT_POINTS} к заботе
+            </p>
+          )}
           <div className="grid w-full grid-cols-3 gap-2 text-center text-xs text-text-muted">
             {(
               [

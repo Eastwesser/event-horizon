@@ -11,9 +11,10 @@ export interface Pipe {
 }
 
 const BASE_PIPE_SPEED = 3;
-const BASE_GRAVITY = 0.3;
-const BASE_PIPE_GAP = 150;
+const BASE_GRAVITY = 0.28;
+const BASE_PIPE_GAP = 170;
 const BASE_PIPE_SPACING = 300;
+const BASE_JUMP = -7;
 
 function clampLevel(level: number): number {
   if (!Number.isFinite(level)) return 1;
@@ -23,10 +24,13 @@ function clampLevel(level: number): number {
 function physicsForLevel(level: number) {
   const lv = clampLevel(level);
   return {
-    PIPE_SPEED: BASE_PIPE_SPEED + (lv - 1) * 0.25,
-    PIPE_GAP: Math.max(100, BASE_PIPE_GAP - (lv - 1) * 5),
+    // L1 slower/wider; L10 faster/tighter — clearly distinct.
+    PIPE_SPEED: BASE_PIPE_SPEED + (lv - 1) * 0.28,
+    PIPE_GAP: Math.max(95, BASE_PIPE_GAP - (lv - 1) * 8.3),
     PIPE_SPACING: Math.max(200, BASE_PIPE_SPACING - (lv - 1) * 10),
     GRAVITY: BASE_GRAVITY,
+    /** Per-pipe gap variance (px). More on easy levels so L1 ≠ fixed L5 feel. */
+    GAP_JITTER: Math.max(6, 38 - (lv - 1) * 3.5),
   };
 }
 
@@ -45,6 +49,7 @@ interface FlappyState {
   PIPE_GAP: number;
   PIPE_SPACING: number;
   PIPE_SPEED: number;
+  GAP_JITTER: number;
 
   boostId: string | null;
   boosted: boolean;
@@ -76,11 +81,12 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
   level: 1,
 
   GRAVITY: BASE_GRAVITY,
-  JUMP_FORCE: -6.5,
+  JUMP_FORCE: BASE_JUMP,
   PIPE_WIDTH: 60,
   PIPE_GAP: BASE_PIPE_GAP,
   PIPE_SPACING: BASE_PIPE_SPACING,
   PIPE_SPEED: BASE_PIPE_SPEED,
+  GAP_JITTER: 38,
 
   boostId: null,
   boosted: false,
@@ -99,6 +105,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       boosted: false,
       PIPE_SPEED: phys.PIPE_SPEED,
       GRAVITY: phys.GRAVITY,
+      GAP_JITTER: phys.GAP_JITTER,
     });
   },
 
@@ -129,6 +136,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       lastSubmitMessage: null,
       PIPE_GAP: phys.PIPE_GAP,
       PIPE_SPACING: phys.PIPE_SPACING,
+      GAP_JITTER: phys.GAP_JITTER,
       // Boost: world/pipes slower; bird gravity stays normal (flap feel intact).
       PIPE_SPEED: boosted ? phys.PIPE_SPEED * 0.55 : phys.PIPE_SPEED,
       GRAVITY: phys.GRAVITY,
@@ -173,7 +181,8 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
     let newScore = score;
     const pipesWithScore = updatedPipes.map((pipe) => {
       if (!pipe.passed && pipe.x + PIPE_WIDTH < 100) {
-        newScore = newScore + 10;
+        // Level-scaled reward: L1 pipe ≠ L10 pipe (balance, not pay-to-win).
+        newScore = newScore + 10 * clampLevel(get().level);
         return { ...pipe, passed: true };
       }
       return pipe;
@@ -223,19 +232,21 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
       PIPE_GAP: phys.PIPE_GAP,
       PIPE_SPACING: phys.PIPE_SPACING,
       PIPE_SPEED: phys.PIPE_SPEED,
+      GAP_JITTER: phys.GAP_JITTER,
       GRAVITY: phys.GRAVITY,
     });
   },
 
   generatePipe: () => {
-    const { PIPE_GAP } = get();
+    const { PIPE_GAP, GAP_JITTER } = get();
+    const gap = Math.max(90, PIPE_GAP + (Math.random() * 2 - 1) * GAP_JITTER);
     const minTop = 50;
-    const maxTop = GAME_HEIGHT - PIPE_GAP - 50;
+    const maxTop = GAME_HEIGHT - gap - 50;
     const topHeight = Math.random() * (maxTop - minTop) + minTop;
-    const bottomY = topHeight + PIPE_GAP;
+    const bottomY = topHeight + gap;
 
     return {
-      id: Date.now(),
+      id: Date.now() + Math.floor(Math.random() * 1000),
       x: GAME_WIDTH,
       topHeight,
       bottomY,

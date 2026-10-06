@@ -16,7 +16,7 @@ export const BOOST_EFFECT_BY_GAME: Record<string, string> = {
   hanoi: 'Hanoi: доступно авто-решение (платный чит лампами).',
   twenty48: '2048: один undo хода за буст (не в лидерборд).',
   gears: 'Gears: следующий дроп копирует текущий номинал.',
-  companion: 'Companion: забота без давления — сейв с бустом не гонится за топом.',
+  companion: 'Companion: без гонки за топом — важнее ежедневный подарок заботы.',
 };
 
 export function boostHelpLines(gameId: string): string[] {

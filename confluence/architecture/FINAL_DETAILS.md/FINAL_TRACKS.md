@@ -38,7 +38,7 @@
 | Shop cleanup (catalog) | ✅ (platform-adjacent; done) |
 | Boost Phase 1 allowlist | ✅ |
 | Hotfix + Boost UX + per-game effects | ✅ (BoostCheckbox, gameBoostCopy, GameOverActions) |
-| Levels + deferred polish | 🟧 Towers/Hanoi/2048/Gears done; Flappy gap + Companion gift open |
+| Levels + deferred polish | ✅ Flappy gap/feel + Companion daily gift; deferred art left |
 
 ---
 
@@ -70,11 +70,9 @@ Open: platform button list (Emma). Locked/skipped: C4=D, #5b shipped, EXPLAIN/bo
 ## Что делать сейчас
 
 ```text
-P4 + P5 actionable DONE.
-Track B hotfix + boost UX + per-game effects DONE.
-Towers levels + Hanoi pre-game + 2048 swipe + Gears visual DONE.
+Track B gameplay slice DONE (hotfix → boost UX → levels → Flappy/Companion).
 
-NEXT = Flappy gap/feel + Companion daily gift (or park) + deferred art.
+NEXT = deferred polish (emoji icons, GameShell unify, art/3D) or platform Emma list.
 ```
 
 ---
@@ -84,7 +82,7 @@ NEXT = Flappy gap/feel + Companion daily gift (or park) + deferred art.
 ```
 Wave 1–4   ████████████ DONE
 Track A    ████████████ DONE
-Track B    ██████████░░ Flappy gap / Companion gift  ← you are here
+Track B    ████████████ gameplay done; deferred art  ← you are here
 Track D    ████████████ P1–P3 DONE
 Track C    ████████████ DONE
 Deferred   ████████░░░░ P5 slice done (Emma button list open)
