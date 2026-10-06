@@ -12,28 +12,28 @@
 
 | Срез | Done / Total | Notes |
 |------|--------------|-------|
-| 0 Meta / process | 2 / 4 | focus + gate after hotfix/boost UX |
-| 1 Global (all games) | 9 / 12 | emoji icons + GameShell later |
+| 0 Meta / process | 3 / 4 | OSS/3D parked |
+| 1 Global (all games) | 12 / 12 | ✅ |
 | 2 Economy / boost philosophy | 8 / 8 | ✅ gameBoostCopy + BE 0 rewards |
 | 3 Hotfix bugs | 6 / 6 | ✅ 06.10 |
-| 4 Hexagon / Pancaker | 14 / 22 | levels art/polish open |
-| 5 Flappy | 18 / 20 | LB eye-check open |
+| 4 Hexagon / Pancaker | 19 / 22 | 2.5D deferred |
+| 5 Flappy | 18 / 20 | LB eye-check manual |
 | 6 Towers / Builder | 12 / 12 | levels done |
 | 7 Hanoi | 13 / 14 | 3D deferred |
-| 8 Memory / Memonia | 8 / 12 | art polish open |
+| 8 Memory / Memonia | 10 / 12 | card art deferred |
 | 9 Twenty48 | 8 / 8 | swipe done |
-| 10 Gears / Орбиты | 10 / 12 | lag check open |
-| 11 Companion | 7 / 10 | tickets gift later; EN name open |
-| 12 Leaderboard (cross) | 5 / 6 | select order cosmetic |
+| 10 Gears / Орбиты | 11 / 12 | lag OK at FE |
+| 11 Companion | 7 / 10 | tickets/EN parked |
+| 12 Leaderboard (cross) | 6 / 6 | ✅ order = Home |
 | 13 Shop / inventory / chrome | 12 / 12 | ✅ Track D |
-| 14 Naming / copy | 5 / 6 | glossary open |
-| 15 Deferred / wish | 2 / 10 | chrome + k3s done |
+| 14 Naming / copy | 6 / 6 | ✅ currencyGlossary |
+| 15 Deferred / wish | 3 / 10 | Track B gameplay closed |
 
 ---
 
 ## 0. Meta / process
 
-- [ ] Предыгровой сейв / rollback-point «до извращений с играми» — держать в голове (флешка / коммит)
+- [x] Предыгровой сейв / rollback-point «до извращений с играми» — держать в голове (флешка / коммит)
 - [x] Сейчас фокус = игры; остальной chrome (кнопки платформы) — после игр (final polishing)
 - [x] Не пилить Track B levels вслепую, пока не закрыты hotfix + boost UX
 - [ ] Опционально позже: готовые OSS/3D решения под игры (не тащить зоопарк языков без нужды)
@@ -45,13 +45,13 @@
 - [x] Boost непонятен игроку: что это, зачем, −10 ламп, что даёт
 - [x] Boost checkbox слишком на виду — смущает; увести вниз / в help / не мозолить глаза
 - [x] В help (свёрнутый блок) — явный текст: буст = легальный чит, **не в лидерборд**
-- [ ] Лампы/билеты в играх всё ещё emoji → заменить на иконки (как в app/shop)
+- [x] Лампы/билеты в играх всё ещё emoji → заменить на иконки (как в app/shop)
 - [x] Непонятно зачем лампы и билеты (тултип / одна строка в help)
 - [x] Честная игра → билеты (+ лампы, ламп меньше); с бустом → залипание, без LB / без профита в магазин
 - [x] «На главную» из GO → к блоку «Выбери игру», не на самый верх лендинга
 - [x] GO-кнопки: одинаковая ширина / один ряд (Новая / Сохранить / На главную)
 - [x] Toast/нотификация «счёт сохранён» — зелёная **нарисованная** галочка, не emoji
-- [ ] UX каждой игры «сырой» — выравнивание контролов по единому GameShell-паттерну (после per-game)
+- [x] UX каждой игры «сырой» — выравнивание контролов по единому GameShell-паттерну (после per-game)
 - [x] Экран «дёргается» / pulse на клик (Flappy, Towers) — убрать или сильно ослабить
 - [x] Правила «Как играть» — где пусто, дописать конкретно под игру
 
@@ -102,16 +102,16 @@
 - [x] Текст в help: что делает буст в Pancaker
 
 ### Уровень
-- [ ] Непонятно, от чего растёт уровень (сейчас in-run / каждые ~100?)
+- [x] Непонятно, от чего растёт уровень (сейчас in-run / каждые ~100?)
 - [x] Либо продуманный scaling, либо выбираемый difficulty, либо оставить progress-only как в старых аркадах — **решить явно**
 - [ ] Идея levels: размер поля (19 hex → 20+ …) — опционально later
-- [ ] Не сделать игру непроходимой
+- [x] Не сделать игру непроходимой
 
 ### Арт / polish
 - [ ] Трей-карточки: опционально заменить emoji на рисунки (курочка и т.д.) — некритично, v1 emoji ок
-- [ ] Space skin: тёмная карточка под тёмную звезду (меньше кринжа розовый+тёмное)
-- [ ] Расположение кнопки «Космические блины» — UX polish
-- [ ] Контролы: порядок Новая / Boost / Топ-10 / Завершить — переставить удобнее
+- [x] Space skin: тёмная карточка под тёмную звезду (меньше кринжа розовый+тёмное)
+- [x] Расположение кнопки «Космические блины» — UX polish
+- [x] Контролы: порядок Новая / Boost / Топ-10 / Завершить — переставить удобнее
 - [ ] Wish: блины 2.5D башенками сбоку — **deferred / 3D**
 
 ---
@@ -219,7 +219,7 @@
 
 ### Polish
 - [ ] Wish: картинки вместо emoji на картах
-- [ ] Общий UX раскладки контролов
+- [x] Общий UX раскладки контролов
 
 ---
 
@@ -254,7 +254,7 @@
 - [x] Анти-абуз: спам в одну точку / пирамида / merge в полёте — жёстче lose-line (10% top zone)
 - [x] Lose, когда поле забито до spawn-линии
 - [x] Уровни цели: не только 8 → 9, 10…; убрать хардкод «до 8» из copy
-- [ ] Лаг при сохранении больших счетов — проверить
+- [x] Лаг при сохранении больших счетов — проверить
 
 ### Naming
 - [x] «Орбиты» → **Gears** (EN) — опционально согласовать
@@ -288,7 +288,7 @@
 - [x] Memory: пусто после сейва — проверить submit/ranked
 - [x] Builder/Hanoi/2048/Gears/Companion — глазами сверить после hotfix
 - [x] Оставить **per-game** LB (не общий суммарный) — решение: разделение ок
-- [ ] Порядок игр в селекте LB (Memonia не на «не своём» месте) — cosmetic
+- [x] Порядок игр в селекте LB (Memonia не на «не своём» месте) — cosmetic
 
 ---
 
@@ -316,7 +316,7 @@
 - [x] Companion → soft pet copy без «смерти»
 - [x] Memory Home tile: без «фруктов»
 - [x] Flappy skin label: rainbow → cosmic
-- [ ] Единый glossary: лампы / билеты / буст / лидерборд (RU)
+- [x] Единый glossary: лампы / билеты / буст / лидерборд (RU)
 
 ---
 
@@ -328,7 +328,7 @@
 - [ ] OSS готовые движки под 3D
 - [ ] Companion room art + daily gift economy full
 - [ ] Mass multi-user LB seeding (10 аккаунтов × 8 игр) — для QA
-- [ ] Track B levels после чистой базы
+- [x] Track B levels после чистой базы
 - [ ] C4 payouts / Wave2 #5b / EXPLAIN / bottleneck / pull-in / backfill
 - [x] Final polishing не-игрового chrome
 - [x] k3s data plane (Track C)
@@ -347,6 +347,8 @@
 
 ## Next action
 
-Сейчас: deferred art/3D, emoji→icons, GameShell unify, Flappy LB eye-check, Companion tickets gift later.
-Закрыто: Flappy gap/reward/feel + Companion daily gift (points, boost removed).
+Track B gameplay + polish slice **CLOSED**.
+
+Parked / deferred: 3D art, tray/card emoji→drawings, Companion tickets gift + EN name,
+Emma chrome button list, C4 / EXPLAIN / backfill, Flappy LB eye-check (manual QA).
 Не начинать 3D / OSS без ОК.

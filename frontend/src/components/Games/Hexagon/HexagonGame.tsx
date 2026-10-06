@@ -127,6 +127,17 @@ export function HexagonGame() {
               value={level}
               className="[&_span:last-child]:text-photon-cyan"
             />
+          </>
+        }
+        controls={
+          <>
+            <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
+              {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleEndGame} disabled={!runReady}>
+              Завершить
+            </Button>
+            <Leaderboard gameId="hexagon" />
             {skins.hexagon.hasSpacePancakes && (
               <button
                 type="button"
@@ -142,24 +153,16 @@ export function HexagonGame() {
                 Космические блины
               </button>
             )}
-          </>
-        }
-        controls={
-          <>
-            <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
-              {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
-            </Button>
-            <Leaderboard gameId="hexagon" />
-            <Button variant="danger" size="sm" onClick={handleEndGame} disabled={!runReady}>
-              Завершить
-            </Button>
             <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
           </>
         }
         help={
           <>
             <p>Перетаскивайте стопки с подноса на соседние гексы того же вкуса, чтобы сливать блины.</p>
-            <p>Соберите ≥10 на клетке — стопка исчезнет и даст очки. Уровень растёт по очкам (аркадный progress, не выбор сложности).</p>
+            <p>
+              Соберите ≥10 на клетке — стопка исчезнет и даст очки. Уровень растёт по очкам (каждые
+              +50 к цели после порога) — аркадный progress, не выбор сложности.
+            </p>
             {boostHelpLines('hexagon').map((line) => (
               <p key={line}>{line}</p>
             ))}

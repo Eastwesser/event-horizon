@@ -7,8 +7,8 @@ import { PageShell } from '../ui/PageShell';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
 import { cn } from '../../lib/cn';
-import { Icon, IconLabel, type IconName } from '../ui/Icon';
-import { gameIcon } from '../../lib/gameIcons';
+import { Icon, IconLabel } from '../ui/Icon';
+import { GAME_LB_TABS, type GameTabId } from '../../lib/gameIcons';
 
 interface LeaderboardEntry {
   rank: number;
@@ -19,18 +19,9 @@ interface LeaderboardEntry {
   game_id?: string;
 }
 
-type GameId = 'hexagon' | 'memory' | 'flappy' | 'towers' | 'hanoi' | 'twenty48' | 'gears' | 'companion';
+type GameId = GameTabId;
 
-const GAME_TABS: { id: GameId; label: string; icon: IconName }[] = [
-  { id: 'hexagon', label: 'Pancaker', icon: gameIcon('hexagon') },
-  { id: 'flappy', label: 'Flappy Bird', icon: gameIcon('flappy') },
-  { id: 'memory', label: 'Memonia', icon: gameIcon('memory') },
-  { id: 'towers', label: 'Builder', icon: gameIcon('towers') },
-  { id: 'hanoi', label: 'Hanoi', icon: gameIcon('hanoi') },
-  { id: 'twenty48', label: '2048', icon: gameIcon('twenty48') },
-  { id: 'gears', label: 'Орбиты', icon: gameIcon('gears') },
-  { id: 'companion', label: 'Компаньон', icon: gameIcon('companion') },
-];
+const GAME_TABS = GAME_LB_TABS;
 
 const RANK_TONE: Record<number, string> = {
   1: 'text-horizon-gold',
