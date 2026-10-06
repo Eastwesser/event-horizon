@@ -43,7 +43,6 @@ export function MemoryGame() {
     boosted,
     lastSubmitRanked,
     initGame,
-    resetGame,
     submitScore,
   } = useMemoryStore();
 
