@@ -89,9 +89,7 @@ export function HexagonGame() {
   };
 
   const handleEndGame = () => {
-    if (confirm('Завершить игру? Ваш прогресс будет сохранён.')) {
-      setGameOver(score);
-    }
+    setGameOver(score);
   };
 
   const handleBack = () => navigate('/');

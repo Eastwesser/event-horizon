@@ -111,29 +111,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   // },
 
   setGameOver: (finalScore: number) => {
-      console.log('🎮 setGameOver with finalScore:', finalScore);
-      console.log('🎮 Current store score:', get().score);
-      set({ isGameOver: true, finalScore, score: finalScore });
-      get().submitScore();
+    set({ isGameOver: true, finalScore, score: finalScore, lastSubmitRanked: null });
+    void get().submitScore();
   },
 
   addPancakeToHex: (trayId: number, coord: HexCoord) => {
-    console.log('🔹 addPancakeToHex called with trayId:', trayId, 'coord:', coord);
     const move = {
-        fromX: 0,
-        fromY: 0,
-        toX: coord.q,
-        toY: coord.r,
-        timestamp: Date.now(),
+      fromX: 0,
+      fromY: 0,
+      toX: coord.q,
+      toY: coord.r,
+      timestamp: Date.now(),
     };
-    console.log('🔹 Adding move:', move);
-    console.log('🔹 Current gameMoves length:', get().gameMoves.length);
     set({ gameMoves: [...get().gameMoves, move] });
-    console.log('📝 Saving move:', move);
-
-
-    // // Временное решение: не отправляем ходы
-    // set({ gameMoves: [] }); // очищаем, не сохраняем ходы
 
     const { tray, tiles, isGameOver } = get();
     if (isGameOver) return;
@@ -359,186 +349,77 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
-    const userEmail = localStorage.getItem('userEmail') || '';  // 👈 ПЕРЕНЕСТИ СЮДА
-    const nickname = localStorage.getItem('nickname') || userEmail.split('@')[0];  // 👈
+    const { isGameOver, boosted, boostId, finalScore, score } = get();
+    if (!isGameOver) return;
 
-      let movesToSend = get().gameMoves;
-      if (movesToSend.length === 0) {
-          console.log('⚠️ gameMoves is empty, creating test moves');
-          movesToSend = [];
-          for (let i = 0; i < 10; i++) {
-              movesToSend.push({
-                  fromX: 0, fromY: 0,
-                  toX: i % 5, toY: Math.floor(i / 5),
-                  timestamp: Date.now() + i,
-              });
-          }
-      }
-      console.log('🔹 SubmitScore - gameMoves length:', get().gameMoves.length);
-      console.log('🔹 SubmitScore - gameMoves:', get().gameMoves);
-      // Alert для визуальной отладки
-      alert('1️⃣ submitScore started');
-      
-      console.log('🎯 submitScore called, isGameOver:', get().isGameOver);
-      const { level, gameMoves, isGameOver } = get();
-      
-      alert('2️⃣ isGameOver: ' + isGameOver + ', level: ' + level + ', moves: ' + gameMoves.length);
-      console.log('📊 isGameOver:', isGameOver, 'level:', level, 'moves:', gameMoves.length);
-      
-      if (!isGameOver) {
-          alert('❌ Game not over, skipping');
-          console.log('❌ Game not over, skipping submit');
-          return;
-      }
+    const userEmail = localStorage.getItem('userEmail') || '';
+    const nickname =
+      localStorage.getItem('nickname') || userEmail.split('@')[0] || '';
 
-      let userId = localStorage.getItem('userId');
-      console.log('🎯 submitScore - userId from localStorage:', userId);
-
-      if (!userId) {
-          const token = localStorage.getItem('accessToken');
-          if (token) {
-              try {
-                  const payload = JSON.parse(atob(token.split('.')[1]));
-                  userId = payload.user_id;
-                  if (userId) {
-                      localStorage.setItem('userId', userId);
-                      console.log('🔧 Fallback: restored userId from token:', userId);
-                  }
-              } catch (e) {
-                  console.error('Failed to parse token', e);
-              }
-          }
-      }
-
-      if (!userId) {
-          console.error('❌ No userId found!');
-          return;
-      }
-
-      alert('3️⃣ userId from localStorage: ' + userId);
-      console.log('📡 userId from localStorage:', userId);
-      
-      if (!localStorage.getItem('userId')) {
-          localStorage.setItem('userId', '70bdc424-37b4-4bce-a205-7586b0a9e91d');
-          alert('⚠️ Forced userId: 70bdc424-37b4-4bce-a205-7586b0a9e91d');
-      }
-
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
       const token = localStorage.getItem('accessToken');
       if (token) {
+        try {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          const userId = payload.user_id;
-          localStorage.setItem('userId', userId);
-      }
-
-      if (!userId) {
-          alert('❌ No userId found!');
-          console.error('❌ No userId found in localStorage');
-          return;
-      }
-      
-      alert('4️⃣ Sending to backend...');
-      console.log('📤 Request data:', {
-          user_id: userId,
-          game_id: 'hexagon',
-          level: level,
-          seed: 'game_seed_' + Date.now(),
-          // moves: gameMoves,
-          moves: [], // пока пустой массив
-
-      });
-      
-      try {
-        console.log('📤 REQUEST DATA:', {
-            user_id: userId,
-            game_id: 'hexagon',
-            level: level,
-            seed: 'game_seed_' + Date.now(),
-            moves: [],
-        });
-
-        const currentScore = get().finalScore || get().score;
-        console.log('🎯 Sending score:', currentScore);
-        console.log('📤 Full request:', {
-            user_id: userId,
-            game_id: 'hexagon',
-            level: level,
-            score: currentScore,
-            seed: 'game_seed_' + Date.now(),
-            moves: [],
-        });
-        console.log('🎯 Score to send:', currentScore);
-        console.log('🔍 DEBUG - currentScore from store:', currentScore);
-        console.log('🔍 DEBUG - finalScore from store:', get().finalScore);
-        console.log('🎯 FINAL SCORE BEFORE SEND:', currentScore);
-        console.log('🎯 Current score before submit:', currentScore);
-
-        console.log('🎯 Current score from store:', currentScore);
-
-        console.log('📧 userEmail:', userEmail);
-
-        console.log('🔍 FINAL REQUEST DATA:', {
-            user_id: userId,
-            game_id: 'hexagon',
-            level: level,
-            score: currentScore,
-            user_email: userEmail,
-            seed: 'game_seed_' + Date.now(),
-            moves: get().gameMoves,
-        });
-
-        const response = await api.post('/game/submit', (() => {
-          const { boosted, boostId } = get();
-          const body: Record<string, unknown> = {
-            user_id: userId,
-            game_id: 'hexagon',
-            level: level,
-            score: currentScore,
-            user_email: userEmail,
-            nickname: nickname,
-            seed: 'game_seed_' + Date.now(),
-            moves: [],
-          };
-          if (boosted && boostId) body.boost_id = boostId;
-          return body;
-        })());
-
-        if (response.status === 200 || response.data) {
-            const ranked =
-              response.data?.ranked === true &&
-              !get().boosted &&
-              !String(response.data?.message || '').includes('not ranked');
-            set({ lastSubmitRanked: ranked });
-            if (!ranked) {
-              set({ gameMoves: [] });
-              return;
-            }
-            // 💾 Сохраняем статистику в localStorage с привязкой к userId
-            // Используем существующий userId, НЕ объявляем новый!
-            const storageKey = `gameScores_${userId}`;
-            const totalScoreKey = `totalScore_${userId}`;
-            const playedKey = `hexagonGamesPlayed_${userId}`;
-
-            const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
-            const currentBest = savedScores.hexagon || 0;
-
-            if (currentScore > currentBest) {
-                savedScores.hexagon = currentScore;
-                localStorage.setItem(storageKey, JSON.stringify(savedScores));
-            }
-
-            const played = parseInt(localStorage.getItem(playedKey) || '0');
-            localStorage.setItem(playedKey, String(played + 1));
-
-            const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
-            localStorage.setItem(totalScoreKey, String(totalScore + currentScore));
-            void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+          userId = payload.user_id;
+          if (userId) localStorage.setItem('userId', userId);
+        } catch {
+          /* ignore */
         }
+      }
+    }
+    if (!userId) {
+      console.error('submitScore: no userId');
+      set({ lastSubmitRanked: false });
+      return;
+    }
 
-        console.log('✅ Score submitted:', response.data);
-        set({ gameMoves: [] });
-    } catch (err: any) {
-        console.error('❌ Failed to submit score:', err);
-    }   
+    const currentScore = finalScore || score;
+    // Pancaker LB is global (level=1); in-run level is UI-only.
+    const submitLevel = 1;
+
+    try {
+      const body: Record<string, unknown> = {
+        user_id: userId,
+        game_id: 'hexagon',
+        level: submitLevel,
+        score: currentScore,
+        user_email: userEmail,
+        nickname,
+        seed: `game_seed_${Date.now()}`,
+        moves: [],
+      };
+      if (boosted && boostId) body.boost_id = boostId;
+
+      const response = await api.post('/game/submit', body);
+      const ranked =
+        response.data?.ranked === true &&
+        !boosted &&
+        !String(response.data?.message || '').includes('not ranked');
+      set({ lastSubmitRanked: ranked, gameMoves: [] });
+
+      if (!ranked) return;
+
+      const storageKey = `gameScores_${userId}`;
+      const totalScoreKey = `totalScore_${userId}`;
+      const playedKey = `hexagonGamesPlayed_${userId}`;
+      const savedScores = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      const currentBest = savedScores.hexagon || 0;
+      if (currentScore > currentBest) {
+        savedScores.hexagon = currentScore;
+        localStorage.setItem(storageKey, JSON.stringify(savedScores));
+      }
+      const played = parseInt(localStorage.getItem(playedKey) || '0', 10);
+      localStorage.setItem(playedKey, String(played + 1));
+      const total = parseInt(localStorage.getItem(totalScoreKey) || '0', 10);
+      localStorage.setItem(totalScoreKey, String(total + currentScore));
+      void import('../lib/achievements').then(({ afterRankedSubmit }) =>
+        afterRankedSubmit(),
+      );
+    } catch (err) {
+      console.error('Failed to submit score:', err);
+      set({ lastSubmitRanked: false, gameMoves: [] });
+    }
   },
-
 }));
