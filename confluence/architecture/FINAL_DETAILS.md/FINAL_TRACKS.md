@@ -37,7 +37,7 @@
 |------|--------|
 | Shop cleanup (catalog) | ✅ (platform-adjacent; done) |
 | Boost Phase 1 allowlist | ✅ |
-| Hotfix → Boost UX → per-game effects → Levels | 🟧 parked until Emma returns to games |
+| Hotfix → Boost UX → per-game effects → Levels | 🟧 hotfix ✅ · UX/effects/levels next |
 
 ---
 
