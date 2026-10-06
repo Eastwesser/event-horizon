@@ -15,7 +15,7 @@
 | 0 Meta / process | 0 / 4 | |
 | 1 Global (all games) | 0 / 12 | |
 | 2 Economy / boost philosophy | 0 / 8 | |
-| 3 Hotfix bugs | 0 / 6 | |
+| 3 Hotfix bugs | 6 / 6 | ✅ 06.10 |
 | 4 Hexagon / Pancaker | 0 / 22 | |
 | 5 Flappy | 0 / 20 | |
 | 6 Towers / Builder | 0 / 12 | |
