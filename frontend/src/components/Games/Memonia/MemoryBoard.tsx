@@ -9,7 +9,7 @@ interface MemoryBoardProps {
 
 // Эмодзи для разных скинов
 const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐', '🥑', '🥥', '🫐'];
-const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🦝', '🦊', '🐺'];
+const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🦝', '🦉', '🐺'];
 
 export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
   const { cards, flipCard, gameOver, flippedIndices, matchedPairs } = useMemoryStore();

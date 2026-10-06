@@ -287,6 +287,11 @@ func (s *gameService) SubmitScore(ctx context.Context, req *SubmitScoreRequest) 
     if level < 1 {
         level = 1
     }
+    // Only Flappy partitions the leaderboard by difficulty level.
+    // Other games' in-run "level" must not fan out into empty boards (UI reads level=1).
+    if req.GameID != "flappy" {
+        level = 1
+    }
 
     // Получаем текущий рекорд (per-level)
     currentHighscore, err := s.repo.GetHighscore(ctx, req.UserID, req.GameID, level)
