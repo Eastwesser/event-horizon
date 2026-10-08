@@ -1,0 +1,160 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: deployments/k6/purchase.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 1m0s max duration (incl. graceful stop):
+              * default: 1 looping VUs for 30s (gracefulStop: 30s)
+
+time="2026-10-08T23:10:26+03:00" level=info msg="purchase.js: assigned 1 item(s) to VUs: c586a47f-b6d3-49d3-a627-26903aa5e26e" source=console
+
+running (0m01.0s), 1/1 VUs, 0 complete and 0 interrupted iterations
+default   [   1% ] 1 VUs  00.3s/30s
+
+running (0m02.0s), 1/1 VUs, 1 complete and 0 interrupted iterations
+default   [   4% ] 1 VUs  01.3s/30s
+
+running (0m03.0s), 1/1 VUs, 2 complete and 0 interrupted iterations
+default   [   8% ] 1 VUs  02.3s/30s
+
+running (0m04.0s), 1/1 VUs, 3 complete and 0 interrupted iterations
+default   [  11% ] 1 VUs  03.3s/30s
+
+running (0m05.0s), 1/1 VUs, 4 complete and 0 interrupted iterations
+default   [  14% ] 1 VUs  04.3s/30s
+
+running (0m06.0s), 1/1 VUs, 5 complete and 0 interrupted iterations
+default   [  18% ] 1 VUs  05.4s/30s
+
+running (0m07.1s), 1/1 VUs, 5 complete and 0 interrupted iterations
+default   [  22% ] 1 VUs  06.5s/30s
+
+running (0m08.0s), 1/1 VUs, 6 complete and 0 interrupted iterations
+default   [  24% ] 1 VUs  07.3s/30s
+
+running (0m09.0s), 1/1 VUs, 6 complete and 0 interrupted iterations
+default   [  28% ] 1 VUs  08.3s/30s
+
+running (0m10.0s), 1/1 VUs, 7 complete and 0 interrupted iterations
+default   [  31% ] 1 VUs  09.4s/30s
+
+running (0m11.0s), 1/1 VUs, 7 complete and 0 interrupted iterations
+default   [  34% ] 1 VUs  10.3s/30s
+
+running (0m12.0s), 1/1 VUs, 8 complete and 0 interrupted iterations
+default   [  38% ] 1 VUs  11.3s/30s
+
+running (0m13.0s), 1/1 VUs, 9 complete and 0 interrupted iterations
+default   [  41% ] 1 VUs  12.3s/30s
+
+running (0m14.0s), 1/1 VUs, 10 complete and 0 interrupted iterations
+default   [  44% ] 1 VUs  13.3s/30s
+
+running (0m15.0s), 1/1 VUs, 10 complete and 0 interrupted iterations
+default   [  48% ] 1 VUs  14.3s/30s
+
+running (0m16.0s), 1/1 VUs, 11 complete and 0 interrupted iterations
+default   [  51% ] 1 VUs  15.3s/30s
+
+running (0m17.0s), 1/1 VUs, 12 complete and 0 interrupted iterations
+default   [  54% ] 1 VUs  16.3s/30s
+
+running (0m18.0s), 1/1 VUs, 13 complete and 0 interrupted iterations
+default   [  58% ] 1 VUs  17.4s/30s
+
+running (0m19.0s), 1/1 VUs, 14 complete and 0 interrupted iterations
+default   [  61% ] 1 VUs  18.3s/30s
+
+running (0m20.0s), 1/1 VUs, 15 complete and 0 interrupted iterations
+default   [  65% ] 1 VUs  19.4s/30s
+
+running (0m21.0s), 1/1 VUs, 15 complete and 0 interrupted iterations
+default   [  68% ] 1 VUs  20.3s/30s
+
+running (0m22.0s), 1/1 VUs, 17 complete and 0 interrupted iterations
+default   [  71% ] 1 VUs  21.3s/30s
+
+running (0m23.0s), 1/1 VUs, 18 complete and 0 interrupted iterations
+default   [  74% ] 1 VUs  22.3s/30s
+
+running (0m24.0s), 1/1 VUs, 19 complete and 0 interrupted iterations
+default   [  78% ] 1 VUs  23.3s/30s
+
+running (0m25.0s), 1/1 VUs, 20 complete and 0 interrupted iterations
+default   [  81% ] 1 VUs  24.3s/30s
+
+running (0m26.0s), 1/1 VUs, 21 complete and 0 interrupted iterations
+default   [  84% ] 1 VUs  25.3s/30s
+
+running (0m27.0s), 1/1 VUs, 22 complete and 0 interrupted iterations
+default   [  88% ] 1 VUs  26.3s/30s
+
+running (0m28.0s), 1/1 VUs, 23 complete and 0 interrupted iterations
+default   [  91% ] 1 VUs  27.3s/30s
+
+running (0m29.0s), 1/1 VUs, 25 complete and 0 interrupted iterations
+default   [  94% ] 1 VUs  28.3s/30s
+
+running (0m30.0s), 1/1 VUs, 26 complete and 0 interrupted iterations
+default   [  98% ] 1 VUs  29.3s/30s
+
+running (0m31.0s), 1/1 VUs, 27 complete and 0 interrupted iterations
+default ↓ [ 100% ] 1 VUs  30s
+
+
+  █ THRESHOLDS 
+
+    errors
+    ✓ 'rate<0.15' rate=0.00%
+
+    http_req_duration
+    ✓ 'p(95)<1200' p(95)=534.56ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 168     5.368883/s
+    checks_succeeded...: 100.00% 168 out of 168
+    checks_failed......: 0.00%   0 out of 168
+
+    ✓ purchase 200
+    ✓ purchase success
+    ✓ cancel1 200
+    ✓ cancel1 success
+    ✓ cancel2 200
+    ✓ cancel2 idempotent
+
+    CUSTOM
+    errors.........................: 0.00% 0 out of 84
+
+    HTTP
+    http_req_duration..............: avg=196ms min=42.46ms  med=125.94ms max=894.96ms p(90)=419.71ms p(95)=534.56ms
+      { expected_response:true }...: avg=196ms min=42.46ms  med=125.94ms max=894.96ms p(90)=419.71ms p(95)=534.56ms
+    http_req_failed................: 0.00% 0 out of 86
+    http_reqs......................: 86    2.748357/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.09s min=732.46ms med=961.63ms max=2.23s    p(90)=1.6s     p(95)=1.94s   
+    iterations.....................: 28    0.894814/s
+    vus............................: 1     min=1       max=1
+    vus_max........................: 1     min=1       max=1
+
+    NETWORK
+    data_received..................: 69 kB 2.2 kB/s
+    data_sent......................: 47 kB 1.5 kB/s
+
+
+
+
+running (0m31.3s), 0/1 VUs, 28 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  30s

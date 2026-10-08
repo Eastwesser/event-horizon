@@ -54,17 +54,13 @@ Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`
 
 ## B. Left to do (honest buckets)
 
-### B1 — Denis runtime (blocks “done” claims for shop/history/LB)
+### B1 — Denis runtime — **DONE 08.10 night**
 ```bash
-make deploy          # or build-all + docker-build-all + deploy
-# then apply seeds (never touch real Berserk merch without OK):
-psql "$SHOP_DSN"    -f scripts/cleanup-shop-content-v2.sql
-psql "$SHOP_DSN"    -f scripts/seed-shop-themes-skins.sql
-psql "$HISTORY_DSN" -f scripts/seed-history-demo.sql
-# profile goose up → new achievement catalog
-make test-k6         # drop summary into LOAD_RESULTS/
+make seed-v110       # docker exec split A/B + themes + history + migrate-profile
+make test-k6         # browse CORE green
+make test-k6-purchase
 ```
-Also: smoke profile/LB zeros after real ranked saves; tag rollback point if wanted.
+Still optional IRL: play ranked game for profile/LB zeros; git tag `v1.1.0` after Miro+Boosty.
 
 ### B2 — Representation pack (you called these out — still open)
 | Item | Status | Action |

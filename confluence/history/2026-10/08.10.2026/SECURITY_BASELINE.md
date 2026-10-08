@@ -19,4 +19,11 @@ Quick posture check — not a full audit. Ticklist §3 stays open for deeper CSR
 - AuthZ: re-check admin / author / inventory write routes after author seed
 - DDoS: document limiter thresholds after `make test-k6` on live stack
 
+## Observed under load (08.10.2026)
+
+- CORE `browse.js` (~20 VU) is the sanity suite (`make test-k6`).
+- Legacy ~500 VU login blast → ~99% auth failures: **bcrypt cost 12 + ~100 rps login rate limit**.
+- Concurrently, shop / inventory / submit / leaderboard stayed green → read path OK; not an auth “outage” bug.
+- Do not use `deployments/k6/legacy/loadtest.js` for pass/fail CORE reports.
+
 **Verdict for now:** baseline OK for local/demo; not a claim of production hardening.

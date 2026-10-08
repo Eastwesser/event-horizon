@@ -1,6 +1,7 @@
 # Event Horizon — interview cheat sheet (where / ports / how)
 
-Living notes for v1.1.0. Topology diagram: `README.md` + `confluence/architecture/EH_SCHEMAS.md`. Miro board: https://miro.com/app/board/uXjVJLLg9us=/
+Living notes for v1.1.0. Topology diagram: `README.md` + `confluence/architecture/EH_SCHEMAS.md`. Miro board: https://miro.com/app/board/uXjVJLLg9us=/  
+Patterns / WS / SQL practice: `confluence/history/2026-10/08.10.2026/INTERVIEW_PATTERNS.md`
 
 ## Entry points
 

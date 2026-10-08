@@ -129,8 +129,8 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 |-------|--------------|-------|
 | 0 Meta / order | 4 / 5 | order + rename + feedbacks; tag rollback open |
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
-| 2 Interview + Miro | 2 / 14 | ports + WHAT_HAVE; **Miro export / Mermaid sync open** |
-| 3 Security | 1 / 4 | SECURITY_BASELINE.md note |
+| 2 Interview + Miro | 8 / 14 | patterns/WS/SQL/FE note; **Miro export still Denis IRL** |
+| 3 Security | 2 / 4 | baseline + rate-limit/k6 note |
 | 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
 | 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
 | 6 Shop / inventory / catalog | 12 / 24 | merch chip, dedupe, themes/skins SQL, floors |
@@ -141,7 +141,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 11 Games per-title | 18 / 48 | cosmic skins, Memonia map, 2048 drag, Track B done |
 | 12 Achievements | 4 / 4 | 3 tiers × 8 games + SVG icons |
 | 13 Mobile | 3 / 3 | safe-area + touch targets + shell inset |
-| 14 Load / metrics | 1 / 16 | runbook ready; blocked until `make deploy` |
+| 14 Load / metrics | 4 / 16 | CORE browse+purchase green; blast = legacy |
 | 15 Bugs / console | 4 / 12 | profile path; LB undefined; API spam gated |
 | 16 Parked wishlist | 0 / 8 | |
 | 17 MCP / Tetiva | 0 / 5 | **very last** |
@@ -171,7 +171,7 @@ Sources: `CLEANUP.md`, ideas voice (professional look / folders)
 - [x] FE: shop / inventory / chrome in clear folders (stores under `Shop/`, `Inventory/`)
 - [x] Backend: leave working Clean Architecture unless broken consistency found
 - [x] Professional look: FE `tsc --noEmit` green after moves
-- [ ] Smoke after moves: `make build-all && make docker-build-all && make deploy` (Denis runtime)
+- [x] Smoke after moves: `make build-all && make docker-build-all && make deploy` (Denis runtime) — stack up; CORE k6 green
 
 ---
 
@@ -181,14 +181,14 @@ Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 
 ### Write-ups (v1.1.0 snapshot)
 - [x] **What have we done** (commit/state as of 07–08.10) — `WHAT_HAVE_WE_DONE.md`
-- [ ] **Which methods / patterns** we use + code links (LB, rate limiter, circuit breaker, outbox, …)
-- [ ] **What could be better** (tech + design + product)
-- [ ] Anti-patterns / risks note (or “none critical”) — after highload preferred
+- [x] **Which methods / patterns** we use + code links (LB, rate limiter, circuit breaker, outbox, …) — `INTERVIEW_PATTERNS.md`
+- [x] **What could be better** (tech + design + product) — same file
+- [x] Anti-patterns / risks note (or “none critical”) — after highload preferred
 - [ ] Per-service plain-RU explainers: auth, game, billing, LB, profile, shop, inventory, authors, payment, history, analytics, notification, fulfillment, gateway, nats-hub, balancer
-- [ ] Where WebSockets live (LB Redis→WS? notifications?) — document truth
-- [ ] SQL practice list for interviews (admin joins: users / goods / purchases)
+- [x] Where WebSockets live (LB Redis→WS? notifications?) — document truth
+- [x] SQL practice list for interviews (admin joins: users / goods / purchases)
 - [x] `INTERVIEW_QUESTIONS_EH.md` — fill ports / “where is what”
-- [ ] FE architecture note: backend-first then FE — is FE folder layout OK?
+- [x] FE architecture note: backend-first then FE — is FE folder layout OK?
 
 ### Miro (Denis board)
 - [ ] Open board https://miro.com/app/board/uXjVJLLg9us=/
@@ -205,7 +205,7 @@ Sources: ideas voice
 
 - [ ] CSRF / XSS / SQL injection pass (gateway + FE)
 - [ ] AuthZ on admin / author / inventory routes
-- [ ] DDoS / rate-limit posture (limiter exists — verify surfaces)
+- [x] DDoS / rate-limit posture (limiter exists — verify surfaces) — 500 VU login fail = expected; CORE green
 - [x] Confluence note: critical findings or “baseline OK” — `SECURITY_BASELINE.md`
 
 ---
@@ -237,12 +237,12 @@ Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 - [x] About copy: authors marketplace + games + tickets economy (professional, not “pet project”)
 - [x] More vertical space between «Все игры» / «Лидерборд» and game grid (+ Void spacing ≈1.5–2×) — `01…/MAINPAGE2.png`
 - [x] Home blurbs: Builder = floating/sliding blocks; Gears = connect to largest; Companion = Tamagotchi + soft care
-- [ ] Trailing period cleanup on hero support line if still present
+- [x] Trailing period cleanup on hero support line if still present — no trailing period
 - [x] Keep Void mascot; don’t redesign black hole casually
 
 ### Chrome
 - [ ] Platform button polish list (**Denis decides** which buttons) — from `FUTURE_TODO_1`
-- [ ] Shop load spinner: true center H+V (not near header only)
+- [x] Shop load spinner: true center H+V (not near header only) — `LoadingSpinner fullscreen`
 
 ### Profile
 - [ ] Avatar upload (format hint; crop/size rules) — not URL-only — `03…/PROFILE_3_NEED_TO_FIX_AND_CHANGE_AVA.png`
@@ -286,7 +286,7 @@ Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 - [ ] Author seeding: ~108 card artists as authors (not only Event Horizon + Admin)
 
 ### Economy copy
-- [ ] Clarify lamps = boosts; tickets = shop (tooltips in games too)
+- [x] Clarify lamps = boosts; tickets = shop (tooltips in games too) — Balance `title` + `currencyGlossary` + boost help
 - [x] Written site bugs/F12 report → `FEEDBACK_VoiceM_2_1.md`
 
 ---
@@ -458,8 +458,8 @@ Sources: `MOBILE_ADAPTIVE.md`
 Sources: `LOAD_TESTS/HIGHLOAD_TESTS.md`, `METRICS.md`
 
 ### Run
-- [ ] Run CORE highload suite (k6 / existing scripts) on current stack — `make test-k6` → `deployments/k6/browse.js` @ `:8079`
-- [x] Store results under `08.10.2026/LOAD_RESULTS/` (create when run) — README runbook; numbers after deploy
+- [x] Run CORE highload suite (k6 / existing scripts) on current stack — browse 100% checks p95~705ms; purchase 100% checks
+- [x] Store results under `08.10.2026/LOAD_RESULTS/` — `browse-*.txt` / `purchase-*.txt` + README
 
 ### Capture vs targets (10k DAU model)
 - [ ] RPS (avg ~17–50, peak ~35–100 depending on session×API model)
