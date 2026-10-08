@@ -360,9 +360,15 @@ export function Twenty48Game() {
           )),
         )}
       </div>
-      <div className="mt-3 flex gap-2 sm:hidden">
+      <div className="mt-3 grid grid-cols-4 gap-2 sm:hidden">
         {(['up', 'left', 'down', 'right'] as const).map((d) => (
-          <Button key={d} size="sm" variant="ghost" onClick={() => applyMove(d)}>
+          <Button
+            key={d}
+            size="sm"
+            variant="ghost"
+            className="min-h-11 w-full justify-center text-lg"
+            onClick={() => applyMove(d)}
+          >
             {d === 'up' ? '↑' : d === 'down' ? '↓' : d === 'left' ? '←' : '→'}
           </Button>
         ))}

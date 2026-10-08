@@ -140,7 +140,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 10 Games global | 10 / 14 | boost/GO/check/LB spam; Balance on all games |
 | 11 Games per-title | 18 / 48 | cosmic skins, Memonia map, 2048 drag, Track B done |
 | 12 Achievements | 0 / 4 | |
-| 13 Mobile | 0 / 3 | **after FE cleanup** |
+| 13 Mobile | 3 / 3 | safe-area + touch targets + shell inset |
 | 14 Load / metrics | 0 / 16 | |
 | 15 Bugs / console | 4 / 12 | profile path; LB undefined; API spam gated |
 | 16 Parked wishlist | 0 / 8 | |
@@ -447,9 +447,9 @@ Sources: ideas voice
 
 Sources: `MOBILE_ADAPTIVE.md`
 
-- [ ] FE cleanup / game isolation done first (§1)
-- [ ] Responsive pass: home, shop, games, profile, LB on phone widths
-- [ ] 2048 swipe + game touch targets usable on small screens
+- [x] FE cleanup / game isolation done first (§1)
+- [x] Responsive pass: home, shop, games, profile, LB on phone widths *(safe-area, shell px-4, brand/logout collapse, ScoreChip/controls)*
+- [x] 2048 swipe + game touch targets usable on small screens
 
 ---
 

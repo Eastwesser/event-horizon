@@ -32,8 +32,8 @@ const widthClasses: Record<Width, string> = {
  * and pages must put ALL chrome (header/footer) inside the same shell edges.
  */
 const padClasses: Record<Pad, string> = {
-  default: 'box-border px-6 py-6 sm:px-8 sm:py-8',
-  game: 'box-border px-4 pb-3 pt-3 sm:px-6 sm:pt-4',
+  default: 'box-border px-4 py-5 sm:px-6 sm:py-8 lg:px-8',
+  game: 'box-border px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4',
 };
 
 export function PageShell({

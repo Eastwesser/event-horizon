@@ -49,13 +49,13 @@ export function GameShell({
       />
 
       {stats && (
-        <div className="mb-1.5 flex shrink-0 flex-wrap items-center justify-center gap-2 sm:mb-2 sm:justify-start">
+        <div className="mb-1.5 flex shrink-0 flex-wrap items-center justify-center gap-1.5 sm:mb-2 sm:gap-2 sm:justify-start">
           {stats}
         </div>
       )}
 
       {controls && (
-        <div className="relative z-20 mb-1.5 flex shrink-0 flex-wrap items-center justify-center gap-3 sm:mb-2 sm:justify-start">
+        <div className="relative z-20 mb-1.5 flex shrink-0 flex-wrap items-center justify-center gap-2 sm:mb-2 sm:gap-3 sm:justify-start [&_button]:min-h-10 [&_button]:min-w-10">
           {controls}
         </div>
       )}
@@ -88,7 +88,7 @@ export function ScoreChip({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 rounded-full border border-white/10 bg-nebula px-4 py-2 font-hud text-sm tabular-nums',
+        'inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-nebula px-2.5 py-1 font-hud text-xs tabular-nums sm:gap-2 sm:px-4 sm:py-2 sm:text-sm',
         className,
       )}
     >
