@@ -1,6 +1,8 @@
 # What have we done (v1.1.0 polish, 08.10.2026)
 
-HEAD tip: `03adfbe` (and later) on `main`. Full ticklist: `TICKLIST_LAST_TODO_1.md`.
+**Canonical pack:** [`V1_1_0_FINAL_STATUS.md`](./V1_1_0_FINAL_STATUS.md) (done / left / ports / commands / Boosty / happy path).
+
+HEAD tip: `e552125` on `main`. Full ticklist: `TICKLIST_LAST_TODO_1.md`.
 
 ## Shipped in this wave
 

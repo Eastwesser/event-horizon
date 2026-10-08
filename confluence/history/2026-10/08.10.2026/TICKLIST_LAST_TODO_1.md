@@ -127,9 +127,9 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 
 | Block | Done / Total | Notes |
 |-------|--------------|-------|
-| 0 Meta / order | 0 / 5 | |
+| 0 Meta / order | 4 / 5 | order + rename + feedbacks; tag rollback open |
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
-| 2 Interview + Miro | 1 / 14 | INTERVIEW_QUESTIONS ports filled; Miro export still open |
+| 2 Interview + Miro | 2 / 14 | ports + WHAT_HAVE; **Miro export / Mermaid sync open** |
 | 3 Security | 1 / 4 | SECURITY_BASELINE.md note |
 | 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
 | 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
