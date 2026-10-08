@@ -280,14 +280,14 @@ export function Home() {
       </section>
 
       <main className={shellInner}>
-        <section id="choose" className="eh-choose relative py-12 sm:py-16">
+        <section id="choose" className="eh-choose relative py-16 sm:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div className="text-center lg:text-left">
               <h1 className="font-display text-4xl font-bold leading-tight text-text-primary sm:text-5xl">
                 Выбери игру и ставь рекорды
               </h1>
               <p className="mx-auto mt-4 max-w-lg text-lg text-text-secondary lg:mx-0">
-                Играй в мини-игры, зарабатывай лампочки и билетики, становись лучшим в лидерборде.
+                Играй в мини-игры, зарабатывай лампочки и билетики, становись лучшим в лидерборде
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
                 <Button
@@ -388,7 +388,7 @@ export function Home() {
           </div>
         </section>
 
-        <section id="games" className="scroll-mt-24 pb-16 pt-4">
+        <section id="games" className="scroll-mt-24 pb-16 pt-12 sm:pt-16">
           <h2 className="mb-6 font-display text-xl font-semibold text-text-primary">Игры</h2>
           <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {games.map((game, i) => (

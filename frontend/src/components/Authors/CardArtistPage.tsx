@@ -16,7 +16,7 @@ import {
   sortCatalogItems,
 } from '../../lib/catalogQuery';
 import { saveCatalogNav } from '../../lib/catalogNav';
-import { pluralCards } from '../../lib/pluralize';
+import { pluralGoods } from '../../lib/pluralize';
 import { paymentApi } from '../../services/paymentApi';
 
 export function CardArtistPage() {
@@ -113,7 +113,7 @@ export function CardArtistPage() {
     <PageShell width="wide">
       <PageHeader
         title={displayName}
-        subtitle={pluralCards(items.length)}
+        subtitle={pluralGoods(items.length)}
         onBack={() => navigate('/authors')}
         backLabel="К списку художников"
       />
