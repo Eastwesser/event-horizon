@@ -1,7 +1,10 @@
 #!/bin/bash
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
 
 echo "🔥 Запуск нагрузки k6 (50 VUs, 60 секунд)..."
-cd ~/event_horizon/deployments/k6
+cd "$REPO_ROOT/deployments/k6"
 k6 run --vus 50 --duration 60s e2e-test.js > /tmp/k6_load.log 2>&1 &
 
 K6_PID=$!

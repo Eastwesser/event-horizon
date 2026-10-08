@@ -1,7 +1,7 @@
 // frontend/src/components/Games/Towers/TowerGame.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTowerStore } from '../../../store/towerStore';
+import { useTowerStore } from './towerStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { Balance } from '../../Billing/Balance';

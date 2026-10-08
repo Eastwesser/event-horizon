@@ -7,7 +7,7 @@ import { HexGrid } from './HexGrid';
 import { Tray } from './Tray';
 import { Balance } from '../../Billing/Balance';
 import { Leaderboard } from '../../Leaderboard/Leaderboard';
-import { useGameStore } from '../../../store/gameStore';
+import { useGameStore } from './gameStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { GameShell, ScoreChip } from '../../ui/GameShell';

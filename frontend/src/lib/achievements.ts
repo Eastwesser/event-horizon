@@ -85,7 +85,8 @@ export async function syncAchievements(opts?: {
     return { profile: {}, achievements: [], fresh: [], toastMessage: null };
   }
 
-  const res = await api.get('/api/profile', {
+  // baseURL is already `/api` — do not prefix `/api` again (was 404 → /api/api/profile).
+  const res = await api.get('/profile', {
     headers: { Authorization: `Bearer ${token}` },
   });
   const profile: ProfilePayload = res.data || {};

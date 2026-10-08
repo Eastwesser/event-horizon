@@ -85,7 +85,7 @@ VALUES
     'брелок',
     'Космический брелок',
     'Брелок с силуэтом горизонта событий. Пример физического товара.',
-    100, 50,
+    100000, 50,
     '{"example": true, "kind": "brelok"}'::jsonb,
     ARRAY['/images/shop/brelok-cosmic.jpg'],
     NOW(), NOW(), NULL, 1
@@ -96,7 +96,7 @@ VALUES
     'картина',
     'Картина «Туманность Horizon»',
     'Печать космической туманности. Пример картины — скрыт с витрины (P1).',
-    100, 20,
+    100000, 20,
     '{"example": true, "kind": "kartina"}'::jsonb,
     ARRAY['/images/brand/planet-hero.png'],
     NOW(), NOW(), NOW(), 1
@@ -107,7 +107,7 @@ VALUES
     'фенечка',
     'Фенечка «Орбита»',
     'Плетёная фенечка в тёмных тонах Event Horizon. Пример фенечки.',
-    100, 100,
+    100000, 100,
     '{"example": true, "kind": "fenechka"}'::jsonb,
     ARRAY['/images/shop/fenechka-orbit.jpg'],
     NOW(), NOW(), NULL, 1
@@ -118,7 +118,7 @@ VALUES
     'мерч',
     'Значок Event Horizon',
     'Металлический значок с кольцом горизонта событий. Пример мерча.',
-    100, 50,
+    100000, 50,
     '{"example": true, "kind": "merch"}'::jsonb,
     ARRAY['/images/shop/badge-horizon.jpg'],
     NOW(), NOW(), NULL, 1
@@ -219,25 +219,25 @@ VALUES
     'a1111111-1111-4111-8111-111111111101',
     'Космический брелок',
     'Брелок с силуэтом горизонта событий. Пример физического товара.',
-    100, 'merch', '', '/images/shop/brelok-cosmic.jpg', true, 50, 1
+    100000, 'merch', '', '/images/shop/brelok-cosmic.jpg', true, 50, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111102',
     'Картина «Туманность Horizon»',
     'Печать космической туманности. Пример — скрыт с витрины (P1).',
-    100, 'merch', '', '/images/brand/planet-hero.png', false, 20, 1
+    100000, 'merch', '', '/images/brand/planet-hero.png', false, 20, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111103',
     'Фенечка «Орбита»',
     'Плетёная фенечка в тёмных тонах Event Horizon. Пример фенечки.',
-    100, 'merch', '', '/images/shop/fenechka-orbit.jpg', true, 100, 1
+    100000, 'merch', '', '/images/shop/fenechka-orbit.jpg', true, 100, 1
   ),
   (
     'a1111111-1111-4111-8111-111111111104',
     'Значок Event Horizon',
     'Металлический значок с кольцом горизонта событий. Пример мерча.',
-    100, 'merch', '', '/images/shop/badge-horizon.jpg', true, 50, 1
+    100000, 'merch', '', '/images/shop/badge-horizon.jpg', true, 50, 1
   )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,

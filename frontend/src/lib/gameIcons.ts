@@ -35,6 +35,6 @@ export const GAME_LB_TABS: { id: GameTabId; label: string; icon: IconName }[] = 
   { id: 'memory', label: 'Memonia', icon: gameIcon('memory') },
   { id: 'twenty48', label: '2048', icon: gameIcon('twenty48') },
   { id: 'gears', label: 'Gears', icon: gameIcon('gears') },
-  { id: 'companion', label: 'Компаньон', icon: gameIcon('companion') },
+  { id: 'companion', label: 'Tamagotchi', icon: gameIcon('companion') },
 ];
 

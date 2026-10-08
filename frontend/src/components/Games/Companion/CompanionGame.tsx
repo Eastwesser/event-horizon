@@ -209,7 +209,7 @@ export function CompanionGame() {
 
   return (
     <GameShell
-      title="Компаньон"
+      title="Tamagotchi"
       onBack={handleBack}
       width="narrow"
       stats={

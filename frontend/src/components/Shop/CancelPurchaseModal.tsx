@@ -1,4 +1,4 @@
-import type { ShopItem } from '../../store/shopStore';
+import type { ShopItem } from './shopStore';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
@@ -38,8 +38,8 @@ export function CancelPurchaseModal({
         />
         <p className="font-display text-lg font-semibold text-text-primary">{item.name}</p>
         <p className="mt-3 text-sm text-text-secondary">
-          Вернуть {formatTicketAmount(amount)}? Карта уйдёт из инвентаря, товар снова
-          станет доступен.
+          Вернуть {formatTicketAmount(amount)}? Предмет будет удалён из инвентаря, товар
+          снова станет доступен.
         </p>
 
         <div className="mt-6 flex w-full gap-3">

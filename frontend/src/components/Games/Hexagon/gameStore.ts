@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { type HexCoord, type PancakeType, HEX_GRID, getNeighbors } from '../utils/hexagon';
-import api from '../services/api';
+import { type HexCoord, type PancakeType, HEX_GRID, getNeighbors } from '../../../utils/hexagon';
+import api from '../../../services/api';
 
 interface HexTile {
   coord: HexCoord;
@@ -429,7 +429,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem(playedKey, String(played + 1));
       const total = parseInt(localStorage.getItem(totalScoreKey) || '0', 10);
       localStorage.setItem(totalScoreKey, String(total + currentScore));
-      void import('../lib/achievements').then(({ afterRankedSubmit }) =>
+      void import('../../../lib/achievements').then(({ afterRankedSubmit }) =>
         afterRankedSubmit(),
       );
     } catch (err) {

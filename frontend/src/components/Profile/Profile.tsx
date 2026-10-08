@@ -53,6 +53,10 @@ export function Profile() {
   });
   const [balance, setBalance] = useState({ lamps: 0, tickets: 0 });
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showNickModal, setShowNickModal] = useState(false);
+  const [nickDraft, setNickDraft] = useState('');
+  const [nickSaving, setNickSaving] = useState(false);
+  const [nickError, setNickError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -103,24 +107,36 @@ export function Profile() {
       });
   }, [nicknameKey, email]);
 
-  const handleSetNickname = async () => {
-    const newNick = window.prompt('Новый никнейм:', stats.nickname);
-    if (!newNick || !newNick.trim()) return;
+  const openNickModal = () => {
+    setNickDraft(stats.nickname);
+    setNickError(null);
+    setShowNickModal(true);
+  };
 
+  const handleSetNickname = async () => {
+    const newNick = nickDraft.trim();
+    if (!newNick) {
+      setNickError('Введите никнейм');
+      return;
+    }
+    setNickSaving(true);
+    setNickError(null);
     try {
       const token = localStorage.getItem('accessToken');
       await api.post(
         '/auth/update-nickname',
-        { nickname: newNick.trim() },
+        { nickname: newNick },
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      localStorage.setItem(nicknameKey, newNick.trim());
-      setStats((prev) => ({ ...prev, nickname: newNick.trim() }));
-      alert('Никнейм обновлён!');
+      localStorage.setItem(nicknameKey, newNick);
+      setStats((prev) => ({ ...prev, nickname: newNick }));
+      setShowNickModal(false);
     } catch (err) {
-      alert('Ошибка при обновлении ника');
+      setNickError('Не удалось обновить никнейм');
       console.error(err);
+    } finally {
+      setNickSaving(false);
     }
   };
 
@@ -144,8 +160,8 @@ export function Profile() {
     { key: 'towers', label: 'Builder', value: stats.bestScores.towers },
     { key: 'hanoi', label: 'Hanoi', value: stats.bestScores.hanoi },
     { key: 'twenty48', label: '2048', value: stats.bestScores.twenty48 },
-    { key: 'gears', label: 'Орбиты', value: stats.bestScores.gears },
-    { key: 'companion', label: 'Компаньон', value: stats.bestScores.companion },
+    { key: 'gears', label: 'Gears', value: stats.bestScores.gears },
+    { key: 'companion', label: 'Tamagotchi', value: stats.bestScores.companion },
   ];
 
   const avatarIcon: IconName = stats.achievements.length >= 2 ? 'crown' : 'hex';
@@ -161,7 +177,7 @@ export function Profile() {
         <div className="min-w-0">
           <button
             type="button"
-            onClick={handleSetNickname}
+            onClick={openNickModal}
             className="inline-flex items-center gap-1.5 font-display text-xl font-semibold text-text-primary transition-colors hover:text-indigo-soft"
           >
             {stats.nickname}
@@ -259,6 +275,37 @@ export function Profile() {
       <Button variant="ghost" onClick={() => setShowResetModal(true)}>
         Сбросить статистику
       </Button>
+
+      <Modal
+        open={showNickModal}
+        onClose={() => !nickSaving && setShowNickModal(false)}
+        title="Новый никнейм"
+      >
+        <label className="block text-sm text-text-secondary" htmlFor="eh-nick-input">
+          Никнейм
+        </label>
+        <input
+          id="eh-nick-input"
+          type="text"
+          value={nickDraft}
+          onChange={(e) => setNickDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void handleSetNickname();
+          }}
+          maxLength={32}
+          autoFocus
+          className="mt-2 w-full rounded-md border border-white/15 bg-void px-3 py-2 font-display text-text-primary outline-none focus:border-horizon-gold/50"
+        />
+        {nickError ? <p className="mt-2 text-sm text-horizon-ember">{nickError}</p> : null}
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Button variant="ghost" onClick={() => setShowNickModal(false)} disabled={nickSaving}>
+            Отмена
+          </Button>
+          <Button variant="primary" onClick={() => void handleSetNickname()} disabled={nickSaving}>
+            {nickSaving ? 'Сохранение…' : 'Сохранить'}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={showResetModal}

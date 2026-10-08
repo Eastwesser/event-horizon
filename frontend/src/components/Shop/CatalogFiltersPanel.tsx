@@ -48,6 +48,8 @@ interface CatalogFiltersPanelProps {
   /** Debounced name search draft (parent owns debounce → ?q=). */
   queryDraft: string;
   onQueryDraftChange: (v: string) => void;
+  /** Shop type chip — card filters only when `карточка`. */
+  productType?: string;
 }
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
@@ -143,7 +145,9 @@ export function CatalogFiltersPanel({
   onReset,
   queryDraft,
   onQueryDraftChange,
+  productType = 'all',
 }: CatalogFiltersPanelProps) {
+  const cardFilters = productType === 'карточка';
   const activeCount = countActiveFilters(filters);
   const [open, setOpen] = useState(activeCount > 0);
 
@@ -220,7 +224,24 @@ export function CatalogFiltersPanel({
         ) : null}
       </div>
 
-      {open ? (
+      {open && !cardFilters ? (
+        <div className="rounded-md border border-white/10 bg-nebula/60 p-4 space-y-4">
+          <Group title="Название">
+            <input
+              type="search"
+              className={inputClass}
+              placeholder="Поиск по названию…"
+              value={queryDraft}
+              onChange={(e) => onQueryDraftChange(e.target.value)}
+            />
+          </Group>
+          <p className="text-xs text-text-muted">
+            Фильтры стихии / класса / редкости — только во вкладке «Карточки».
+          </p>
+        </div>
+      ) : null}
+
+      {open && cardFilters ? (
         <div className="rounded-md border border-white/10 bg-nebula/60 p-4">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* LEFT */}

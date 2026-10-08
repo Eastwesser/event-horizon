@@ -8,7 +8,7 @@ import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import { paymentApi } from '../../services/paymentApi';
 import { inventoryApi } from '../../services/inventoryApi';
-import { useShopStore, type ShopItem, type PurchasedItem } from '../../store/shopStore';
+import { useShopStore, type ShopItem, type PurchasedItem } from './shopStore';
 import { inventoryToShopItem } from '../../lib/shopItemMap';
 import { formatTicketAmount } from '../../lib/formatPrice';
 import { Card } from '../ui/Card';
@@ -498,6 +498,7 @@ export const Shop: React.FC = () => {
             onReset={resetFilters}
             queryDraft={qDraft}
             onQueryDraftChange={setQDraft}
+            productType={filterType}
           />
 
           <p className="mb-4 text-sm text-text-muted">

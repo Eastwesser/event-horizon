@@ -21,8 +21,8 @@ const PLANS: {
 }[] = [
   {
     id: 'present',
-    name: 'Текущий',
-    title: 'Текущий план',
+    name: 'Базовый',
+    title: 'Базовый план',
     icon: 'gift',
     description: 'Подписка на Boosty — доступ к мерчу и бонусам сообщества.',
     titleClass: 'text-horizon-gold',
@@ -30,18 +30,18 @@ const PLANS: {
   },
   {
     id: 'future',
-    name: 'Будущий',
-    title: 'Будущий план',
+    name: 'Расширенный',
+    title: 'Расширенный план',
     icon: 'sparkle',
-    description: 'Расширенная подписка с дополнительными привилегиями (когда будет доступна).',
+    description: 'Расширенная подписка с дополнительными привилегиями.',
     titleClass: 'text-indigo-soft',
     buttonVariant: 'secondary',
   },
 ];
 
 const PLAN_LABELS: Record<string, string> = {
-  present: 'Текущий',
-  future: 'Будущий',
+  present: 'Базовый',
+  future: 'Расширенный',
   none: 'Нет плана',
 };
 
@@ -209,7 +209,7 @@ export function Subscription() {
                       </p>
                       {isCurrent ? (
                         <Button variant="ghost" className="mt-auto self-start" disabled>
-                          Текущий план
+                          Активный план
                         </Button>
                       ) : (
                         <Button
@@ -226,8 +226,20 @@ export function Subscription() {
                 })}
               </div>
               <p className="mt-4 text-sm text-text-secondary">
-                Мерч в магазине уже доступен. Продление и отмена появятся позже.
+                Мерч в магазине уже доступен. Управление продлением — на Boosty; отмена
+                плана сбрасывает доступ после окончания оплаченного периода.
               </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    window.open('https://boosty.to/eastwesser', '_blank', 'noopener,noreferrer')
+                  }
+                >
+                  Продлить на Boosty
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="mt-8">

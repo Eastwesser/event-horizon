@@ -1,5 +1,5 @@
 // frontend/src/components/Shop/PurchaseModal.tsx
-import type { ShopItem } from '../../store/shopStore';
+import type { ShopItem } from './shopStore';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';

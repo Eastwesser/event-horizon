@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { inventoryApi } from '../../services/inventoryApi';
 import { inventoryToShopItem } from '../../lib/shopItemMap';
-import { useShopStore, type ShopItem } from '../../store/shopStore';
+import { useShopStore, type ShopItem } from '../Shop/shopStore';
 import ShopItemCard from '../Shop/ShopItemCard';
 import PurchaseModal from '../Shop/PurchaseModal';
 import { PageHeader } from '../ui/PageHeader';

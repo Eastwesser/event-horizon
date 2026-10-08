@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useInventoryStore } from '../store/inventoryStore';
+import { useInventoryStore } from '../components/Inventory/inventoryStore';
 
 export const useInventory = () => {
   const {

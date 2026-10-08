@@ -1,5 +1,5 @@
 import type { InventoryItem } from '../services/inventoryApi';
-import type { ShopItem } from '../store/shopStore';
+import type { ShopItem } from '../components/Shop/shopStore';
 
 /** Map an inventory catalog item into the shop card shape. */
 export function inventoryToShopItem(item: InventoryItem, owned = false): ShopItem {

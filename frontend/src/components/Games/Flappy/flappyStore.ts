@@ -1,6 +1,6 @@
 // frontend/src/store/flappyStore.ts
 import { create } from 'zustand';
-import api from '../services/api';
+import api from '../../../services/api';
 
 export interface Pipe {
   id: number;
@@ -325,7 +325,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
         if (ranked) {
           const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0');
           localStorage.setItem(totalScoreKey, String(totalScore + score));
-          void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+          void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
         }
       }
     } catch (err) {
