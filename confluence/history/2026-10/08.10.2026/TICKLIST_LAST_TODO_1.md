@@ -152,11 +152,11 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 
 Sources: `CLEANUP.md`, `MOBILE_ADAPTIVE.md`, `MCP_WHEN.md`, `FUTURE_TODO_1.md`, ideas voice
 
-- [ ] Confirm order: cleanup → FE/shop → games → mobile → load → docs/Miro → MCP/Tetiva last
+- [x] Confirm order: cleanup → FE/shop → games → mobile → load → docs/Miro → MCP/Tetiva last
 - [ ] Pre-game rollback point (flash / tagged commit) — keep recoverable
-- [ ] Re-verify Track B closed vs this list (boost UX, Towers levels, Companion gift, GO buttons…)
-- [ ] Rename docs “Denis” → Denis where still present
-- [ ] Fill `FEEDBACK_VoiceM_2_1.md` + `FEEDBACK_VoiceM_3_1.md` when v1.1.0 polish wave ends
+- [x] Re-verify Track B closed vs this list (boost UX, Towers levels, Companion gift, GO buttons…)
+- [x] Rename docs “Emma” → Denis where still present *(active polish docs + shop SQL)*
+- [x] Fill `FEEDBACK_VoiceM_2_1.md` + `FEEDBACK_VoiceM_3_1.md` when v1.1.0 polish wave ends
 
 ---
 
