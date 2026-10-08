@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 seed-admin fe-build fe-preview
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase seed-admin seed-shop seed-themes seed-history seed-v110 fe-build fe-preview
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -78,12 +78,36 @@ test-smoke:
 	  curl -fsS -o /dev/null --max-time 3 "$$url" || echo "SKIP/FAIL $$url (is compose up?)"; \
 	done
 
+# CORE k6 (Wave 4): browse.js @ balancer :8079 — not the legacy 500 VU blast.
+# Credentials: EH_K6_* env, or scripts/.env.seed.admin (SEED_ADMIN_EMAIL/PASSWORD).
 test-k6:
-	@echo "Optional k6 load (requires k6 + running stack on :8079)"
+	@echo "CORE k6 browse.js → balancer :8079 (requires stack + k6)"
 	@command -v k6 >/dev/null || { echo "k6 not installed — skip"; exit 0; }
-	@BASE_URL=$${BASE_URL:-http://localhost:8079}; \
-	echo "BASE_URL=$$BASE_URL"; \
-	BASE_URL=$$BASE_URL k6 run deployments/k6/browse.js
+	@set -a; \
+	[ -f scripts/.env.seed.admin ] && . scripts/.env.seed.admin; \
+	set +a; \
+	BASE_URL=$${BASE_URL:-http://localhost:8079}; \
+	EH_K6_EMAIL=$${EH_K6_EMAIL:-$${SEED_ADMIN_EMAIL:-admin@eventhorizon.local}}; \
+	EH_K6_PASSWORD=$${EH_K6_PASSWORD:-$${SEED_ADMIN_PASSWORD:-}}; \
+	if [ -z "$$EH_K6_PASSWORD" ]; then \
+	  echo "Missing EH_K6_PASSWORD — export it or copy scripts/.env.seed.admin.example → scripts/.env.seed.admin"; \
+	  exit 1; \
+	fi; \
+	echo "BASE_URL=$$BASE_URL  user=$$EH_K6_EMAIL"; \
+	BASE_URL=$$BASE_URL EH_K6_EMAIL=$$EH_K6_EMAIL EH_K6_PASSWORD=$$EH_K6_PASSWORD \
+	  k6 run deployments/k6/browse.js
+
+test-k6-purchase:
+	@command -v k6 >/dev/null || { echo "k6 not installed — skip"; exit 0; }
+	@set -a; \
+	[ -f scripts/.env.seed.admin ] && . scripts/.env.seed.admin; \
+	set +a; \
+	BASE_URL=$${BASE_URL:-http://localhost:8079}; \
+	EH_K6_EMAIL=$${EH_K6_EMAIL:-$${SEED_ADMIN_EMAIL:-admin@eventhorizon.local}}; \
+	EH_K6_PASSWORD=$${EH_K6_PASSWORD:-$${SEED_ADMIN_PASSWORD:-}}; \
+	if [ -z "$$EH_K6_PASSWORD" ]; then echo "Missing EH_K6_PASSWORD"; exit 1; fi; \
+	BASE_URL=$$BASE_URL EH_K6_EMAIL=$$EH_K6_EMAIL EH_K6_PASSWORD=$$EH_K6_PASSWORD \
+	  K6_VUS=$${K6_VUS:-1} k6 run deployments/k6/purchase.js
 
 test-integration:
 	@echo "Integration tests (testcontainers; needs Docker OR *_TEST_DATABASE_URL)"
@@ -120,8 +144,41 @@ migrate-shop:
 migrate-inventory:
 	cd services/inventory && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5466/eventhorizon_inventory?sslmode=disable" up
 
-migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard migrate-profile migrate-shop migrate-inventory
+migrate-history:
+	cd services/history && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5469/eventhorizon_history?sslmode=disable" up
+
+migrate-all: migrate-auth migrate-billing migrate-game migrate-leaderboard migrate-profile migrate-shop migrate-inventory migrate-history
 	@echo "✅ All migrations applied"
+
+# ===== v1.1.0 content seeds (Docker TCP — not host unix socket) =====
+# cleanup-shop-content-v2.sql has SECTION A (inventory) + SECTION B (shop).
+# Never mutates Berserk карточка rows.
+PG_SHOP_CTR ?= event-horizon-postgres-shop
+PG_INV_CTR ?= event-horizon-postgres-inventory
+PG_HISTORY_CTR ?= event-horizon-postgres-history
+
+seed-shop-inventory:
+	@echo "→ inventory SECTION A on $(PG_INV_CTR)"
+	@awk '/SECTION A/{p=1} /SECTION B/{p=0} p' scripts/cleanup-shop-content-v2.sql \
+	  | docker exec -i $(PG_INV_CTR) psql -U eventhorizon -d eventhorizon_inventory
+
+seed-shop:
+	@echo "→ shop SECTION B on $(PG_SHOP_CTR)"
+	@awk '/SECTION B/{p=1} p' scripts/cleanup-shop-content-v2.sql \
+	  | docker exec -i $(PG_SHOP_CTR) psql -U eventhorizon -d eventhorizon_shop
+
+seed-themes:
+	@echo "→ shop seed-shop-themes-skins.sql on $(PG_SHOP_CTR)"
+	docker exec -i $(PG_SHOP_CTR) psql -U eventhorizon -d eventhorizon_shop \
+	  < scripts/seed-shop-themes-skins.sql
+
+seed-history:
+	@echo "→ history seed-history-demo.sql on $(PG_HISTORY_CTR)"
+	docker exec -i $(PG_HISTORY_CTR) psql -U eventhorizon -d eventhorizon_history \
+	  < scripts/seed-history-demo.sql
+
+seed-v110: seed-shop-inventory seed-shop seed-themes seed-history migrate-profile
+	@echo "✅ v1.1.0 seeds + profile migrations applied"
 
 # ===== NATS HUB =====
 build-nats-hub:

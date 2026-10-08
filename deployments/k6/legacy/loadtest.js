@@ -1,7 +1,10 @@
 /**
- * LEGACY — outdated paths (e.g. /api/shop/inventory).
- * Wave 4: use browse.js / purchase.js / leaderboard.js / auth_burst.js instead.
- * Kept for reference only; do not use for load reports.
+ * LEGACY BLAST (≈500 VU) — NOT the CORE suite.
+ * Auth login/register will fail hard (bcrypt cost 12 + rate limit ~100 rps).
+ * Reads (shop / LB / inventory / submit) may stay green — that is expected capacity,
+ * not a backend regression.
+ *
+ * CORE reports: make test-k6 (browse.js) · make test-k6-purchase
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';

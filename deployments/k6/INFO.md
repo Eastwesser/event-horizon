@@ -2,36 +2,39 @@
 
 ## Auth
 
-All scripts except pure public probes need:
-
 ```bash
+# Or: make test-k6  (loads scripts/.env.seed.admin)
 export BASE_URL=http://localhost:8079
-export EH_K6_EMAIL=...
+export EH_K6_EMAIL=admin@eventhorizon.local
 export EH_K6_PASSWORD=...
 ```
 
-## Scripts
+## CORE (reports)
+
+| Script | Purpose | Make |
+|--------|---------|------|
+| `browse.js` | shop + inventory browse (~20 VU) | `make test-k6` |
+| `purchase.js` | purchase → cancel path | `make test-k6-purchase` |
+
+## Legacy (not for CORE reports)
 
 | Script | Purpose |
 |--------|---------|
-| `browse.js` | `GET /api/shop/items` + `GET /api/inventory/items` |
-| `purchase.js` | purchase → cancel → cancel (per-VU unowned item; skips `owned`) |
-| `leaderboard.js` | *(queued)* hot leaderboard read |
-| `auth_burst.js` | *(queued)* login burst |
-| `e2e-test.js` | legacy 1 VU smoke (register/login/submit/lb) |
-| `loadtest.js` | **legacy / outdated paths** — prefer split scripts; do not use for Wave 4 reports |
+| `legacy/loadtest.js` | ~500 VU blast — auth will fail (bcrypt + rate limit) |
+| `../../scripts/loadtest/loadtest_balancer.js` | submit blast @ `:8079` |
+| `e2e-test.js` | 1 VU smoke |
 
 ## Run
 
 ```bash
-cd deployments/k6
-k6 run browse.js
-k6 run purchase.js
+make test-k6
+make test-k6-purchase
+# or:
+k6 run deployments/k6/browse.js
 ```
 
-Optional: `K6_VUS`, `K6_DURATION`, `EH_K6_ITEM_ID` (pin VU1 item only if unowned).
-`purchase.js` auto-picks unowned non-merch ids (one per VU); extra VUs idle if the pool is short.
+Optional: `K6_VUS`, `K6_DURATION`, `EH_K6_ITEM_ID`.
 
 ## Indexes
 
-Do **not** add indexes until after a measured run + `EXPLAIN`. Report candidates first.
+Do **not** add indexes until after a measured run + `EXPLAIN`.
