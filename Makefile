@@ -40,13 +40,16 @@ docker-push-all:
 	done
 
 # ===== BUILD =====
+# Static linux/amd64 bins for Alpine *.bin images (needs CGO off — plain `go build` breaks deploy).
 SERVICES ?= auth billing game leaderboard profile shop gateway balancer nats-hub inventory payment authors history analytics fulfillment notification
 
 build-all:
-	@echo "Building all services..."
-	for service in $(SERVICES); do \
-		(cd services/$$service && go build -o $$service-service ./cmd/main.go) || exit 1; \
+	@echo "Building all services (CGO_ENABLED=0, linux/amd64)..."
+	@for service in $(SERVICES); do \
+		echo "===== $$service ====="; \
+		(cd services/$$service && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-s -w' -o $$service-service ./cmd/main.go) || exit 1; \
 	done
+	@echo "✅ Static binaries ready → next: make docker-build-all && make deploy"
 
 test-unit:
 	@echo "Unit tests..."

@@ -1,0 +1,1 @@
+Where is what and how does it work, which ports etc
