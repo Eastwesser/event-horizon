@@ -120,7 +120,7 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 
 ## Deferred (mostly closed 06.10 — see PLATFORM_INSIGHTS P5)
 
-- [ ] Мелкий UX «кнопок платформы» (список Emma)
+- [ ] Мелкий UX «кнопок платформы» (список Denis)
 - [x] C4 monetization = D defer ([`TRACK_C4_MONETIZATION_LOCK.md`](./TRACK_C4_MONETIZATION_LOCK.md))
 - [x] Wave 2 #5b first_purchase + first_boost
 - [x] Multi-VU EXPLAIN / bottleneck 500+ / cursor pull-in / authors content — skipped with reason
@@ -153,5 +153,5 @@ Tracks map: [`FINAL_TRACKS.md`](./FINAL_TRACKS.md).
 - **PLATFORM_INSIGHTS.md** — shop/chrome/infra (active).
 - Do not mix C4 into a “quick commit”.
 - Berserk CCG cards (~281) = real merch — never mutate without explicit OK.
-- Standing: agent does not push; writes commit messages; Emma OKs push.
+- Standing: agent does not push; writes commit messages; Denis OKs push.
 - Related debt: [`STILL_TECH_DEBT.md`](../../tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md)

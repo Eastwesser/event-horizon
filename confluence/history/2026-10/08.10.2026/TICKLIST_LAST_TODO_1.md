@@ -130,7 +130,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 0 Meta / order | 0 / 5 | |
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
 | 2 Interview + Miro | 1 / 14 | INTERVIEW_QUESTIONS ports filled; Miro export still open |
-| 3 Security | 0 / 4 | |
+| 3 Security | 1 / 4 | SECURITY_BASELINE.md note |
 | 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
 | 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
 | 6 Shop / inventory / catalog | 12 / 24 | merch chip, dedupe, themes/skins SQL, floors |
@@ -155,7 +155,7 @@ Sources: `CLEANUP.md`, `MOBILE_ADAPTIVE.md`, `MCP_WHEN.md`, `FUTURE_TODO_1.md`, 
 - [ ] Confirm order: cleanup → FE/shop → games → mobile → load → docs/Miro → MCP/Tetiva last
 - [ ] Pre-game rollback point (flash / tagged commit) — keep recoverable
 - [ ] Re-verify Track B closed vs this list (boost UX, Towers levels, Companion gift, GO buttons…)
-- [ ] Rename docs “Emma” → Denis where still present
+- [ ] Rename docs “Denis” → Denis where still present
 - [ ] Fill `FEEDBACK_VoiceM_2_1.md` + `FEEDBACK_VoiceM_3_1.md` when v1.1.0 polish wave ends
 
 ---
@@ -180,7 +180,7 @@ Sources: `CLEANUP.md`, ideas voice (professional look / folders)
 Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 
 ### Write-ups (v1.1.0 snapshot)
-- [ ] **What have we done** (commit/state as of 07–08.10)
+- [x] **What have we done** (commit/state as of 07–08.10) — `WHAT_HAVE_WE_DONE.md`
 - [ ] **Which methods / patterns** we use + code links (LB, rate limiter, circuit breaker, outbox, …)
 - [ ] **What could be better** (tech + design + product)
 - [ ] Anti-patterns / risks note (or “none critical”) — after highload preferred
@@ -206,7 +206,7 @@ Sources: ideas voice
 - [ ] CSRF / XSS / SQL injection pass (gateway + FE)
 - [ ] AuthZ on admin / author / inventory routes
 - [ ] DDoS / rate-limit posture (limiter exists — verify surfaces)
-- [ ] Confluence note: critical findings or “baseline OK”
+- [x] Confluence note: critical findings or “baseline OK” — `SECURITY_BASELINE.md`
 
 ---
 

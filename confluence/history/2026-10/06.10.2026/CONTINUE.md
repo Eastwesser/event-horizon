@@ -15,14 +15,14 @@ Standing: don’t touch Berserk CCG / refund / notifications / auth / C4 unless 
 ## Do next (pick one)
 
 1. **Manual QA** — Flappy LB eye-check; smoke 8 games + boost + Companion «Подарок дня».
-2. **Emma chrome** — platform button list (PLATFORM_INSIGHTS P5) — blocked until Emma lists buttons.
+2. **Denis chrome** — platform button list (PLATFORM_INSIGHTS P5) — blocked until Denis lists buttons.
 3. **Deferred only if wanted** — 3D/art, Companion tickets gift, C4 payouts, LB seeding.
 
 ## Parked (not blockers)
 
 | Item | Blocker |
 |------|---------|
-| Emma platform buttons | Emma list |
+| Denis platform buttons | Denis list |
 | C4 payouts | product lock |
 | Companion tickets in daily gift | billing |
 | 3D / Dodo / Sims / tray drawings | wish |

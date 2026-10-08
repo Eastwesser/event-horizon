@@ -23,7 +23,7 @@ When the FE redesign starts:
 
 - Brand name should be a **hero-level** signal on landing — not only nav text.
 - First viewport: brand + one headline + one short line + one CTA + one dominant visual.
-- Avoid purple-on-white / cream-serif / broadsheet clichés unless Emma asks for that look.
+- Avoid purple-on-white / cream-serif / broadsheet clichés unless Denis asks for that look.
 - Logos should work on dark and light atmospheres (test contrast).
 
 ## Status

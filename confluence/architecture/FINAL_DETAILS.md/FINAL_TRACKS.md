@@ -53,7 +53,7 @@
 |------|--------|
 | **P1 Shop examples & art** | ✅ |
 | **P2 Shop spinner + load** | ✅ |
-| **P3 Chrome polish** | ✅ (glossary + SVG; button list → Emma) |
+| **P3 Chrome polish** | ✅ (glossary + SVG; button list → Denis) |
 | Berserk cards | 🔒 never without OK |
 
 ---
@@ -66,7 +66,7 @@
 
 ## Deferred
 
-Open: platform button list (Emma). Art/3D, Companion tickets economy.
+Open: platform button list (Denis). Art/3D, Companion tickets economy.
 Locked/skipped: C4=D, EXPLAIN/bottleneck/cursor/authors content, live backfill.
 
 ---
@@ -76,7 +76,7 @@ Locked/skipped: C4=D, EXPLAIN/bottleneck/cursor/authors content, live backfill.
 ```text
 Tracks A–D gameplay/platform DONE.
 
-NEXT = push when ready · Emma chrome list · or deferred art when wanted.
+NEXT = push when ready · Denis chrome list · or deferred art when wanted.
 ```
 
 ---
@@ -89,5 +89,5 @@ Track A    ████████████ DONE
 Track B    ████████████ DONE (deferred art parked)
 Track D    ████████████ P1–P3 DONE
 Track C    ████████████ DONE
-Deferred   ████████░░░░ Emma + art/3D
+Deferred   ████████░░░░ Denis + art/3D
 ```

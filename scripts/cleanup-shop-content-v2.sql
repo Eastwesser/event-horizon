@@ -7,7 +7,7 @@
 -- Never: WHERE category='merch', WHERE type='карточка', or name ILIKE on cards.
 -- Before/after: card count MUST stay identical (assert in apply wrapper).
 --
--- Apply (after Emma OK + backup):
+-- Apply (after Denis OK + backup):
 --   1) inventory DB  — this file section A
 --   2) shop DB       — this file section B
 -- Idempotent: safe to re-run.

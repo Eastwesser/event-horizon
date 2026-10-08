@@ -63,7 +63,7 @@ Source: voice 06.10 + shop cleanup leftovers.
 - [x] Glossary RU на currency chips: `LAMP_HINT` / `TICKET_HINT` — Balance, Profile, Shop
 - [x] Balance header + Notification toast: emoji → SVG
 
-**Parked:** мелкий UX «кнопок платформы» — нужен список Emma (остаётся в open).
+**Parked:** мелкий UX «кнопок платформы» — нужен список Denis (остаётся в open).
 
 ---
 
@@ -76,7 +76,7 @@ Source: voice 06.10 + shop cleanup leftovers.
 
 ## P5 — Deferred product ✅ (actionable slice)
 
-- [ ] Мелкий UX «кнопок платформы» (список Emma) — **open**
+- [ ] Мелкий UX «кнопок платформы» (список Denis) — **open**
 - [x] C4 monetization lock = **D defer** — [`TRACK_C4_MONETIZATION_LOCK.md`](../../architecture/FINAL_DETAILS.md/TRACK_C4_MONETIZATION_LOCK.md)
 - [x] Wave 2 #5b: `first_purchase` + `first_boost` (migration + NATS; FE sync toast)
 - [x] Multi-VU purchase EXPLAIN — **skip** (нет real slow report)
@@ -99,8 +99,8 @@ Source: voice 06.10 + shop cleanup leftovers.
 ## Next action
 
 ```text
-Platform P0–P5 actionable DONE (button list still needs Emma).
+Platform P0–P5 actionable DONE (button list still needs Denis).
 
-NEXT = Manual QA (games smoke / Flappy LB) · or Emma chrome list when ready.
+NEXT = Manual QA (games smoke / Flappy LB) · or Denis chrome list when ready.
 Tracks A–D pushed (CONTINUE through ef6843e+).
 ```
