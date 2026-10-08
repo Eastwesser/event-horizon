@@ -22,7 +22,7 @@ const FLAG_CHIPS: { key: keyof CatalogFilterFlags; label: string }[] = [
   { key: 'foil', label: 'Фойл' },
   { key: 'noir', label: 'Нуар' },
   { key: 'flying', label: 'Летающие' },
-  { key: 'companion', label: 'Компаньон' },
+  { key: 'companion', label: 'Tamagotchi' },
   { key: 'unique', label: 'Уникальная' },
   { key: 'symbiont', label: 'Симбионт' },
   { key: 'parasite', label: 'Паразит' },

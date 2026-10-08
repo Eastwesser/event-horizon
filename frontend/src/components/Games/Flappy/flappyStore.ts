@@ -304,7 +304,9 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
           lastSubmitRanked: ranked,
           lastSubmitMessage: response.data?.message || null,
         });
-        console.log(`✅ Flappy score submitted: ${score} L${level} ranked=${ranked}`);
+        if (import.meta.env.DEV) {
+          console.log(`Flappy score submitted: ${score} L${level} ranked=${ranked}`);
+        }
 
         const storageKey = `gameScores_${userId}`;
         const totalScoreKey = `totalScore_${userId}`;

@@ -8,6 +8,7 @@ import { MemoryBoard } from './MemoryBoard';
 import { Modal } from '../../ui/Modal';
 import { Icon } from '../../ui/Icon';
 import Notification from '../../Common/Notification/Notification';
+import { Balance } from '../../Billing/Balance';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
 import { boostHelpLines } from '../../../lib/gameBoostCopy';
@@ -130,6 +131,7 @@ export function MemoryGame() {
       <div className="memory-game-header">
         <h1 className="memory-game-title">Memonia</h1>
         <div className="memory-stats">
+          <Balance />
           <div className="memory-stat">
             <span className="stat-label">Пары</span>
             <span className="stat-value">

@@ -46,8 +46,8 @@ function IconPipes({ cosmic }: { cosmic: boolean }) {
     <svg className="eh-flappy-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
       <defs>
         <linearGradient id="eh-pipe-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={cosmic ? '#FF6B6B' : '#2E7D32'} />
-          <stop offset="100%" stopColor={cosmic ? '#818CF8' : '#1B5E20'} />
+          <stop offset="0%" stopColor={cosmic ? '#1A3A5C' : '#2E7D32'} />
+          <stop offset="100%" stopColor={cosmic ? '#C9A227' : '#1B5E20'} />
         </linearGradient>
       </defs>
       <rect x="4" y="1" width="8" height="6" rx="1" fill="url(#eh-pipe-grad)" />
@@ -99,7 +99,8 @@ export function FlappyGame() {
   } = useFlappyStore();
 
   useEffect(() => {
-    const savedPipes = localStorage.getItem('flappy_rainbow_pipes');
+    const savedPipes =
+      localStorage.getItem('flappy_cosmic_pipes') ?? localStorage.getItem('flappy_rainbow_pipes');
     const savedBird = localStorage.getItem('flappy_golden_bird');
     if (savedPipes !== null) setUseCosmicPipes(savedPipes === 'true');
     if (savedBird !== null) setUseGoldenBird(savedBird === 'true');
@@ -112,7 +113,7 @@ export function FlappyGame() {
   const toggleCosmicPipes = () => {
     const newVal = !useCosmicPipes;
     setUseCosmicPipes(newVal);
-    localStorage.setItem('flappy_rainbow_pipes', String(newVal));
+    localStorage.setItem('flappy_cosmic_pipes', String(newVal));
   };
 
   const toggleGoldenBird = () => {
@@ -256,7 +257,7 @@ export function FlappyGame() {
     drawStars(ctx, FLAPPY_W, FLAPPY_H, starScrollRef.current);
     drawClouds(ctx, FLAPPY_W, cloudScrollRef.current);
 
-    const cosmic = useCosmicPipes && skins.flappy.hasRainbowPipes;
+    const cosmic = useCosmicPipes && skins.flappy.hasCosmicPipes;
     const golden = useGoldenBird && skins.flappy.hasGoldenBird;
 
     for (const pipe of pipes) {
@@ -339,7 +340,7 @@ export function FlappyGame() {
               Птичка
             </button>
           )}
-          {skins.flappy.hasRainbowPipes && (
+          {skins.flappy.hasCosmicPipes && (
             <button
               type="button"
               onClick={toggleCosmicPipes}

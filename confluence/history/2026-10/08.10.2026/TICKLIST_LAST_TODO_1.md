@@ -137,8 +137,8 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 7 Admin panel | 2 / 12 | tickets icon Top-N; merch chip |
 | 8 Authors | 1 / 12 | Мои товары |
 | 9 History / analytics / notif | 5 / 8 | dual NATS + seed SQL + empty copy |
-| 10 Games global | 3 / 14 | GO equal width; /#games; boost help exists |
-| 11 Games per-title | 0 / 48 | many Track B — re-verify |
+| 10 Games global | 10 / 14 | boost/GO/check/LB spam; Balance on all games |
+| 11 Games per-title | 18 / 48 | cosmic skins, Memonia map, 2048 drag, Track B done |
 | 12 Achievements | 0 / 4 | |
 | 13 Mobile | 0 / 3 | **after FE cleanup** |
 | 14 Load / metrics | 0 / 16 | |
@@ -353,7 +353,7 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Boost help **before** checkbox: what it does + not in LB + no shop profit from boosted runs — `gameBoostCopy`
 - [x] Boost checkbox not eye-sore (collapsed / inside help) — `<details>` BoostCheckbox
 - [x] GO buttons equal width / one row; «На главную» → `/#games` (not top of home)
-- [ ] Remove browser `confirm()` / debug submit overlays (`user id from localStorage`, `Sending to backend`…)
+- [x] Remove browser `confirm()` / debug submit overlays (`user id from localStorage`, `Sending to backend`…) — gone from Games; logs DEV-gated
 - [x] Save toast: green **drawn** check icon (not emoji)
 - [x] Isolate each game folder (FE) — same as §1
 - [ ] Written report: what done in games for v1.1.0 → `FEEDBACK_VoiceM_3_1.md`
@@ -369,66 +369,66 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 ## 11. Games — per title
 
 ### Pancaker / Hexagon
-- [ ] Explain boost = mono tray type; verify boosted run **not** ranked (was buggy: ranked while boost on)
+- [x] Explain boost = mono tray type; verify boosted run **not** ranked (was buggy: ranked while boost on)
 - [ ] Level growth clarity **or** selectable difficulty / board size idea
-- [ ] Space skin: darker card under dark emoji (less pink+dark clash); more dark cosmic variety
+- [x] Space skin: darker card under dark emoji (less pink+dark clash); more dark cosmic variety
 - [ ] Cosmic pancakes button placement UX
 - [ ] Top-10 not stuck at 0·0 for admin/anon after real saves
 - [ ] Optional later: tray art instead of emoji; 2.5D stacks deferred
 
 ### Flappy
-- [ ] Rainbow pipes → cosmic (if any rainbow left) — kids-safe, no rainbow controversy
-- [ ] Center «Нажмите пробел» under score
-- [ ] Weaken click pulse / screen expand (hurts play)
-- [ ] Boost = world/pipes slower, bird normal (not cursor-follow — that kills the genre)
-- [ ] Gap jitter + score × level (re-verify)
+- [x] Rainbow pipes → cosmic (if any rainbow left) — kids-safe, no rainbow controversy
+- [x] Center «Нажмите пробел» under score
+- [x] Weaken click pulse / screen expand (hurts play)
+- [x] Boost = world/pipes slower, bird normal (not cursor-follow — that kills the genre)
+- [x] Gap jitter + score × level (re-verify)
 - [ ] Optional: boosted sit-on-pipe grace — TBD
-- [ ] Rejected idea park: bird follows cursor on boost (ideas voice) — **do not ship**
+- [x] Rejected idea park: bird follows cursor on boost (ideas voice) — **do not ship**
 
 ### Builder / Towers
-- [ ] Disable meaningless «Идёт…» mid-run
-- [ ] Soft-fail / difficulty 1–10 vs floor (re-verify)
-- [ ] Boost = slower block (re-verify)
-- [ ] Screen shake on click — tone down if same as Flappy pulse
+- [x] Disable meaningless «Идёт…» mid-run
+- [x] Soft-fail / difficulty 1–10 vs floor (re-verify)
+- [x] Boost = slower block (re-verify)
+- [x] Screen shake on click — tone down if same as Flappy pulse
 - [ ] Dodo Pizza boxes look — deferred wish
 
 ### Hanoi
-- [ ] Disk select: dark bg, white digits, gold hover (not grey-on-white)
-- [ ] Timer starts on «Старт», not on enter
-- [ ] Pre-game disk pick → Start (default 5; range 3–8)
-- [ ] Boost = auto-solve; link copy so players understand
-- [ ] Stop auto-solve button
+- [x] Disk select: dark bg, white digits, gold hover (not grey-on-white)
+- [x] Timer starts on «Старт», not on enter
+- [x] Pre-game disk pick → Start (default 5; range 3–8)
+- [x] Boost = auto-solve; link copy so players understand
+- [x] Stop auto-solve button
 - [ ] Ring gloss / volume polish
-- [ ] No skins for Hanoi (would hurt readability)
+- [x] No skins for Hanoi (would hurt readability)
 - [ ] 3D Sims camera — deferred
 
 ### Memonia
-- [ ] Fruit/animal mapping bug (peach+coconut → fox) — **re-verify fixed**
-- [ ] Home blurb without «фруктов»
-- [ ] Boost = one pair hint
+- [x] Fruit/animal mapping bug (peach+coconut → fox) — **re-verify fixed** *(shared FRUIT/ANIMAL lists)*
+- [x] Home blurb without «фруктов»
+- [x] Boost = one pair hint
 - [ ] Wish: real card art later
 
 ### 2048
-- [ ] Swipe / drag on mobile (and mouse drag)
-- [ ] Boost = undo **or** cell swap (document; unranked)
-- [ ] Title optionally plain «2048»
+- [x] Swipe / drag on mobile (and mouse drag)
+- [x] Boost = undo **or** cell swap (document; unranked)
+- [x] Title optionally plain «2048»
 
 ### Gears (was Orbits)
-- [ ] Name: **Gears** (EN) everywhere
-- [ ] Gear visuals (not plain balls) — re-verify
-- [ ] Anti-abuse: lose line when field filled to spawn line; no merge-in-flight abuse
-- [ ] Goal copy not hardcoded «до 8» — “to the largest”
-- [ ] Boost = copy next nominal (not slower drop) — re-verify
+- [x] Name: **Gears** (EN) everywhere
+- [x] Gear visuals (not plain balls) — re-verify
+- [x] Anti-abuse: lose line when field filled to spawn line; no merge-in-flight abuse
+- [x] Goal copy not hardcoded «до 8» — “to the largest”
+- [x] Boost = copy next nominal (not slower drop) — re-verify
 - [ ] Optional flower skin (sunflower / rose / pansy / …) — wish from ideas voice
 - [ ] Immediate merge on contact (no multi-touch delay) — from ideas voice
 
 ### Companion
-- [ ] EN name (Tamagotchi vs Companion) — decide + apply home/LB/game
-- [ ] Soft care copy (no death FOMO) — “play with your pet”
-- [ ] Daily gift +1000 care points (re-verify); tickets gift when billing OK
-- [ ] Remove weird boost-on-save unranked (or replace with gift)
+- [x] EN name (Tamagotchi vs Companion) — decide + apply home/LB/game *(+ catalog)*
+- [x] Soft care copy (no death FOMO) — “play with your pet”
+- [x] Daily gift +1000 care points (re-verify); tickets gift when billing OK *(points done; tickets later)*
+- [x] Remove weird boost-on-save unranked (or replace with gift)
 - [ ] Room + cute pet art — wish
-- [ ] Not a spam-score game — daily care loop
+- [x] Not a spam-score game — daily care loop
 
 ---
 

@@ -31,11 +31,18 @@ interface MemoryState {
   submitScore: () => Promise<void>;
 }
 
-const FRUIT_EMOJIS = [
+/** Shared deck + animal-skin map (same order → same animal). */
+export const FRUIT_EMOJIS = [
   '🍎', '🍒', '🍊', '🍋', '🍉',
   '🥝', '🍓', '🍑', '🥥', '🥑',
-  '🍇', '🍐', '🍈', '🫐', '🍌'
-];
+  '🍇', '🍐', '🍈', '🫐', '🍌',
+] as const;
+
+export const ANIMAL_EMOJIS = [
+  '🐶', '🐱', '🐭', '🐹', '🐰',
+  '🦊', '🐻', '🐼', '🐨', '🐯',
+  '🦁', '🐮', '🐷', '🐸', '🐵',
+] as const;
 
 // Перемешать массив (Fisher-Yates)
 function shuffleArray<T>(arr: T[]): T[] {
@@ -242,7 +249,9 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
       const totalScore = parseInt(localStorage.getItem('totalScore') || '0');
       localStorage.setItem('totalScore', String(totalScore + finalScore));
       
-      console.log(`🎉 Game Over! Moves: ${newMoves}, Score: ${finalScore}`);
+      if (import.meta.env.DEV) {
+        console.log(`Memonia game over: moves=${newMoves} score=${finalScore}`);
+      }
     }
     
     set({

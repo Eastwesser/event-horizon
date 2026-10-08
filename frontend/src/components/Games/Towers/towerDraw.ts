@@ -2,14 +2,14 @@
 
 export const BLOCK_HEIGHT = 25;
 
-const RAINBOW = [
-  '#FF6B6B',
-  '#FF9F43',
-  '#FFD700',
-  '#4ADE80',
-  '#60A5FA',
-  '#818CF8',
-  '#C084FC',
+const COSMIC = [
+  '#0B1020',
+  '#1A3A5C',
+  '#4F7CAC',
+  '#6366F1',
+  '#7DD3FC',
+  '#C9A227',
+  '#E8D5A3',
 ] as const;
 
 const DEFAULT_REDS = [
@@ -22,9 +22,9 @@ const DEFAULT_REDS = [
   '#4A1A0A',
 ] as const;
 
-export function blockColor(blockLevel: number, rainbow: boolean): string {
-  if (rainbow) {
-    return RAINBOW[(blockLevel - 1) % RAINBOW.length];
+export function blockColor(blockLevel: number, cosmic: boolean): string {
+  if (cosmic) {
+    return COSMIC[(blockLevel - 1) % COSMIC.length];
   }
   const index = Math.min(Math.floor((blockLevel - 1) / 2), DEFAULT_REDS.length - 1);
   return DEFAULT_REDS[index];

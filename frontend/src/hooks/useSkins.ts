@@ -4,14 +4,14 @@ import { getInventory } from '../services/api';
 
 export interface GameSkins {
   flappy: {
-    hasRainbowPipes: boolean;
+    hasCosmicPipes: boolean;
     hasGoldenBird: boolean;
   };
   hexagon: {
     hasSpacePancakes: boolean;
   };
   towers: {
-    hasRainbowBlocks: boolean;
+    hasCosmicBlocks: boolean;
   };
   memory: {
     hasAnimalCards: boolean;
@@ -19,9 +19,9 @@ export interface GameSkins {
 }
 
 const EMPTY_SKINS: GameSkins = {
-  flappy: { hasRainbowPipes: false, hasGoldenBird: false },
+  flappy: { hasCosmicPipes: false, hasGoldenBird: false },
   hexagon: { hasSpacePancakes: false },
-  towers: { hasRainbowBlocks: false },
+  towers: { hasCosmicBlocks: false },
   memory: { hasAnimalCards: false },
 };
 
@@ -32,6 +32,12 @@ function normalizeInventoryPayload(data: unknown): unknown[] {
     return (data as { items: unknown[] }).items;
   }
   return [];
+}
+
+function nameMatches(name: string | undefined, needles: string[]): boolean {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return needles.some((needle) => n.includes(needle.toLowerCase()));
 }
 
 export function useSkins() {
@@ -53,26 +59,32 @@ export function useSkins() {
 
         setSkins({
           flappy: {
-            hasRainbowPipes: items.some(
-              (item) => item.game_id === 'flappy' && item.name?.includes('Радужные трубы'),
+            hasCosmicPipes: items.some(
+              (item) =>
+                item.game_id === 'flappy' &&
+                nameMatches(item.name, ['космические трубы', 'радужные трубы']),
             ),
             hasGoldenBird: items.some(
-              (item) => item.game_id === 'flappy' && item.name?.includes('Золотая птичка'),
+              (item) => item.game_id === 'flappy' && nameMatches(item.name, ['золотая птичка']),
             ),
           },
           hexagon: {
             hasSpacePancakes: items.some(
-              (item) => item.game_id === 'hexagon' && item.name?.includes('Космические блины'),
+              (item) =>
+                item.game_id === 'hexagon' && nameMatches(item.name, ['космические блины']),
             ),
           },
           towers: {
-            hasRainbowBlocks: items.some(
-              (item) => item.game_id === 'towers' && item.name?.includes('Радужные блоки'),
+            hasCosmicBlocks: items.some(
+              (item) =>
+                item.game_id === 'towers' &&
+                nameMatches(item.name, ['космические блоки', 'радужные блоки']),
             ),
           },
           memory: {
             hasAnimalCards: items.some(
-              (item) => item.game_id === 'memory' && item.name?.includes('Карточки со зверями'),
+              (item) =>
+                item.game_id === 'memory' && nameMatches(item.name, ['карточки со зверями']),
             ),
           },
         });
