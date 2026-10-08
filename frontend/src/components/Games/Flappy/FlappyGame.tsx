@@ -1,7 +1,7 @@
 // frontend/src/components/Games/Flappy/FlappyGame.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFlappyStore } from '../../../store/flappyStore';
+import { useFlappyStore } from './flappyStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import api from '../../../services/api';

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { inventoryApi, type InventoryItem, type SearchItemsRequest } from '../services/inventoryApi';
+import { inventoryApi, type InventoryItem, type SearchItemsRequest } from '../../services/inventoryApi';
 
 interface InventoryState {
   items: InventoryItem[];

@@ -1,7 +1,7 @@
 // frontend/src/components/Games/Memonia/MemoryGame.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMemoryStore } from '../../../store/memoryStore';
+import { useMemoryStore } from './memoryStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { MemoryBoard } from './MemoryBoard';

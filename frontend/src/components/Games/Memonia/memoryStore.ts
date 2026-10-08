@@ -1,6 +1,6 @@
 // frontend/src/store/memoryStore.ts
 import { create } from 'zustand';
-import api from '../services/api';
+import api from '../../../services/api';
 
 export interface Card {
   id: number;
@@ -310,7 +310,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
         localStorage.setItem(playedKey, String(played + 1));
         const totalScore = parseInt(localStorage.getItem(totalScoreKey) || '0', 10);
         localStorage.setItem(totalScoreKey, String(totalScore + score));
-        void import('../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
+        void import('../../../lib/achievements').then(({ afterRankedSubmit }) => afterRankedSubmit());
       }
     } catch (err) {
       console.error('Failed to submit memory score:', err);

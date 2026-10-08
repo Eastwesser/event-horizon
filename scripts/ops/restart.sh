@@ -1,5 +1,8 @@
 #!/bin/bash
-cd ~/event_horizon
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
+# cd handled by REPO_ROOT
 echo "🛑 Stopping services..."
 make stop-services
 echo "🐳 Restarting Docker..."

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { inventoryApi, type InventoryItem } from '../../services/inventoryApi';
 import { paymentApi } from '../../services/paymentApi';
-import { useShopStore } from '../../store/shopStore';
+import { useShopStore } from './shopStore';
 import { inventoryToShopItem } from '../../lib/shopItemMap';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import Notification from '../Common/Notification/Notification';

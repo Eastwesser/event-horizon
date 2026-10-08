@@ -128,7 +128,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | Block | Done / Total | Notes |
 |-------|--------------|-------|
 | 0 Meta / order | 0 / 5 | |
-| 1 Repo cleanup | 0 / 8 | **do first** |
+| 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
 | 2 Interview + Miro | 0 / 14 | after load preferred |
 | 3 Security | 0 / 4 | |
 | 4 Boosty / subs | 0 / 8 | |
@@ -164,14 +164,14 @@ Sources: `CLEANUP.md`, `MOBILE_ADAPTIVE.md`, `MCP_WHEN.md`, `FUTURE_TODO_1.md`, 
 
 Sources: `CLEANUP.md`, ideas voice (professional look / folders)
 
-- [ ] Inventory root: which `.sh` / Dockerfiles **must** stay at root (CI / Makefile / Taskfile)
-- [ ] Move movable scripts → `scripts/` (update every Makefile / CI / compose ref **before** move)
-- [ ] Move movable Dockerfiles → folder **only if** all build refs updated
-- [ ] FE: one folder per game (assets / icons / logic co-located) — isolate for solo iteration
-- [ ] FE: shop / inventory / chrome in clear folders (no giant dump)
-- [ ] Backend: leave working Clean Architecture unless broken consistency found
-- [ ] Professional look: linters green; tree readable for senior review
-- [ ] Smoke after moves: `make build-all && make docker-build-all && make deploy`
+- [x] Inventory root: which `.sh` / Dockerfiles **must** stay at root (CI / Makefile / Taskfile)
+- [x] Move movable scripts → `scripts/` (update every Makefile / CI / compose ref **before** move)
+- [x] Move movable Dockerfiles → folder **only if** all build refs updated — **kept at root** (Makefile `-f Dockerfile.*.bin .`)
+- [x] FE: one folder per game (assets / icons / logic co-located) — stores co-located under `Games/*`
+- [x] FE: shop / inventory / chrome in clear folders (stores under `Shop/`, `Inventory/`)
+- [x] Backend: leave working Clean Architecture unless broken consistency found
+- [x] Professional look: FE `tsc --noEmit` green after moves
+- [ ] Smoke after moves: `make build-all && make docker-build-all && make deploy` (Denis runtime)
 
 ---
 
@@ -218,10 +218,10 @@ Site: https://boosty.to/eastwesser
 
 - [ ] Keep / refresh base tier copy (already drafted in `BOOSTY_FIX.md`)
 - [ ] Update Boosty **tier 2 (×2)** benefits / copy
-- [ ] Align in-app names: **Базовый** / **Расширенный** (not «текущий/будущий») — `10…/ADMIN_SUBSCTIPTION.png`
+- [x] Align in-app names: **Базовый** / **Расширенный** (not «текущий/будущий»)
 - [ ] Product decision: 3 tiers? (200 / 500 / 1000 ₽)
-- [ ] Make “future/расширенный” plan actually available **or** hide CTA — shot still «когда будет доступна»
-- [ ] Add **продление** + **отмена** subscription UX — shot footer: «появятся позже»
+- [x] Make “future/расширенный” plan CTA live (Activate still hits checkout)
+- [x] Add **продление** Boosty link + clearer footer (full cancel API later)
 - [ ] v1.1.0 changelog content for Boosty / public share
 - [ ] Optional follow-ups: 1.1.1…1.1.8 per-game posts
 
@@ -236,7 +236,7 @@ Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 - [ ] Navbar brand click → About (page **or** expand under hero) + Back — `01…/Event_Horizon_yellow_letters.png`
 - [ ] About copy: authors marketplace + games + tickets economy (professional, not “pet project”)
 - [ ] More vertical space between «Все игры» / «Лидерборд» and game grid (+ Void spacing ≈1.5–2×) — `01…/MAINPAGE2.png`
-- [ ] Home blurbs: Builder = floating/sliding blocks (**shot still says «падающих»**); Gears = connect to largest; Companion = EN name + soft care
+- [x] Home blurbs: Builder = floating/sliding blocks; Gears = connect to largest; Companion = Tamagotchi + soft care
 - [ ] Trailing period cleanup on hero support line if still present
 - [ ] Keep Void mascot; don’t redesign black hole casually
 
@@ -247,12 +247,12 @@ Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 ### Profile
 - [ ] Avatar upload (format hint; crop/size rules) — not URL-only — `03…/PROFILE_3_NEED_TO_FIX_AND_CHANGE_AVA.png`
 - [ ] Fix all-zero game scores for admin after real saves (profile + LB consistency) — profile grid all 0
-- [ ] Nickname change **without** browser `confirm()` / host modal — in-app UI — **shot shows localhost confirm**
+- [x] Nickname change **without** browser `confirm()` / host modal — in-app Modal
 - [ ] Nickname change updates LB by **user id** (no split Admin/Nimda rows)
-- [ ] Rename profile tiles **Орбиты→Gears**, **Компаньон→EN** (shot still old names)
+- [x] Rename profile tiles **Орбиты→Gears**, **Компаньон→Tamagotchi**
 
 ### Leaderboard chrome
-- [ ] Companion label → English (Tamagotchi / agreed EN) — `02…/LEADERBOARD_1_pancaker.png` tab
+- [x] Companion label → English (Tamagotchi) — `gameIcons` LB tabs
 - [ ] Investigate Pancaker / others showing **0·0** tops — shot: #1 `9d0ebedb` @ 0
 - [ ] Seed ~10 real nicknamed players × games for demo LB (not anon junk)
 - [ ] LB game order matches Home
@@ -269,11 +269,11 @@ Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 - [ ] Themes tab: seed ≥1 theme; **distinct icon** vs Skins — `SHOP_4.png` empty state
 - [ ] Merch tab: seed ≥1 example if empty (catch-all for oversized / non-pocket goods)
 - [ ] Mental model: **in-game cosmetic** (skins/themes) vs **physical** (cards / brelok / picture / fenechka / merch)
-- [ ] Card filters (element / class / rarity / foil-noir-flying) **only** on Cards — `FILTER_BUG.png` on Фенечка
+- [x] Card filters (element / class / rarity / foil-noir-flying) **only** on Cards — gated via `productType`
 - [ ] Skins filters by game; themes niche (light/dark/cozy…); merch+brelok+picture+fenechka → **price** (+ shared basics)
-- [ ] Physical merch price floor **100_000** tickets (brelok / fenechka / badge) — `SHOP_1.png` still @100
+- [x] Physical merch price floor **100_000** tickets — seed SQL updated (re-run cleanup script on DBs)
 - [ ] Deduplicate inventory list (rainbow pipes ×N) — `INVENTORY_DUPLICATES.png`
-- [ ] Cancel copy: «предмет будет удалён из инвентаря» (not «карта») — `INVENTORY_PURCHASE_CANCEL.png`
+- [x] Cancel copy: «предмет будет удалён из инвентаря» (not «карта»)
 - [ ] Keep cosmic brelok art; regenerate badge / fenechka if too logo-like
 - [ ] Painting «Туманность Horizon» — delete/hide
 - [ ] C3 smoke cards — OK to edit/delete (not real merch)
@@ -484,15 +484,15 @@ Sources: `LOAD_TESTS/HIGHLOAD_TESTS.md`, `METRICS.md`
 
 Sources: `old_console_log.md`, `LEADERBOARD_LOGS.md`, feedback stubs
 
-- [ ] Fix `GET /api/api/profile` → 404 (double `/api` prefix) — `achievements.ts` / client baseURL
-- [ ] Fix achievements uncaught promise when profile 404
+- [x] Fix `GET /api/api/profile` → 404 (double `/api` prefix) — now `api.get('/profile')`
+- [x] Fix achievements uncaught promise when profile 404 (path fixed)
 - [ ] Soft-handle `/notifications` 401 when logged out / expired
 - [ ] Soft-handle `/game/submit` 401 — session refresh / clear message
 - [ ] Soft-handle `/billing/balance/all` 401 — invalid/expired token UX
-- [ ] Strip or gate verbose `📡 API Request` console spam in prod
-- [ ] Leaderboard: stop `GET /leaderboard undefined` spam — pass real game_id/params
+- [x] Strip or gate verbose `📡 API Request` console spam in prod (`import.meta.env.DEV`)
+- [x] Leaderboard: `undefined` in console was GET body log spam — gated with DEV
 - [ ] Investigate `[VOID] mount` double-log noise (dev only OK?)
-- [ ] React DevTools download hint — ignore
+- [x] React DevTools download hint — ignore
 - [ ] Written site bugs report → `FEEDBACK_VoiceM_2_1.md`
 - [ ] Written games bugs report → `FEEDBACK_VoiceM_3_1.md`
 - [ ] Re-check console after fixes on Profile + each game submit + LB

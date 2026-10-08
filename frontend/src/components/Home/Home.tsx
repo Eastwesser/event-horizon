@@ -44,7 +44,7 @@ const games: {
   {
     id: 'towers',
     name: 'Builder',
-    description: 'Строй башню из падающих блоков',
+    description: 'Строй башню из плавающих блоков',
     icon: gameIcon('towers'),
     path: '/game/towers',
     available: true,
@@ -76,15 +76,15 @@ const games: {
   {
     id: 'gears',
     name: 'Gears',
-    description: 'Сливай шестерёнки до восьмой',
+    description: 'Соединяй шестерёнки до самой большой',
     icon: gameIcon('gears'),
     path: '/game/gears',
     available: true,
   },
   {
     id: 'companion',
-    name: 'Компаньон',
-    description: 'Мягкий тамагочи без давления',
+    name: 'Tamagotchi',
+    description: 'Заботься о своём питомце',
     icon: gameIcon('companion'),
     path: '/game/companion',
     available: true,

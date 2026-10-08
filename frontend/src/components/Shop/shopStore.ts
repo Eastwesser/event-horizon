@@ -7,8 +7,8 @@ import {
   cancelShopPurchase,
   getInventory,
   getAllBalances,
-} from '../services/api';
-import { invalidateBalanceCache } from '../components/Billing/Balance';
+} from '../../services/api';
+import { invalidateBalanceCache } from '../Billing/Balance';
 
 export interface ShopItem {
   id: string;

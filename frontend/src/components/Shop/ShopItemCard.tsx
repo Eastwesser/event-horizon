@@ -1,6 +1,6 @@
 // frontend/src/components/Shop/ShopItemCard.tsx
 import { Link } from 'react-router-dom';
-import type { ShopItem } from '../../store/shopStore';
+import type { ShopItem } from './shopStore';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';

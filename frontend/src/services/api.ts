@@ -37,8 +37,9 @@ api.interceptors.request.use((config) => {
       delete config.headers['Content-Type'];
     }
   }
-  console.log('📡 API Request:', config.method, config.url, config.data);
-  console.log('📡 Headers:', config.headers);
+  if (import.meta.env.DEV) {
+    console.log('📡 API Request:', config.method, config.url, config.data);
+  }
   return config;
 });
 
@@ -69,15 +70,17 @@ async function refreshAccessToken(): Promise<string | null> {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    console.error('❌ API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message:
-        (error.response?.data as { error?: string; message?: string })?.error ||
-        (error.response?.data as { message?: string })?.message ||
-        error.message,
-    });
+    if (import.meta.env.DEV) {
+      console.error('❌ API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message:
+          (error.response?.data as { error?: string; message?: string })?.error ||
+          (error.response?.data as { message?: string })?.message ||
+          error.message,
+      });
+    }
 
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     if (error.response?.status === 401 && original && !original._retry) {

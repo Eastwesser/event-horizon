@@ -1,4 +1,7 @@
 #!/bin/bash
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
 
 # Сохраняем все рекорды из Redis в PostgreSQL
 GAME_DB="postgres://eventhorizon:eventhorizon@localhost:5461/eventhorizon_game"

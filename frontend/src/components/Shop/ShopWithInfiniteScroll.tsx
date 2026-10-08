@@ -5,7 +5,7 @@ import ShopItemCard from './ShopItemCard';
 import PurchaseModal from './PurchaseModal';
 import Notification from '../Common/Notification/Notification';
 import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
-import { useShopStore, type ShopItem } from '../../store/shopStore';
+import { useShopStore, type ShopItem } from './shopStore';
 import { inventoryApi } from '../../services/inventoryApi';
 import { inventoryToShopItem } from '../../lib/shopItemMap';
 import { PageHeader } from '../ui/PageHeader';

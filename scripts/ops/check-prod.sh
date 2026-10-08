@@ -1,4 +1,7 @@
 #!/bin/bash
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO_ROOT"
+
 echo "=== 1. Optimistic Locking (version) ==="
 grep -rn "Version" --include="*.go" services/*/internal/ 2>/dev/null | wc -l
 

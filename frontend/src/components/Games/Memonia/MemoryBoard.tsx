@@ -1,6 +1,6 @@
 // frontend/src/components/Games/Memonia/MemoryBoard.tsx
 import { useEffect, useRef, useState } from 'react';
-import { useMemoryStore } from '../../../store/memoryStore';
+import { useMemoryStore } from './memoryStore';
 import { MemoryCard } from './MemoryCard';
 
 interface MemoryBoardProps {
