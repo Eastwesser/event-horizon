@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
@@ -212,6 +213,7 @@ export function CompanionGame() {
       title="Tamagotchi"
       onBack={handleBack}
       width="narrow"
+      actions={<Balance />}
       stats={
         pet ? (
           <>

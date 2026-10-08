@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useGameBoost } from '../../../hooks/useGameBoost';
+import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
@@ -333,6 +334,7 @@ export function GearsGame() {
       title="Gears"
       onBack={handleBack}
       width="narrow"
+      actions={<Balance />}
       stats={
         <>
           <ScoreChip label="Счёт" value={score} />

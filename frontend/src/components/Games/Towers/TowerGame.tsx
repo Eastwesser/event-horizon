@@ -26,12 +26,12 @@ import {
 } from './towerDraw';
 import './TowerGame.css';
 
-function IconBlocks({ rainbow }: { rainbow: boolean }) {
+function IconBlocks({ cosmic }: { cosmic: boolean }) {
   return (
     <svg className="eh-tower-skin-icon" viewBox="0 0 16 16" aria-hidden="true">
-      <rect x="3" y="9" width="10" height="4" rx="0.5" fill={rainbow ? '#60A5FA' : '#C0392B'} />
-      <rect x="4" y="5" width="8" height="4" rx="0.5" fill={rainbow ? '#FFD700' : '#E74C3C'} />
-      <rect x="5" y="1" width="6" height="4" rx="0.5" fill={rainbow ? '#FF6B6B' : '#A93226'} />
+      <rect x="3" y="9" width="10" height="4" rx="0.5" fill={cosmic ? '#4F7CAC' : '#C0392B'} />
+      <rect x="4" y="5" width="8" height="4" rx="0.5" fill={cosmic ? '#C9A227' : '#E74C3C'} />
+      <rect x="5" y="1" width="6" height="4" rx="0.5" fill={cosmic ? '#6366F1' : '#A93226'} />
     </svg>
   );
 }
@@ -42,7 +42,7 @@ export function TowerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prevGameOver = useRef(false);
   const { skins, loading: skinsLoading } = useSkins();
-  const [useRainbowBlocks, setUseRainbowBlocks] = useState(false);
+  const [useCosmicBlocks, setUseCosmicBlocks] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState(1);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
@@ -79,18 +79,19 @@ export function TowerGame() {
   } = useTowerStore();
 
   useEffect(() => {
-    const saved = localStorage.getItem('towers_rainbow_blocks');
-    if (saved !== null) setUseRainbowBlocks(saved === 'true');
+    const saved =
+      localStorage.getItem('towers_cosmic_blocks') ?? localStorage.getItem('towers_rainbow_blocks');
+    if (saved !== null) setUseCosmicBlocks(saved === 'true');
     const savedDiff = parseInt(localStorage.getItem('towers_difficulty') || '1', 10);
     if (Number.isFinite(savedDiff)) {
       setSelectedDifficulty(Math.min(10, Math.max(1, savedDiff)));
     }
   }, []);
 
-  const toggleRainbowBlocks = () => {
-    const newVal = !useRainbowBlocks;
-    setUseRainbowBlocks(newVal);
-    localStorage.setItem('towers_rainbow_blocks', String(newVal));
+  const toggleCosmicBlocks = () => {
+    const newVal = !useCosmicBlocks;
+    setUseCosmicBlocks(newVal);
+    localStorage.setItem('towers_cosmic_blocks', String(newVal));
   };
 
   useEffect(() => {
@@ -162,7 +163,7 @@ export function TowerGame() {
   const handleBack = () => navigate('/#games');
   const midRun = started && !gameOver;
 
-  const rainbow = useRainbowBlocks && skins.towers.hasRainbowBlocks;
+  const cosmic = useCosmicBlocks && skins.towers.hasCosmicBlocks;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -180,12 +181,12 @@ export function TowerGame() {
       const blockW = towerBlocks[i];
       const blockX = (GAME_WIDTH - blockW) / 2;
       const blockY = startY - i * BLOCK_HEIGHT;
-      drawBlock(ctx, blockX, blockY, blockW, h, blockColor(i + 1, rainbow));
+      drawBlock(ctx, blockX, blockY, blockW, h, blockColor(i + 1, cosmic));
     }
 
     if (started && !gameOver) {
       const currentY = startY - towerBlocks.length * BLOCK_HEIGHT;
-      const color = blockColor(towerBlocks.length + 1, rainbow);
+      const color = blockColor(towerBlocks.length + 1, cosmic);
       drawMovingBlock(ctx, currentBlockX, currentY, blockWidth, h, color);
       drawDirectionChevron(ctx, direction, GAME_WIDTH, currentY, h);
     }
@@ -197,7 +198,7 @@ export function TowerGame() {
     started,
     GAME_WIDTH,
     GAME_HEIGHT,
-    rainbow,
+    cosmic,
     direction,
   ]);
 
@@ -235,20 +236,20 @@ export function TowerGame() {
             value={getMultiplierDisplay()}
             className="border-photon-cyan/30 [&_span:last-child]:text-photon-cyan"
           />
-          {skins.towers.hasRainbowBlocks && (
+          {skins.towers.hasCosmicBlocks && (
             <button
               type="button"
-              onClick={toggleRainbowBlocks}
-              title="Радужные блоки"
+              onClick={toggleCosmicBlocks}
+              title="Космические блоки"
               className={cn(
                 'rounded-sm border px-3 py-1.5 text-sm transition-colors',
-                useRainbowBlocks
+                useCosmicBlocks
                   ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
                   : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
               )}
             >
-              <IconBlocks rainbow={useRainbowBlocks} />
-              Радужные блоки
+              <IconBlocks cosmic={useCosmicBlocks} />
+              Космические блоки
             </button>
           )}
         </>
@@ -276,11 +277,7 @@ export function TowerGame() {
               </select>
             </label>
           )}
-          {midRun ? (
-            <Button variant="primary" size="sm" disabled>
-              В игре
-            </Button>
-          ) : (
+          {!midRun && (
             <Button variant="primary" size="sm" onClick={() => void beginRun()} disabled={boostBusy}>
               {boostBusy ? 'Старт…' : gameOver ? 'Новая игра' : 'Старт'}
             </Button>

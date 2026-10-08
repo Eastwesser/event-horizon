@@ -1,8 +1,16 @@
 // frontend/src/components/Games/Twenty48/Twenty48Game.tsx
-import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type TouchEvent,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useGameBoost } from '../../../hooks/useGameBoost';
+import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
@@ -219,6 +227,20 @@ export function Twenty48Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [applyMove]);
 
+  const finishSwipe = (x: number, y: number) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const dx = x - start.x;
+    const dy = y - start.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN_PX) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      applyMove(dx > 0 ? 'right' : 'left');
+    } else {
+      applyMove(dy > 0 ? 'down' : 'up');
+    }
+  };
+
   const onTouchStart = (e: TouchEvent) => {
     const t = e.touches[0];
     if (!t) return;
@@ -226,19 +248,22 @@ export function Twenty48Game() {
   };
 
   const onTouchEnd = (e: TouchEvent) => {
-    const start = touchStart.current;
-    touchStart.current = null;
-    if (!start) return;
     const t = e.changedTouches[0];
-    if (!t) return;
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN_PX) return;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      applyMove(dx > 0 ? 'right' : 'left');
-    } else {
-      applyMove(dy > 0 ? 'down' : 'up');
+    if (!t) {
+      touchStart.current = null;
+      return;
     }
+    finishSwipe(t.clientX, t.clientY);
+  };
+
+  const onPointerDown = (e: ReactPointerEvent) => {
+    if (e.pointerType === 'touch') return; // touch handlers cover mobile
+    touchStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const onPointerUp = (e: ReactPointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    finishSwipe(e.clientX, e.clientY);
   };
 
   const submit = async () => {
@@ -282,6 +307,7 @@ export function Twenty48Game() {
       title="2048"
       onBack={handleBack}
       width="narrow"
+      actions={<Balance />}
       stats={
         <>
           <ScoreChip label="Счёт" value={score} />
@@ -306,7 +332,7 @@ export function Twenty48Game() {
       }
       help={
         <>
-          <p>Стрелки, WASD или свайп по полю — сдвиг плиток. Собери плитку 2048.</p>
+          <p>Стрелки, WASD, свайп или перетаскивание мышью — сдвиг плиток. Собери плитку 2048.</p>
           {boostHelpLines('twenty48').map((line) => (
             <p key={line}>{line}</p>
           ))}
@@ -317,6 +343,11 @@ export function Twenty48Game() {
         className="grid w-full max-w-sm touch-none grid-cols-4 gap-2 rounded-md border border-white/10 bg-nebula p-2"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerLeave={() => {
+          touchStart.current = null;
+        }}
       >
         {board.flatMap((row, r) =>
           row.map((v, c) => (

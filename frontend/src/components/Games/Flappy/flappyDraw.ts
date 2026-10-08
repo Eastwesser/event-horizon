@@ -93,17 +93,16 @@ function pipeBodyGradient(
   y: number,
   w: number,
   h: number,
-  rainbow: boolean,
+  cosmic: boolean,
 ) {
-  if (rainbow) {
+  if (cosmic) {
+    // Void → cyan → indigo → gold (no rainbow spectrum).
     const g = ctx.createLinearGradient(x, y, x, y + h);
-    g.addColorStop(0, '#FF6B6B');
-    g.addColorStop(0.17, '#FFA500');
-    g.addColorStop(0.33, '#FFD700');
-    g.addColorStop(0.5, '#4ADE80');
-    g.addColorStop(0.67, '#60A5FA');
-    g.addColorStop(0.83, '#818CF8');
-    g.addColorStop(1, '#C084FC');
+    g.addColorStop(0, '#0B1020');
+    g.addColorStop(0.35, '#1A3A5C');
+    g.addColorStop(0.6, '#4F7CAC');
+    g.addColorStop(0.82, '#6366F1');
+    g.addColorStop(1, '#C9A227');
     return g;
   }
   const g = ctx.createLinearGradient(x, y, x + w, y);
@@ -119,36 +118,36 @@ export function drawPipe(
   pipe: PipeDraw,
   pipeWidth: number,
   gameHeight: number,
-  rainbow: boolean,
+  cosmic: boolean,
 ) {
   const { x, topHeight, bottomY } = pipe;
   const w = pipeWidth;
 
   const paintSegment = (y: number, h: number, isTop: boolean) => {
     if (h <= 0) return;
-    ctx.fillStyle = pipeBodyGradient(ctx, x, y, w, h, rainbow);
+    ctx.fillStyle = pipeBodyGradient(ctx, x, y, w, h, cosmic);
     ctx.fillRect(x, y, w, h);
 
     // Rim / lip
     const lipH = 30;
     const lipY = isTop ? y + h - lipH : y;
-    ctx.fillStyle = pipeBodyGradient(ctx, x - 5, lipY, w + 10, lipH, rainbow);
+    ctx.fillStyle = pipeBodyGradient(ctx, x - 5, lipY, w + 10, lipH, cosmic);
     ctx.fillRect(x - 5, lipY, w + 10, lipH);
 
     // Highlight edge
-    ctx.fillStyle = rainbow ? 'rgba(255,255,255,0.28)' : 'rgba(165, 214, 167, 0.45)';
+    ctx.fillStyle = cosmic ? 'rgba(125, 211, 252, 0.35)' : 'rgba(165, 214, 167, 0.45)';
     ctx.fillRect(x + 4, y, 6, h);
 
     // Shadow edge
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.fillRect(x + w - 8, y, 6, h);
 
-    ctx.strokeStyle = rainbow ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)';
+    ctx.strokeStyle = cosmic ? 'rgba(201, 162, 39, 0.45)' : 'rgba(0,0,0,0.25)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, w, h);
     ctx.strokeRect(x - 5, lipY, w + 10, lipH);
 
-    if (!rainbow) {
+    if (!cosmic) {
       ctx.fillStyle = 'rgba(27, 94, 32, 0.55)';
       for (let i = 0; i < 3; i++) {
         const ry = isTop ? topHeight - 20 + i * 10 : bottomY + 10 + i * 10;
@@ -264,20 +263,20 @@ export function drawScore(ctx: CanvasRenderingContext2D, score: number, w: numbe
   ctx.restore();
 }
 
-export function drawStartHint(ctx: CanvasRenderingContext2D, w: number, h: number) {
+export function drawStartHint(ctx: CanvasRenderingContext2D, w: number, _h: number) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // Center under the score chip (score sits ~y=60).
+  // Directly under the score (score baseline ~y=60).
   const cx = w / 2;
-  const cy = h / 2 + 10;
-  ctx.font = 'bold 24px "Press Start 2P", monospace';
+  const cy = 108;
+  ctx.font = 'bold 20px "Press Start 2P", monospace';
   ctx.fillStyle = '#FFF';
   ctx.shadowColor = '#000';
   ctx.shadowBlur = 6;
   ctx.fillText('НАЖМИТЕ ПРОБЕЛ', cx, cy);
   ctx.font = '16px monospace';
   ctx.shadowBlur = 0;
-  ctx.fillText('или кликните мышкой', cx, cy + 36);
+  ctx.fillText('или кликните мышкой', cx, cy + 32);
   ctx.restore();
 }

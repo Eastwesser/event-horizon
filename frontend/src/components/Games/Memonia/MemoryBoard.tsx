@@ -1,15 +1,11 @@
 // frontend/src/components/Games/Memonia/MemoryBoard.tsx
 import { useEffect, useRef, useState } from 'react';
-import { useMemoryStore } from './memoryStore';
+import { ANIMAL_EMOJIS, FRUIT_EMOJIS, useMemoryStore } from './memoryStore';
 import { MemoryCard } from './MemoryCard';
 
 interface MemoryBoardProps {
   skin?: 'default' | 'animals';
 }
-
-// Эмодзи для разных скинов
-const defaultEmojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🍒', '🍉', '🥝', '🍍', '🥭', '🍌', '🍈', '🍏', '🍐', '🥑', '🥥', '🫐'];
-const animalEmojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🦝', '🦉', '🐺'];
 
 export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
   const { cards, flipCard, gameOver, flippedIndices, matchedPairs } = useMemoryStore();
@@ -32,12 +28,10 @@ export function MemoryBoard({ skin = 'default' }: MemoryBoardProps) {
   }, [flippedIndices, matchedPairs]);
 
   const getCardEmoji = (originalEmoji: string) => {
-    if (skin === 'animals') {
-      const index = defaultEmojis.indexOf(originalEmoji);
-      if (index !== -1 && index < animalEmojis.length) {
-        return animalEmojis[index];
-      }
-      return originalEmoji;
+    if (skin !== 'animals') return originalEmoji;
+    const index = (FRUIT_EMOJIS as readonly string[]).indexOf(originalEmoji);
+    if (index !== -1 && index < ANIMAL_EMOJIS.length) {
+      return ANIMAL_EMOJIS[index];
     }
     return originalEmoji;
   };

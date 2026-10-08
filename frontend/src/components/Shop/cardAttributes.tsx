@@ -124,7 +124,7 @@ export function cardFlagBadges(attrs: Record<string, unknown>): FlagBadge[] {
   if (asBool(attrs.foil)) flags.push({ key: 'foil', label: '✦ ФОЙЛ', tone: 'gold' });
   if (asBool(attrs.noir)) flags.push({ key: 'noir', label: '◐ НУАР', tone: 'neutral' });
   if (asBool(attrs.flying)) flags.push({ key: 'flying', label: 'ЛЕТАЮЩИЙ', tone: 'cyan' });
-  if (asBool(attrs.companion)) flags.push({ key: 'companion', label: 'C Компаньон', tone: 'success' });
+  if (asBool(attrs.companion)) flags.push({ key: 'companion', label: 'C Tamagotchi', tone: 'success' });
   if (asBool(attrs.unique)) flags.push({ key: 'unique', label: '♛ УНИКАЛЬНАЯ', tone: 'warning' });
   if (asBool(attrs.symbiont)) flags.push({ key: 'symbiont', label: 'Симбионт', tone: 'indigo' });
   if (asBool(attrs.parasite)) flags.push({ key: 'parasite', label: 'Паразит', tone: 'indigo' });
