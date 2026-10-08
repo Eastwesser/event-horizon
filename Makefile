@@ -79,9 +79,11 @@ test-smoke:
 	done
 
 test-k6:
-	@echo "Optional k6 load (requires k6 + running stack)"
+	@echo "Optional k6 load (requires k6 + running stack on :8079)"
 	@command -v k6 >/dev/null || { echo "k6 not installed — skip"; exit 0; }
-	k6 run deployments/k6/loadtest.js
+	@BASE_URL=$${BASE_URL:-http://localhost:8079}; \
+	echo "BASE_URL=$$BASE_URL"; \
+	BASE_URL=$$BASE_URL k6 run deployments/k6/browse.js
 
 test-integration:
 	@echo "Integration tests (testcontainers; needs Docker OR *_TEST_DATABASE_URL)"

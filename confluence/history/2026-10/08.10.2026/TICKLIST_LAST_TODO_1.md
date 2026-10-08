@@ -129,7 +129,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 |-------|--------------|-------|
 | 0 Meta / order | 0 / 5 | |
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
-| 2 Interview + Miro | 0 / 14 | after load preferred |
+| 2 Interview + Miro | 1 / 14 | INTERVIEW_QUESTIONS ports filled; Miro export still open |
 | 3 Security | 0 / 4 | |
 | 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
 | 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
@@ -141,7 +141,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 11 Games per-title | 18 / 48 | cosmic skins, Memonia map, 2048 drag, Track B done |
 | 12 Achievements | 0 / 4 | |
 | 13 Mobile | 3 / 3 | safe-area + touch targets + shell inset |
-| 14 Load / metrics | 0 / 16 | |
+| 14 Load / metrics | 1 / 16 | runbook ready; blocked until `make deploy` |
 | 15 Bugs / console | 4 / 12 | profile path; LB undefined; API spam gated |
 | 16 Parked wishlist | 0 / 8 | |
 | 17 MCP / Tetiva | 0 / 5 | **very last** |
