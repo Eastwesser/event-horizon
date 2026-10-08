@@ -139,7 +139,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 9 History / analytics / notif | 5 / 8 | dual NATS + seed SQL + empty copy |
 | 10 Games global | 10 / 14 | boost/GO/check/LB spam; Balance on all games |
 | 11 Games per-title | 18 / 48 | cosmic skins, Memonia map, 2048 drag, Track B done |
-| 12 Achievements | 0 / 4 | |
+| 12 Achievements | 4 / 4 | 3 tiers × 8 games + SVG icons |
 | 13 Mobile | 3 / 3 | safe-area + touch targets + shell inset |
 | 14 Load / metrics | 1 / 16 | runbook ready; blocked until `make deploy` |
 | 15 Bugs / console | 4 / 12 | profile path; LB undefined; API spam gated |
@@ -187,7 +187,7 @@ Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 - [ ] Per-service plain-RU explainers: auth, game, billing, LB, profile, shop, inventory, authors, payment, history, analytics, notification, fulfillment, gateway, nats-hub, balancer
 - [ ] Where WebSockets live (LB Redis→WS? notifications?) — document truth
 - [ ] SQL practice list for interviews (admin joins: users / goods / purchases)
-- [ ] `INTERVIEW_QUESTIONS_EH.md` — fill ports / “where is what”
+- [x] `INTERVIEW_QUESTIONS_EH.md` — fill ports / “where is what”
 - [ ] FE architecture note: backend-first then FE — is FE folder layout OK?
 
 ### Miro (Denis board)
@@ -287,7 +287,7 @@ Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 
 ### Economy copy
 - [ ] Clarify lamps = boosts; tickets = shop (tooltips in games too)
-- [ ] Written site bugs/F12 report → `FEEDBACK_VoiceM_2_1.md`
+- [x] Written site bugs/F12 report → `FEEDBACK_VoiceM_2_1.md`
 
 ---
 
@@ -356,7 +356,7 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Remove browser `confirm()` / debug submit overlays (`user id from localStorage`, `Sending to backend`…) — gone from Games; logs DEV-gated
 - [x] Save toast: green **drawn** check icon (not emoji)
 - [x] Isolate each game folder (FE) — same as §1
-- [ ] Written report: what done in games for v1.1.0 → `FEEDBACK_VoiceM_3_1.md`
+- [x] Written report: what done in games for v1.1.0 → `FEEDBACK_VoiceM_3_1.md`
 - [ ] 3 achievements per game (novice → amateur → pro → maestro → hero) — SVG, no emoji
 - [ ] Optional OSS/3D engines later — don’t multi-language zoo without need
 - [ ] Flappy LB eye-check after saves (manual QA)
@@ -436,10 +436,10 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 
 Sources: ideas voice
 
-- [ ] Ladder: новичок → любитель → профессионал → маэстро → герой/король
-- [ ] 3+ badges per game wired to scores / LB thresholds
-- [ ] Draw SVG icons (no emoji)
-- [ ] Profile surface for unlocks (depends on `/api/profile` fix)
+- [x] Ladder: новичок → любитель → профессионал → маэстро → герой/король *(новичок=first_play; +amateur/pro/hero per game; totals = maestro path)*
+- [x] 3+ badges per game wired to scores / LB thresholds — migration `20261008120000_game_tier_achievements.sql`
+- [x] Draw SVG icons (no emoji) — IconName map on FE
+- [x] Profile surface for unlocks (depends on `/api/profile` fix)
 
 ---
 
@@ -458,8 +458,8 @@ Sources: `MOBILE_ADAPTIVE.md`
 Sources: `LOAD_TESTS/HIGHLOAD_TESTS.md`, `METRICS.md`
 
 ### Run
-- [ ] Run CORE highload suite (k6 / existing scripts) on current stack
-- [ ] Store results under `08.10.2026/LOAD_RESULTS/` (create when run)
+- [ ] Run CORE highload suite (k6 / existing scripts) on current stack — `make test-k6` → `deployments/k6/browse.js` @ `:8079`
+- [x] Store results under `08.10.2026/LOAD_RESULTS/` (create when run) — README runbook; numbers after deploy
 
 ### Capture vs targets (10k DAU model)
 - [ ] RPS (avg ~17–50, peak ~35–100 depending on session×API model)
