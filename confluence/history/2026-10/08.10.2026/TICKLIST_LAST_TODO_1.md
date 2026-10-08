@@ -131,18 +131,18 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
 | 2 Interview + Miro | 0 / 14 | after load preferred |
 | 3 Security | 0 / 4 | |
-| 4 Boosty / subs | 0 / 8 | |
-| 5 Home / chrome / profile / LB | 0 / 18 | |
-| 6 Shop / inventory / catalog | 0 / 24 | |
-| 7 Admin panel | 0 / 12 | |
-| 8 Authors | 0 / 12 | |
-| 9 History / analytics / notif | 0 / 8 | |
-| 10 Games global | 0 / 14 | |
+| 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
+| 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
+| 6 Shop / inventory / catalog | 12 / 24 | merch chip, dedupe, themes/skins SQL, floors |
+| 7 Admin panel | 2 / 12 | tickets icon Top-N; merch chip |
+| 8 Authors | 1 / 12 | Мои товары |
+| 9 History / analytics / notif | 5 / 8 | dual NATS + seed SQL + empty copy |
+| 10 Games global | 3 / 14 | GO equal width; /#games; boost help exists |
 | 11 Games per-title | 0 / 48 | many Track B — re-verify |
 | 12 Achievements | 0 / 4 | |
 | 13 Mobile | 0 / 3 | **after FE cleanup** |
 | 14 Load / metrics | 0 / 16 | |
-| 15 Bugs / console | 0 / 12 | |
+| 15 Bugs / console | 4 / 12 | profile path; LB undefined; API spam gated |
 | 16 Parked wishlist | 0 / 8 | |
 | 17 MCP / Tetiva | 0 / 5 | **very last** |
 
@@ -232,13 +232,13 @@ Site: https://boosty.to/eastwesser
 Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 
 ### Home / hero
-- [ ] Lower «Event Horizon» toward vertical center (≈2× gap under navbar rule) — `01…/MAINPAGE1.png`
-- [ ] Navbar brand click → About (page **or** expand under hero) + Back — `01…/Event_Horizon_yellow_letters.png`
-- [ ] About copy: authors marketplace + games + tickets economy (professional, not “pet project”)
-- [ ] More vertical space between «Все игры» / «Лидерборд» and game grid (+ Void spacing ≈1.5–2×) — `01…/MAINPAGE2.png`
+- [x] Lower «Event Horizon» toward vertical center (≈2× gap under navbar rule) — `01…/MAINPAGE1.png`
+- [x] Navbar brand click → About (page **or** expand under hero) + Back — `01…/Event_Horizon_yellow_letters.png`
+- [x] About copy: authors marketplace + games + tickets economy (professional, not “pet project”)
+- [x] More vertical space between «Все игры» / «Лидерборд» and game grid (+ Void spacing ≈1.5–2×) — `01…/MAINPAGE2.png`
 - [x] Home blurbs: Builder = floating/sliding blocks; Gears = connect to largest; Companion = Tamagotchi + soft care
 - [ ] Trailing period cleanup on hero support line if still present
-- [ ] Keep Void mascot; don’t redesign black hole casually
+- [x] Keep Void mascot; don’t redesign black hole casually
 
 ### Chrome
 - [ ] Platform button polish list (**Denis decides** which buttons) — from `FUTURE_TODO_1`
@@ -265,24 +265,24 @@ Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 
 ### Catalog UX
-- [ ] Skins tab: show game skins (not empty) — Memonia animals etc.; restore rainbow-pipe era skins as cosmic where needed — `SHOP_5`+
-- [ ] Themes tab: seed ≥1 theme; **distinct icon** vs Skins — `SHOP_4.png` empty state
-- [ ] Merch tab: seed ≥1 example if empty (catch-all for oversized / non-pocket goods)
-- [ ] Mental model: **in-game cosmetic** (skins/themes) vs **physical** (cards / brelok / picture / fenechka / merch)
+- [x] Skins tab: show game skins (not empty) — Memonia animals etc.; restore rainbow-pipe era skins as cosmic where needed — `SHOP_5`+ *(SQL `seed-shop-themes-skins.sql` — apply on shop DB)*
+- [x] Themes tab: seed ≥1 theme; **distinct icon** vs Skins — `SHOP_4.png` empty state *(star icon; SQL seed)*
+- [x] Merch tab: seed ≥1 example if empty (catch-all for oversized / non-pocket goods) — cleanup-shop-content-v2
+- [x] Mental model: **in-game cosmetic** (skins/themes) vs **physical** (cards / brelok / picture / fenechka / merch)
 - [x] Card filters (element / class / rarity / foil-noir-flying) **only** on Cards — gated via `productType`
 - [ ] Skins filters by game; themes niche (light/dark/cozy…); merch+brelok+picture+fenechka → **price** (+ shared basics)
 - [x] Physical merch price floor **100_000** tickets — seed SQL updated (re-run cleanup script on DBs)
-- [ ] Deduplicate inventory list (rainbow pipes ×N) — `INVENTORY_DUPLICATES.png`
+- [x] Deduplicate inventory list (rainbow pipes ×N) — `INVENTORY_DUPLICATES.png` *(group by item_id ×qty)*
 - [x] Cancel copy: «предмет будет удалён из инвентаря» (not «карта»)
 - [ ] Keep cosmic brelok art; regenerate badge / fenechka if too logo-like
-- [ ] Painting «Туманность Horizon» — delete/hide
+- [x] Painting «Туманность Horizon» — delete/hide — platform-p1 + cleanup v2
 - [ ] C3 smoke cards — OK to edit/delete (not real merch)
 
 ### Inventory / catalog admin
-- [ ] Catalog types include **merch**
-- [ ] Create-product: remove foil/noir/flying from non-card context; price label = **tickets** not ₽
+- [x] Catalog types include **merch**
+- [x] Create-product: remove foil/noir/flying from non-card context; price label = **tickets** not ₽
 - [ ] Types count / “4 types” → refresh (card, brelok, picture, fenechka, merch, skins, themes…)
-- [ ] Seed ≥1 picture, ≥1 theme; skins restored to filters
+- [x] Seed ≥1 picture, ≥1 theme; skins restored to filters *(themes/skins SQL; picture hidden)*
 - [ ] Author seeding: ~108 card artists as authors (not only Event Horizon + Admin)
 
 ### Economy copy
@@ -298,10 +298,10 @@ Sources: shop voice (admin)
 - [ ] Users: subscription column UX (active/inactive meaning clear)
 - [ ] Seed author with **active** subscription for publish tests
 - [ ] Inventory stats: authors count after seed — shot: **2 authors** / **4 types** (`ADMIN_INVENTORY.png`)
-- [ ] Top-N by price: tickets icon not ₽ — shot shows **100,000 ₽**
+- [x] Top-N by price: tickets icon not ₽ — shot shows **100,000 ₽**
 - [ ] Consider Top-100 by popularity / business metrics (not only Top-5 price)
-- [ ] Catalog type chips include **Мерч** — `06…/ALL_AVAILABLE_MERCH.png` missing chip
-- [ ] Analytics DAU/MAU/retention: explain «D0…D7»; fix empty retention if broken
+- [x] Catalog type chips include **Мерч** — `06…/ALL_AVAILABLE_MERCH.png` missing chip
+- [x] Analytics DAU/MAU/retention: explain «D0…D7»; fix empty retention if broken *(copy added; empty = no cohort data)*
 - [ ] Applications tabs (pending / approved / rejected) — keep; polish labels
 - [ ] Revenue view for admin later (subs ₽ → author payouts) — product lock with C4
 - [ ] UX layout review: “are elements correctly placed?” — pass after polish
@@ -317,8 +317,8 @@ Sources: shop voice (authors)
 
 - [ ] Remove / rewrite demo line «временно до multi-author pages»
 - [ ] Authors = all artists (not only «художники карт»); unify cards vs **goods** count
-- [ ] Author dashboard: «Мои карты» → **«Мои товары»**
-- [ ] Soft-delete label: «Удалить» (soft) instead of vague «Снять»
+- [x] Author dashboard: «Мои карты» → **«Мои товары»**
+- [x] Soft-delete label: «Удалить» (soft) instead of vague «Снять»
 - [ ] Avatar / portfolio: upload from disk, not URL-only
 - [ ] Sales → month-end payout % model (ties to C4 — product lock)
 - [ ] Community authors list consistency with card artists + JWT smoke authors
@@ -334,13 +334,13 @@ Sources: shop voice (authors)
 
 Sources: shop + ideas + console
 
-- [ ] History page: not empty on all tabs — seed registration / records / purchases / payments / authors — `07…/FULL_EMPTY_HISTORY.png`
-- [ ] Fix broken history if API returns nothing for admin
+- [x] History page: not empty on all tabs — seed registration / records / purchases / payments / authors — `07…/FULL_EMPTY_HISTORY.png` *(dual NATS publish + `seed-history-demo.sql`; apply after rebuild)*
+- [x] Fix broken history if API returns nothing for admin *(subscribe `event.user.registered` → store as `user.registered`)*
 - [ ] Notification: «your record beaten» deep-link to LB detail (player + scores)
-- [ ] Keep existing bell badge behaviour (don’t redraw)
-- [ ] Soft-handle notifications when logged out (no hard 401 spam)
+- [x] Keep existing bell badge behaviour (don’t redraw)
+- [x] Soft-handle notifications when logged out (no hard 401 spam)
 - [ ] Analytics admin graphs: polish / explain MAU window / DAU series
-- [ ] F12: `/api/api/profile` 404 — fix double `/api` (also §15)
+- [x] F12: `/api/api/profile` 404 — fix double `/api` (also §15)
 - [ ] Identity: no Telegram spam for players — in-app bell is enough
 
 ---
@@ -349,19 +349,19 @@ Sources: shop + ideas + console
 
 Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 
-- [ ] Currency icons in games (lamp/ticket SVG, not emoji)
-- [ ] Boost help **before** checkbox: what it does + not in LB + no shop profit from boosted runs
-- [ ] Boost checkbox not eye-sore (collapsed / inside help)
-- [ ] GO buttons equal width / one row; «На главную» → `/#games` (not top of home)
+- [x] Currency icons in games (lamp/ticket SVG, not emoji) — BoostCheckbox + Icon lamp/ticket
+- [x] Boost help **before** checkbox: what it does + not in LB + no shop profit from boosted runs — `gameBoostCopy`
+- [x] Boost checkbox not eye-sore (collapsed / inside help) — `<details>` BoostCheckbox
+- [x] GO buttons equal width / one row; «На главную» → `/#games` (not top of home)
 - [ ] Remove browser `confirm()` / debug submit overlays (`user id from localStorage`, `Sending to backend`…)
-- [ ] Save toast: green **drawn** check icon (not emoji)
-- [ ] Isolate each game folder (FE) — same as §1
+- [x] Save toast: green **drawn** check icon (not emoji)
+- [x] Isolate each game folder (FE) — same as §1
 - [ ] Written report: what done in games for v1.1.0 → `FEEDBACK_VoiceM_3_1.md`
 - [ ] 3 achievements per game (novice → amateur → pro → maestro → hero) — SVG, no emoji
 - [ ] Optional OSS/3D engines later — don’t multi-language zoo without need
 - [ ] Flappy LB eye-check after saves (manual QA)
-- [ ] `LEADERBOARD_LOGS.md`: stop spam `GET /leaderboard undefined` — fix client query params
-- [ ] Pancaker GO: correct Russian plural for “блинов/блина”
+- [x] `LEADERBOARD_LOGS.md`: stop spam `GET /leaderboard undefined` — fix client query params
+- [x] Pancaker GO: correct Russian plural for “блинов/блина” — `pluralBliny`
 - [ ] Pre-start UX: Start centered; boost optional below — polish if still awkward
 
 ---

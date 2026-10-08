@@ -224,7 +224,7 @@ export function AuthorDashboard() {
               <Spinner />
             </div>
           ) : visibleItems.length === 0 ? (
-            <p className="py-12 text-center text-text-secondary">Пока нет карт</p>
+            <p className="py-12 text-center text-text-secondary">Пока нет товаров</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleItems.map((item) => (

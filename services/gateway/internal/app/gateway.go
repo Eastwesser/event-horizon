@@ -583,7 +583,9 @@ func runGateway() {
 		}
 		eventJSON, _ := json.Marshal(eventData)
 		if js != nil {
+			// Profile listens on event.user.registered; history also on user.registered.
 			js.Publish("event.user.registered", eventJSON)
+			js.Publish("user.registered", eventJSON)
 			log.Printf("📡 Published event: user.registered for %s", resp.Email)
 		} else {
 			log.Printf("⚠️ NATS not available, event not published")

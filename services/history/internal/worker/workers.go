@@ -12,12 +12,14 @@ import (
 )
 
 // NATS subjects mirrored into history trail.
+// Gateway register publishes event.user.registered; store as user.registered for FE filters.
 var subjects = []string{
 	"payment.completed",
 	"author.upserted",
 	"shop.purchased",
 	"score.updated",
 	"user.registered",
+	"event.user.registered",
 }
 
 type IngestWorker struct {
@@ -43,7 +45,11 @@ func (w *IngestWorker) Start(ctx context.Context) {
 					userID = v
 				}
 			}
-			if _, err := w.svc.RecordEvent(context.Background(), userID, s, string(msg.Data)); err != nil {
+			eventType := s
+			if s == "event.user.registered" {
+				eventType = "user.registered"
+			}
+			if _, err := w.svc.RecordEvent(context.Background(), userID, eventType, string(msg.Data)); err != nil {
 				log.Printf("history ingest %s: %v", s, err)
 				_ = msg.Nak()
 				return

@@ -161,8 +161,7 @@ export const useShopStore = create<ShopState>()(
         set({ loading: true, error: null });
         try {
           const response = await getInventory();
-          console.log('📦 Ответ от API /shop/inventory:', response.data);
-          
+
           let inventoryData = response.data;
           if (response.data && response.data.items && Array.isArray(response.data.items)) {
             inventoryData = response.data.items;

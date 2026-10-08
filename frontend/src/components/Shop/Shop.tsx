@@ -55,7 +55,7 @@ const itemTypes: { value: string; label: string; icon?: IconName }[] = [
   { value: 'all', label: 'Все' },
   { value: 'карточка', label: 'Карточки', icon: 'cards' },
   { value: 'game_skin', label: 'Скины', icon: 'palette' },
-  { value: 'profile_theme', label: 'Темы', icon: 'palette' },
+  { value: 'profile_theme', label: 'Темы', icon: 'star' },
   { value: 'merch', label: 'Мерч', icon: 'gift' },
   { value: 'брелок', label: 'Брелок', icon: 'key' },
   { value: 'картина', label: 'Картина', icon: 'frame' },
@@ -76,6 +76,32 @@ export const Shop: React.FC = () => {
     cancelPurchase,
     cancelling,
   } = useShopStore();
+
+  /** One card per item_id — duplicates (same skin bought N times) collapse with qty. */
+  const inventoryGrouped = useMemo(() => {
+    const byItem = new Map<
+      string,
+      { primary: PurchasedItem; qty: number; latestAt: number }
+    >();
+    for (const p of inventory) {
+      const key = p.item_id || p.id;
+      const at = Date.parse(p.purchased_at) || 0;
+      const prev = byItem.get(key);
+      if (!prev) {
+        byItem.set(key, { primary: p, qty: 1, latestAt: at });
+        continue;
+      }
+      prev.qty += 1;
+      // Prefer newest refundable row as the action target.
+      const prevCancel = prev.primary.can_cancel ? 1 : 0;
+      const nextCancel = p.can_cancel ? 1 : 0;
+      if (nextCancel > prevCancel || (nextCancel === prevCancel && at > prev.latestAt)) {
+        prev.primary = p;
+        prev.latestAt = at;
+      }
+    }
+    return Array.from(byItem.values()).sort((a, b) => b.latestAt - a.latestAt);
+  }, [inventory]);
 
   const [catalog, setCatalog] = useState<ShopItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -453,7 +479,13 @@ export const Shop: React.FC = () => {
             fetchInventory();
           }}
         >
-          <IconLabel name="backpack">Мой инвентарь ({inventory.length})</IconLabel>
+          <IconLabel name="backpack">
+            Мой инвентарь ({inventoryGrouped.length}
+            {inventory.length !== inventoryGrouped.length
+              ? ` · ${inventory.length} покупок`
+              : ''}
+            )
+          </IconLabel>
         </FilterChip>
       </div>
 
@@ -532,13 +564,13 @@ export const Shop: React.FC = () => {
         </>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {inventory.length === 0 ? (
+          {inventoryGrouped.length === 0 ? (
             <p className="col-span-full flex items-center justify-center gap-2 py-16 text-text-secondary">
               <Icon name="backpack" className="h-5 w-5" />
               У вас пока нет купленных предметов
             </p>
           ) : (
-            inventory.map((purchased) => {
+            inventoryGrouped.map(({ primary: purchased, qty }) => {
               // Shop /inventory often has empty image_url; catalog (inventory svc) has images[].
               const fromCatalog = catalogById.get(purchased.item_id);
               const img =
@@ -556,7 +588,7 @@ export const Shop: React.FC = () => {
                 game_id: purchased.item.game_id || fromCatalog?.game_id,
               });
               return (
-                <Card key={purchased.id} className="flex h-full flex-col">
+                <Card key={purchased.item_id || purchased.id} className="flex h-full flex-col">
                   <button
                     type="button"
                     className="flex min-h-0 flex-1 flex-col text-left text-inherit"
@@ -574,9 +606,14 @@ export const Shop: React.FC = () => {
                     <div className="mt-4 min-w-0 flex-1">
                       <h4 className="font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2">
                         {title}
+                        {qty > 1 ? (
+                          <span className="ml-2 font-hud text-sm text-horizon-gold">×{qty}</span>
+                        ) : null}
                       </h4>
                       <p className="mt-1 text-xs text-text-muted">
-                        Куплено: {new Date(purchased.purchased_at).toLocaleDateString()}
+                        {qty > 1
+                          ? `Покупок: ${qty} · последняя ${new Date(purchased.purchased_at).toLocaleDateString()}`
+                          : `Куплено: ${new Date(purchased.purchased_at).toLocaleDateString()}`}
                       </p>
                     </div>
                   </button>
