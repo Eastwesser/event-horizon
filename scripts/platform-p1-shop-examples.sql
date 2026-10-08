@@ -7,7 +7,7 @@
 -- ---------------------------------------------------------------------------
 BEGIN;
 
--- Soft-delete example painting (Emma: remove from project)
+-- Soft-delete example painting (Denis: remove from project)
 UPDATE inventory_items
 SET deleted_at = COALESCE(deleted_at, NOW()),
     updated_at = NOW()
