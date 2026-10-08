@@ -13,10 +13,22 @@ var mainGames = []string{
 	"flappy", "hexagon", "memory", "towers", "hanoi", "twenty48", "gears", "companion",
 }
 
+// Per-game score tiers: любитель / профессионал / герой (новичок = first_play_*).
+var gameScoreTiers = map[string][3]int32{
+	"flappy":    {25, 100, 500},
+	"hexagon":   {50, 200, 1000},
+	"memory":    {200, 500, 900},
+	"towers":    {10, 30, 80},
+	"hanoi":     {100, 500, 2000},
+	"twenty48":  {512, 2048, 8192},
+	"gears":     {50, 200, 500},
+	"companion": {1000, 5000, 15000},
+}
+
 // EvaluateAchievements derives unlock codes from best_scores / total_score / optional event level.
 // totalScore should be the sum of best_scores (already maintained by the score.updated consumer).
 func EvaluateAchievements(bestScores map[string]int32, totalScore int32, gameID string, level int) []string {
-	codes := make([]string, 0, 16)
+	codes := make([]string, 0, 40)
 	if bestScores == nil {
 		bestScores = map[string]int32{}
 	}
@@ -31,6 +43,20 @@ func EvaluateAchievements(bestScores map[string]int32, totalScore int32, gameID 
 		codes = append(codes, "first_play_"+gameID)
 	}
 
+	for game, tiers := range gameScoreTiers {
+		score := bestScores[game]
+		if score >= tiers[0] {
+			codes = append(codes, game+"_amateur")
+		}
+		if score >= tiers[1] {
+			codes = append(codes, game+"_pro")
+		}
+		if score >= tiers[2] {
+			codes = append(codes, game+"_hero")
+		}
+	}
+
+	// Legacy flappy thresholds (kept for already-unlocked badges).
 	if bestScores["flappy"] >= 100 {
 		codes = append(codes, "flappy_score_100")
 	}

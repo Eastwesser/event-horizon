@@ -13,6 +13,8 @@ func TestEvaluateAchievements(t *testing.T) {
 	want := map[string]bool{
 		"first_play_flappy":  true,
 		"first_play_hexagon": true,
+		"flappy_amateur":     true,
+		"flappy_pro":         true,
 		"flappy_score_100":   true,
 		"flappy_level_5":     true,
 	}
