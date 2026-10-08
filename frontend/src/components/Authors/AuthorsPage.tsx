@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authorsApi, type Author } from '../../services/authorsApi';
 import { inventoryApi } from '../../services/inventoryApi';
 import { collectCardArtists, type CardArtist } from '../../lib/cardArtists';
-import { pluralCards } from '../../lib/pluralize';
+import { pluralGoods } from '../../lib/pluralize';
 import { useUserRole } from '../../hooks/useUserRole';
 import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
@@ -125,14 +125,14 @@ export function AuthorsPage() {
     <PageShell width="wide">
       <PageHeader
         title={<IconLabel name="pen" iconClassName="h-7 w-7 text-horizon-gold">Авторы</IconLabel>}
-        subtitle="Художники карт и авторы сообщества Event Horizon"
+        subtitle="Авторы сообщества Event Horizon"
         onBack={() => navigate('/')}
       />
 
       {!roleLoading && !isAuthor && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-horizon-gold/25 bg-horizon-gold/5 px-4 py-3">
           <p className="text-sm text-text-secondary">
-            Хотите публиковать карты? Отправьте заявку на роль автора.
+            Хотите публиковать товары? Отправьте заявку на роль автора.
           </p>
           <Button variant="secondary" size="sm" onClick={() => navigate('/register-author')}>
             Стать автором
@@ -160,7 +160,7 @@ export function AuthorsPage() {
       <section className="mb-10">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-text-primary">
-            Художники карт ({cardArtists.length})
+            Авторы ({cardArtists.length})
           </h2>
           <input
             type="search"
@@ -174,8 +174,8 @@ export function AuthorsPage() {
           />
         </div>
         <p className="mb-3 text-xs text-text-muted">
-          Соавторы на одной карте: ссылка ведёт на первого artist_id, в названии —
-          полное display-имя (временно, до multi-author страниц).
+          Соавторы на одной карте объединены в одну строку; ссылка открывает
+          профиль первого автора в списке.
         </p>
         {cardsLoading ? (
           <div className="flex justify-center py-12">
@@ -183,7 +183,7 @@ export function AuthorsPage() {
           </div>
         ) : filteredArtists.length === 0 ? (
           <div className="rounded-md border border-white/10 bg-nebula py-10 text-center text-text-secondary">
-            {artistQuery.trim() ? 'Никого не найдено' : 'Пока нет карт с художниками'}
+            {artistQuery.trim() ? 'Никого не найдено' : 'Пока нет авторов с товарами'}
           </div>
         ) : (
           <>
@@ -199,7 +199,7 @@ export function AuthorsPage() {
                       {a.display_name}
                     </span>
                     <span className="font-hud text-sm tabular-nums text-text-muted">
-                      {pluralCards(a.count)}
+                      {pluralGoods(a.count)}
                     </span>
                   </div>
                 </Link>

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { Home } from './components/Home/Home';
+import { About } from './components/Home/About';
 import { HexagonGame } from './components/Games/Hexagon/HexagonGame';
 import { MemoryGame } from './components/Games/Memonia/MemoryGame';
 import { FlappyGame } from './components/Games/Flappy/FlappyGame';
@@ -56,9 +57,13 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route 
-            path="/" 
-            element={isAuthenticated ? <Home /> : <Navigate to="/login" />} 
+          <Route
+            path="/"
+            element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/about"
+            element={isAuthenticated ? <About /> : <Navigate to="/login" />}
           />
           <Route 
             path="/game/hexagon" 

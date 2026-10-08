@@ -67,8 +67,9 @@ export function AppNavbar() {
       >
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/about')}
           className="flex shrink-0 items-center gap-2 font-display text-lg font-bold tracking-tight text-horizon-gold transition-colors hover:text-horizon-gold-hot sm:gap-2.5 sm:text-xl"
+          title="О проекте Event Horizon"
         >
           <img
             src="/images/brand/logo-icon.png"

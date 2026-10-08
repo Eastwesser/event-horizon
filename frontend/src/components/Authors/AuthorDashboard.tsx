@@ -64,7 +64,7 @@ export function AuthorDashboard() {
         query: query.trim() || undefined,
       })
       .then((res) => setItems(res.items))
-      .catch(() => setItemsError('Не удалось загрузить карты'))
+      .catch(() => setItemsError('Не удалось загрузить товары'))
       .finally(() => setItemsLoading(false));
   }, [selfId, isAdmin, typeFilter, query]);
 
@@ -152,7 +152,7 @@ export function AuthorDashboard() {
     <PageShell width="wide">
       <PageHeader
         title="Кабинет автора"
-        subtitle="Ваши карты, продажи и профиль."
+        subtitle="Ваши товары, продажи и профиль."
         onBack={() => navigate('/')}
         backLabel="На главную"
       />
@@ -160,7 +160,7 @@ export function AuthorDashboard() {
       <div className="mb-6 flex flex-wrap gap-2">
         {(
           [
-            ['cards', 'Мои карты'],
+            ['cards', 'Мои товары'],
             ['sales', 'Продажи'],
             ['profile', 'Профиль автора'],
           ] as const

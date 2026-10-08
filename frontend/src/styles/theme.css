@@ -124,8 +124,8 @@
   width: 100%;
   height: 80vh;
   min-height: 80vh;
-  /* Clear navbar + leave room for bottom chevron */
-  padding-top: 5.5rem;
+  /* Clear navbar (~2× gap under rule) + leave room for bottom chevron */
+  padding-top: 8rem;
   padding-bottom: 3.5rem;
   overflow: hidden;
   background: var(--color-void);

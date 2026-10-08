@@ -33,7 +33,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
 
   const handleDelete = async () => {
     if (softManage) {
-      if (!window.confirm(`Снять с публикации «${item.name}»?`)) return;
+      if (!window.confirm(`Удалить «${item.name}» из витрины? (soft delete)`)) return;
       setBusy(true);
       try {
         await inventoryApi.softDeleteItem(item.id);
@@ -138,7 +138,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
                 onClick={() => void handleDelete()}
                 disabled={busy}
               >
-                {busy ? '...' : softManage ? 'Снять' : 'Удалить'}
+                {busy ? '...' : 'Удалить'}
               </Button>
             )}
           </div>
