@@ -22,7 +22,7 @@ const moreNav: { label: string; path: string; icon: IconName }[] = [
 ];
 
 /** Shared with Home footer — keep padding in sync with PageShell. */
-export const shellInner = 'mx-auto box-border w-full max-w-6xl px-6 sm:px-8';
+export const shellInner = 'mx-auto box-border w-full max-w-6xl px-4 sm:px-6 lg:px-8';
 
 export function AppNavbar() {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ export function AppNavbar() {
         <button
           type="button"
           onClick={() => navigate('/about')}
-          className="flex shrink-0 items-center gap-2 font-display text-lg font-bold tracking-tight text-horizon-gold transition-colors hover:text-horizon-gold-hot sm:gap-2.5 sm:text-xl"
+          className="flex min-w-0 shrink items-center gap-2 font-display text-base font-bold tracking-tight text-horizon-gold transition-colors hover:text-horizon-gold-hot sm:gap-2.5 sm:text-xl"
           title="О проекте Event Horizon"
         >
           <img
@@ -76,9 +76,9 @@ export function AppNavbar() {
             alt=""
             width={36}
             height={36}
-            className="h-8 w-8 rounded-md object-cover sm:h-9 sm:w-9"
+            className="h-8 w-8 shrink-0 rounded-md object-cover sm:h-9 sm:w-9"
           />
-          <span className="whitespace-nowrap">Event Horizon</span>
+          <span className="hidden whitespace-nowrap min-[380px]:inline">Event Horizon</span>
         </button>
 
         <nav className="hidden min-w-0 items-center justify-center gap-x-5 text-sm text-text-secondary sm:flex">
@@ -144,6 +144,21 @@ export function AppNavbar() {
                     </button>
                   ))}
                 </div>
+                {token && (
+                  <div className="border-t border-white/10 py-1 min-[420px]:hidden">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
+                    >
+                      Выйти
+                    </button>
+                  </div>
+                )}
                 {isAuthor && (
                   <div className="border-t border-white/10 py-1">
                     <button
@@ -181,7 +196,12 @@ export function AppNavbar() {
           </div>
 
           {token && (
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="hidden shrink-0 min-[420px]:inline-flex"
+            >
               Выйти
             </Button>
           )}
