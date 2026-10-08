@@ -29,6 +29,7 @@ const TYPE_FILTERS = [
   { value: 'картина', label: 'Картина' },
   { value: 'фенечка', label: 'Фенечка' },
   { value: 'карточка', label: 'Карточка' },
+  { value: 'мерч', label: 'Мерч' },
 ];
 
 export const InventoryPage: React.FC = () => {
@@ -202,15 +203,19 @@ export const InventoryPage: React.FC = () => {
         <FilterChip active={inStock} onClick={() => toggleFlag('in_stock', inStock)}>
           В наличии
         </FilterChip>
-        <FilterChip active={foil} onClick={() => toggleFlag('foil', foil)}>
-          Фойл
-        </FilterChip>
-        <FilterChip active={noir} onClick={() => toggleFlag('noir', noir)}>
-          Нуар
-        </FilterChip>
-        <FilterChip active={flying} onClick={() => toggleFlag('flying', flying)}>
-          Летающие
-        </FilterChip>
+        {type === 'карточка' || type === '' ? (
+          <>
+            <FilterChip active={foil} onClick={() => toggleFlag('foil', foil)}>
+              Фойл
+            </FilterChip>
+            <FilterChip active={noir} onClick={() => toggleFlag('noir', noir)}>
+              Нуар
+            </FilterChip>
+            <FilterChip active={flying} onClick={() => toggleFlag('flying', flying)}>
+              Летающие
+            </FilterChip>
+          </>
+        ) : null}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

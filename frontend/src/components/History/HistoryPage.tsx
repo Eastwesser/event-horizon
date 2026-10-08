@@ -122,8 +122,12 @@ export function HistoryPage() {
           <Spinner size={48} />
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-md border border-white/10 bg-nebula py-12 text-center text-text-secondary">
-          Пока нет событий
+        <div className="rounded-md border border-white/10 bg-nebula px-6 py-12 text-center text-text-secondary">
+          <p className="font-display text-base text-text-primary">Пока нет событий</p>
+          <p className="mt-2 text-sm">
+            Здесь появятся регистрация, рекорды, покупки и оплаты после действий в аккаунте
+            (окно ~30 дней). Сыграйте игру со сохранением или купите товар в магазине.
+          </p>
         </div>
       ) : (
         <>

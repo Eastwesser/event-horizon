@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { adminApi, type InventoryStats, type TopExpensiveItem } from '../../services/adminApi';
-import { formatRubPrice } from '../../lib/formatPrice';
+import { formatTicketPrice } from '../../lib/formatPrice';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Spinner } from '../ui/Spinner';
 import { StatCard } from '../ui/StatCard';
+import { Icon } from '../ui/Icon';
 
 function truncateId(id: string): string {
   if (id.length <= 12) return id;
@@ -67,7 +68,12 @@ function TopExpensiveList({ items }: { items: TopExpensiveItem[] }) {
                 <span className="mr-2 font-hud text-text-muted">{i + 1}.</span>
                 {item.name || '—'}
               </span>
-              <Badge tone="gold">{formatRubPrice(item.price)}</Badge>
+              <Badge tone="gold">
+                <span className="inline-flex items-center gap-1">
+                  <Icon name="ticket" className="h-3 w-3" />
+                  {formatTicketPrice(item.price)}
+                </span>
+              </Badge>
             </li>
           ))}
         </ol>

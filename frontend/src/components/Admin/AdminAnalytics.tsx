@@ -179,6 +179,9 @@ export function AdminAnalytics() {
                   </span>
                 )}
               </div>
+              <p className="text-xs leading-snug text-text-muted">
+                D0 — день регистрации (100%). D1…D7 — доля когорты, вернувшаяся на N-й день.
+              </p>
               {!retention || retention.points.length === 0 ? (
                 <p className="py-6 text-center text-sm text-text-muted">Нет данных</p>
               ) : (

@@ -52,7 +52,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     { value: 'all', label: 'Все' },
     { value: 'карточка', label: 'Карточки', icon: 'cards' },
     { value: 'game_skin', label: 'Скины', icon: 'palette' },
-    { value: 'profile_theme', label: 'Темы', icon: 'palette' },
+    { value: 'profile_theme', label: 'Темы', icon: 'star' },
     { value: 'merch', label: 'Мерч', icon: 'gift' },
   ];
 

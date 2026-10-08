@@ -34,7 +34,7 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
     type: 'брелок',
     name: '',
     description: '',
-    price: 0,
+    price: 100000,
     stock: 1,
   });
   const [card, setCard] = useState({
@@ -97,6 +97,7 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
             <option value="брелок">Брелок</option>
             <option value="картина">Картина</option>
             <option value="фенечка">Фенечка</option>
+            <option value="мерч">Мерч</option>
             <option value="карточка">Карточка (ККИ)</option>
           </select>
         </div>
@@ -214,15 +215,19 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
           </div>
         ) : (
           <div>
-            <label className={labelClass}>Цена (₽ / билетики — как принято)</label>
+            <label className={labelClass}>Цена (билетики)</label>
             <input
               type="number"
-              step="0.01"
+              step="1"
+              min={0}
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
               required
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-text-muted">
+              Физический мерч — от 100 000 билетиков.
+            </p>
           </div>
         )}
 
