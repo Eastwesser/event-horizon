@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase seed-admin seed-shop seed-themes seed-history seed-v110 fe-build fe-preview
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase seed-admin seed-shop seed-themes seed-history seed-v110 seed-lb-demo seed-card-artists fe-build fe-preview
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -179,6 +179,14 @@ seed-history:
 
 seed-v110: seed-shop-inventory seed-shop seed-themes seed-history migrate-profile
 	@echo "✅ v1.1.0 seeds + profile migrations applied"
+
+seed-lb-demo:
+	@echo "→ leaderboard demo nicknames (Redis + PG backup)"
+	python3 scripts/seed_leaderboard_demo.py
+
+seed-card-artists:
+	@echo "→ card artists → authors DB (synthetic user_ids)"
+	python3 scripts/seed_card_artists_authors.py
 
 # ===== NATS HUB =====
 build-nats-hub:
