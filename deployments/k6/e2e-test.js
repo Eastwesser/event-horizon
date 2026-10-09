@@ -20,7 +20,7 @@ export default function () {
     nickname: nickname,
   });
 
-  const registerRes = http.post(`${baseURL}/api/auth/register`, registerPayload, {
+  const registerRes = http.post(`${baseURL}/api/v1/auth/register`, registerPayload, {
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -37,7 +37,7 @@ export default function () {
     password: 'secret123',
   });
 
-  const loginRes = http.post(`${baseURL}/api/auth/login`, loginPayload, {
+  const loginRes = http.post(`${baseURL}/api/v1/auth/login`, loginPayload, {
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -65,7 +65,7 @@ export default function () {
     moves: [],
   });
 
-  const scoreRes = http.post(`${baseURL}/api/game/submit`, scorePayload, {
+  const scoreRes = http.post(`${baseURL}/api/v1/game/submit`, scorePayload, {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
@@ -77,7 +77,7 @@ export default function () {
   });
 
   // 4. Проверка лидерборда
-  const leaderboardRes = http.get(`${baseURL}/api/leaderboard?game_id=hexagon&limit=10`);
+  const leaderboardRes = http.get(`${baseURL}/api/v1/leaderboard?game_id=hexagon&limit=10`);
   
   check(leaderboardRes, {
     '✅ лидерборд доступен': (r) => r.status === 200,
