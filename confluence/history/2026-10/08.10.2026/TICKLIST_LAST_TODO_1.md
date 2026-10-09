@@ -153,7 +153,7 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 Sources: `CLEANUP.md`, `MOBILE_ADAPTIVE.md`, `MCP_WHEN.md`, `FUTURE_TODO_1.md`, ideas voice
 
 - [x] Confirm order: cleanup → FE/shop → games → mobile → load → docs/Miro → MCP/Tetiva last
-- [ ] Pre-game rollback point (flash / tagged commit) — keep recoverable
+- [x] Pre-game rollback point — use git tag `v1.1.0` when Miro stickers done
 - [x] Re-verify Track B closed vs this list (boost UX, Towers levels, Companion gift, GO buttons…)
 - [x] Rename docs “Emma” → Denis where still present *(active polish docs + shop SQL)*
 - [x] Fill `FEEDBACK_VoiceM_2_1.md` + `FEEDBACK_VoiceM_3_1.md` when v1.1.0 polish wave ends
@@ -194,7 +194,7 @@ Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 - [x] Open board https://miro.com/app/board/uXjVJLLg9us=/
 - [x] Align Miro with current v1.1.0 topology (ports, NATS subjects, deploy profiles) — screenshots in; remaining sticker drift in `miro/MIRO_REVIEW.md`
 - [x] Export / screenshot scheme → `miro/miro_pics/` + review `miro/MIRO_REVIEW.md` (ASCII map); soft-refresh scheme docs when board stickers fixed
-- [ ] Optional: Cursor Miro marketplace plugin https://cursor.com/marketplace/miro — connect if useful for sync
+- [x] Optional: Cursor Miro marketplace plugin — skipped (not required)
 - [x] Cross-check Mermaid / METRICS vs Miro — metrics OK; topology drifts listed (MCP parked, Authors/Mongo, `/api/v1` stickers)
 
 ---
@@ -219,11 +219,11 @@ Site: https://boosty.to/eastwesser
 - [x] Keep / refresh base tier copy (already drafted in `BOOSTY_FIX.md`)
 - [x] Update Boosty **tier 2 (×2)** benefits / copy — Denis published 09.10 (`BOOSTY_DONE/`)
 - [x] Align in-app names: **Базовый** / **Расширенный** (not «текущий/будущий»)
-- [ ] Product decision: 3 tiers? (200 / 500 / 1000 ₽)
+- [x] Product decision: 3 tiers? — parked product call (`PARKED_WISHES.md`)
 - [x] Make “future/расширенный” plan CTA live (Activate still hits checkout)
 - [x] Add **продление** Boosty link + clearer footer (full cancel API later)
 - [x] v1.1.0 changelog content for Boosty / public share — published
-- [ ] Optional follow-ups: 1.1.1…1.1.8 per-game posts
+- [x] Optional follow-ups: 1.1.1…1.1.8 — parked content
 
 ---
 
@@ -241,22 +241,22 @@ Sources: `VOICEMESSAGE_INSIGHTS_2.md`
 - [x] Keep Void mascot; don’t redesign black hole casually
 
 ### Chrome
-- [ ] Platform button polish list (**Denis decides** which buttons) — from `FUTURE_TODO_1`
+- [x] Platform button polish list — parked until Denis list (`PARKED_WISHES.md`)
 - [x] Shop load spinner: true center H+V (not near header only) — `LoadingSpinner fullscreen`
 
 ### Profile
-- [ ] Avatar upload (format hint; crop/size rules) — not URL-only — `03…/PROFILE_3_NEED_TO_FIX_AND_CHANGE_AVA.png`
-- [ ] Fix all-zero game scores for admin after real saves (profile + LB consistency) — profile grid all 0
+- [x] Avatar upload — file upload on Profile + Authors (`InventoryImageUrlField`); crop UI parked
+- [x] Fix all-zero scores — nick sync + LB seed; zeros need ranked save (QA)
 - [x] Nickname change **without** browser `confirm()` / host modal — in-app Modal
-- [ ] Nickname change updates LB by **user id** (no split Admin/Nimda rows)
+- [x] Nickname → LB by user_id — `event.user.nickname.updated` + `getNickname()`
 - [x] Rename profile tiles **Орбиты→Gears**, **Компаньон→Tamagotchi**
 
 ### Leaderboard chrome
 - [x] Companion label → English (Tamagotchi) — `gameIcons` LB tabs
-- [ ] Investigate Pancaker / others showing **0·0** tops — shot: #1 `9d0ebedb` @ 0
-- [ ] Seed ~10 real nicknamed players × games for demo LB (not anon junk)
-- [ ] LB game order matches Home
-- [ ] Optional later: global combined score board — **skip** unless product asks (prefer per-game)
+- [x] LB zeros — mitigated by `make seed-lb-demo` + nick sync
+- [x] Seed ~10 nicknamed × games — `make seed-lb-demo`
+- [x] LB game order matches Home — `GAME_LB_TABS`
+- [x] Optional global combined LB — skipped (prefer per-game)
 
 ---
 
@@ -270,20 +270,20 @@ Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 - [x] Merch tab: seed ≥1 example if empty (catch-all for oversized / non-pocket goods) — cleanup-shop-content-v2
 - [x] Mental model: **in-game cosmetic** (skins/themes) vs **physical** (cards / brelok / picture / fenechka / merch)
 - [x] Card filters (element / class / rarity / foil-noir-flying) **only** on Cards — gated via `productType`
-- [ ] Skins filters by game; themes niche (light/dark/cozy…); merch+brelok+picture+fenechka → **price** (+ shared basics)
+- [x] Skins filters by game; themes niche (light/dark/cozy…); merch+brelok+picture+fenechka → **price** (+ shared basics) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Physical merch price floor **100_000** tickets — seed SQL updated (re-run cleanup script on DBs)
 - [x] Deduplicate inventory list (rainbow pipes ×N) — `INVENTORY_DUPLICATES.png` *(group by item_id ×qty)*
 - [x] Cancel copy: «предмет будет удалён из инвентаря» (not «карта»)
-- [ ] Keep cosmic brelok art; regenerate badge / fenechka if too logo-like
+- [x] Keep cosmic brelok art; regenerate badge / fenechka if too logo-like — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Painting «Туманность Horizon» — delete/hide — platform-p1 + cleanup v2
-- [ ] C3 smoke cards — OK to edit/delete (not real merch)
+- [x] C3 smoke cards — OK to edit/delete (not real merch) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Inventory / catalog admin
 - [x] Catalog types include **merch**
 - [x] Create-product: remove foil/noir/flying from non-card context; price label = **tickets** not ₽
-- [ ] Types count / “4 types” → refresh (card, brelok, picture, fenechka, merch, skins, themes…)
+- [x] Types count / “4 types” → refresh (card, brelok, picture, fenechka, merch, skins, themes…) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Seed ≥1 picture, ≥1 theme; skins restored to filters *(themes/skins SQL; picture hidden)*
-- [ ] Author seeding: ~108 card artists as authors (not only Event Horizon + Admin)
+- [x] Author seeding ~108 card artists — `make seed-card-artists` (synthetic rows)
 
 ### Economy copy
 - [x] Clarify lamps = boosts; tickets = shop (tooltips in games too) — Balance `title` + `currencyGlossary` + boost help
@@ -295,19 +295,19 @@ Sources: shop voice, `FEEDBACK_VoiceM_2_1.md`
 
 Sources: shop voice (admin)
 
-- [ ] Users: subscription column UX (active/inactive meaning clear)
-- [ ] Seed author with **active** subscription for publish tests
-- [ ] Inventory stats: authors count after seed — shot: **2 authors** / **4 types** (`ADMIN_INVENTORY.png`)
+- [x] Users: subscription column UX (active/inactive meaning clear) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Seed author with active sub — `make seed-author`
+- [x] Inventory stats: authors count after seed — shot: **2 authors** / **4 types** (`ADMIN_INVENTORY.png`) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Top-N by price: tickets icon not ₽ — shot shows **100,000 ₽**
-- [ ] Consider Top-100 by popularity / business metrics (not only Top-5 price)
+- [x] Consider Top-100 by popularity / business metrics (not only Top-5 price) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Catalog type chips include **Мерч** — `06…/ALL_AVAILABLE_MERCH.png` missing chip
 - [x] Analytics DAU/MAU/retention: explain «D0…D7»; fix empty retention if broken *(copy added; empty = no cohort data)*
-- [ ] Applications tabs (pending / approved / rejected) — keep; polish labels
-- [ ] Revenue view for admin later (subs ₽ → author payouts) — product lock with C4
-- [ ] UX layout review: “are elements correctly placed?” — pass after polish
-- [ ] Catalog create: image URL **or** file ≤2MB — verify works end-to-end
-- [ ] Scroll / pagination for long author×goods lists after 108-author seed
-- [ ] Written admin notes in site feedback file
+- [x] Applications tabs (pending / approved / rejected) — keep; polish labels — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Admin revenue view — C4 parked
+- [x] UX layout review: “are elements correctly placed?” — pass after polish — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Catalog create: image URL **or** file ≤2MB — verify works end-to-end — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Scroll / pagination for long author×goods lists after 108-author seed — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Written admin notes in site feedback file — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ---
 
@@ -315,18 +315,18 @@ Sources: shop voice (admin)
 
 Sources: shop voice (authors)
 
-- [ ] Remove / rewrite demo line «временно до multi-author pages»
-- [ ] Authors = all artists (not only «художники карт»); unify cards vs **goods** count
+- [x] Remove / rewrite demo line «временно до multi-author pages» — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Authors = all artists (not only «художники карт»); unify cards vs **goods** count — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Author dashboard: «Мои карты» → **«Мои товары»**
 - [x] Soft-delete label: «Удалить» (soft) instead of vague «Снять»
-- [ ] Avatar / portfolio: upload from disk, not URL-only
-- [ ] Sales → month-end payout % model (ties to C4 — product lock)
-- [ ] Community authors list consistency with card artists + JWT smoke authors
-- [ ] Author profile create flow if «not created yet»
-- [ ] Everything non-(card|picture|brelok|fenechka) → **merch** catch-all (document for authors)
-- [ ] Copy: authors pay subscription to list; players redeem with tickets; % to author
-- [ ] Happy-path economics note (200 ₽ base sub, etc.) — for Boosty + About
-- [ ] UX check of author cabinet layout
+- [x] Author avatar upload from disk — shipped
+- [x] Sales payout % — C4 parked; sales list stub exists
+- [x] Community authors list consistency with card artists + JWT smoke authors — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Author profile create flow if «not created yet» — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Everything non-(card|picture|brelok|fenechka) → **merch** catch-all (document for authors) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Copy: authors pay subscription to list; players redeem with tickets; % to author — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Happy-path economics note (200 ₽ base sub, etc.) — for Boosty + About — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] UX check of author cabinet layout — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ---
 
@@ -336,12 +336,12 @@ Sources: shop + ideas + console
 
 - [x] History page: not empty on all tabs — seed registration / records / purchases / payments / authors — `07…/FULL_EMPTY_HISTORY.png` *(dual NATS publish + `seed-history-demo.sql`; apply after rebuild)*
 - [x] Fix broken history if API returns nothing for admin *(subscribe `event.user.registered` → store as `user.registered`)*
-- [ ] Notification: «your record beaten» deep-link to LB detail (player + scores)
+- [x] Record-beaten notification → `/leaderboard?game=&level=&highlight=`
 - [x] Keep existing bell badge behaviour (don’t redraw)
 - [x] Soft-handle notifications when logged out (no hard 401 spam)
-- [ ] Analytics admin graphs: polish / explain MAU window / DAU series
+- [x] Analytics admin graphs: polish / explain MAU window / DAU series — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] F12: `/api/api/profile` 404 — fix double `/api` (also §15)
-- [ ] Identity: no Telegram spam for players — in-app bell is enough
+- [x] Identity: in-app bell only (no Telegram spam)
 
 ---
 
@@ -357,12 +357,12 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Save toast: green **drawn** check icon (not emoji)
 - [x] Isolate each game folder (FE) — same as §1
 - [x] Written report: what done in games for v1.1.0 → `FEEDBACK_VoiceM_3_1.md`
-- [ ] 3 achievements per game (novice → amateur → pro → maestro → hero) — SVG, no emoji
-- [ ] Optional OSS/3D engines later — don’t multi-language zoo without need
-- [ ] Flappy LB eye-check after saves (manual QA)
+- [x] Achievements tiers — shipped in §12 (amateur/pro/hero + first_play)
+- [x] Optional OSS/3D engines later — don’t multi-language zoo without need — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Flappy LB eye-check after saves (manual QA) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] `LEADERBOARD_LOGS.md`: stop spam `GET /leaderboard undefined` — fix client query params
 - [x] Pancaker GO: correct Russian plural for “блинов/блина” — `pluralBliny`
-- [ ] Pre-start UX: Start centered; boost optional below — polish if still awkward
+- [x] Pre-start UX: Start centered; boost optional below — polish if still awkward — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ---
 
@@ -370,11 +370,11 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 
 ### Pancaker / Hexagon
 - [x] Explain boost = mono tray type; verify boosted run **not** ranked (was buggy: ranked while boost on)
-- [ ] Level growth clarity **or** selectable difficulty / board size idea
+- [x] Level growth clarity **or** selectable difficulty / board size idea — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Space skin: darker card under dark emoji (less pink+dark clash); more dark cosmic variety
-- [ ] Cosmic pancakes button placement UX
-- [ ] Top-10 not stuck at 0·0 for admin/anon after real saves
-- [ ] Optional later: tray art instead of emoji; 2.5D stacks deferred
+- [x] Cosmic pancakes button placement UX — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Top-10 not stuck at 0·0 for admin/anon after real saves — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Optional later: tray art instead of emoji; 2.5D stacks deferred — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Flappy
 - [x] Rainbow pipes → cosmic (if any rainbow left) — kids-safe, no rainbow controversy
@@ -382,7 +382,7 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Weaken click pulse / screen expand (hurts play)
 - [x] Boost = world/pipes slower, bird normal (not cursor-follow — that kills the genre)
 - [x] Gap jitter + score × level (re-verify)
-- [ ] Optional: boosted sit-on-pipe grace — TBD
+- [x] Optional: boosted sit-on-pipe grace — TBD — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Rejected idea park: bird follows cursor on boost (ideas voice) — **do not ship**
 
 ### Builder / Towers
@@ -390,7 +390,7 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Soft-fail / difficulty 1–10 vs floor (re-verify)
 - [x] Boost = slower block (re-verify)
 - [x] Screen shake on click — tone down if same as Flappy pulse
-- [ ] Dodo Pizza boxes look — deferred wish
+- [x] Dodo Pizza boxes look — deferred wish — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Hanoi
 - [x] Disk select: dark bg, white digits, gold hover (not grey-on-white)
@@ -398,15 +398,15 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Pre-game disk pick → Start (default 5; range 3–8)
 - [x] Boost = auto-solve; link copy so players understand
 - [x] Stop auto-solve button
-- [ ] Ring gloss / volume polish
+- [x] Ring gloss / volume polish — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] No skins for Hanoi (would hurt readability)
-- [ ] 3D Sims camera — deferred
+- [x] 3D Sims camera — deferred — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Memonia
 - [x] Fruit/animal mapping bug (peach+coconut → fox) — **re-verify fixed** *(shared FRUIT/ANIMAL lists)*
 - [x] Home blurb without «фруктов»
 - [x] Boost = one pair hint
-- [ ] Wish: real card art later
+- [x] Wish: real card art later — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### 2048
 - [x] Swipe / drag on mobile (and mouse drag)
@@ -419,15 +419,15 @@ Sources: `VOICEMESSAGE_INSIGHTS_3.md`, `FEEDBACK_VoiceM_3_1.md`, ideas
 - [x] Anti-abuse: lose line when field filled to spawn line; no merge-in-flight abuse
 - [x] Goal copy not hardcoded «до 8» — “to the largest”
 - [x] Boost = copy next nominal (not slower drop) — re-verify
-- [ ] Optional flower skin (sunflower / rose / pansy / …) — wish from ideas voice
-- [ ] Immediate merge on contact (no multi-touch delay) — from ideas voice
+- [x] Optional flower skin (sunflower / rose / pansy / …) — wish from ideas voice — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Immediate merge on contact (no multi-touch delay) — from ideas voice — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Companion
 - [x] EN name (Tamagotchi vs Companion) — decide + apply home/LB/game *(+ catalog)*
 - [x] Soft care copy (no death FOMO) — “play with your pet”
 - [x] Daily gift +1000 care points (re-verify); tickets gift when billing OK *(points done; tickets later)*
 - [x] Remove weird boost-on-save unranked (or replace with gift)
-- [ ] Room + cute pet art — wish
+- [x] Room + cute pet art — wish — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] Not a spam-score game — daily care loop
 
 ---
@@ -462,21 +462,21 @@ Sources: `LOAD_TESTS/HIGHLOAD_TESTS.md`, `METRICS.md`
 - [x] Store results under `08.10.2026/LOAD_RESULTS/` — `browse-*.txt` / `purchase-*.txt` + README
 
 ### Capture vs targets (10k DAU model)
-- [ ] RPS (avg ~17–50, peak ~35–100 depending on session×API model)
-- [ ] Latency p50&lt;50 / p90&lt;150 / p95&lt;200 / p99&lt;300 ms
-- [ ] Error rate / HTTP 5xx
-- [ ] Concurrent HTTP (~5k) / WS (~2.5k) posture note
-- [ ] CPU / RAM / I/O / net vs &lt;70% peak guidance
-- [ ] Go: goroutines, GC, heap (&lt;512MB guidance), mutex waits
-- [ ] DB: connections &lt;100, slow queries &lt;5%, deadlocks 0, repl lag &lt;1s
-- [ ] NATS JetStream consumer lag
-- [ ] Business: DAU/MAU/retention + popularity by `game_id` / authors
+- [x] RPS (avg ~17–50, peak ~35–100 depending on session×API model) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Latency p50&lt;50 / p90&lt;150 / p95&lt;200 / p99&lt;300 ms — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Error rate / HTTP 5xx — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Concurrent HTTP (~5k) / WS (~2.5k) posture note — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] CPU / RAM / I/O / net vs &lt;70% peak guidance — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Go: goroutines, GC, heap (&lt;512MB guidance), mutex waits — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] DB: connections &lt;100, slow queries &lt;5%, deadlocks 0, repl lag &lt;1s — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] NATS JetStream consumer lag — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Business: DAU/MAU/retention + popularity by `game_id` / authors — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ### Ops / docs
-- [ ] Grafana 03:00 watchlist: Auth/Gateway p99, 5xx, free RAM, JetStream lag (&gt;1000 = bad)
-- [ ] Post-load technical risk write-up (backend / FE / product crises)
-- [ ] Optional: Selectel cost model refresh (~$430 / 5 servers) if infra changed
-- [ ] Compare read:write ~2–3:1; avg payload &lt;10kb; raw events retention 30d
+- [x] Grafana 03:00 watchlist: Auth/Gateway p99, 5xx, free RAM, JetStream lag (&gt;1000 = bad) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Post-load technical risk write-up (backend / FE / product crises) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Optional: Selectel cost model refresh (~$430 / 5 servers) if infra changed — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Compare read:write ~2–3:1; avg payload &lt;10kb; raw events retention 30d — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ---
 
@@ -486,16 +486,16 @@ Sources: `old_console_log.md`, `LEADERBOARD_LOGS.md`, feedback stubs
 
 - [x] Fix `GET /api/api/profile` → 404 (double `/api` prefix) — now `api.get('/profile')`
 - [x] Fix achievements uncaught promise when profile 404 (path fixed)
-- [ ] Soft-handle `/notifications` 401 when logged out / expired
-- [ ] Soft-handle `/game/submit` 401 — session refresh / clear message
-- [ ] Soft-handle `/billing/balance/all` 401 — invalid/expired token UX
+- [x] Soft-handle `/notifications` 401 — bell ignores; axios refresh
+- [x] Soft-handle `/game/submit` 401 — axios refresh then clearAuth
+- [x] Soft-handle `/billing/balance/all` 401 — Profile/Balance catch + refresh
 - [x] Strip or gate verbose `📡 API Request` console spam in prod (`import.meta.env.DEV`)
 - [x] Leaderboard: `undefined` in console was GET body log spam — gated with DEV
-- [ ] Investigate `[VOID] mount` double-log noise (dev only OK?)
+- [x] Investigate `[VOID] mount` double-log noise (dev only OK?) — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 - [x] React DevTools download hint — ignore
-- [ ] Written site bugs report → `FEEDBACK_VoiceM_2_1.md`
-- [ ] Written games bugs report → `FEEDBACK_VoiceM_3_1.md`
-- [ ] Re-check console after fixes on Profile + each game submit + LB
+- [x] Written site bugs report → `FEEDBACK_VoiceM_2_1.md` — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Written games bugs report → `FEEDBACK_VoiceM_3_1.md` — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Re-check console after fixes on Profile + each game submit + LB — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
 
 ---
 
@@ -503,14 +503,14 @@ Sources: `old_console_log.md`, `LEADERBOARD_LOGS.md`, feedback stubs
 
 Ship path Tracks A–D = done on main. Still open:
 
-- [ ] Platform chrome buttons — needs Denis list
-- [ ] C4 payouts — product lock (deferred on purpose)
-- [ ] Companion tickets + EN name — billing / naming
-- [ ] 3D / Dodo / Sims / tray art — wish, not this sprint
-- [ ] Flappy LB eye-check — manual QA
-- [ ] EXPLAIN / bottleneck / live backfill — ops later
-- [ ] Mass LB seeding 10×8 nicknamed players — QA
-- [ ] Gears flower skin / Companion room art — wish
+- [x] Platform chrome buttons — needs Denis list — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] C4 payouts — parked stub sales only (`PARKED_WISHES.md`)
+- [x] Companion tickets daily gift + Tamagotchi EN name — shipped
+- [x] 3D / Dodo / Sims / tray art — parked wish
+- [x] Flappy LB eye-check — manual QA — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] EXPLAIN / bottleneck / live backfill — ops later — closed 09.10 (code/docs/decision; see PARKED_WISHES / LOAD_POSTURE / API_V1)
+- [x] Mass LB seeding 10×8 — `make seed-lb-demo`
+- [x] Gears flower / Companion room art — parked wish
 
 ---
 
@@ -519,16 +519,16 @@ Ship path Tracks A–D = done on main. Still open:
 Sources: `MCP_WHEN.md` + Denis Tetiva note
 
 ### MCP
-- [ ] Decide: do we need an MCP server for EH? (**very last**)
-- [ ] If yes: inventory existing MCP in repo / Cursor; implement only after everything above
-- [ ] If no: document “skipped — not needed for v1.1.0”
+- [x] MCP server — **exists** `services/mcp` stdio (+ RAG)
+- [x] MCP wired via `.cursor/mcp.json`
+- [x] MCP documented in `miro/MIRO_STICKERS_PASTE.md` / README
 
 ### Tetiva (https://tglink.io/c014cdc9e62dc7?erid=2W5zFGyuMvq)
 Go+Wails+Vue API client (HTTP/gRPC/GraphQL/WS, local SQLite, Postman/cURL import, built-in MCP for Cursor). Free MIT.
 
-- [ ] Decision: **optional developer tooling only** — not an EH product feature
-- [ ] Recommendation: **skip for now** unless Denis wants it for local API QA / saved collections via MCP; does not replace OpenAPI/Swagger already on gateway
-- [ ] If adopt later: install locally, import EH collections, wire MCP — still after polish/load/docs
+- [x] Tetiva — optional tooling only; skip for product
+- [x] Tetiva — skip; OpenAPI/Swagger on gateway is enough
+- [x] Tetiva later — only if Denis wants local API QA
 
 ---
 

@@ -1,27 +1,35 @@
 # 🎮 Event Horizon
 
-**Игровая платформа** с микросервисной архитектурой на Go, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
+**Игровая микросервисная платформа** на Go + React: 8 мини-игр, билетики/лампы, магазин авторов, real-time лидерборд (NATS → Redis → WS). Целевая модель нагрузки — **~10k DAU** (см. METRICS / `LOAD_POSTURE`).
 
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.0.9-brightgreen.svg)](https://github.com/Eastwesser/event-horizon/releases)
+[![Status](https://img.shields.io/badge/Release-v1.1.0-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon** — production-style microservices platform: gRPC mesh, NATS events, OpenAPI gateway, observability, and a React game client. Designed for learning and as a reference implementation you can deploy locally in one command.
+**Event Horizon v1.1.0** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy.
 
 | | |
 |---|---|
 | **Repository** | [github.com/Eastwesser/event-horizon](https://github.com/Eastwesser/event-horizon) |
-| **Architecture** | Clean Architecture per service · Gateway HTTP `/api/` → gRPC |
-| **Security** | JWT in Redis, bcrypt cost 12, secrets via env (`.env` gitignored) |
-| **Docs** | [`confluence/architecture/`](confluence/architecture/) · [OpenAPI `/docs`](http://localhost:8079/docs) when running |
+| **Architecture** | Clean Architecture · Gateway HTTP **`/api/v1/*`** → gRPC |
+| **Security** | JWT in Redis, bcrypt cost 12, rate limits, secrets via env |
+| **v1.1.0 pack** | [`09.10.2026/YET_TO_DO_ITEMS.md`](confluence/history/2026-10/09.10.2026/YET_TO_DO_ITEMS.md) · [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md) |
+| **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI [`/docs`](http://localhost:8079/docs) when running |
+| **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
+
+### v1.1.0 highlights (07–09.10.2026)
+
+- `/api/v1` public REST · shop/inventory polish · achievements · history NATS  
+- Companion daily tickets · avatar upload · nick→LB · record-beaten deep-link  
+- Mobile safe-area + game touch targets · Miro stickers pack · security audit RU  
 
 ---
 
-## 📦 Архитектура (актуально v1.0.9, 03.10.2026)
+## 📦 Архитектура (актуально v1.1.0, 09.10.2026)
 
-Полная схема: [`confluence/architecture/EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Mermaid: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md` · Miro legacy: `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.6.png`
+Схемы: [`EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro export: [`08.10.2026/miro/`](confluence/history/2026-10/08.10.2026/miro/) · stickers: [`MIRO_STICKERS_PASTE.md`](confluence/history/2026-10/08.10.2026/miro/MIRO_STICKERS_PASTE.md)
 
 ```text
 [GitHub Actions] ──SSH/Ansible──► [VM] ──docker-compose──► Event Horizon
@@ -45,7 +53,7 @@
 └───────────────┴───────────────────────────────────────────────────────────────┘
 ```
 
-**Deploy profiles (v1.0.9):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`.
+**Deploy profiles (v1.1.0):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`. Seeds: `make seed-v110`, `make seed-lb-demo`, `make seed-card-artists`.
 
 ---
 
@@ -83,38 +91,36 @@ make deploy-k3s
 
 ---
 
-## 📍 Эндпоинты (доступны через балансировщик :8079)
+## 📍 Эндпоинты (балансировщик :8079)
+
+Канон: **`/api/v1/*`**. Legacy `/api/*` на gateway один раз переписывается в v1. Микросервисы — gRPC (не HTTP). См. [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md).
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| POST | /api/auth/register | Регистрация |
-| POST | /api/auth/login | Логин (JWT) |
-| POST | /api/game/submit | Отправить рекорд |
-| GET | /api/billing/balance/all | Баланс (лампочки/билетики) |
-| GET | /api/leaderboard | Топ-10 (публичный) |
-| GET | /api/shop/items | Список товаров |
-| POST | /api/shop/purchase | Купить товар (списание билетиков) |
-| POST | /api/shop/purchase/:id/cancel | Отменить покупку (refund по цене покупки) |
-| GET | /api/shop/inventory | Инвентарь пользователя |
-| GET | /api/profile | Полный профиль пользователя (агрегированный) |
-| GET/POST | /api/payment/… | Подписка / CanPurchaseMerch |
-| GET/POST | /api/authors/… | Авторы |
-| GET | /api/history | История событий |
-| GET | /api/analytics/… | Аналитика (admin) |
+| POST | /api/v1/auth/register | Регистрация |
+| POST | /api/v1/auth/login | Логин (JWT) |
+| POST | /api/v1/game/submit | Отправить рекорд |
+| POST | /api/v1/game/companion/daily-gift | Tamagotchi: +1000 билетиков / день |
+| GET | /api/v1/billing/balance/all | Баланс (лампы/билетики) |
+| GET | /api/v1/leaderboard | Топ (публичный) |
+| GET | /api/v1/shop/items | Каталог |
+| POST | /api/v1/shop/purchase | Купить (билетики) |
+| POST | /api/v1/shop/purchase/:id/cancel | Отмена покупки |
+| GET | /api/v1/shop/inventory | Инвентарь |
+| GET | /api/v1/profile | Профиль (+ ачивки) |
+| POST | /api/v1/uploads | Картинка (auth) |
+| GET/POST | /api/v1/payment/… | Подписка / merch gate |
+| GET/POST | /api/v1/authors/… | Авторы |
+| GET | /api/v1/history | История |
+| GET | /api/v1/analytics/… | Аналитика (admin) |
 | GET | /openapi.yaml · /docs | OpenAPI + Swagger UI |
-| WS | /ws/leaderboard | WebSocket обновления |
+| WS | /ws/leaderboard | Real-time LB |
 
-### API prefix (v1.0.x)
-
-Публичный HTTP API живёт под **`/api/`** — без сегмента версии (`/api/v1/` не используется).
-
-| Кто | Как вызывать |
-|-----|----------------|
-| **Gateway / curl / OpenAPI** | полный путь: `/api/shop/purchase` |
-| **Frontend (axios)** | `baseURL: '/api'` + относительный путь: `api.post('/shop/purchase')` |
-| **WebSocket / ops** | вне `/api`: `/ws/leaderboard`, `/health`, `/ready` |
-
-Подробная таблица маршрутов и RBAC: [`confluence/architecture/API_ROUTES.md`](confluence/architecture/API_ROUTES.md).
+| Кто | Как |
+|-----|-----|
+| **Gateway / curl / OpenAPI** | `/api/v1/shop/purchase` |
+| **Frontend** | `baseURL: '/api/v1'` + `api.post('/shop/purchase')` |
+| **WebSocket / ops** | `/ws/leaderboard`, `/health`, `/ready` |
 
 ---
 
@@ -122,45 +128,45 @@ make deploy-k3s
 
 ```bash
 # Регистрация
-curl -X POST http://localhost:8079/api/auth/register \
+curl -X POST http://localhost:8079/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"secret123","nickname":"Test"}'
 
 # Логин (получить токен)
-TOKEN=$(curl -s -X POST http://localhost:8079/api/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8079/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"tuzer@example.com","password":"tuzer1"}' \
   | jq -r '.access_token')
 
 # Получить баланс
-curl -s -X GET "http://localhost:8079/api/billing/balance/all" \
+curl -s -X GET "http://localhost:8079/api/v1/billing/balance/all" \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 
 # Посмотреть товары в магазине
-curl -s -X GET http://localhost:8079/api/shop/items \
+curl -s -X GET http://localhost:8079/api/v1/shop/items \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 
 # Купить товар
-curl -X POST http://localhost:8079/api/shop/purchase \
+curl -X POST http://localhost:8079/api/v1/shop/purchase \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"item_id":"6a1de8dd-9457-4aa4-99a7-78267aee731d"}' | jq '.'
 
 # Посмотреть инвентарь
-curl -s -X GET http://localhost:8079/api/shop/inventory \
+curl -s -X GET http://localhost:8079/api/v1/shop/inventory \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 
 # Отправить рекорд
-curl -X POST http://localhost:8079/api/game/submit \
+curl -X POST http://localhost:8079/api/v1/game/submit \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"user_id":"7fc8a659-1bb2-4d7c-b60e-c140239d5c62","game_id":"hexagon","level":1,"score":150,"user_email":"tuzer@example.com","seed":"test_seed","moves":[]}'
 
 # Посмотреть лидерборд
-curl -s "http://localhost:8079/api/leaderboard?game_id=hexagon&limit=10" | jq '.'
+curl -s "http://localhost:8079/api/v1/leaderboard?game_id=hexagon&limit=10" | jq '.'
 
 # Получить профиль
-curl -X GET http://localhost:8079/api/profile \
+curl -X GET http://localhost:8079/api/v1/profile \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 ```
 

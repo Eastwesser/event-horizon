@@ -1,85 +1,95 @@
 # Miro review vs METRICS / code (09.10.2026)
 
-Screenshots: `miro_pics/` (`miro_main.png` + `miro_1`…`miro_10`).  
-Metrics source: `../07.10.2026/LOAD_TESTS/METRICS.md`.
+Screenshots: `miro_pics/` · **Paste stickers:** `MIRO_STICKERS_PASTE.md`  
+Metrics: `../07.10.2026/LOAD_TESTS/METRICS.md`
 
-**Happy path:** не рисовать как цепочку боксов на Miro — это видео Дениса (reg → play → shop/sub → pay → card). На схеме оставляем topology + ports + bus.
-
----
-
-## METRICS panel (правая колонка) — вердикт
-
-| Блок Miro | vs `METRICS.md` | Вердикт |
-|-----------|-----------------|---------|
-| MAU 100k / DAU 10k / ~1M new/year | совпадает | OK |
-| RPS avg 30–50, peak ~100; read/write | совпадает (есть и модель ~17/35 при 10 API/сессия) | OK — две оценки, обе planning |
-| HTTP 5k / WS 2.5k (до 10k / 5k) | совпадает | OK |
-| Latency p50/90/95/99 | совпадает | OK (цель прода ≠ локальный k6 p95~700ms) |
-| Storage PG/Redis/Mongo/CH + retention 30d | совпадает | OK |
-| Selectel ~$430 / 5 VM | совпадает | OK |
-| RPS calc 10k×15 → 1.7 → ×10 API ≈17 / peak 35 | совпадает | OK |
-| Go / DB / Grafana 03:00 watchlist | совпадает | OK |
-| DB table dated 08.10 | те же сервисы + объёмы | OK |
-
-**Итог:** правая колонка Miro = capacity planning из `METRICS.md`, не измеренный local CORE. На интервью разделяй «цель» vs «факт стенда» (`SECURITY_AUDIT_RU.md`).
+**Happy path:** видео Дениса (reg → play → shop/sub → pay → card), не цепочка боксов на Miro.
 
 ---
 
-## Topology (слева) — что ок
+## `/api/v1` — где прописано?
 
-- Client → LB `:8079` → API GW `8081–8083` → сервисы + NATS JetStream hub
-- Auth / Game / Billing / LB / Profile / Shop / Inventory(+Mongo+Outbox) / Authors / Payment / History / Analytics(CH) / Notification / Fulfillment
-- Observability: Prometheus 9090, Grafana 3000, Jaeger 16686, NATS Explorer 7777 (+ Alertmanager)
-- Kafka у Fulfillment помечен как optional / cut — согласуется с thin vs `deploy-heavy`
-- Порты на стикерах Auth/Game/Billing/LB в целом совпадают с compose / interview cheat sheet
+| Слой | `/api/v1`? |
+|------|------------|
+| Gateway HTTP (Gin) | **да** — все публичные REST |
+| FE axios | **да** — `baseURL: '/api/v1'` |
+| OpenAPI / k6 | **да** |
+| Auth/Game/… gRPC | **нет** — только protobuf RPC |
 
----
-
-## Drift / что поправить на доске (не блокер тега)
-
-1. **MCP SERVER (RAG)** нарисован у GW — **parked**, не runtime v1.1.0. Либо серый «future», либо убрать со стрелки.
-2. **`api routes:`** на стикерах пустые → заполнить каноном **`/api/v1/...`** (с 09.10 в коде).
-3. **Нумерация сервисов** плавает (Shop/Inventory/History в разных кропах как 6/7/8) — выровнять под единый список.
-4. **Authors sticky** иногда тянет Mongo/ports Inventory — Mongo только у **Inventory**.
-5. **Inventory PG** на одном стикере `5446` — сверить с compose (ожидаемо `546x` ряд); Redis `6364` тоже перепроверить.
-6. **Notification gRPC `50056`** — сверить с фактическим портом в compose.
-7. **PROMO** обрубок справа — либо подписать, либо убрать.
-8. Outbox нарисован почти у всех PG — ок как паттерн; у кого реально нет outbox — можно не рисовать цилиндр (честность для интервью).
+Legacy `/api/*` на gateway один раз переписывается в `/api/v1/*`.
 
 ---
 
-## ASCII / text map (для интервью)
+## METRICS panel — вердикт
+
+Правая колонка Miro **=** capacity planning из `METRICS.md` (не local CORE k6). OK.
+
+---
+
+## Drift — ответы (после сверки compose)
+
+| # | Тема | Вердикт |
+|---|------|---------|
+| 1 | MCP | **Сделан** (`services/mcp`, stdio, RAG+tools). На схеме: Cursor→MCP, **не** player→GW→MCP. |
+| 2 | api routes | Список для копипаста → `MIRO_STICKERS_PASTE.md` |
+| 3 | Нумерация | Оставь свою; визуально выстрой edge→core→async (см. paste sheet) |
+| 4 | Authors + Mongo | Authors = **PG 5468 + Redis 6387**. Mongo **только Inventory** (`27017` в inventory compose). |
+| 5 | Inventory ports | PG **5466**, Redis **6384** (стикеры 5446 / 6364 — **ошибка**) |
+| 6 | Notification gRPC | **50063** (не 50056); PG host **5470** |
+| 7 | PROMO | ignore (crop) |
+| 8 | Outbox | Есть: Game, Billing, Shop, Inventory, Payment, Authors. **Нет:** Auth, Profile, Leaderboard, History, Analytics, Notification, Fulfillment |
+
+---
+
+## ASCII map (актуально)
 
 ```text
 [CLIENT React :5173]
-        |  HTTP /api/v1/*   WS /ws/leaderboard
+        |  HTTP /api/v1/*          WS /ws/leaderboard
         v
 [LOAD BALANCER :8079] -----> [API GW ×3 :8081-8083]
                                     |
-        +-----------+---------------+---------------+-----------+
-        v           v               v               v           v
-     [AUTH]      [GAME]        [BILLING]      [LEADERBOARD] [PROFILE]
-     :50051      :50052         :50053          :50054        :50060
-     PG+Redis    PG(+Redis)     PG+Redis        PG+Redis SS   PG
-        |           |               |               |           |
-        +-----------+------ NATS JETSTREAM HUB -----+-----------+
-                           (cluster 4222/4223/4224)
-                                    |
-        +--------+--------+---------+--------+--------+
-        v        v        v         v        v        v
-     [SHOP] [INVENTORY] [AUTHORS] [PAYMENT] [HISTORY] [ANALYTICS]
-            +Mongo+Outbox                    PG       ClickHouse
-        |
-     [NOTIFICATION] [FULFILLMENT]--(opt Kafka)--Outbox
-        |
-     [Observability: Prom/Grafana/Jaeger/NATS Explorer]
+     +---------+----------+---------+----------+----------+
+     v         v          v         v          v          v
+  [AUTH]    [GAME]    [BILLING] [LEADERBOARD] [PROFILE] [SHOP]
+  :50051    :50052     :50053     :50054       :50060    :50055
+  PG5460    PG5461     PG5462     PG5463       PG5464    PG5465
+  R6379     R6380      R6381      R6382        R6385     R6383
+  (no OB)   OUTBOX     OUTBOX     (no OB)      (no OB)   OUTBOX
+     |         |          |         |            |          |
+     +---------+----+ NATS JETSTREAM HUB (4222/3/4) +-------+
+                        |         |         |         |
+                        v         v         v         v
+                 [INVENTORY] [AUTHORS] [PAYMENT] [HISTORY]
+                   :50059     :50061    :50058    :50062
+                   PG5466     PG5468    PG5467    PG5469
+                   R6384      R6387     R6386     (consumer)
+                   Mongo27017 OUTBOX    OUTBOX    (no OB)
+                   OUTBOX     (no Mongo)
+                        |         |
+                        v         v
+                 [ANALYTICS] [NOTIFICATION] [FULFILLMENT]
+                   :50057      :50063         (worker)
+                   ClickHouse  PG5470         opt Kafka
+                   (no OB)     (no OB)        (no OB table)
+
+[Cursor/agent] --stdio--> [MCP SERVER] --> NATS / PG(ro) / Redis / Prydwen RAG
+                          (NOT on player HTTP path)
+
+[Observability] Prom:9090 Grafana:3000 Jaeger:16686 NATS Explorer:7777 Alertmanager
 ```
 
 ---
 
-## Next for Denis (IRL Miro)
+## Что осталось после v1.1.0 wave (честно)
 
-- [ ] Серый MCP / убрать стрелку  
-- [ ] Дописать `/api/v1` на стикерах  
-- [ ] Починить Authors/Inventory Mongo drift + спорные порты  
-- [ ] После правок — PNG уже в `miro_pics/`; при желании один «чистый» full export в корень `miro/`
+**IRL (ты):**  
+- Вставить стикеры из `MIRO_STICKERS_PASTE.md`  
+- Поправить порты / убрать лишние Outbox / MCP стрелку  
+- Опционально: Boosty URL в `BOOSTY_DONE`, `git tag v1.1.0`, ranked smoke для нулей на профиле  
+
+**Код / продукт (не блокер тега):** avatar, 108 authors, LB seed, Tamagotchi tickets gift, deep-link «рекорд побит», AuthZ matrix  
+
+**Parked:** C4 payouts, flower/3D/Dodo/Sims, per-game Boosty 1.1.1…  
+
+**MCP:** код есть — для Cursor; допиливать tools можно позже, не блокирует схему.

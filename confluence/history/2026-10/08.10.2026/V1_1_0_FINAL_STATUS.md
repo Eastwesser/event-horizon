@@ -75,16 +75,17 @@ Still optional IRL: play ranked game for profile/LB zeros; git tag `v1.1.0` afte
 | **Happy-path pitch** | Video (Denis), not Miro boxes | §F below still valid as storyboard |
 | **Boosty** | **Done** | Optional post URL in `BOOSTY_DONE` |
 
-### B3 — Product leftovers (not blockers for tag)
-- Avatar upload; LB nicknamed seed ~10; nick→LB by user id
-- 108 card artists as authors; author active-sub seed
-- Shop filters by game/theme niche; art regen badge/fenechka
-- Tamagotchi **tickets** gift (points gift already)
-- Record-beaten notification deep-link
-- AuthZ full matrix after author seed
+### B3 — Closed in code (09.10 night)
+- Avatar upload (Profile + Authors) via `/api/v1/uploads` (any auth user)
+- Nick → LB by `user_id` (`event.user.nickname.updated` + FE `getNickname()`)
+- LB demo seed: `make seed-lb-demo`
+- Card artists → authors rows: `make seed-card-artists` (synthetic UUIDs)
+- Tamagotchi daily **+1000 tickets**: `POST /api/v1/game/companion/daily-gift`
+- Record-beaten bell → `/leaderboard?game=&level=&highlight=`
+- MCP exists (stdio); Tetiva skipped
 
-### B4 — Parked / deferred (do **not** start)
-Avatar polish wave, **108 authors**, **MCP**, **C4** payouts, flower skin / 3D / Dodo / Sims, optional 1.1.1…1.1.8 per-game Boosty posts.
+### B4 — Closed by decision (not open) — `PARKED_WISHES.md` + `API_V1.md` + `LOAD_POSTURE.md`
+C4 = lock D; full 3D/Dodo engines = visual CSS close (Gears flowers, Hanoi gloss, Companion room); 108 logins = seed synthetic only; crop UI / chrome list / Boosty series = product/content.
 
 ---
 

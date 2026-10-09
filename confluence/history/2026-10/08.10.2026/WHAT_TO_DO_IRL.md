@@ -1,20 +1,22 @@
 # WHAT TO DO IRL
 
-**Короткий приказной список:** [`DENIS_NEXT_ACTIONS.md`](./DENIS_NEXT_ACTIONS.md) ← читай его.
+## Уже сделано
 
-## Уже сделано (не повторяй)
-
-- [x] Код v1.1.0 + seeds + CORE k6 (`7d145c8`)
-- [x] Ответы Elen в `QUESTIONS_FROM_ELEN.md`
-- [x] Папка `miro/` для PNG + текстовая схема v1.1.0
+- [x] Код v1.1.0 + `/api/v1` + seeds scripts + CORE k6  
+- [x] Boosty done (`BOOSTY_DONE/`)  
+- [x] Miro PNGs + `MIRO_STICKERS_PASTE.md` / `MIRO_REVIEW.md`  
+- [x] Leftovers wave: avatar, LB seed, card-artists authors, Tamagotchi tickets, record-beaten deep-link  
 
 ## Тебе осталось
 
-- [ ] **Miro** → PNG в `08.10.2026/miro/` или в чат  
-- [ ] **Boosty** ×2 + пост v1.1.0 (текст в `BOOSTY_FIX.md`)  
-- [ ] Опционально: одна ranked-игра  
-- [ ] Сообщение Курсору: MIRO/BOOSTY/TEГ  
+1. **Miro stickers** — вставь routes/ports из `miro/MIRO_STICKERS_PASTE.md` (MCP стрелка Cursor→MCP, Outbox только где есть)  
+2. После rebuild gateway/lb/notification:
+   ```bash
+   make seed-lb-demo
+   make seed-card-artists   # нужен inventory с карточками
+   ```
+3. Опционально: ranked-игра + `git tag v1.1.0`  
 
-## Курсор после твоего «готово»
+## Parked (не делаем сейчас)
 
-- Влинкует PNG, обновит docs, `git tag v1.1.0`, закроет галочки  
+См. `PARKED_WISHES.md` — C4, 3D/Dodo/Sims/flower, crop UI, 108 login-авторов.

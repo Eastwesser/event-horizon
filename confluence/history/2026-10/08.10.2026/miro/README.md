@@ -8,7 +8,8 @@ Board: https://miro.com/app/board/uXjVJLLg9us=/
 |------|------|
 | `miro_pics/miro_main.png` | Full-board overview |
 | `miro_pics/miro_1.png` … `miro_10.png` | Zooms (LB, GW/MCP, Auth, Game/Billing/LB, NATS, Fulfillment/Kafka, WS, History/Payment/Inventory, Authors/Notif/Analytics, Observability) |
-| `MIRO_REVIEW.md` | Cursor review vs `METRICS.md` + compose ports + ASCII map |
+| `MIRO_REVIEW.md` | Review vs METRICS + ports + Outbox + ASCII |
+| `MIRO_STICKERS_PASTE.md` | **Copy-paste** `/api/v1` routes per service + port fixes |
 
 ## After board tweaks
 
