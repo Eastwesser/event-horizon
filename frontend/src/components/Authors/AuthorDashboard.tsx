@@ -12,6 +12,7 @@ import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { Badge } from '../ui/Badge';
 import { formatTicketPrice } from '../../lib/formatPrice';
+import { InventoryImageUrlField } from '../Inventory/InventoryImageUrlField';
 
 type Tab = 'cards' | 'sales' | 'profile';
 
@@ -44,6 +45,7 @@ export function AuthorDashboard() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [portfolio, setPortfolio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [profileFlash, setProfileFlash] = useState('');
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export function AuthorDashboard() {
         setDisplayName(a.display_name || '');
         setBio(a.bio || '');
         setPortfolio(a.portfolio || '');
+        setAvatarUrl(a.avatar_url || '');
       })
       .catch(() => setProfileError('Профиль ещё не создан — сохраните имя ниже'))
       .finally(() => setProfileLoading(false));
@@ -127,7 +130,7 @@ export function AuthorDashboard() {
         display_name: displayName.trim(),
         bio: bio.trim(),
         portfolio: portfolio.trim(),
-        avatar_url: profile?.avatar_url || '',
+        avatar_url: avatarUrl.trim(),
       });
       setProfile(a);
       setProfileFlash('Сохранено');
@@ -341,6 +344,10 @@ export function AuthorDashboard() {
                   placeholder="https://…"
                 />
               </label>
+              <div>
+                <InventoryImageUrlField value={avatarUrl} onChange={setAvatarUrl} />
+                <p className="mt-1 text-xs text-text-muted">Аватар: файл или URL (до 2 МБ).</p>
+              </div>
               <label className="flex flex-col gap-1 text-sm text-text-secondary">
                 Bio
                 <textarea

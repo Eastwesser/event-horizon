@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
@@ -22,19 +23,63 @@ const MAX_LEVEL = 10;
 /** Top 10% is the danger / spawn band. */
 const DANGER_Y = Math.round(H * 0.1);
 const RADIUS = [0, 14, 17, 20, 23, 26, 29, 32, 36, 40, 44];
-const COLORS = [
-  '',
-  '#6b8cae',
-  '#5a9e8a',
-  '#c4a35a',
-  '#c47a5a',
-  '#a66bb5',
-  '#5a8fc4',
-  '#d4c05a',
-  '#c9c9d8',
-  '#e0c070',
-  '#f2f2f8',
-];
+const COLOR_PALETTES: Record<string, string[]> = {
+  metal: [
+    '',
+    '#6b8cae',
+    '#5a9e8a',
+    '#c4a35a',
+    '#c47a5a',
+    '#a66bb5',
+    '#5a8fc4',
+    '#d4c05a',
+    '#c9c9d8',
+    '#e0c070',
+    '#f2f2f8',
+  ],
+  sunflower: [
+    '',
+    '#f4d35e',
+    '#eea73b',
+    '#e07a2f',
+    '#c45c26',
+    '#8b5a2b',
+    '#6b8f3c',
+    '#f7e8a4',
+    '#d4a017',
+    '#ffe066',
+    '#fff4c2',
+  ],
+  rose: [
+    '',
+    '#f2a6b8',
+    '#e86b8a',
+    '#c93a5a',
+    '#9b2745',
+    '#6b1f3a',
+    '#d48aa8',
+    '#f5c6d0',
+    '#b83b5e',
+    '#ff8fab',
+    '#ffe0e9',
+  ],
+  pansy: [
+    '',
+    '#b388ff',
+    '#7c4dff',
+    '#651fff',
+    '#ffd54f',
+    '#ffb300',
+    '#ce93d8',
+    '#5e35b1',
+    '#ea80fc',
+    '#fff59d',
+    '#f3e5f5',
+  ],
+};
+
+type FlowerSkin = keyof typeof COLOR_PALETTES;
+const SKIN_KEY = 'eh_gears_skin_v1';
 
 let idSeq = 1;
 
@@ -105,6 +150,12 @@ export function GearsGame() {
   const boostedRef = useRef(false);
   const [runBoosted, setRunBoosted] = useState(false);
   const [runBoostId, setRunBoostId] = useState<string | null>(null);
+  const [skin, setSkin] = useState<FlowerSkin>(() => {
+    const raw = localStorage.getItem(SKIN_KEY) as FlowerSkin | null;
+    return raw && COLOR_PALETTES[raw] ? raw : 'metal';
+  });
+  const colorsRef = useRef(COLOR_PALETTES.metal);
+  colorsRef.current = COLOR_PALETTES[skin] || COLOR_PALETTES.metal;
   const {
     useBoost,
     setUseBoost,
@@ -113,6 +164,10 @@ export function GearsGame() {
     boostError,
     setBoostError,
   } = useGameBoost('gears');
+
+  useEffect(() => {
+    localStorage.setItem(SKIN_KEY, skin);
+  }, [skin]);
 
   useEffect(() => {
     if (boostError) {
@@ -211,7 +266,8 @@ export function GearsGame() {
           if (dist < min) {
             const aSlow = Math.hypot(a.vx, a.vy) < 1.35;
             const bSlow = Math.hypot(b.vx, b.vy) < 1.35;
-            if (a.level === b.level && a.level < MAX_LEVEL && aSlow && bSlow) {
+            // Merge on contact (same level) — no multi-touch delay; slow gate only avoids mid-air chain abuse.
+            if (a.level === b.level && a.level < MAX_LEVEL && (aSlow || bSlow || a.settled || b.settled)) {
               remove.add(a.id);
               remove.add(b.id);
               const nl = a.level + 1;
@@ -277,16 +333,18 @@ export function GearsGame() {
       if (!droppingRef.current && !lost && !won) {
         const lvl = nextRef.current;
         const r = RADIUS[lvl];
+        const COLORS = colorsRef.current;
         drawGear(ctx, aimXRef.current, r + 8, r, COLORS[lvl], lvl, 0.35);
       }
       for (const o of orbsRef.current) {
+        const COLORS = colorsRef.current;
         drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level);
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [won, lost]);
+  }, [won, lost, skin]);
 
   const onPointer = (clientX: number, rect: DOMRect) => {
     const x = ((clientX - rect.left) / rect.width) * W;
@@ -302,7 +360,7 @@ export function GearsGame() {
         level: 1,
         score: scoreRef.current,
         user_email: localStorage.getItem('userEmail'),
-        nickname: localStorage.getItem('nickname') || '',
+        nickname: getNickname(),
         seed: `gears_${Date.now()}`,
         moves: [],
       };
@@ -366,6 +424,25 @@ export function GearsGame() {
         </>
       }
     >
+      <div className="mb-3 flex flex-wrap justify-center gap-2">
+        {(
+          [
+            ['metal', 'Металл'],
+            ['sunflower', 'Подсолнух'],
+            ['rose', 'Роза'],
+            ['pansy', 'Анютины'],
+          ] as const
+        ).map(([id, label]) => (
+          <Button
+            key={id}
+            size="sm"
+            variant={skin === id ? 'secondary' : 'ghost'}
+            onClick={() => setSkin(id)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
       <canvas
         ref={canvasRef}
         width={W}

@@ -1,6 +1,6 @@
 // frontend/src/components/Leaderboard/LeaderboardFull.tsx
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getLeaderboard } from '../../services/api';
 import { PageHeader } from '../ui/PageHeader';
 import { PageShell } from '../ui/PageShell';
@@ -29,12 +29,32 @@ const RANK_TONE: Record<number, string> = {
   3: 'text-horizon-ember',
 };
 
+function isGameId(v: string | null): v is GameId {
+  return !!v && GAME_TABS.some((t) => t.id === v);
+}
+
 export function LeaderboardFull() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightRef = useRef<HTMLLIElement | null>(null);
+
+  const paramGame = searchParams.get('game');
+  const paramLevel = Number(searchParams.get('level') || '1');
+  const highlightUser = searchParams.get('highlight') || searchParams.get('user_id') || '';
+
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGame, setSelectedGame] = useState<GameId>('hexagon');
-  const [selectedLevel, setSelectedLevel] = useState(1);
+  const [selectedGame, setSelectedGame] = useState<GameId>(
+    isGameId(paramGame) ? paramGame : 'hexagon',
+  );
+  const [selectedLevel, setSelectedLevel] = useState(
+    Number.isFinite(paramLevel) && paramLevel >= 1 ? paramLevel : 1,
+  );
+
+  useEffect(() => {
+    if (isGameId(paramGame)) setSelectedGame(paramGame);
+    if (Number.isFinite(paramLevel) && paramLevel >= 1) setSelectedLevel(paramLevel);
+  }, [paramGame, paramLevel]);
 
   useEffect(() => {
     setLoading(true);
@@ -60,6 +80,11 @@ export function LeaderboardFull() {
       });
   }, [selectedGame, selectedLevel]);
 
+  useEffect(() => {
+    if (!highlightUser || loading) return;
+    highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightUser, loading, entries]);
+
   const activeIcon = GAME_TABS.find((t) => t.id === selectedGame)?.icon || 'trophy';
   const handleBack = () => navigate('/');
 
@@ -82,92 +107,67 @@ export function LeaderboardFull() {
             active={selectedGame === tab.id}
             onClick={() => setSelectedGame(tab.id)}
           >
-            <IconLabel name={tab.icon}>{tab.label}</IconLabel>
+            <IconLabel name={tab.icon} iconClassName="h-4 w-4">
+              {tab.label}
+            </IconLabel>
           </FilterChip>
         ))}
       </div>
 
       {selectedGame === 'flappy' && (
-        <label className="mb-4 flex items-center gap-2 text-sm text-text-primary">
-          Уровень
-          <select
-            className="rounded-sm border border-white/15 bg-void px-2 py-1"
-            value={selectedLevel}
-            onChange={(e) => setSelectedLevel(Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-          >
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
-              <option key={lv} value={lv}>
-                {lv}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {[1, 2, 3].map((lvl) => (
+            <FilterChip
+              key={lvl}
+              active={selectedLevel === lvl}
+              onClick={() => setSelectedLevel(lvl)}
+            >
+              Уровень {lvl}
+            </FilterChip>
+          ))}
+        </div>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center gap-4 py-20">
+        <div className="flex justify-center py-16">
           <Spinner size={48} />
-          <p className="text-text-secondary">Загрузка рекордов...</p>
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-20 text-center">
-          <p className="text-text-secondary">Пока нет рекордов в этой игре</p>
-          <p className="text-text-muted">Стань первым!</p>
-        </div>
+        <p className="py-12 text-center text-text-secondary">Пока нет результатов</p>
       ) : (
-        <div className="overflow-hidden rounded-md border border-white/10 bg-nebula">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-text-muted">
-                <th className="px-4 py-3 font-normal">#</th>
-                <th className="px-4 py-3 font-normal">Ник</th>
-                <th className="px-4 py-3 text-right font-normal">Очки</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {entries.map((entry, idx) => {
-                const rank = idx + 1;
-                return (
-                  <tr key={entry.userId || `row-${idx}`} className="hover:bg-white/5">
-                    <td
-                      className={cn(
-                        'px-4 py-3 font-hud tabular-nums',
-                        RANK_TONE[rank] || 'text-text-secondary',
-                      )}
-                    >
-                      {rank <= 3 ? (
-                        <Icon name="medal" className="inline h-4 w-4" title={`${rank}`} />
-                      ) : (
-                        rank
-                      )}
-                      {rank <= 3 ? (
-                        <span className="ml-1 align-middle">{rank}</span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-sm font-semibold text-void">
-                          {entry.nickname?.charAt(0).toUpperCase() ||
-                            entry.user_email?.charAt(0).toUpperCase() ||
-                            '?'}
-                        </div>
-                        <span className="truncate text-text-primary">
-                          {entry.nickname || entry.user_email?.split('@')[0] || 'Аноним'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-hud tabular-nums text-horizon-gold">
-                      <span className="inline-flex items-center justify-end gap-1.5">
-                        {(entry.score ?? 0).toLocaleString()}
-                        <Icon name={activeIcon} className="h-3.5 w-3.5" />
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ul className="space-y-2">
+          {entries.map((entry) => {
+            const highlighted = highlightUser && entry.userId === highlightUser;
+            return (
+              <li
+                key={`${entry.userId}-${entry.rank}`}
+                ref={highlighted ? highlightRef : undefined}
+                className={cn(
+                  'flex items-center gap-3 rounded-md border px-4 py-3',
+                  highlighted
+                    ? 'border-horizon-gold/60 bg-horizon-gold/10'
+                    : 'border-white/10 bg-nebula',
+                )}
+              >
+                <span
+                  className={cn(
+                    'w-8 font-hud text-lg font-semibold',
+                    RANK_TONE[entry.rank] || 'text-text-muted',
+                  )}
+                >
+                  {entry.rank}
+                </span>
+                <Icon name={activeIcon} className="h-5 w-5 text-text-muted" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-text-primary">
+                    {entry.nickname || entry.user_email || entry.userId.slice(0, 8)}
+                  </p>
+                </div>
+                <span className="font-hud text-horizon-gold">{entry.score}</span>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </PageShell>
   );

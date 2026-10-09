@@ -136,6 +136,7 @@ export interface CatalogSortable {
   price_tickets?: number;
   stock?: number | null;
   created_at?: string;
+  game_id?: string;
   attributes?: Record<string, unknown> | null;
 }
 
@@ -164,6 +165,10 @@ export interface CatalogFilterFlags {
   typeMains?: string[];
   icons?: string[];
   attackDice?: string;
+  /** Skin catalog: filter by game_id */
+  games?: string[];
+  /** Theme catalog: light / dark / cozy / … */
+  themeNiches?: string[];
   cost?: StatFilter | null;
   hp?: StatFilter | null;
   move?: StatFilter | null;
@@ -338,6 +343,8 @@ export function parseCatalogFilters(params: URLSearchParams): CatalogFilterFlags
     typeMains: parseCommaList(params.get('type_main')),
     icons: parseCommaList(params.get('icons')),
     attackDice: (params.get('attack') || '').trim(),
+    games: parseCommaList(params.get('game')),
+    themeNiches: parseCommaList(params.get('theme_niche')),
     cost: parseStatFilter(params.get('cost_op'), params.get('cost')),
     hp: parseStatFilter(params.get('hp_op'), params.get('hp')),
     move: parseStatFilter(params.get('move_op'), params.get('move')),
@@ -366,6 +373,8 @@ export function countActiveFilters(f: CatalogFilterFlags): number {
   if (f.typeMains?.length) n += 1;
   if (f.icons?.length) n += 1;
   if (f.attackDice) n += 1;
+  if (f.games?.length) n += 1;
+  if (f.themeNiches?.length) n += 1;
   if (f.cost) n += 1;
   if (f.hp) n += 1;
   if (f.move) n += 1;
@@ -479,6 +488,26 @@ export function filterCatalogItems<T extends CatalogSortable>(
     out = out.filter(
       (it) => attrStr(it, 'attack_dice').trim().toLowerCase() === needle
     );
+  }
+  if (flags.games?.length) {
+    const want = new Set(flags.games.map((g) => g.toLowerCase()));
+    out = out.filter((it) => {
+      const gid = (it.game_id || attrStr(it, 'game_id') || '').toLowerCase();
+      return gid !== '' && want.has(gid);
+    });
+  }
+  if (flags.themeNiches?.length) {
+    const want = new Set(flags.themeNiches.map((t) => t.toLowerCase()));
+    out = out.filter((it) => {
+      const niche = (
+        attrStr(it, 'theme_niche') ||
+        attrStr(it, 'niche') ||
+        attrStr(it, 'mood') ||
+        ''
+      ).toLowerCase();
+      const name = (it.name || '').toLowerCase();
+      return [...want].some((w) => niche.includes(w) || name.includes(w));
+    });
   }
   if (flags.cost) {
     out = out.filter((it) => matchStat(attrNumOrNull(it, 'cost'), flags.cost));

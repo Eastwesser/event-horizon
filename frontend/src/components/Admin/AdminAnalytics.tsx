@@ -142,6 +142,11 @@ export function AdminAnalytics() {
         </div>
       ) : (
         <>
+          <p className="text-xs text-text-muted">
+            MAU — уникальные пользователи за выбранное окно дней. DAU — активные за календарный
+            день (серия ниже). Retention D0…D7 — доля когорты, вернувшаяся на N-й день; пусто =
+            ещё нет данных когорты в ClickHouse.
+          </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatCard value={mau?.mau ?? 0} label="MAU" sub={`окно ${mau?.window_days ?? days} дн.`} tone="indigo" />
             <StatCard value={latestDau} label="DAU (последний день)" tone="cyan" />

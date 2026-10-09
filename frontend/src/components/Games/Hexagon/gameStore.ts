@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { type HexCoord, type PancakeType, HEX_GRID, getNeighbors } from '../../../utils/hexagon';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 
 interface HexTile {
   coord: HexCoord;
@@ -369,7 +370,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const userEmail = localStorage.getItem('userEmail') || '';
     const nickname =
-      localStorage.getItem('nickname') || userEmail.split('@')[0] || '';
+      getNickname() || userEmail.split('@')[0] || '';
 
     let userId = localStorage.getItem('userId');
     if (!userId) {
