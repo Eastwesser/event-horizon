@@ -2420,9 +2420,10 @@ func runGateway() {
 			return
 		}
 
+		userID := middleware.UserID(c)
 		_, err := throughBreaker(authCB, c, func() (any, error) {
 			return authClient.GetClient().UpdateNickname(c.Request.Context(), &authPb.UpdateNicknameRequest{
-				UserId:   middleware.UserID(c),
+				UserId:   userID,
 				Nickname: req.Nickname,
 			})
 		})
@@ -2431,6 +2432,17 @@ func runGateway() {
 		}
 		if handleRPCError(c, err) {
 			return
+		}
+
+		// Refresh LB nicknames by user_id (all games) via NATS.
+		if js != nil {
+			payload, _ := json.Marshal(map[string]string{
+				"user_id":  userID,
+				"nickname": req.Nickname,
+			})
+			if _, pubErr := js.Publish("event.user.nickname.updated", payload); pubErr != nil {
+				log.Printf("⚠️ publish event.user.nickname.updated: %v", pubErr)
+			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "nickname updated"})
@@ -2517,6 +2529,49 @@ func runGateway() {
 		respJSON, _ := json.Marshal(respBody)
 		scoreCache.Set(cacheKey, respJSON)
 		c.JSON(http.StatusOK, respBody)
+	})
+
+	// Tamagotchi daily gift: +1000 tickets (idempotent per UTC day) + FE still adds care points.
+	r.POST("/api/v1/game/companion/daily-gift", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		userID := middleware.UserID(c)
+		day := time.Now().UTC().Format("2006-01-02")
+		ref := "companion-daily-" + userID + "-" + day
+		out, err := throughBreaker(billingCB, c, func() (any, error) {
+			return billingClient.AddCurrency(c.Request.Context(), &billingPb.AddCurrencyRequest{
+				UserId:      userID,
+				Currency:    billingPb.CurrencyType_TICKETS,
+				Amount:      1000,
+				Reason:      "companion_daily_gift",
+				ReferenceId: ref,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if err != nil {
+			// Unique reference_id → already claimed today.
+			msg := err.Error()
+			if strings.Contains(strings.ToLower(msg), "duplicate") || strings.Contains(msg, "unique") {
+				c.JSON(http.StatusOK, gin.H{
+					"tickets_granted": 0,
+					"already_claimed": true,
+					"message":         "already claimed today",
+				})
+				return
+			}
+			if handleRPCError(c, err) {
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		resp := out.(*billingPb.AddCurrencyResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"tickets_granted": 1000,
+			"already_claimed": false,
+			"new_balance":     resp.GetNewBalance(),
+			"message":         resp.GetMessage(),
+		})
 	})
 
 	r.POST("/api/v1/game/boost/start", middleware.RequireAuth(authClient), func(c *gin.Context) {

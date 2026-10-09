@@ -89,3 +89,25 @@ func (s *InboxService) HandleApproved(ctx context.Context, applicationID, userID
 	})
 	return err
 }
+
+// HandleRecordBeaten notifies the previous #1 that someone took their place.
+func (s *InboxService) HandleRecordBeaten(ctx context.Context, beatenUserID, newNickname, gameID string, level, newScore int) error {
+	beatenUserID = strings.TrimSpace(beatenUserID)
+	if beatenUserID == "" || strings.TrimSpace(gameID) == "" {
+		return model.ErrInvalidInput
+	}
+	nick := strings.TrimSpace(newNickname)
+	if nick == "" {
+		nick = "игрок"
+	}
+	link := fmt.Sprintf("/leaderboard?game=%s&level=%d&highlight=%s", gameID, level, beatenUserID)
+	src := fmt.Sprintf("leaderboard.record_beaten:%s:%d:%s:%d", gameID, level, beatenUserID, newScore)
+	_, err := s.repo.Insert(ctx, &model.Notification{
+		UserID: beatenUserID,
+		Title:  "Рекорд побит",
+		Body:   fmt.Sprintf("%s обошёл(ла) тебя в %s (счёт %d). Открыть лидерборд.", nick, gameID, newScore),
+		Link:   link,
+		Source: src,
+	})
+	return err
+}

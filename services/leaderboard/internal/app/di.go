@@ -46,6 +46,15 @@ type ScoreEvent struct {
 	Level     int    `json:"level"`
 }
 
+type nicknameUpdatedEvent struct {
+	UserID   string `json:"user_id"`
+	Nickname string `json:"nickname"`
+}
+
+var allGameIDs = []string{
+	"hexagon", "flappy", "towers", "hanoi", "memory", "twenty48", "gears", "companion",
+}
+
 type diContainer struct {
 	cfg *config.Config
 
@@ -267,6 +276,26 @@ func (a *App) initNATS(_ context.Context) error {
 		msgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
+		// Notify previous #1 when a different player takes the lead.
+		if top, topErr := svc.GetTopScores(msgCtx, event.GameID, 1, level); topErr == nil && len(top) > 0 {
+			prev := top[0]
+			if prev.UserID != "" && prev.UserID != event.UserID && event.Score > prev.Score {
+				payload, _ := json.Marshal(map[string]any{
+					"event":             "leaderboard.record_beaten",
+					"beaten_user_id":    prev.UserID,
+					"new_user_id":       event.UserID,
+					"new_nickname":      event.Nickname,
+					"game_id":           event.GameID,
+					"level":             level,
+					"new_score":         event.Score,
+					"previous_score":    prev.Score,
+				})
+				if _, pubErr := js.Publish("event.leaderboard.record_beaten", payload); pubErr != nil {
+					a.log.Error("publish record_beaten", "err", pubErr)
+				}
+			}
+		}
+
 		if err := svc.SaveUserInfo(msgCtx, event.GameID, event.UserID, event.UserEmail, event.Nickname, level); err != nil {
 			a.log.Error("failed to save user info", "err", err)
 		}
@@ -279,6 +308,33 @@ func (a *App) initNATS(_ context.Context) error {
 		return fmt.Errorf("nats subscribe score.updated: %w", err)
 	}
 	a.log.Info("subscribed to nats", "subject", "score.updated")
+
+	_, err = js.Subscribe("event.user.nickname.updated", func(msg *nats.Msg) {
+		var event nicknameUpdatedEvent
+		if err := json.Unmarshal(msg.Data, &event); err != nil || event.UserID == "" || event.Nickname == "" {
+			_ = msg.Ack()
+			return
+		}
+		msgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		for _, gameID := range allGameIDs {
+			levels := []int{1}
+			if gameID == "flappy" {
+				levels = []int{1, 2, 3}
+			}
+			for _, level := range levels {
+				if err := svc.SaveUserInfo(msgCtx, gameID, event.UserID, "", event.Nickname, level); err != nil {
+					a.log.Error("nickname refresh", "game", gameID, "err", err)
+				}
+			}
+		}
+		_ = msg.Ack()
+	}, nats.Durable("leaderboard-nickname"), nats.ManualAck())
+	if err != nil {
+		a.log.Error("nats subscribe nickname.updated", "err", err)
+	} else {
+		a.log.Info("subscribed to nats", "subject", "event.user.nickname.updated")
+	}
 	return nil
 }
 

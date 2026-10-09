@@ -449,6 +449,27 @@ paths:
         '401':
           description: Unauthorized
 
+  /api/v1/game/companion/daily-gift:
+    post:
+      summary: Tamagotchi daily gift — +1000 tickets (idempotent UTC day)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Gift granted or already claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tickets_granted:
+                    type: integer
+                  already_claimed:
+                    type: boolean
+                  new_balance:
+                    type: integer
+                  message:
+                    type: string
   /api/v1/game/boost/start:
     post:
       summary: Spend lamps to arm a pre-game boost (Flappy pilot)
