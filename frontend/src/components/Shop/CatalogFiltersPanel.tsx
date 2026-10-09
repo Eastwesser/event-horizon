@@ -14,6 +14,7 @@ import {
   titleCaseRu,
   toggleListValue,
 } from '../../lib/catalogQuery';
+import { GAME_LB_TABS } from '../../lib/gameIcons';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
 
@@ -148,6 +149,9 @@ export function CatalogFiltersPanel({
   productType = 'all',
 }: CatalogFiltersPanelProps) {
   const cardFilters = productType === 'карточка';
+  const skinFilters = productType === 'скин';
+  const themeFilters = productType === 'тема';
+  const physicalFilters = ['мерч', 'брелок', 'картина', 'фенечка'].includes(productType);
   const activeCount = countActiveFilters(filters);
   const [open, setOpen] = useState(activeCount > 0);
 
@@ -235,6 +239,50 @@ export function CatalogFiltersPanel({
               onChange={(e) => onQueryDraftChange(e.target.value)}
             />
           </Group>
+          {skinFilters ? (
+            <Group title="Игра">
+              <ChipWrap>
+                {GAME_LB_TABS.map((g) => (
+                  <FilterChip
+                    key={g.id}
+                    active={filters.games?.includes(g.id)}
+                    onClick={() => toggleMulti('game', filters.games || [], g.id)}
+                  >
+                    {g.label}
+                  </FilterChip>
+                ))}
+              </ChipWrap>
+            </Group>
+          ) : null}
+          {themeFilters ? (
+            <Group title="Настроение темы">
+              <ChipWrap>
+                {[
+                  { value: 'light', label: 'Светлая' },
+                  { value: 'dark', label: 'Тёмная' },
+                  { value: 'cozy', label: 'Уютная' },
+                  { value: 'cosmic', label: 'Космос' },
+                ].map((o) => (
+                  <FilterChip
+                    key={o.value}
+                    active={filters.themeNiches?.includes(o.value)}
+                    onClick={() =>
+                      toggleMulti('theme_niche', filters.themeNiches || [], o.value)
+                    }
+                  >
+                    {o.label}
+                  </FilterChip>
+                ))}
+              </ChipWrap>
+            </Group>
+          ) : null}
+          {physicalFilters || productType === 'all' ? (
+            <Group title="Цена (билетики)">
+              <p className="text-xs text-text-muted">
+                Сортировка «Цена ↑/↓» над каталогом. Физ. мерч от 100 000 билетиков.
+              </p>
+            </Group>
+          ) : null}
           <p className="text-xs text-text-muted">
             Фильтры стихии / класса / редкости — только во вкладке «Карточки».
           </p>

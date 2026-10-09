@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
@@ -142,29 +143,40 @@ export function CompanionGame() {
     setPet(next);
   };
 
-  const claimDailyGift = () => {
+  const claimDailyGift = async () => {
     if (!pet || giftClaimed || dailyGiftClaimedToday()) {
       setNotif({ message: 'Подарок сегодня уже получен', type: 'error' });
       return;
     }
-    localStorage.setItem(DAILY_GIFT_KEY, todayKey());
-    setGiftClaimed(true);
-    setGiftPoints(DAILY_GIFT_POINTS);
-    // Soft care bump from the gift itself.
-    setPet((p) =>
-      p
-        ? {
-            ...p,
-            hunger: Math.min(100, p.hunger + 12),
-            energy: Math.min(100, p.energy + 12),
-            joy: Math.min(100, p.joy + 12),
-          }
-        : p,
-    );
-    setNotif({
-      message: `Подарок дня: +${DAILY_GIFT_POINTS} к заботе. Загляни завтра снова.`,
-      type: 'success',
-    });
+    try {
+      const { data } = await api.post<{
+        tickets_granted?: number;
+        already_claimed?: boolean;
+      }>('/game/companion/daily-gift');
+      localStorage.setItem(DAILY_GIFT_KEY, todayKey());
+      setGiftClaimed(true);
+      setGiftPoints(DAILY_GIFT_POINTS);
+      setPet((p) =>
+        p
+          ? {
+              ...p,
+              hunger: Math.min(100, p.hunger + 12),
+              energy: Math.min(100, p.energy + 12),
+              joy: Math.min(100, p.joy + 12),
+            }
+          : p,
+      );
+      const tickets = data?.tickets_granted ?? 1000;
+      const again = data?.already_claimed
+        ? ' (уже было на сервере)'
+        : '';
+      setNotif({
+        message: `Подарок дня: +${DAILY_GIFT_POINTS} к заботе и +${tickets} билетиков${again}.`,
+        type: 'success',
+      });
+    } catch {
+      setNotif({ message: 'Не удалось получить подарок дня', type: 'error' });
+    }
   };
 
   const submit = async () => {
@@ -177,7 +189,7 @@ export function CompanionGame() {
         level: 1,
         score: Math.min(10000, careScore(pet) + giftPoints),
         user_email: localStorage.getItem('userEmail'),
-        nickname: localStorage.getItem('nickname') || '',
+        nickname: getNickname(),
         seed: `companion_${pet.name}_${Date.now()}`,
         moves: [],
       };
@@ -249,8 +261,8 @@ export function CompanionGame() {
         <>
           <p>Играй со своим питомцем: корми, играй, дай отдохнуть. Без давления и дедлайнов.</p>
           <p>
-            Это не гонка за лидербордом. Раз в день — подарок заботы (+{DAILY_GIFT_POINTS} к счёту
-            заботы). Билетики за подарок — later.
+            Это не гонка за лидербордом. Раз в день — подарок: +{DAILY_GIFT_POINTS} к заботе и
+            +1000 билетиков на кошелёк.
           </p>
         </>
       }
@@ -303,13 +315,29 @@ export function CompanionGame() {
       ) : (
         <div className="flex w-full max-w-sm flex-col items-center gap-4">
           <div
-            className="flex h-40 w-40 flex-col items-center justify-center rounded-full border border-white/15 shadow-elevated transition-transform duration-500"
-            style={{ background: `radial-gradient(circle at 35% 30%, ${pet.color}55, #0c0e16 70%)` }}
+            className="relative flex w-full flex-col items-center rounded-lg border border-white/10 px-4 py-8"
+            style={{
+              background:
+                'linear-gradient(180deg, #1a2238 0%, #12182a 45%, #0c101c 100%), repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.03) 18px, rgba(255,255,255,0.03) 19px)',
+            }}
           >
-            <span className="text-6xl" aria-hidden>
-              {speciesMeta?.emoji}
-            </span>
-            <span className="mt-1 font-display text-lg text-text-primary">{pet.name}</span>
+            <div
+              className="pointer-events-none absolute inset-x-6 top-3 h-10 rounded-full opacity-40 blur-xl"
+              style={{ background: pet.color }}
+              aria-hidden
+            />
+            <div
+              className="relative flex h-40 w-40 flex-col items-center justify-center rounded-full border border-white/15 shadow-elevated transition-transform duration-500"
+              style={{
+                background: `radial-gradient(circle at 35% 30%, ${pet.color}55, #0c0e16 70%)`,
+              }}
+            >
+              <span className="text-6xl" aria-hidden>
+                {speciesMeta?.emoji}
+              </span>
+              <span className="mt-1 font-display text-lg text-text-primary">{pet.name}</span>
+            </div>
+            <p className="relative mt-3 text-xs text-text-muted">Комната питомца</p>
           </div>
           <p className="text-center text-sm text-text-secondary">{moodLine}</p>
           {giftClaimed ? (

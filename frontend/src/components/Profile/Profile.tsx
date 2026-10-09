@@ -16,6 +16,9 @@ import {
   syncAchievements,
   type ProfileAchievement,
 } from '../../lib/achievements';
+import { setNickname } from '../../lib/nickname';
+import { getAvatarUrl, setAvatarUrl } from '../../lib/avatar';
+import { InventoryImageUrlField } from '../Inventory/InventoryImageUrlField';
 
 const GAME_ROUTES: Record<string, string> = {
   hexagon: '/game/hexagon',
@@ -57,6 +60,7 @@ export function Profile() {
   const [nickDraft, setNickDraft] = useState('');
   const [nickSaving, setNickSaving] = useState(false);
   const [nickError, setNickError] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState(() => getAvatarUrl(userId));
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -129,7 +133,7 @@ export function Profile() {
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      localStorage.setItem(nicknameKey, newNick);
+      setNickname(newNick, userId);
       setStats((prev) => ({ ...prev, nickname: newNick }));
       setShowNickModal(false);
     } catch (err) {
@@ -171,10 +175,14 @@ export function Profile() {
       <PageHeader title="Профиль" onBack={handleBack} backLabel="На главную" />
 
       <div className="eh-ring mb-8 flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-nebula p-6">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-void shadow-glow-gold">
-          <Icon name={avatarIcon} className="h-8 w-8" />
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-horizon-gold to-horizon-ember text-void shadow-glow-gold">
+          {avatar ? (
+            <img src={avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <Icon name={avatarIcon} className="h-8 w-8" />
+          )}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <button
             type="button"
             onClick={openNickModal}
@@ -192,6 +200,18 @@ export function Profile() {
               <p className="mt-1 break-all font-hud text-xs text-text-muted">{userId}</p>
             </details>
           ) : null}
+          <div className="mt-3 max-w-md">
+            <InventoryImageUrlField
+              value={avatar}
+              onChange={(url) => {
+                setAvatar(url);
+                setAvatarUrl(url, userId);
+              }}
+            />
+            <p className="mt-1 text-xs text-text-muted">
+              PNG/JPG/WebP, до 2 МБ. Квадрат смотрится лучше.
+            </p>
+          </div>
         </div>
       </div>
 

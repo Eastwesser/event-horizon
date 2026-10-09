@@ -25,9 +25,12 @@ function roleTone(role: string): 'gold' | 'indigo' | 'neutral' {
 
 function subLabel(u: AdminUser): string {
   const s = u.subscription;
-  if (!s) return 'нет';
-  if (s.active) return s.plan || s.status || 'активна';
-  return s.status || 'нет';
+  if (!s) return 'нет подписки';
+  if (s.active) {
+    const plan = s.plan || 'план';
+    return `активна · ${plan}`;
+  }
+  return `неактивна${s.status ? ` · ${s.status}` : ''}`;
 }
 
 export function AdminPage() {

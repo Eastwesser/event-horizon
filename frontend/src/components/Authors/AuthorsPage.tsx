@@ -12,6 +12,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { Icon, IconLabel } from '../ui/Icon';
+import { InventoryImageUrlField } from '../Inventory/InventoryImageUrlField';
 
 const PAGE_SIZE = 20;
 const TOP_N = 24;
@@ -241,16 +242,8 @@ export function AuthorsPage() {
                 className={`${inputClasses} min-h-[80px] resize-y`}
               />
             </label>
-            <label className="text-sm font-medium text-text-secondary">
-              URL аватара
-              <input
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://..."
-                type="url"
-                className={inputClasses}
-              />
-            </label>
+            <InventoryImageUrlField value={avatarUrl} onChange={setAvatarUrl} />
+            <p className="text-xs text-text-muted">PNG/JPG/WebP до 2 МБ или URL.</p>
             <Button type="submit" disabled={saving} className="self-start">
               {saving ? 'Сохранение…' : 'Сохранить профиль'}
             </Button>

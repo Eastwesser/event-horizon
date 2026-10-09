@@ -1,6 +1,7 @@
 // frontend/src/store/flappyStore.ts
 import { create } from 'zustand';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 
 export interface Pipe {
   id: number;
@@ -274,7 +275,7 @@ export const useFlappyStore = create<FlappyState>((set, get) => ({
     const { score, boostId, boosted, level } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
+    const nickname = getNickname() || userEmail?.split('@')[0] || 'Игрок';
 
     if (!userId || !userEmail) return;
 

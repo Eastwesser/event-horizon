@@ -1,6 +1,7 @@
 // frontend/src/store/towerStore.ts
 import { create } from 'zustand';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 
 interface TowerState {
   towerBlocks: number[];
@@ -214,7 +215,7 @@ export const useTowerStore = create<TowerState>((set, get) => ({
     const { score, boosted, boostId, difficulty } = get();
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
-    const nickname = localStorage.getItem('nickname') || userEmail?.split('@')[0] || 'Игрок';
+    const nickname = getNickname() || userEmail?.split('@')[0] || 'Игрок';
 
     if (!userId || !userEmail) return;
 

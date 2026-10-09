@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { getNickname } from '../../../lib/nickname';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { Balance } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
@@ -275,7 +276,7 @@ export function Twenty48Game() {
         level: 1,
         score,
         user_email: localStorage.getItem('userEmail'),
-        nickname: localStorage.getItem('nickname') || '',
+        nickname: getNickname(),
         seed: `twenty48_${Date.now()}`,
         moves: [],
       };
