@@ -1,3 +1,33 @@
+# Changelog
+
+## [v1.1.0] — 2026-10-09
+
+Polish wave **v1.0.9 → v1.1.0** (07–09.10.2026). Public HTTP now under **`/api/v1/*`**.
+
+### Added
+- Canonical REST prefix `/api/v1` (Gateway + OpenAPI + FE + k6); legacy `/api/*` rewrite
+- Companion daily gift: `POST /api/v1/game/companion/daily-gift` (+1000 tickets, idempotent)
+- Record-beaten in-app notifications → `/leaderboard?game=&level=&highlight=`
+- Nick refresh across LB via NATS `event.user.nickname.updated`
+- Avatar upload (any auth user) on Profile + Authors
+- Seeds: `make seed-lb-demo`, `make seed-card-artists`, `make seed-v110`
+- Gears flower palettes; Tamagotchi room chrome; shop skin/theme filters
+- Docs: SECURITY_AUDIT_RU, Miro stickers/review, API_V1, LOAD_POSTURE, PARKED_WISHES
+
+### Changed
+- FE nickname helper (`getNickname`) for all game submits
+- Inventory uploads no longer author-only
+- About / admin analytics copy; ticklist closed for v1.1.0 wave
+
+### Security / load
+- CSRF/XSS/SQL checklist + rate-limit notes (`SECURITY_AUDIT_RU.md`)
+- CORE k6 browse/purchase green; legacy 500 VU login blast = expected fail
+
+### Decision-locked (not bugs)
+- C4 payouts deferred (lock D); full 3D/Dodo engines out of scope — see `PARKED_WISHES.md`
+
+---
+
 # EventHorizon 🎮
 
 Игровая платформа с микросервисной архитектурой, real-time leaderboard через NATS и целевой нагрузкой 10k RPS.
