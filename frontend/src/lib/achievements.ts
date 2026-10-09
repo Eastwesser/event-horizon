@@ -85,7 +85,7 @@ export async function syncAchievements(opts?: {
     return { profile: {}, achievements: [], fresh: [], toastMessage: null };
   }
 
-  // baseURL is already `/api` — do not prefix `/api` again (was 404 → /api/api/profile).
+  // baseURL is already `/api/v1` — do not prefix `/api` again (was 404 → /api/api/profile).
   const res = await api.get('/profile', {
     headers: { Authorization: `Bearer ${token}` },
   });

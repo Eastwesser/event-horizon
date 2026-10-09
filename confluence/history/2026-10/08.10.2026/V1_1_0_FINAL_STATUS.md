@@ -1,10 +1,10 @@
 # Event Horizon v1.1.0 — final status pack
 
-**HEAD:** `e552125` · **Ticklist:** `TICKLIST_LAST_TODO_1.md` (~123 done / ~112 open checkboxes; many open = product/wish/QA)
-
-Miro board (refresh): https://miro.com/app/board/uXjVJLLg9us=/  
+**As of:** 09.10.2026 · **Ticklist:** `TICKLIST_LAST_TODO_1.md`  
+Miro board: https://miro.com/app/board/uXjVJLLg9us=/ · screenshots: `miro/miro_pics/` · review: `miro/MIRO_REVIEW.md`  
 Mermaid / text schemas: `confluence/architecture/EH_SCHEMAS.md`, `confluence/architecture/SYSTEM_DESIGN/event-horizon-v1.0.7-system-design.md`  
-Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`
+Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`  
+Security (RU audit): `SECURITY_AUDIT_RU.md` · baseline: `SECURITY_BASELINE.md`
 
 ---
 
@@ -14,6 +14,7 @@ Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`
 - Scripts moved under `scripts/` (ops / metrics / loadtest); Dockerfiles stay at root for `Makefile -f Dockerfile.*.bin .`
 - FE: one folder per game; shop/inventory stores co-located
 - Emma → Denis rename on active polish docs + shop SQL comments
+- **HTTP API prefix:** canonical **`/api/v1/*`** (gateway + OpenAPI + FE `baseURL` + k6); legacy `/api/*` rewritten once on gateway
 
 ### Site / chrome
 - About page (navbar brand → `/about`); professional copy
@@ -45,10 +46,12 @@ Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`
 - Balance on all game shells; Pancaker plural; Hanoi/Builder Track-B polish
 - Achievements: amateur / pro / hero × 8 games (+ first_play = новичок)
 
-### Docs written this wave
-- `WHAT_HAVE_WE_DONE.md`, `SECURITY_BASELINE.md`, `LOAD_RESULTS/README.md`
-- `FEEDBACK_VoiceM_2_1.md`, `FEEDBACK_VoiceM_3_1.md`
-- `INTERVIEW_QUESTIONS_EH.md` (ports / patterns)
+### Docs / representation (08–09.10)
+- `WHAT_HAVE_WE_DONE.md`, `SECURITY_BASELINE.md`, **`SECURITY_AUDIT_RU.md`** (цифры + CSRF/XSS/SQL)
+- `LOAD_RESULTS/`, `INTERVIEW_PATTERNS.md`, `QUESTIONS_FROM_ELEN.md` answers
+- `SERVICES_RU_ONE_LINERS.md`, `MERMAID_INDEX.md`
+- Miro PNGs + `miro/MIRO_REVIEW.md` (METRICS OK; sticker drifts listed)
+- Boosty: **published** — `BOOSTY_DONE/BOOSTY_DONE.md`
 
 ---
 
@@ -57,34 +60,31 @@ Ports cheat sheet: `SYSTEM_DESIGN_MIRO/INTERVIEW_QUESTIONS_EH.md`
 ### B1 — Denis runtime — **DONE 08.10 night**
 ```bash
 make seed-v110       # docker exec split A/B + themes + history + migrate-profile
-make test-k6         # browse CORE green
+make test-k6         # browse CORE green  (paths now /api/v1 — rebuild gateway after pull)
 make test-k6-purchase
 ```
-Still optional IRL: play ranked game for profile/LB zeros; git tag `v1.1.0` after Miro+Boosty.
+Still optional IRL: play ranked game for profile/LB zeros; git tag `v1.1.0` after Miro sticker polish; paste Boosty post URL into `BOOSTY_DONE`.
 
-### B2 — Representation pack (you called these out — still open)
+### B2 — Representation pack
 | Item | Status | Action |
 |------|--------|--------|
-| **Miro scheme** | Old (v1.0.6/7 era note) | Update board → export PNG → `FINAL_SYSTEM_DESIGN_MIRO_SCHEME.md` + `08.10.2026/` |
-| **Mermaid / EH_SCHEMAS** | Exists, may drift | Cross-check vs Miro after export |
-| **Interview questions** | Ports filled; your full Q list later | Keep `INTERVIEW_QUESTIONS_EH.md`; expand when you ask |
-| **Ports list** | Done in interview doc + §C below | Copy into Miro node labels |
-| **Commands** | `make deploy` (+ §D) | Enough for demo; document seeds |
-| **Boosty copy** | Draft base exists; ×2 + v1.1.0 post **not published** | §E below — paste into Boosty UI |
-| **Happy-path pitch** | Not a single one-pager yet | §F below — use with Miro |
+| **Miro scheme** | PNGs in `miro_pics/` | Fix drifts in `MIRO_REVIEW.md` (MCP grey, `/api/v1` stickers, Authors≠Mongo, ports) |
+| **METRICS vs Miro** | **OK** | Planning targets match; not local k6 numbers |
+| **Mermaid / EH_SCHEMAS** | Exists | Soft sync after sticker fixes |
+| **Interview questions** | Ports + patterns + Elen Q | Expand when you ask |
+| **Happy-path pitch** | Video (Denis), not Miro boxes | §F below still valid as storyboard |
+| **Boosty** | **Done** | Optional post URL in `BOOSTY_DONE` |
 
-### B3 — Product / FE leftovers (code or content)
+### B3 — Product leftovers (not blockers for tag)
 - Avatar upload; LB nicknamed seed ~10; nick→LB by user id
 - 108 card artists as authors; author active-sub seed
 - Shop filters by game/theme niche; art regen badge/fenechka
 - Tamagotchi **tickets** gift (points gift already)
 - Record-beaten notification deep-link
-- Full CSRF/XSS/SQL + AuthZ pass (beyond baseline note)
-- Per-service RU explainers, patterns write-up, SQL interview list
-- MCP / Tetiva — **last**
+- AuthZ full matrix after author seed
 
-### B4 — Parked / deferred (do not block 1.1.0 tag)
-Flower skin, 3D engines, Dodo boxes, C4 payouts lock, optional 1.1.1…1.1.8 per-game Boosty posts.
+### B4 — Parked / deferred (do **not** start)
+Avatar polish wave, **108 authors**, **MCP**, **C4** payouts, flower skin / 3D / Dodo / Sims, optional 1.1.1…1.1.8 per-game Boosty posts.
 
 ---
 
@@ -122,7 +122,7 @@ Flower skin, 3D engines, Dodo boxes, C4 payouts lock, optional 1.1.1…1.1.8 per
 | ClickHouse | `8123` HTTP / `9000` native |
 | Prometheus / Grafana / Jaeger | compose defaults (see `make status`) |
 
-API prefix: **`/api/`** only. FE: `baseURL: '/api'` + relative paths.
+API prefix: **`/api/v1/`** (legacy `/api/` rewritten). FE: `baseURL: '/api/v1'`.
 
 ---
 
@@ -133,47 +133,22 @@ cp .env.example .env          # JWT_SECRET, DB/Grafana passwords
 make deploy                   # thin stack (NATS path; no Kafka)
 make status                   # health/ready sweep
 # FE:
-cd frontend && npm i && npm run dev   # :5173 → proxy /api → :8079
+cd frontend && npm i && npm run dev   # :5173 → proxy /api → :8079 (covers /api/v1)
 
 # Optional:
 make deploy-heavy             # Kafka
-make test-k6                  # browse.js @ :8079
+make test-k6                  # browse.js @ :8079 (/api/v1)
 make seed-admin               # if needed
+make seed-v110
 ```
-
-Seeds after first deploy: see §B1.
 
 ---
 
-## E. What to write on Boosty (paste-ready)
+## E. Boosty — done
 
-Site: https://boosty.to/eastwesser
-
-### Profile / about (refresh)
-Keep the existing Russian intro in `BOOSTY_FIX.md`, but swap «pet-project» framing for:  
-**«игровая микросервисная платформа на Go (Clean Architecture, gRPC, NATS) + React клиент»**.
-
-### Tier 1 — Базовый (refresh benefits)
-- Поддержка инфраструктуры и доменов  
-- Новости релизов раньше публичных каналов  
-- Упоминание в списке поддержавших (по желанию)  
-- Доступ к мерчу в магазине Event Horizon (по правилам подписки in-app)
-
-### Tier 2 — Расширенный (×2) — **update this tier**
-- Всё из Базового  
-- Ранний доступ к заметкам по архитектуре / схемам (Miro / Mermaid)  
-- Голос по приоритету мини-игр (1.1.1…1.1.8)  
-- Расширенные бонусы сообщества (как договоримся in-app)
-
-### Post — «Event Horizon v1.1.0»
-Suggested body (RU):
-
-> Вышел **Event Horizon v1.1.0** — волна полировки продукта и платформы.  
-> **Платформа:** чище структура репо и FE по играм; About; мобильные отступы/touch; история событий по NATS; ачивки amateur/pro/hero на все 8 игр.  
-> **Магазин:** мерч-тип, инвентарь без дублей (×N), билетики вместо ₽ в админке, темы/скины (космические вместо «радужных»), порог физ. мерча 100 000.  
-> **Игры:** единый Boost (не в LB), космические скины, фикс Memonia, 2048 drag, Balance везде, Gears/Tamagotchi.  
-> Дальше: обновление Miro-схемы, прогон highload (`make test-k6`), и серии постов 1.1.1–1.1.8 по каждой игре.  
-> Поддержать: https://boosty.to/eastwesser
+Site: https://boosty.to/eastwesser  
+Status file: `BOOSTY_DONE/BOOSTY_DONE.md` (tier ×2 + v1.1.0 post marked done 09.10).  
+Draft text remains in `07.10.2026/BOOSTY_FIX.md` if you need to edit later.
 
 ---
 
@@ -181,25 +156,25 @@ Suggested body (RU):
 
 **One sentence:** Event Horizon — Go microservices game platform: play → rank → earn lamps/tickets → shop/authors merch → subscribe → history & analytics, with real-time leaderboard over NATS/Redis/WS.
 
-**Happy path (draw this on Miro left→right):**
+**Happy path (Denis video, not Miro boxes):**
 
-1. **Register / Login** → Balancer `:8079` → Gateway → Auth (`50051`) → JWT in Redis; publish `user.registered` (+ `event.user.registered`) → History + Profile.  
+1. **Register / Login** → Balancer `:8079` → Gateway `/api/v1/auth/*` → Auth (`50051`) → JWT in Redis; publish `user.registered` (+ `event.user.registered`) → History + Profile.  
 2. **Play** (e.g. Flappy) → Game (`50052`) submit score → NATS `score.updated` → Leaderboard Redis SS + Profile bests + achievements unlock.  
 3. **Optional Boost** (−lamps via Billing) → run **not ranked**, no shop profit.  
 4. **Leaderboard live** → Redis → WS `/ws/leaderboard` → FE.  
-5. **Shop** → list Inventory/Shop catalog → spend **tickets** → `shop.purchased` / `purchase.paid` → Fulfillment + Notification; physical merch needs Payment subscription.  
-6. **Authors** → publish goods (карточка/мерч/…) after author role + sub rules.  
+5. **Shop** → catalog → spend **tickets** → purchase events → Fulfillment + Notification; physical merch needs Payment subscription.  
+6. **Authors** → publish goods after author role + sub rules.  
 7. **Admin / Analytics** → users, inventory stats, DAU/MAU/retention (ClickHouse).
 
-**Artifacts to keep in sync:** Miro PNG + this happy path + Mermaid in `event-horizon-v1.0.7-system-design.md` (bump title to v1.1.0 when Miro refreshed).
+**Artifacts:** Miro PNGs + `MIRO_REVIEW.md` + this happy path + Mermaid (bump title to v1.1.0 when stickers cleaned).
 
 ---
 
-## G. Suggested close-out order (next sessions)
+## G. Close-out order (remaining)
 
-1. `make deploy` + seeds + smoke (B1)  
-2. Miro refresh + export image (B2)  
-3. Publish Boosty tier×2 + v1.1.0 post (E)  
-4. `make test-k6` → `LOAD_RESULTS/`  
-5. Interview pack leftovers when you bring your Q list  
-6. MCP/Tetiva last  
+1. ~~Seeds + CORE k6~~  
+2. ~~Boosty publish~~  
+3. Miro sticker polish from `MIRO_REVIEW.md` (Denis IRL)  
+4. Rebuild gateway after `/api/v1` pull; optional re-run `make test-k6`  
+5. `git tag v1.1.0` when you are happy with Miro  
+6. Parked: avatar / 108 / MCP / C4 — later  

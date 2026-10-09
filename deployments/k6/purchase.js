@@ -78,7 +78,7 @@ export function setup() {
     throw new Error('EH_K6_EMAIL and EH_K6_PASSWORD are required');
   }
   const loginRes = http.post(
-    `${baseURL}/api/auth/login`,
+    `${baseURL}/api/v1/auth/login`,
     JSON.stringify({ email, password }),
     { headers: { 'Content-Type': 'application/json' } },
   );
@@ -90,7 +90,7 @@ export function setup() {
     throw new Error('login response missing access_token');
   }
 
-  const shopRes = http.get(`${baseURL}/api/shop/items`, { headers: authHeaders(token) });
+  const shopRes = http.get(`${baseURL}/api/v1/shop/items`, { headers: authHeaders(token) });
   if (shopRes.status !== 200) {
     throw new Error(`shop items failed: ${shopRes.status}`);
   }
@@ -120,7 +120,7 @@ export default function (data) {
   const itemID = data.itemIDs[idx];
 
   const buyRes = http.post(
-    `${baseURL}/api/shop/purchase`,
+    `${baseURL}/api/v1/shop/purchase`,
     JSON.stringify({ item_id: itemID }),
     { headers },
   );
@@ -134,14 +134,14 @@ export default function (data) {
     return;
   }
 
-  const cancel1 = http.post(`${baseURL}/api/shop/purchase/${itemID}/cancel`, null, { headers });
+  const cancel1 = http.post(`${baseURL}/api/v1/shop/purchase/${itemID}/cancel`, null, { headers });
   const cancel1OK = check(cancel1, {
     'cancel1 200': (r) => r.status === 200,
     'cancel1 success': (r) => r.json('success') === true,
   });
   errorRate.add(!cancel1OK);
 
-  const cancel2 = http.post(`${baseURL}/api/shop/purchase/${itemID}/cancel`, null, { headers });
+  const cancel2 = http.post(`${baseURL}/api/v1/shop/purchase/${itemID}/cancel`, null, { headers });
   const cancel2OK = check(cancel2, {
     'cancel2 200': (r) => r.status === 200,
     'cancel2 idempotent': (r) =>

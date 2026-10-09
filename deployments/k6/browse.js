@@ -32,7 +32,7 @@ export function setup() {
     throw new Error('EH_K6_EMAIL and EH_K6_PASSWORD are required');
   }
   const loginRes = http.post(
-    `${baseURL}/api/auth/login`,
+    `${baseURL}/api/v1/auth/login`,
     JSON.stringify({ email, password }),
     { headers: { 'Content-Type': 'application/json' } },
   );
@@ -52,14 +52,14 @@ export default function (data) {
     'Content-Type': 'application/json',
   };
 
-  const shopRes = http.get(`${baseURL}/api/shop/items`, { headers });
+  const shopRes = http.get(`${baseURL}/api/v1/shop/items`, { headers });
   const shopOK = check(shopRes, {
     'shop items 200': (r) => r.status === 200,
     'shop items is array': (r) => Array.isArray(r.json()),
   });
   errorRate.add(!shopOK);
 
-  const invRes = http.get(`${baseURL}/api/inventory/items`, { headers });
+  const invRes = http.get(`${baseURL}/api/v1/inventory/items`, { headers });
   const invOK = check(invRes, {
     'inventory items 200': (r) => r.status === 200,
     'inventory items has items': (r) => {

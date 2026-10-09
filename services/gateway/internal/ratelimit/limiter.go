@@ -54,14 +54,14 @@ func (rl *RateLimiter) AllowGlobal(id string) bool {
 	return allowed
 }
 
-// AllowSubmit для POST /api/game/submit (10 запросов в секунду)
+// AllowSubmit для POST /api/v1/game/submit (10 запросов в секунду)
 func (rl *RateLimiter) AllowSubmit(userID string) bool {
 	key := fmt.Sprintf("rl:submit:%s", userID)
 	allowed, _ := rl.Allow(context.Background(), key, 10, time.Second)
 	return allowed
 }
 
-// AllowLogin для POST /api/auth/login (5 запросов в секунду с одного IP)
+// AllowLogin для POST /api/v1/auth/login (5 запросов в секунду с одного IP)
 func (rl *RateLimiter) AllowLogin(ip string) bool {
 	key := fmt.Sprintf("rl:login:%s", ip)
 	allowed, _ := rl.Allow(context.Background(), key, 5, time.Second)

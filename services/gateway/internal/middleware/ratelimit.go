@@ -23,10 +23,10 @@ func RateLimitMiddleware(limiter *ratelimit.RateLimiter) gin.HandlerFunc {
 		var allowed bool
 
 		switch {
-		case path == "/api/game/submit" && method == "POST":
+		case path == "/api/v1/game/submit" && method == "POST":
 			allowed = limiter.AllowSubmit(subject)
 
-		case path == "/api/auth/login" && method == "POST":
+		case path == "/api/v1/auth/login" && method == "POST":
 			allowed = limiter.AllowLogin(c.ClientIP())
 
 		case path == "/ws/leaderboard":

@@ -452,6 +452,15 @@ func runGateway() {
 	// GIN ROUTER SECTION
 	r := gin.Default()
 
+	// Canonical HTTP prefix is /api/v1/*. Legacy /api/* (without v1) is rewritten once.
+	r.Use(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		if strings.HasPrefix(p, "/api/") && !strings.HasPrefix(p, "/api/v1/") {
+			c.Request.URL.Path = "/api/v1/" + strings.TrimPrefix(p, "/api/")
+		}
+		c.Next()
+	})
+
 	r.Use(otelgin.Middleware("gateway"))
 
 	gatewayRequestsTotal := promauto.NewCounterVec(
@@ -554,7 +563,7 @@ func runGateway() {
 		go client.readPump()
 	})
 
-	r.POST("/api/auth/register", func(c *gin.Context) {
+	r.POST("/api/v1/auth/register", func(c *gin.Context) {
 		var req authPb.RegisterRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -593,7 +602,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, resp)
 	})
 
-	r.POST("/api/auth/login", func(c *gin.Context) {
+	r.POST("/api/v1/auth/login", func(c *gin.Context) {
 		var req authPb.LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -622,7 +631,7 @@ func runGateway() {
 		})
 	})
 
-	r.POST("/api/auth/refresh", func(c *gin.Context) {
+	r.POST("/api/v1/auth/refresh", func(c *gin.Context) {
 		var req struct {
 			RefreshToken string `json:"refresh_token"`
 		}
@@ -661,7 +670,7 @@ func runGateway() {
 		}
 	}
 
-	r.GET("/api/auth/whoami", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/auth/whoami", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
 		if cached, ok := authReadCache.Get("whoami:" + token); ok {
 			c.Data(http.StatusOK, "application/json", cached)
@@ -687,7 +696,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, payload)
 	})
 
-	r.POST("/api/auth/logout", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/auth/logout", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
 		_, err := throughBreaker(authCB, c, func() (any, error) {
 			return authClient.GetClient().Logout(c.Request.Context(), &authPb.LogoutRequest{Token: token})
@@ -702,7 +711,7 @@ func runGateway() {
 	})
 
 	// Admin-only: change a user's role (user/author/admin).
-	r.POST("/api/auth/update-role", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/auth/update-role", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		var req struct {
 			UserID string `json:"user_id"`
 			Role   string `json:"role"`
@@ -729,7 +738,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"success": resp.Success, "message": resp.Message})
 	})
 
-	r.GET("/api/auth/user", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/auth/user", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 		if cached, ok := authReadCache.Get("user:" + userID); ok {
 			c.Data(http.StatusOK, "application/json", cached)
@@ -761,7 +770,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, payload)
 	})
 
-	r.GET("/api/profile", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/profile", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 		token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
 
@@ -808,7 +817,7 @@ func runGateway() {
 	billingClient := billingPb.NewBillingServiceClient(billingConn)
 	billingCB := newServiceBreaker("billing")
 
-	r.GET("/api/billing/balance/all", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/billing/balance/all", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(billingCB, c, func() (any, error) {
 			return billingClient.GetAllBalances(c.Request.Context(), &billingPb.GetAllBalancesRequest{
 				UserId: middleware.UserID(c),
@@ -856,7 +865,7 @@ func runGateway() {
 	shopCB := newServiceBreaker("shop")
 
 	// Добавь эндпоинты:
-	r.GET("/api/shop/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/shop/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		category := c.Query("category")
 		gameID := c.Query("game_id")
 
@@ -877,7 +886,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, dto.ShopItemsCatalog(resp.GetItems()))
 	})
 
-	r.POST("/api/shop/purchase", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/shop/purchase", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
 			ItemID string `json:"item_id"`
 		}
@@ -935,7 +944,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, body)
 	})
 
-	r.POST("/api/shop/purchase/:id/cancel", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/shop/purchase/:id/cancel", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		itemID := c.Param("id")
 		if itemID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
@@ -990,7 +999,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, body)
 	})
 
-	r.GET("/api/shop/inventory", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/shop/inventory", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(shopCB, c, func() (any, error) {
 			return shopClient.GetInventory(c.Request.Context(), &shopPb.GetInventoryRequest{
 				UserId: middleware.UserID(c),
@@ -1015,7 +1024,7 @@ func runGateway() {
 	paymentClient := paymentPb.NewPaymentServiceClient(paymentConn)
 	paymentCB := newServiceBreaker("payment")
 
-	r.POST("/api/payment/checkout", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/payment/checkout", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
 			Plan string `json:"plan"`
 		}
@@ -1045,7 +1054,7 @@ func runGateway() {
 		})
 	})
 
-	r.GET("/api/payment/subscription", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/payment/subscription", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(paymentCB, c, func() (any, error) {
 			return paymentClient.GetSubscription(c.Request.Context(), &paymentPb.GetSubscriptionRequest{
 				UserId: middleware.UserID(c),
@@ -1068,7 +1077,7 @@ func runGateway() {
 	})
 
 	// Admin-only user directory with billing + subscription enrichment.
-	r.GET("/api/admin/users", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/admin/users", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		q := c.Query("q")
 		limit := int32(50)
 		if l := c.Query("limit"); l != "" {
@@ -1172,7 +1181,7 @@ func runGateway() {
 		})
 	})
 
-	r.GET("/api/payment/can-purchase-merch", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/payment/can-purchase-merch", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(paymentCB, c, func() (any, error) {
 			return paymentClient.CanPurchaseMerch(c.Request.Context(), &paymentPb.CanPurchaseMerchRequest{
 				UserId: middleware.UserID(c),
@@ -1188,7 +1197,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"allowed": resp.Allowed, "reason": resp.Reason})
 	})
 
-	r.POST("/api/payment/webhook", func(c *gin.Context) {
+	r.POST("/api/v1/payment/webhook", func(c *gin.Context) {
 		raw, err := c.GetRawData()
 		if err != nil || len(raw) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "empty body"})
@@ -1259,7 +1268,7 @@ func runGateway() {
 	//   "event": "payment.succeeded",
 	//   "object": { "id": "<payment_id>", "status": "succeeded" }
 	// }
-	r.POST("/api/payment/yookassa/webhook", func(c *gin.Context) {
+	r.POST("/api/v1/payment/yookassa/webhook", func(c *gin.Context) {
 		var req struct {
 			Event         string `json:"event"`
 			WebhookSecret string `json:"webhook_secret"`
@@ -1322,7 +1331,7 @@ func runGateway() {
 	authorsClient := authorsPb.NewAuthorsServiceClient(authorsConn)
 	authorsCB := newServiceBreaker("authors")
 
-	r.PUT("/api/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.PUT("/api/v1/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		var req struct {
 			DisplayName string `json:"display_name"`
 			Bio         string `json:"bio"`
@@ -1352,7 +1361,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, dto.Author(resp.Author))
 	})
 
-	r.GET("/api/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
 			return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
 				UserId: middleware.UserID(c),
@@ -1369,7 +1378,7 @@ func runGateway() {
 	})
 
 	// Wave 3 C3 — author sales (read-only aggregates + purchase rows).
-	r.GET("/api/authors/me/sales", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/authors/me/sales", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		authorID := middleware.UserID(c)
 		if middleware.Role(c) == RoleAdmin {
 			if q := strings.TrimSpace(c.Query("author_id")); q != "" {
@@ -1492,7 +1501,7 @@ func runGateway() {
 	})
 
 	// Wave 3 C1 — author application (approval is C2).
-	r.POST("/api/authors/apply", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/authors/apply", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
 			DisplayName  string `json:"display_name"`
 			Portfolio    string `json:"portfolio"`
@@ -1549,7 +1558,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, resp.Application)
 	})
 
-	r.GET("/api/authors/me/application", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/authors/me/application", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
 			return authorsClient.GetMyApplication(c.Request.Context(), &authorsPb.GetMyApplicationRequest{
 				UserId: middleware.UserID(c),
@@ -1566,7 +1575,7 @@ func runGateway() {
 	})
 
 	// Wave 3 C2 — admin application review (orchestrates Auth.UpdateRole on approve).
-	r.GET("/api/authors/applications", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/authors/applications", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 		statusFilter := strings.TrimSpace(c.DefaultQuery("status", "pending"))
@@ -1593,7 +1602,7 @@ func runGateway() {
 		})
 	})
 
-	r.POST("/api/authors/applications/:id/approve", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/authors/applications/:id/approve", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		appID := c.Param("id")
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
 			return authorsClient.ApproveApplication(c.Request.Context(), &authorsPb.ApproveApplicationRequest{
@@ -1657,7 +1666,7 @@ func runGateway() {
 		})
 	})
 
-	r.POST("/api/authors/applications/:id/reject", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/authors/applications/:id/reject", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		var req struct {
 			ReviewerNote string `json:"reviewer_note"`
 		}
@@ -1679,7 +1688,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, dto.AuthorApplication(resp.GetApplication()))
 	})
 
-	r.GET("/api/authors/:user_id", func(c *gin.Context) {
+	r.GET("/api/v1/authors/:user_id", func(c *gin.Context) {
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
 			return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
 				UserId: c.Param("user_id"),
@@ -1695,7 +1704,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, resp.Author)
 	})
 
-	r.GET("/api/authors", func(c *gin.Context) {
+	r.GET("/api/v1/authors", func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
@@ -1723,7 +1732,7 @@ func runGateway() {
 	notificationClient := notificationPb.NewNotificationServiceClient(notificationConn)
 	notificationCB := newServiceBreaker("notification")
 
-	r.GET("/api/notifications", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/notifications", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 		unreadOnly := c.Query("unread_only") == "1" || strings.EqualFold(c.Query("unread_only"), "true")
@@ -1749,7 +1758,7 @@ func runGateway() {
 		})
 	})
 
-	r.POST("/api/notifications/:id/read", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/notifications/:id/read", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		id := c.Param("id")
 		if id == "all" {
 			id = ""
@@ -1779,7 +1788,7 @@ func runGateway() {
 	historyClient := historyPb.NewHistoryServiceClient(historyConn)
 	historyCB := newServiceBreaker("history")
 
-	r.GET("/api/history", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/history", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 		out, err := throughBreaker(historyCB, c, func() (any, error) {
@@ -1809,7 +1818,7 @@ func runGateway() {
 	analyticsClient := analyticsPb.NewAnalyticsServiceClient(analyticsConn)
 	analyticsCB := newServiceBreaker("analytics")
 
-	r.GET("/api/analytics/dau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/analytics/dau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
 		out, err := throughBreaker(analyticsCB, c, func() (any, error) {
 			return analyticsClient.GetDAU(c.Request.Context(), &analyticsPb.GetDAURequest{Days: int32(days)})
@@ -1824,7 +1833,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"days": dto.DayCounts(resp.GetDays())})
 	})
 
-	r.GET("/api/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/analytics/mau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
 		out, err := throughBreaker(analyticsCB, c, func() (any, error) {
 			return analyticsClient.GetMAU(c.Request.Context(), &analyticsPb.GetMAURequest{Days: int32(days)})
@@ -1839,7 +1848,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"mau": resp.Mau, "window_days": resp.WindowDays})
 	})
 
-	r.GET("/api/analytics/retention", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/analytics/retention", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		cohort, _ := strconv.Atoi(c.DefaultQuery("cohort_days_ago", "7"))
 		window, _ := strconv.Atoi(c.DefaultQuery("window_days", "7"))
 		out, err := throughBreaker(analyticsCB, c, func() (any, error) {
@@ -1865,7 +1874,7 @@ func runGateway() {
 	// Inventory gRPC client created earlier (shared with shop purchase).
 
 	// GET /api/inventory/items — список товаров с фильтрами
-	r.GET("/api/inventory/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/inventory/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		filters := make(map[string]string)
 		if authorID := c.Query("author_id"); authorID != "" {
 			filters["author_id"] = authorID
@@ -1931,7 +1940,7 @@ func runGateway() {
 	})
 
 	// POST /api/inventory/items — создать товар (только author/admin)
-	r.POST("/api/inventory/items", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/inventory/items", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 
 		var req struct {
@@ -1978,7 +1987,7 @@ func runGateway() {
 
 	// POST /api/inventory/items/bulk — массовое создание (author/admin)
 	// Must be registered before /items/:id so "bulk" is not captured as an id.
-	r.POST("/api/inventory/items/bulk", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/inventory/items/bulk", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 
 		var req struct {
@@ -2037,7 +2046,7 @@ func runGateway() {
 	})
 
 	// GET /api/inventory/items/:id — получить товар по ID
-	r.GET("/api/inventory/items/:id", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.GET("/api/v1/inventory/items/:id", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		itemID := c.Param("id")
 		if itemID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
@@ -2060,7 +2069,7 @@ func runGateway() {
 	})
 
 	// PUT /api/inventory/items/:id — обновить товар (author владелец или admin)
-	r.PUT("/api/inventory/items/:id", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.PUT("/api/v1/inventory/items/:id", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 
 		itemID := c.Param("id")
@@ -2136,7 +2145,7 @@ func runGateway() {
 	})
 
 	// DELETE /api/inventory/items/:id — удалить товар (author владелец или admin)
-	r.DELETE("/api/inventory/items/:id", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.DELETE("/api/v1/inventory/items/:id", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 
 		itemID := c.Param("id")
@@ -2182,7 +2191,7 @@ func runGateway() {
 	})
 
 	// POST /api/inventory/items/:id/reserve — уменьшить stock
-	r.POST("/api/inventory/items/:id/reserve", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/inventory/items/:id/reserve", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		itemID := c.Param("id")
 		if itemID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "item id is required"})
@@ -2222,7 +2231,7 @@ func runGateway() {
 	})
 
 	// DELETE /api/inventory/items/:id/soft — мягкое удаление (author владелец или admin)
-	r.DELETE("/api/inventory/items/:id/soft", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.DELETE("/api/v1/inventory/items/:id/soft", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 		itemID := c.Param("id")
 		if itemID == "" {
@@ -2263,7 +2272,7 @@ func runGateway() {
 	})
 
 	// POST /api/inventory/items/:id/restore — восстановить после soft delete (author владелец или admin)
-	r.POST("/api/inventory/items/:id/restore", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/inventory/items/:id/restore", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		userID := middleware.UserID(c)
 		itemID := c.Param("id")
 		if itemID == "" {
@@ -2308,7 +2317,7 @@ func runGateway() {
 	})
 
 	// GET /api/inventory/stats — статистика по товарам (только admin)
-	r.GET("/api/inventory/stats", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+	r.GET("/api/v1/inventory/stats", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		out, err := throughBreaker(inventoryCB, c, func() (any, error) {
 			return inventoryClient.GetStats(withUserRole(c.Request.Context(), c), &inventoryPb.EmptyRequest{})
 		})
@@ -2367,7 +2376,7 @@ func runGateway() {
 		})
 	})
 
-	r.GET("/api/leaderboard", func(c *gin.Context) {
+	r.GET("/api/v1/leaderboard", func(c *gin.Context) {
 		gameID := c.Query("game_id")
 		limit := c.Query("limit")
 		levelQ := c.Query("level")
@@ -2402,7 +2411,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"entries": dto.ScoreEntries(resp.GetEntries())})
 	})
 
-	r.POST("/api/auth/update-nickname", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/auth/update-nickname", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
 			Nickname string `json:"nickname"`
 		}
@@ -2430,7 +2439,7 @@ func runGateway() {
 	// /api/game/submit previously trusted the "user_id" field from the request body
 	// with no auth check at all, letting anyone submit scores for any account.
 	// It now requires a valid token and always uses the authenticated user's id.
-	r.POST("/api/game/submit", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/game/submit", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		body, _ := c.GetRawData()
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
@@ -2510,7 +2519,7 @@ func runGateway() {
 		c.JSON(http.StatusOK, respBody)
 	})
 
-	r.POST("/api/game/boost/start", middleware.RequireAuth(authClient), func(c *gin.Context) {
+	r.POST("/api/v1/game/boost/start", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
 			GameID string `json:"game_id"`
 		}

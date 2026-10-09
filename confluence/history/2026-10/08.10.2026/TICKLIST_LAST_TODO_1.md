@@ -129,9 +129,9 @@ Use these when implementing / QA; filenames are Denis’s presentation order.
 |-------|--------------|-------|
 | 0 Meta / order | 4 / 5 | order + rename + feedbacks; tag rollback open |
 | 1 Repo cleanup | 7 / 8 | scripts moved; Dockerfiles stay; FE stores co-located |
-| 2 Interview + Miro | 8 / 14 | patterns/WS/SQL/FE note; **Miro export still Denis IRL** |
-| 3 Security | 2 / 4 | baseline + rate-limit/k6 note |
-| 4 Boosty / subs | 3 / 8 | Базовый/Расширенный + CTA live |
+| 2 Interview + Miro | 12 / 14 | PNG in `miro/miro_pics/`; review written; MCP plugin optional |
+| 3 Security | 4 / 4 | baseline + CSRF/XSS/SQL/AuthZ pass + `SECURITY_AUDIT_RU.md` |
+| 4 Boosty / subs | 6 / 8 | Boosty done 09.10; 3-tier decision / 1.1.x posts optional |
 | 5 Home / chrome / profile / LB | 8 / 18 | About, blurbs, nick Modal, Gears/Tamagotchi |
 | 6 Shop / inventory / catalog | 12 / 24 | merch chip, dedupe, themes/skins SQL, floors |
 | 7 Admin panel | 2 / 12 | tickets icon Top-N; merch chip |
@@ -184,18 +184,18 @@ Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 - [x] **Which methods / patterns** we use + code links (LB, rate limiter, circuit breaker, outbox, …) — `INTERVIEW_PATTERNS.md`
 - [x] **What could be better** (tech + design + product) — same file
 - [x] Anti-patterns / risks note (or “none critical”) — after highload preferred
-- [ ] Per-service plain-RU explainers: auth, game, billing, LB, profile, shop, inventory, authors, payment, history, analytics, notification, fulfillment, gateway, nats-hub, balancer
+- [x] Per-service plain-RU explainers: auth, game, billing, LB, profile, shop, inventory, authors, payment, history, analytics, notification, fulfillment, gateway, nats-hub, balancer — `SERVICES_RU_ONE_LINERS.md`
 - [x] Where WebSockets live (LB Redis→WS? notifications?) — document truth
 - [x] SQL practice list for interviews (admin joins: users / goods / purchases)
 - [x] `INTERVIEW_QUESTIONS_EH.md` — fill ports / “where is what”
 - [x] FE architecture note: backend-first then FE — is FE folder layout OK?
 
 ### Miro (Denis board)
-- [ ] Open board https://miro.com/app/board/uXjVJLLg9us=/
-- [ ] Align Miro with current v1.1.0 topology (ports, NATS subjects, deploy profiles)
-- [ ] Export / screenshot scheme → refresh `FINAL_SYSTEM_DESIGN_MIRO_SCHEME.md` + store image under `08.10.2026/` or architecture/
+- [x] Open board https://miro.com/app/board/uXjVJLLg9us=/
+- [x] Align Miro with current v1.1.0 topology (ports, NATS subjects, deploy profiles) — screenshots in; remaining sticker drift in `miro/MIRO_REVIEW.md`
+- [x] Export / screenshot scheme → `miro/miro_pics/` + review `miro/MIRO_REVIEW.md` (ASCII map); soft-refresh scheme docs when board stickers fixed
 - [ ] Optional: Cursor Miro marketplace plugin https://cursor.com/marketplace/miro — connect if useful for sync
-- [ ] Cross-check Mermaid / `EH_SCHEMAS.md` vs Miro (no drift)
+- [x] Cross-check Mermaid / METRICS vs Miro — metrics OK; topology drifts listed (MCP parked, Authors/Mongo, `/api/v1` stickers)
 
 ---
 
@@ -203,10 +203,10 @@ Sources: ideas voice, `SYSTEM_DESIGN_MIRO/*`, Miro board
 
 Sources: ideas voice
 
-- [ ] CSRF / XSS / SQL injection pass (gateway + FE)
-- [ ] AuthZ on admin / author / inventory routes
+- [x] CSRF / XSS / SQL injection pass (gateway + FE) — Bearer JWT; no `dangerouslySetInnerHTML`; parameterized SQL — `SECURITY_AUDIT_RU.md` §4
+- [x] AuthZ on admin / author / inventory routes — `RequireRole` on writes; full matrix later with 108 authors
 - [x] DDoS / rate-limit posture (limiter exists — verify surfaces) — 500 VU login fail = expected; CORE green
-- [x] Confluence note: critical findings or “baseline OK” — `SECURITY_BASELINE.md`
+- [x] Confluence note: critical findings or “baseline OK” — `SECURITY_BASELINE.md` + `SECURITY_AUDIT_RU.md`
 
 ---
 
@@ -216,13 +216,13 @@ Sources: `BOOSTY_FIX.md`, shop voice (subscriptions)
 
 Site: https://boosty.to/eastwesser
 
-- [ ] Keep / refresh base tier copy (already drafted in `BOOSTY_FIX.md`)
-- [ ] Update Boosty **tier 2 (×2)** benefits / copy
+- [x] Keep / refresh base tier copy (already drafted in `BOOSTY_FIX.md`)
+- [x] Update Boosty **tier 2 (×2)** benefits / copy — Denis published 09.10 (`BOOSTY_DONE/`)
 - [x] Align in-app names: **Базовый** / **Расширенный** (not «текущий/будущий»)
 - [ ] Product decision: 3 tiers? (200 / 500 / 1000 ₽)
 - [x] Make “future/расширенный” plan CTA live (Activate still hits checkout)
 - [x] Add **продление** Boosty link + clearer footer (full cancel API later)
-- [ ] v1.1.0 changelog content for Boosty / public share
+- [x] v1.1.0 changelog content for Boosty / public share — published
 - [ ] Optional follow-ups: 1.1.1…1.1.8 per-game posts
 
 ---
@@ -535,10 +535,10 @@ Go+Wails+Vue API client (HTTP/gRPC/GraphQL/WS, local SQLite, Postman/cURL import
 ## Next action
 
 ```text
-START = §1 Repo cleanup (scripts/Docker refs, FE game folders).
-THEN  = §5–9 site/shop/admin/authors + §4 Boosty copy.
-THEN  = §10–12 games verify + leftovers + §15 console bugs.
-THEN  = §13 mobile → §14 load → §2 interview+Miro → §17 MCP/Tetiva last.
+DONE wave 09.10 = /api/v1 + security audit + Miro review + Boosty tick + FINAL_STATUS.
+IRL left   = Miro sticker polish (MIRO_REVIEW.md) → optional tag v1.1.0.
+Parked     = avatar / 108 authors / MCP / C4 (§16–17).
+Rebuild    = gateway after pull, then make test-k6 (paths /api/v1).
 ```
 
 ### Source index (quick)

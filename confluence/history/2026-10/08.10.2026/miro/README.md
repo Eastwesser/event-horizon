@@ -1,7 +1,17 @@
-# Drop Miro export here
+# Miro exports (v1.1.0)
 
-1. Export PNG from https://miro.com/app/board/uXjVJLLg9us=/
-2. Save as e.g. `event-horizon-v1.1.0-miro.png` in **this folder**
-3. Tell Cursor — docs will link it from `FINAL_SYSTEM_DESIGN_MIRO_SCHEME.md`
+Board: https://miro.com/app/board/uXjVJLLg9us=/
 
-Until then the text topology in that file / README is the source of truth.
+## Files
+
+| Path | What |
+|------|------|
+| `miro_pics/miro_main.png` | Full-board overview |
+| `miro_pics/miro_1.png` … `miro_10.png` | Zooms (LB, GW/MCP, Auth, Game/Billing/LB, NATS, Fulfillment/Kafka, WS, History/Payment/Inventory, Authors/Notif/Analytics, Observability) |
+| `MIRO_REVIEW.md` | Cursor review vs `METRICS.md` + compose ports + ASCII map |
+
+## After board tweaks
+
+1. Fix drifts listed in `MIRO_REVIEW.md` (MCP parked, `/api/v1` on stickers, Authors≠Mongo, port typos).
+2. Optional: drop one clean full PNG in this folder root.
+3. Happy path = Denis video, not Miro boxes.

@@ -18,6 +18,6 @@
 | **Fulfillment** | metrics | Consumer `purchase.paid` → выдача/логистика сигнала |
 | **Notification** | metrics | In-app уведомления (колокольчик) |
 | **NATS Hub** | — | Bootstrap JetStream stream `EVENTS` |
-| **FE React** | 5173 dev | Игры + магазин; `baseURL: '/api'` |
+| **FE React** | 5173 dev | Игры + магазин; `baseURL: '/api/v1'` |
 
 **Deploy:** `make deploy` = thin (NATS). `make deploy-heavy` = +Kafka (опционально).

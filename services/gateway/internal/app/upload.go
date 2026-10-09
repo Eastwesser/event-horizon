@@ -39,7 +39,7 @@ func registerUploadRoutes(r *gin.Engine, cfg *config.Config, authClient *client.
 
 	r.Static("/uploads", cfg.UploadDir)
 
-	r.POST("/api/uploads", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/uploads", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, cfg.UploadMaxBytes+1024)
 		file, err := c.FormFile("file")
 		if err != nil {

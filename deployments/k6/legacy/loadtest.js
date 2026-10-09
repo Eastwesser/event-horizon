@@ -47,7 +47,7 @@ export function setup() {
   const baseUrl = 'http://localhost:8079';
   const user = testUsers[0]; // Берем первого пользователя для setup
   
-  const loginRes = http.post(`${baseUrl}/api/auth/login`, JSON.stringify({
+  const loginRes = http.post(`${baseUrl}/api/v1/auth/login`, JSON.stringify({
     email: user.email,
     password: user.password,
   }), { headers: { 'Content-Type': 'application/json' } });
@@ -65,7 +65,7 @@ export default function (data) {
 
   // 1. Регистрация (10% пользователей)
   if (Math.random() < 0.1) {
-    const registerRes = http.post(`${baseUrl}/api/auth/register`, JSON.stringify({
+    const registerRes = http.post(`${baseUrl}/api/v1/auth/register`, JSON.stringify({
       email: user.email,
       password: user.password,
       nickname: user.nickname,
@@ -79,7 +79,7 @@ export default function (data) {
   }
 
   // 2. Логин (получение токена)
-  const loginRes = http.post(`${baseUrl}/api/auth/login`, JSON.stringify({
+  const loginRes = http.post(`${baseUrl}/api/v1/auth/login`, JSON.stringify({
     email: user.email,
     password: user.password,
   }), { headers: { 'Content-Type': 'application/json' } });
@@ -102,7 +102,7 @@ export default function (data) {
   };
 
   // 3. Получить баланс
-  const balanceRes = http.get(`${baseUrl}/api/billing/balance/all`, { headers });
+  const balanceRes = http.get(`${baseUrl}/api/v1/billing/balance/all`, { headers });
   const balanceCheck = check(balanceRes, {
     'balance status 200': (r) => r.status === 200,
     'balance has tickets': (r) => r.json('tickets') !== undefined,
@@ -113,7 +113,7 @@ export default function (data) {
   // 4. Получить лидерборд (для всех игр)
   const games = ['hexagon', 'flappy', 'memory', 'towers'];
   const game = games[Math.floor(Math.random() * games.length)];
-  const leaderboardRes = http.get(`${baseUrl}/api/leaderboard?game_id=${game}&limit=10`, { headers });
+  const leaderboardRes = http.get(`${baseUrl}/api/v1/leaderboard?game_id=${game}&limit=10`, { headers });
   const lbCheck = check(leaderboardRes, {
     'leaderboard status 200': (r) => r.status === 200,
   });
@@ -121,7 +121,7 @@ export default function (data) {
   sleep(0.5);
 
   // 5. Получить профиль
-  const profileRes = http.get(`${baseUrl}/api/profile`, { headers });
+  const profileRes = http.get(`${baseUrl}/api/v1/profile`, { headers });
   const profileCheck = check(profileRes, {
     'profile status 200': (r) => r.status === 200,
   });
@@ -129,7 +129,7 @@ export default function (data) {
   sleep(0.5);
 
   // 6. Получить товары магазина
-  const shopRes = http.get(`${baseUrl}/api/shop/items`, { headers });
+  const shopRes = http.get(`${baseUrl}/api/v1/shop/items`, { headers });
   const shopCheck = check(shopRes, {
     'shop items status 200': (r) => r.status === 200,
     'shop items array': (r) => Array.isArray(r.json()),
@@ -138,7 +138,7 @@ export default function (data) {
   sleep(0.5);
 
   // 7. Получить инвентарь
-  const inventoryRes = http.get(`${baseUrl}/api/shop/inventory`, { headers });
+  const inventoryRes = http.get(`${baseUrl}/api/v1/shop/inventory`, { headers });
   const invCheck = check(inventoryRes, {
     'inventory status 200': (r) => r.status === 200,
   });
@@ -146,7 +146,7 @@ export default function (data) {
   sleep(0.5);
 
   // 8. Отправить рекорд (используем реальный userId из setup)
-  const submitRes = http.post(`${baseUrl}/api/game/submit`, JSON.stringify({
+  const submitRes = http.post(`${baseUrl}/api/v1/game/submit`, JSON.stringify({
     user_id: data.userId, // ← используем реальный UUID из setup
     game_id: game,
     level: 1,

@@ -1,23 +1,25 @@
 # Security baseline note (v1.1.0 polish)
 
-Quick posture check — not a full audit. Ticklist §3 stays open for deeper CSRF/XSS/SQL pass.
+Quick posture + checklist pass 09.10.2026. Full narrative (RU, numbers): `SECURITY_AUDIT_RU.md`.
 
 ## Present
 
 - JWT sessions in Redis; roles `user` | `author` | `admin`
 - bcrypt cost 12; secrets via env (`internal/config`), `.env` gitignored
 - gRPC `Validate()` interceptor on services; gateway HTTP→gRPC
-- Rate limiter surfaces exist (gateway/balancer) — verify coverage under load
+- Rate limiter surfaces (login 5/s IP, submit 10/s, global ~100/s, WS 100/min IP)
 - Notifications soft-fail when logged out (no 401 spam loop)
-- FE axios `baseURL: '/api'` (no double `/api/api` after profile fix)
+- FE axios `baseURL: '/api/v1'` (no double `/api/api`; legacy `/api/*` rewritten on gateway)
 
-## Watch / next
+## Checklist pass (09.10)
 
-- CSRF on cookie-less JWT SPA is lower risk; still audit admin mutation forms
-- XSS: prefer text nodes / React escaping; avoid `dangerouslySetInnerHTML` (spot-check remaining)
-- SQL: repositories should use parameterized queries only (goose + pgx)
-- AuthZ: re-check admin / author / inventory write routes after author seed
-- DDoS: document limiter thresholds after `make test-k6` on live stack
+| Area | Result |
+|------|--------|
+| CSRF | OK — Bearer JWT, not cookie session |
+| XSS | OK — no `dangerouslySetInnerHTML` in FE |
+| SQL | OK — parameterized `$n` in repos (spot-check) |
+| AuthZ | OK baseline — admin/author writes behind `RequireRole` |
+| DDoS | Documented — login blast fails by design |
 
 ## Observed under load (08.10.2026)
 
@@ -26,4 +28,4 @@ Quick posture check — not a full audit. Ticklist §3 stays open for deeper CSR
 - Concurrently, shop / inventory / submit / leaderboard stayed green → read path OK; not an auth “outage” bug.
 - Do not use `deployments/k6/legacy/loadtest.js` for pass/fail CORE reports.
 
-**Verdict for now:** baseline OK for local/demo; not a claim of production hardening.
+**Verdict:** baseline + checklist OK for local/demo / v1.1.0; not a claim of production pen-test hardening.

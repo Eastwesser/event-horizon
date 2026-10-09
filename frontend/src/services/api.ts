@@ -9,7 +9,7 @@ import {
 } from '../lib/auth';
 import { invalidateWhoamiCache } from '../lib/whoamiCache';
 
-export const API_BASE = '/api';
+export const API_BASE = '/api/v1';
 
 hydrateAuth();
 

@@ -48,7 +48,7 @@ paths:
           description: Not ready
 
   # ===== ADMIN =====
-  /api/admin/users:
+  /api/v1/admin/users:
     get:
       summary: List users (admin)
       security:
@@ -101,7 +101,7 @@ paths:
           description: Forbidden (admin only)
 
   # ===== AUTH =====
-  /api/auth/register:
+  /api/v1/auth/register:
     post:
       summary: Register new user
       requestBody:
@@ -142,7 +142,7 @@ paths:
                   message:
                     type: string
 
-  /api/auth/login:
+  /api/v1/auth/login:
     post:
       summary: Login user (получить JWT токен)
       requestBody:
@@ -188,7 +188,7 @@ paths:
                     type: string
                     enum: [user, author, admin]
 
-  /api/auth/refresh:
+  /api/v1/auth/refresh:
     post:
       summary: Refresh access token
       requestBody:
@@ -220,7 +220,7 @@ paths:
         '401':
           description: Invalid refresh token
 
-  /api/auth/whoami:
+  /api/v1/auth/whoami:
     get:
       summary: Current user from access token
       security:
@@ -240,7 +240,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/auth/logout:
+  /api/v1/auth/logout:
     post:
       summary: Invalidate current session
       security:
@@ -258,7 +258,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/auth/update-role:
+  /api/v1/auth/update-role:
     post:
       summary: Change a user's role (admin only)
       security:
@@ -291,7 +291,7 @@ paths:
         '403':
           description: Admin role required
 
-  /api/auth/user:
+  /api/v1/auth/user:
     get:
       summary: Get user data (email, nickname)
       security:
@@ -319,7 +319,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/auth/update-nickname:
+  /api/v1/auth/update-nickname:
     post:
       summary: Update user nickname
       security:
@@ -351,7 +351,7 @@ paths:
           description: Unauthorized
 
   # ===== BILLING =====
-  /api/billing/balance/all:
+  /api/v1/billing/balance/all:
     get:
       summary: Get all balances (lamps + tickets)
       security:
@@ -372,7 +372,7 @@ paths:
           description: Unauthorized
 
   # ===== GAME =====
-  /api/game/submit:
+  /api/v1/game/submit:
     post:
       summary: Submit game score (server-side validation)
       security:
@@ -409,7 +409,7 @@ paths:
                   description: Deterministic seed для валидации
                 boost_id:
                   type: string
-                  description: Optional boost id from POST /api/game/boost/start
+                  description: Optional boost id from POST /api/v1/game/boost/start
                 moves:
                   type: array
                   items:
@@ -449,7 +449,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/game/boost/start:
+  /api/v1/game/boost/start:
     post:
       summary: Spend lamps to arm a pre-game boost (Flappy pilot)
       security:
@@ -489,7 +489,7 @@ paths:
           description: Insufficient lamps or boost unavailable for game
 
   # ===== LEADERBOARD =====
-  /api/leaderboard:
+  /api/v1/leaderboard:
     get:
       summary: Get top 10 players
       parameters:
@@ -539,7 +539,7 @@ paths:
                           description: Unix timestamp
 
   # ===== PROFILE =====
-  /api/profile:
+  /api/v1/profile:
     get:
       summary: Get aggregated user profile (CQRS read model)
       security:
@@ -591,7 +591,7 @@ paths:
           description: Profile not found
 
   # ===== SHOP =====
-  /api/shop/items:
+  /api/v1/shop/items:
     get:
       summary: Get shop items (with filters)
       security:
@@ -640,7 +640,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/shop/purchase:
+  /api/v1/shop/purchase:
     post:
       summary: Purchase an item
       security:
@@ -695,7 +695,7 @@ paths:
         '409':
           description: Conflict (already owned, insufficient tickets)
 
-  /api/shop/purchase/{id}/cancel:
+  /api/v1/shop/purchase/{id}/cancel:
     post:
       summary: Cancel a completed purchase and refund tickets at purchase price
       security:
@@ -749,7 +749,7 @@ paths:
                     type: string
                     example: InvalidArgument
 
-  /api/shop/inventory:
+  /api/v1/shop/inventory:
     get:
       summary: Get user inventory
       security:
@@ -799,7 +799,7 @@ paths:
           description: Unauthorized
 
   # ===== UPLOADS (inventory images) =====
-  /api/uploads:
+  /api/v1/uploads:
     post:
       summary: Upload an inventory image (author/admin)
       description: Multipart field `file`. Returns a public URL under `/uploads/...`.
@@ -837,7 +837,7 @@ paths:
           description: Forbidden (author/admin only)
 
   # ===== INVENTORY =====
-  /api/inventory/items:
+  /api/v1/inventory/items:
     get:
       summary: Get inventory items with filters
       security:
@@ -937,7 +937,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/items/{id}:
+  /api/v1/inventory/items/{id}:
     get:
       summary: Get inventory item by ID
       security:
@@ -1013,7 +1013,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/items/bulk:
+  /api/v1/inventory/items/bulk:
     post:
       summary: Bulk create inventory items
       security:
@@ -1044,7 +1044,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/items/{id}/reserve:
+  /api/v1/inventory/items/{id}/reserve:
     post:
       summary: Reserve item (decrease stock)
       security:
@@ -1086,7 +1086,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/items/{id}/soft:
+  /api/v1/inventory/items/{id}/soft:
     delete:
       summary: Soft delete inventory item
       security:
@@ -1114,7 +1114,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/items/{id}/restore:
+  /api/v1/inventory/items/{id}/restore:
     post:
       summary: Restore soft deleted item
       security:
@@ -1133,7 +1133,7 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/inventory/stats:
+  /api/v1/inventory/stats:
     get:
       summary: Get inventory statistics
       security:
@@ -1185,12 +1185,12 @@ paths:
           description: WebSocket upgrade successful
 
   # ===== PAYMENT =====
-  /api/payment/checkout:
+  /api/v1/payment/checkout:
     post:
       summary: Create subscription checkout (YooKassa stub or Boosty redirect)
       description: |
         Creates an internal pending payment and returns checkout_url.
-        - Local/dev: often completed via POST /api/payment/yookassa/webhook (stub).
+        - Local/dev: often completed via POST /api/v1/payment/yookassa/webhook (stub).
         - Boosty: checkout_url is a redirect helper; no native creator webhook UI —
           treat as secondary/manual path. Autosubscription not guaranteed via Boosty alone.
       security: [{ BearerAuth: [] }]
@@ -1212,7 +1212,7 @@ paths:
           description: Bad request
         '401':
           description: Unauthorized
-  /api/payment/subscription:
+  /api/v1/payment/subscription:
     get:
       summary: Current subscription status
       security: [{ BearerAuth: [] }]
@@ -1221,14 +1221,14 @@ paths:
           description: Subscription info
         '401':
           description: Unauthorized
-  /api/payment/can-purchase-merch:
+  /api/v1/payment/can-purchase-merch:
     get:
       summary: Whether merch purchase is allowed
       security: [{ BearerAuth: [] }]
       responses:
         '200':
           description: allowed + reason
-  /api/payment/webhook:
+  /api/v1/payment/webhook:
     post:
       summary: Payment provider webhook (Boosty; secret in body/header/query)
       responses:
@@ -1240,7 +1240,7 @@ paths:
           description: Invalid webhook secret
         '404':
           description: Payment not found
-  /api/payment/yookassa/webhook:
+  /api/v1/payment/yookassa/webhook:
     post:
       summary: YooKassa webhook stub (local dev / smoke tests)
       description: |
@@ -1280,7 +1280,7 @@ paths:
           description: Payment not found
 
   # ===== AUTHORS =====
-  /api/authors/me:
+  /api/v1/authors/me:
     put:
       summary: Upsert author profile (author|admin)
       security: [{ BearerAuth: [] }]
@@ -1311,7 +1311,7 @@ paths:
           description: No profile yet
         '403':
           description: Forbidden
-  /api/authors/me/sales:
+  /api/v1/authors/me/sales:
     get:
       summary: Author sales aggregates + purchase rows (Wave 3 C3)
       security: [{ BearerAuth: [] }]
@@ -1331,7 +1331,7 @@ paths:
           description: sales_count, tickets_earned, purchases[]
         '403':
           description: Author|admin only
-  /api/authors/apply:
+  /api/v1/authors/apply:
     post:
       summary: Submit author application (Wave 3 C1)
       security: [{ BearerAuth: [] }]
@@ -1354,7 +1354,7 @@ paths:
           description: Already author/admin or invalid input
         '401':
           description: Unauthorized
-  /api/authors/me/application:
+  /api/v1/authors/me/application:
     get:
       summary: Get current user's latest author application
       security: [{ BearerAuth: [] }]
@@ -1365,7 +1365,7 @@ paths:
           description: No application yet
         '401':
           description: Unauthorized
-  /api/authors/applications:
+  /api/v1/authors/applications:
     get:
       summary: List author applications (admin, Wave 3 C2)
       security: [{ BearerAuth: [] }]
@@ -1384,7 +1384,7 @@ paths:
           description: applications + total
         '403':
           description: Admin only
-  /api/authors/applications/{id}/approve:
+  /api/v1/authors/applications/{id}/approve:
     post:
       summary: Approve application → upsert author profile + Auth role=author
       security: [{ BearerAuth: [] }]
@@ -1400,7 +1400,7 @@ paths:
           description: Already reviewed or invalid
         '403':
           description: Admin only
-  /api/authors/applications/{id}/reject:
+  /api/v1/authors/applications/{id}/reject:
     post:
       summary: Reject application with optional note
       security: [{ BearerAuth: [] }]
@@ -1423,13 +1423,13 @@ paths:
           description: Already reviewed or invalid
         '403':
           description: Admin only
-  /api/authors:
+  /api/v1/authors:
     get:
       summary: List authors
       responses:
         '200':
           description: authors + total
-  /api/authors/{user_id}:
+  /api/v1/authors/{user_id}:
     get:
       summary: Get author by user id
       parameters:
@@ -1444,7 +1444,7 @@ paths:
           description: Not found
 
   # ===== HISTORY =====
-  /api/history:
+  /api/v1/history:
     get:
       summary: Own event trail
       security: [{ BearerAuth: [] }]
@@ -1462,7 +1462,7 @@ paths:
         '200':
           description: events + total
 
-  /api/notifications:
+  /api/v1/notifications:
     get:
       summary: Own in-app notifications
       security: [{ BearerAuth: [] }]
@@ -1498,7 +1498,7 @@ paths:
                         read_at_unix: { type: integer }
                   total: { type: integer }
                   unread_count: { type: integer }
-  /api/notifications/{id}/read:
+  /api/v1/notifications/{id}/read:
     post:
       summary: Mark notification read (id=all marks all)
       security: [{ BearerAuth: [] }]
@@ -1514,7 +1514,7 @@ paths:
           description: Notification not found
 
   # ===== ANALYTICS (admin) =====
-  /api/analytics/dau:
+  /api/v1/analytics/dau:
     get:
       summary: Daily active users
       security: [{ BearerAuth: [] }]
@@ -1523,7 +1523,7 @@ paths:
           description: days[]
         '403':
           description: Admin only
-  /api/analytics/mau:
+  /api/v1/analytics/mau:
     get:
       summary: Monthly active users
       security: [{ BearerAuth: [] }]
@@ -1532,7 +1532,7 @@ paths:
           description: mau + window_days
         '403':
           description: Admin only
-  /api/analytics/retention:
+  /api/v1/analytics/retention:
     get:
       summary: Cohort retention
       security: [{ BearerAuth: [] }]

@@ -167,14 +167,14 @@ JetStream ≈ stream + durable consumers (аналог consumer group/offsets в
 
 Что проектировал / держал в синхроне:
 
-- **REST (публичный):** `POST /api/shop/purchase`, `POST /api/shop/purchase/:id/cancel`, `GET /api/shop/items`, `GET /api/shop/inventory` — зафиксированы в `docs/openapi.yaml`, отдаются через Gin gateway `:8079` → gateway replicas. Версионирование: **без `/api/v1`** — стабильный префикс `/api/`; ломающие изменения избегаем, добавляем поля (например `can_cancel` в proto/DTO).
+- **REST (публичный):** `POST /api/v1/shop/purchase`, `POST /api/v1/shop/purchase/:id/cancel`, `GET /api/v1/shop/items`, `GET /api/v1/shop/inventory` — зафиксированы в `docs/openapi.yaml`, отдаются через Gin gateway `:8079` → gateway replicas. Канон: **`/api/v1/`**; legacy `/api/*` переписывается в v1. Ломающие изменения избегаем, добавляем поля (например `can_cancel` в proto/DTO).
 - **gRPC Shop:** сообщения с `validate.rules` / hand-written `Validate()` до полного `task gen-proto`; handler тонкий, логика в service.
 - **Ошибки:** доменные (`ErrRefundWindowExpired`, `ErrAlreadyFulfilled`) → осмысленный HTTP/gRPC status через gateway mapping; клиент FE показывает toast, не «500 всё подряд».
 - **Timeouts / deadlines:** HTTP clients не `http.DefaultClient`; gRPC context с deadline на межсервисных вызовах; k6 thresholds как SLO-smoke (p95).
 - **Совместимость:** пример — добавление ingest subject `event.user.registered` **без** удаления `user.registered`; FE `can_cancel` + группировка inventory на клиенте не требовали breaking change API list purchases.
 - **Смежный контракт:** Payment `CanPurchaseMerch` — shop/FE спрашивают до покупки физического мерча (подписка), цена пола ≥ 100_000 tickets — продуктовое правило на границе API + seed/SQL.
 
-**Случай «не сломать потребителей»:** смена копирайта/иконок и dual NATS publish; OpenAPI остаётся source of truth для REST, proto — для mesh. FE axios `baseURL: '/api'` + относительные пути — контрактная дисциплина, чтобы не поймать `/api/api/*` снова.
+**Случай «не сломать потребителей»:** смена копирайта/иконок и dual NATS publish; OpenAPI остаётся source of truth для REST, proto — для mesh. FE axios `baseURL: '/api/v1'` + относительные пути — контрактная дисциплина, чтобы не поймать `/api/api/*` снова.
 
 ---
 

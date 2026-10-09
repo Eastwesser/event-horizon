@@ -15,6 +15,7 @@ Like here (rather old data):
  (индексы не должны тормозить вставку, партиционирование по дням)12. Avg weight (size) of 1 query/object in bytes: <10kb13. Retention policy (n days of storaging data) сырые ивенты: 30 дней14. Peak load vs average: пик х2 от среднего
 
 
+
 Golang metrics
  -goroutines: 444 (<1000 на одном сервере) 
  -gc cycles: <10 раз в минуту
