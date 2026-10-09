@@ -29,7 +29,7 @@ func ensureUploadDir(dir string) error {
 }
 
 // registerUploadRoutes serves local inventory images and accepts multipart uploads.
-// Scoped to author/admin — kids-safe catalog images only, not a general file host.
+// Any authenticated user may upload (avatars + author/admin catalog images).
 func registerUploadRoutes(r *gin.Engine, cfg *config.Config, authClient *client.AuthClient) {
 	if err := ensureUploadDir(cfg.UploadDir); err != nil {
 		log.Printf("⚠️ upload dir %s: %v (uploads disabled)", cfg.UploadDir, err)
@@ -39,7 +39,7 @@ func registerUploadRoutes(r *gin.Engine, cfg *config.Config, authClient *client.
 
 	r.Static("/uploads", cfg.UploadDir)
 
-	r.POST("/api/v1/uploads", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	r.POST("/api/v1/uploads", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, cfg.UploadMaxBytes+1024)
 		file, err := c.FormFile("file")
 		if err != nil {
