@@ -99,31 +99,65 @@ function drawGear(
   color: string,
   level: number,
   alpha = 1,
+  flower = false,
 ) {
-  const teeth = 5 + level;
-  const tip = r;
-  const valley = r * 0.78;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.beginPath();
-  for (let i = 0; i < teeth * 2; i++) {
-    const ang = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
-    const rad = i % 2 === 0 ? tip : valley;
-    const px = x + Math.cos(ang) * rad;
-    const py = y + Math.sin(ang) * rad;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
+  if (flower) {
+    // Petal blob for sunflower/rose/pansy skins only — metal stays a real gear.
+    const petals = 6 + (level % 3);
+    for (let i = 0; i < petals; i++) {
+      const ang = (i / petals) * Math.PI * 2 - Math.PI / 2;
+      const px = x + Math.cos(ang) * r * 0.55;
+      const py = y + Math.sin(ang) * r * 0.55;
+      ctx.beginPath();
+      ctx.ellipse(px, py, r * 0.42, r * 0.28, ang, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.38, 0, Math.PI * 2);
+    ctx.fillStyle = '#3a2a10';
+    ctx.fill();
+  } else {
+    // Classic spur gear: more teeth + deeper valleys so it doesn't read as a star/prize.
+    const teeth = 10 + Math.min(level, 6);
+    const tip = r;
+    const valley = r * 0.68;
+    const root = r * 0.62;
+    ctx.beginPath();
+    for (let i = 0; i < teeth; i++) {
+      const a0 = (i / teeth) * Math.PI * 2 - Math.PI / 2;
+      const a1 = ((i + 0.35) / teeth) * Math.PI * 2 - Math.PI / 2;
+      const a2 = ((i + 0.5) / teeth) * Math.PI * 2 - Math.PI / 2;
+      const a3 = ((i + 0.85) / teeth) * Math.PI * 2 - Math.PI / 2;
+      const pts: [number, number][] = [
+        [x + Math.cos(a0) * valley, y + Math.sin(a0) * valley],
+        [x + Math.cos(a1) * tip, y + Math.sin(a1) * tip],
+        [x + Math.cos(a2) * tip, y + Math.sin(a2) * tip],
+        [x + Math.cos(a3) * valley, y + Math.sin(a3) * valley],
+        [x + Math.cos(((i + 1) / teeth) * Math.PI * 2 - Math.PI / 2) * root, y + Math.sin(((i + 1) / teeth) * Math.PI * 2 - Math.PI / 2) * root],
+      ];
+      for (let p = 0; p < pts.length; p++) {
+        if (i === 0 && p === 0) ctx.moveTo(pts[p][0], pts[p][1]);
+        else ctx.lineTo(pts[p][0], pts[p][1]);
+      }
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.36, 0, Math.PI * 2);
+    ctx.fillStyle = '#12141c';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.14, 0, Math.PI * 2);
+    ctx.fillStyle = '#8a90a0';
+    ctx.fill();
   }
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.32, 0, Math.PI * 2);
-  ctx.fillStyle = '#0c0e16';
-  ctx.fill();
   ctx.fillStyle = '#e8e8f0';
   ctx.font = 'bold 11px ui-monospace, monospace';
   ctx.textAlign = 'center';
@@ -334,11 +368,11 @@ export function GearsGame() {
         const lvl = nextRef.current;
         const r = RADIUS[lvl];
         const COLORS = colorsRef.current;
-        drawGear(ctx, aimXRef.current, r + 8, r, COLORS[lvl], lvl, 0.35);
+        drawGear(ctx, aimXRef.current, r + 8, r, COLORS[lvl], lvl, 0.35, skin !== 'metal');
       }
       for (const o of orbsRef.current) {
         const COLORS = colorsRef.current;
-        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level);
+        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level, 1, skin !== 'metal');
       }
       raf = requestAnimationFrame(tick);
     };

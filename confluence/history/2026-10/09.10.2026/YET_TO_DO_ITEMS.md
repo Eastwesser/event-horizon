@@ -90,3 +90,11 @@ These are honest remainders — **not** “forgot the wave.”
 2. Smoke: register → play → shop → companion gift → bell deep-link  
 3. Tag `v1.1.0` when happy  
 4. Only then reopen C4 / art epics if product asks  
+
+---
+
+## E. Daily ops / observability (09.10)
+
+- Runbook: [`DAILY_OPS.md`](./DAILY_OPS.md) — morning checklist, make targets, PromQL, gap matrix  
+- `make daily` / `make obs-check` — status + health + Prom targets  
+- Grafana provisioning fixed (provider YAML + dashboard mount); alerts expanded (5xx / p95 / more downs) 

@@ -1,13 +1,52 @@
 {
-  "title": "Event Horizon",
-  "uid": "event-horizon",
-  "version": 1,
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
   "panels": [
     {
       "id": 1,
-      "title": "RPS Gateway",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "title": "Prometheus targets UP",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "up",
+          "refId": "A"
+        },
+        {
+          "expr": "count(up == 0) OR on() vector(0)",
+          "legendFormat": "down",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Gateway RPS",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "expr": "sum(rate(gateway_requests_total[1m])) by (instance)",
@@ -17,65 +56,88 @@
       ]
     },
     {
-      "id": 2,
-      "title": "Latency P99",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (le))",
-          "legendFormat": "P99",
-          "refId": "A"
-        }
-      ]
-    },
-    {
       "id": 3,
-      "title": "Go Goroutines (Game)",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "title": "Gateway 5xx error %",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "go_goroutines{job=\"game\"}",
-          "legendFormat": "Goroutines",
+          "expr": "100 * sum(rate(gateway_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(gateway_requests_total[5m])), 1e-9)",
+          "legendFormat": "5xx %",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 4,
-      "title": "Heap Memory (Game)",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "title": "Gateway latency p95 / p99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "go_memstats_heap_alloc_bytes{job=\"game\"}",
-          "legendFormat": "Heap Alloc",
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
           "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(gateway_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "B"
         }
-      ]
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
     },
     {
       "id": 5,
-      "title": "NATS Connections",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "title": "Scrape target health (by job)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "gnatsd_varz_connections",
-          "legendFormat": "Connections",
+          "expr": "up",
+          "legendFormat": "{{job}} {{instance}}",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 6,
-      "title": "Game Submits",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "title": "Game submits (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(game_submits_total) by (game_id)",
+          "expr": "sum(rate(game_submits_total[5m])) by (game_id)",
           "legendFormat": "{{game_id}}",
           "refId": "A"
         }
@@ -83,47 +145,137 @@
     },
     {
       "id": 7,
-      "title": "Balancer Active Connections",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "title": "Shop orders (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "balancer_active_connections",
-          "legendFormat": "Connections",
+          "expr": "rate(orders_total[5m])",
+          "legendFormat": "orders/s",
           "refId": "A"
         }
       ]
     },
     {
       "id": 8,
-      "title": "Redis Memory",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "title": "Balancer active connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "redis_memory_used_bytes",
-          "legendFormat": "Memory Used",
+          "expr": "balancer_active_connections",
+          "legendFormat": "connections",
           "refId": "A"
+        },
+        {
+          "expr": "rate(balancer_requests_total[1m])",
+          "legendFormat": "balancer RPS",
+          "refId": "B"
         }
       ]
     },
     {
       "id": 9,
-      "title": "PostgreSQL Connections",
-      "type": "graph",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "title": "NATS connections / in_msgs",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "pg_stat_database_numbackends{datname=\"eventhorizon\"}",
-          "legendFormat": "Connections",
+          "expr": "gnatsd_varz_connections",
+          "legendFormat": "connections",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(gnatsd_varz_in_msgs[1m])",
+          "legendFormat": "in_msgs/s",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "NATS consumer pending / lag",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(nats_consumer_num_pending) by (consumer_name) OR sum(nats_consumer_pending_messages) by (consumer_name)",
+          "legendFormat": "{{consumer_name}}",
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 11,
+      "title": "Go goroutines (hot services)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "go_goroutines{job=~\"gateway|game|auth|billing|shop|inventory\"}",
+          "legendFormat": "{{job}} {{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Redis memory",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes",
+          "legendFormat": "used",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 13,
+      "title": "PostgreSQL backends (auth DB exporter)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=~\"eventhorizon.*\"}",
+          "legendFormat": "{{datname}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Heap alloc (hot services)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "go_memstats_heap_alloc_bytes{job=~\"gateway|game|auth|billing|shop\"}",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
     }
   ],
-  "schemaVersion": 16,
-  "time": {"from": "now-1h", "to": "now"},
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["event-horizon", "ops"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
-  "templating": {"list": []},
-  "annotations": {"list": []}
+  "timezone": "browser",
+  "title": "Event Horizon — Ops Overview",
+  "uid": "event-horizon",
+  "version": 2
 }

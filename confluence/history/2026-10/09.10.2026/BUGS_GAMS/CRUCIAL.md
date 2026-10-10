@@ -1,0 +1,1673 @@
+can we fix this while I do make deploy?
+
+ ✔ Container deployments-analytics-1         Running                                                                   0.0s
+ ✔ Container event-horizon-postgres-exporter Started                                                                   6.2s
+ ✘ Container deployments-billing-1           Error dependency billing failed to start                                 14.7s
+ ✔ Container event-horizon-postgres-shop     Started                                                                  15.4s
+ ⠇ Container event-horizon-nats-1            Waiting                                                                  31.9s
+ ... 27 more                                                                                                               
+dependency failed to start: container deployments-billing-1 is unhealthy
+make: *** [Makefile:252: deploy] Ошибка 1
+[denismatveev@c0der event_horizon]$ 
+
+It's not a joke.
+
+Don't just tell me "Oh, just run make deploy for the second time". No shit, I know that works, but I have rebooted my VM, now I want to start services with make deploy command from the first try. Not the second.
+
+(10 million years later)
+
+Ok, I am trying to do the make deploy command for the second time. And ... yeah, it has no errors now. So, from the second time "it just works".
+
+Also, I noticed that the shop db is lost. Why the heck can't I see the goods anymore then? Why did we fucked it up?
+Check if we have 284 goods (or whatsoever) or not? Do we have to use special seed or smth to add them back? It's an incident.
+
+
+!!! Lamps and tickets always shown as 0 0
+
+!!! Boost in games can be active if we even have 0!
+
+LEADERBOARD DOESN'T SAVE GAMES AT ALL!
+
+
+admin
+admin@eventhorizon.local
+
+Показать ID
+Изображение (URL или файл)
+https://… или загрузите файл
+Файл не выбранВыбрать файл
+JPG, PNG, WebP · до 2 МБ
+PNG/JPG/WebP, до 2 МБ. Квадрат смотрится лучше.
+
+This info should be hidden until user presses on willing to change or update info. And we store that data.
+
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=hexagon&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=hexagon&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7701
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=73e2434e:8924
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8917
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8932
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8809
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7701
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=73e2434e:8924
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8917
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8932
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8809
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7701
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7700
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7688
+reconnectPassiveEffects @ react-dom_client.js?v=73e2434e:7713
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=73e2434e:8924
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8917
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=73e2434e:8932
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8809
+(anonymous) @ react-dom_client.js?v=73e2434e:8562
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=flappy&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=towers&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=hanoi&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=memory&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=twenty48&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=gears&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404
+    at settle (axios.js?v=73e2434e:1725:14)
+    at XMLHttpRequest.onloadend (axios.js?v=73e2434e:2077:4)
+(anonymous) @ LeaderboardFull.tsx:78
+Promise.catch
+(anonymous) @ LeaderboardFull.tsx:77
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:41 📡 API Request: get /leaderboard undefined
+api.ts:126  GET http://localhost:5173/api/v1/leaderboard?game_id=companion&limit=50&level=1 404 (Not Found)
+dispatchXhrRequest @ axios.js?v=73e2434e:2151
+xhr @ axios.js?v=73e2434e:2057
+dispatchRequest @ axios.js?v=73e2434e:2649
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+api.ts:74 ❌ API Error: {url: '/leaderboard', method: 'get', status: 404, message: 'Request failed with status code 404'}
+(anonymous) @ api.ts:74
+Promise.then
+_request @ axios.js?v=73e2434e:2860
+request @ axios.js?v=73e2434e:2776
+Axios$1.<computed> @ axios.js?v=73e2434e:2897
+wrap @ axios.js?v=73e2434e:12
+(anonymous) @ api.ts:126
+(anonymous) @ LeaderboardFull.tsx:62
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12904
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+commitHookEffectListMount @ react-dom_client.js?v=73e2434e:6617
+commitHookPassiveMountEffects @ react-dom_client.js?v=73e2434e:6652
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7618
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7622
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7617
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7672
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=73e2434e:7606
+commitPassiveMountOnFiber @ react-dom_client.js?v=73e2434e:7627
+flushPassiveEffects @ react-dom_client.js?v=73e2434e:8808
+flushPendingEffects @ react-dom_client.js?v=73e2434e:8769
+flushSpawnedWork @ react-dom_client.js?v=73e2434e:8747
+commitRoot @ react-dom_client.js?v=73e2434e:8585
+commitRootWhenReady @ react-dom_client.js?v=73e2434e:8079
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:8051
+performSyncWorkOnRoot @ react-dom_client.js?v=73e2434e:9067
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=73e2434e:8984
+processRootScheduleInMicrotask @ react-dom_client.js?v=73e2434e:9005
+(anonymous) @ react-dom_client.js?v=73e2434e:9078
+<LeaderboardFull>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+App @ App.tsx:102
+react_stack_bottom_frame @ react-dom_client.js?v=73e2434e:12868
+renderWithHooksAgain @ react-dom_client.js?v=73e2434e:4268
+renderWithHooks @ react-dom_client.js?v=73e2434e:4219
+updateFunctionComponent @ react-dom_client.js?v=73e2434e:5569
+beginWork @ react-dom_client.js?v=73e2434e:6140
+runWithFiberInDEV @ react-dom_client.js?v=73e2434e:851
+performUnitOfWork @ react-dom_client.js?v=73e2434e:8429
+workLoopSync @ react-dom_client.js?v=73e2434e:8325
+renderRootSync @ react-dom_client.js?v=73e2434e:8309
+performWorkOnRoot @ react-dom_client.js?v=73e2434e:7957
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=73e2434e:9059
+performWorkUntilDeadline @ react-dom_client.js?v=73e2434e:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=73e2434e:193
+(anonymous) @ main.tsx:16
+LeaderboardFull.tsx:78 Failed to fetch leaderboard: AxiosError: Request failed with status code 404

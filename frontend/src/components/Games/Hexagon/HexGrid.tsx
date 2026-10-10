@@ -129,9 +129,10 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = 
     window.setTimeout(() => setBoardShake(false), 420);
   };
 
+  // Only empty cells accept a drop. Same-type merge pulls from *neighbors*, not pile-on-cell.
   const isValidPlacement = (tile: HexTile | undefined, dragType: string | undefined): boolean => {
     if (!tile || !dragType) return false;
-    return tile.type === 'empty' || tile.type === dragType;
+    return tile.type === 'empty';
   };
 
   // Collect pulse: UI-observe clear (tile → empty). Skip mass resets (new game).

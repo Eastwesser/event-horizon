@@ -40,8 +40,9 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
 
   const fetchLeaderboard = async (gid: GameId = selectedGame, level = selectedLevel) => {
     try {
-      const lv = gid === 'flappy' ? level : 1;
-      const { data } = await getLeaderboard(gid, 10, lv);
+      // Product: single board per game (level=1). Multi-level Flappy UI is commented out.
+      void level;
+      const { data } = await getLeaderboard(gid, 10, 1);
       const raw = data?.entries;
       setEntries(Array.isArray(raw) ? raw.filter(Boolean) : []);
     } catch (err) {
@@ -119,6 +120,7 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
           </div>
         )}
 
+        {/* Flappy multi-level LB hidden — all games use level=1 board.
         {selectedGame === 'flappy' && (
           <label className="mb-3 flex items-center gap-2 text-sm text-text-primary">
             Уровень
@@ -137,6 +139,7 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
             </select>
           </label>
         )}
+        */}
 
         {entries.length === 0 ? (
           <p className="py-8 text-center text-text-secondary">Нет данных</p>

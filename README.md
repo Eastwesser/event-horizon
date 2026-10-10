@@ -234,8 +234,12 @@ docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d g
 |--------|------|--------|
 | Prometheus | 9090 | http://localhost:9090 |
 | Grafana | 3000 | http://localhost:3000 (`GRAFANA_ADMIN_PASSWORD`, default admin) |
+| Alertmanager | 9193 | http://localhost:9193 |
 | Jaeger | 16686 | http://localhost:16686 |
 | NATS Exporter | 7777 | http://localhost:7777/metrics |
+
+Daily maintenance: `make daily` (status + smoke + Prom/Grafana targets).  
+Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.2026/DAILY_OPS.md`](confluence/history/2026-10/09.10.2026/DAILY_OPS.md).
 
 ---
 

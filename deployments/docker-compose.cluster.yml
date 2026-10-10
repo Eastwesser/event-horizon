@@ -27,7 +27,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Auth (кеш сессий, JWT) ---
   redis:
@@ -63,7 +65,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Game (кеш) ---
   redis-game:
@@ -97,7 +101,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Billing (кеш балансов) ---
   redis-billing:
@@ -131,7 +137,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Leaderboard (Sorted Set для топа) ---
   redis-leaderboard:
@@ -165,7 +173,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
       
   # --- Redis для Profile (кеш агрегированного профиля) ---
   redis-profile:
@@ -199,7 +209,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Shop ---
   redis-shop:
@@ -233,7 +245,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   # --- Redis для Inventory (кеш товаров) ---
   redis-inventory:
@@ -433,11 +447,15 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      # Provider YAML (must be YAML, not raw dashboard JSON)
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      # Dashboard JSON files loaded by the provider above
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     restart: unless-stopped
     networks:
       - event-horizon-net
@@ -540,10 +558,11 @@ services:
       - "9093:9093"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9093/ready"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      # First boot after reboot: PG migrate + Redis + NATS — 20s was too tight.
+      start_period: 90s
     environment:
       - METRICS_PORT=9093
       - JAEGER_ENDPOINT=jaeger:4317
@@ -555,7 +574,14 @@ services:
       - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_billing
       - REDIS_ADDR=event-horizon-redis-billing:6379
-    restart: on-failure
+    depends_on:
+      postgres-billing:
+        condition: service_healthy
+      redis-billing:
+        condition: service_healthy
+      nats-1:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - event-horizon-net
 
@@ -745,7 +771,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   notification:
     image: eastwesser/notification:latest
@@ -830,7 +858,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   redis-payment:
     image: redis:7-alpine
@@ -897,7 +927,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   redis-authors:
     image: redis:7-alpine
@@ -961,7 +993,9 @@ services:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\""]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      # Crash/reboot: unclean PG recovery can fsync 30–90s before accepting connections.
+      start_period: 120s
 
   history:
     image: eastwesser/history:latest
