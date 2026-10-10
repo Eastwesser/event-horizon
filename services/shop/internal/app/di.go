@@ -27,6 +27,7 @@ import (
 	"github.com/Eastwesser/event-horizon/platform/pkg/metrics"
 	"github.com/Eastwesser/event-horizon/platform/pkg/tracing"
 	billingPb "github.com/Eastwesser/event-horizon/services/billing/proto"
+	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/config"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/handler"
 	"github.com/Eastwesser/event-horizon/services/shop/internal/interceptor"
@@ -35,7 +36,6 @@ import (
 	"github.com/Eastwesser/event-horizon/services/shop/internal/worker"
 	"github.com/Eastwesser/event-horizon/services/shop/migrations"
 	pb "github.com/Eastwesser/event-horizon/services/shop/proto"
-	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 )
 
 type diContainer struct {
@@ -46,6 +46,7 @@ type diContainer struct {
 	nc        *nats.Conn
 	js        nats.JetStreamContext
 	pgRepo    *repository.PostgresShopRepo
+	billing   billingPb.BillingServiceClient
 	svc       service.ShopService
 	api       pb.ShopServiceServer
 	kafkaProd kafka.Producer
@@ -187,6 +188,7 @@ func (a *App) initDomain(_ context.Context) error {
 	}
 	a.closer.AddNamed("billing grpc", func(context.Context) error { return billingConn.Close() })
 	billingClient := billingPb.NewBillingServiceClient(billingConn)
+	a.di.billing = billingClient
 
 	var paymentClient paymentPb.PaymentServiceClient
 	if addr := a.cfg.PaymentConfig().Addr(); addr != "" {
@@ -287,7 +289,27 @@ func subscribePurchaseFulfilled(js nats.JetStreamContext, pg *repository.Postgre
 
 func (a *App) initOutbox(_ context.Context) error {
 	outboxCtx, cancelOutbox := context.WithCancel(context.Background())
-	outboxWorker := worker.NewOutboxWorker(a.di.db, a.di.js)
+	outboxWorker := worker.NewOutboxWorker(a.di.db, a.di.js, func(ctx context.Context, payload []byte) error {
+		if a.di.billing == nil {
+			return fmt.Errorf("billing client missing")
+		}
+		var body struct {
+			UserID      string `json:"user_id"`
+			Amount      int    `json:"amount"`
+			ReferenceID string `json:"reference_id"`
+		}
+		if err := json.Unmarshal(payload, &body); err != nil {
+			return err
+		}
+		_, err := a.di.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
+			UserId:      body.UserID,
+			Currency:    billingPb.CurrencyType_TICKETS,
+			Amount:      int32(body.Amount),
+			Reason:      "shop_purchase_refund",
+			ReferenceId: body.ReferenceID,
+		})
+		return err
+	})
 	go outboxWorker.Start(outboxCtx)
 	a.closer.AddNamed("outbox worker", func(context.Context) error {
 		cancelOutbox()

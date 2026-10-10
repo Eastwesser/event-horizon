@@ -62,12 +62,16 @@ func (s *FulfillmentService) HandlePurchasePaid(ctx context.Context, msg kafka.M
 			s.log.Error("nats publish purchase.fulfilled", "err", err)
 			return err
 		}
+		metrics.PurchasesFulfilledTotal.Inc()
+		s.log.Info("purchase fulfilled published", "purchase", out.PurchaseUUID)
+		return nil
 	}
 	if s.out != nil {
 		if err := s.out.Send(ctx, []byte(out.PurchaseUUID), body); err != nil {
 			return err
 		}
 	}
+	metrics.PurchasesFulfilledTotal.Inc()
 	s.log.Info("purchase fulfilled published", "purchase", out.PurchaseUUID)
 	return nil
 }

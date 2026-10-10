@@ -14,25 +14,25 @@ import (
 )
 
 type mockShopStore struct {
-	item              *repository.Item
-	getItemErr        error
-	owned             bool
-	ownedErr          error
-	ownedIDs          []string
-	listOwnedErr      error
-	purchaseErr       error
-	purchaseCalls     int
-	refund            *repository.RefundResult
-	refundErr         error
-	refundCalls       int
-	listRows          []repository.PurchaseRecord
-	listTotal         int64
-	listSales         int64
-	listTickets       int64
-	listErr           error
-	inventory         []repository.Item
-	items             []repository.Item
-	getItemsErr       error
+	item          *repository.Item
+	getItemErr    error
+	owned         bool
+	ownedErr      error
+	ownedIDs      []string
+	listOwnedErr  error
+	purchaseErr   error
+	purchaseCalls int
+	refund        *repository.RefundResult
+	refundErr     error
+	refundCalls   int
+	listRows      []repository.PurchaseRecord
+	listTotal     int64
+	listSales     int64
+	listTickets   int64
+	listErr       error
+	inventory     []repository.Item
+	items         []repository.Item
+	getItemsErr   error
 }
 
 func (m *mockShopStore) GetItems(context.Context, string, string) ([]repository.Item, error) {
@@ -63,10 +63,16 @@ func (m *mockShopStore) ListOwnedItemIDs(context.Context, string) ([]string, err
 	}
 	return nil, nil
 }
-func (m *mockShopStore) PurchaseItemWithStock(_ context.Context, _, _ string, _ int, _ *repository.OutboxRecord) error {
+func (m *mockShopStore) PurchaseItemWithStock(_ context.Context, _, _, _ string, _ int, _ []repository.OutboxRecord) error {
 	m.purchaseCalls++
 	return m.purchaseErr
 }
+func (m *mockShopStore) NextSpendCycle(context.Context, string, string) (int, error) { return 1, nil }
+func (m *mockShopStore) BumpSpendCycle(context.Context, string, string) error        { return nil }
+func (m *mockShopStore) EnqueueOutbox(context.Context, string, []byte) (string, error) {
+	return "ob1", nil
+}
+func (m *mockShopStore) MarkOutboxProcessed(context.Context, string) error { return nil }
 func (m *mockShopStore) GetUserInventory(context.Context, string) ([]repository.Item, error) {
 	return m.inventory, nil
 }
@@ -122,6 +128,7 @@ type stubBilling struct {
 	addCalls     int
 	getBal       int32
 	getBalErr    error
+	lastSpendRef string
 }
 
 func (b *stubBilling) GetBalance(context.Context, *billingPb.GetBalanceRequest, ...grpc.CallOption) (*billingPb.GetBalanceResponse, error) {
@@ -140,8 +147,9 @@ func (b *stubBilling) AddCurrency(context.Context, *billingPb.AddCurrencyRequest
 	}
 	return &billingPb.AddCurrencyResponse{NewBalance: b.addBal, Success: true}, nil
 }
-func (b *stubBilling) SpendCurrency(context.Context, *billingPb.SpendCurrencyRequest, ...grpc.CallOption) (*billingPb.SpendCurrencyResponse, error) {
+func (b *stubBilling) SpendCurrency(_ context.Context, req *billingPb.SpendCurrencyRequest, _ ...grpc.CallOption) (*billingPb.SpendCurrencyResponse, error) {
 	b.spendCalls++
+	b.lastSpendRef = req.GetReferenceId()
 	if b.spendErr != nil {
 		return nil, b.spendErr
 	}
@@ -241,6 +249,9 @@ func TestPurchaseItem_Success(t *testing.T) {
 	if billing.spendCalls != 1 || store.purchaseCalls != 1 {
 		t.Fatalf("spend=%d purchase=%d", billing.spendCalls, store.purchaseCalls)
 	}
+	if billing.lastSpendRef != "shop:u1:item-uuid-1:1" {
+		t.Fatalf("spend ref %q", billing.lastSpendRef)
+	}
 	if len(cache.deleted) == 0 {
 		t.Fatal("expected cache invalidation")
 	}
@@ -275,15 +286,15 @@ func TestCancelPurchase_NotFound(t *testing.T) {
 func TestCancelPurchase_AlreadyRefundedIdempotent(t *testing.T) {
 	store := &mockShopStore{
 		item:   &repository.Item{ID: "i1", Category: "card"},
-		refund: &repository.RefundResult{AlreadyRefunded: true},
+		refund: &repository.RefundResult{AlreadyRefunded: true, PurchaseID: "p1", Price: 25},
 	}
-	billing := &stubBilling{getBal: 42}
+	billing := &stubBilling{addBal: 42}
 	got, err := newTestShop(store, nil, billing).CancelPurchase(context.Background(), "u1", "i1")
 	if err != nil || !got.AlreadyRefunded || got.NewBalance != 42 || got.RefundedAmount != 0 {
 		t.Fatalf("%+v err=%v", got, err)
 	}
-	if billing.addCalls != 0 {
-		t.Fatal("should not AddCurrency when already refunded")
+	if billing.addCalls != 1 {
+		t.Fatal("retry must send the same cancel reference")
 	}
 }
 

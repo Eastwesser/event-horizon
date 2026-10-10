@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	authPb "github.com/Eastwesser/event-horizon/services/auth/proto"
 )
@@ -48,6 +50,10 @@ func RequireAuth(authClient AuthClient) gin.HandlerFunc {
 
 		resp, err := authClient.GetClient().ValidateToken(c.Request.Context(), &authPb.ValidateTokenRequest{Token: token})
 		if err != nil {
+			if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "auth service unavailable"})
 			return
 		}

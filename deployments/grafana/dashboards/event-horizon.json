@@ -266,6 +266,49 @@
         }
       ],
       "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 15,
+      "title": "Purchase paid → fulfilled",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(orders_total[5m]))",
+          "legendFormat": "purchase.paid / s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(purchases_fulfilled_total[5m]))",
+          "legendFormat": "purchase.fulfilled / s",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(assembly_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "assembly p95",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Shop refund still pending (CRITICAL)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(shop_purchase_refund_failures_total[5m]))",
+          "legendFormat": "refund failures / s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(shop_purchase_refund_failures_total)",
+          "legendFormat": "refund failures total",
+          "refId": "B"
+        }
+      ]
     }
   ],
   "refresh": "30s",
@@ -277,5 +320,5 @@
   "timezone": "browser",
   "title": "Event Horizon — Ops Overview",
   "uid": "event-horizon",
-  "version": 2
+  "version": 3
 }

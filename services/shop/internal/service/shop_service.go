@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 
 	"github.com/Eastwesser/event-horizon/contracts/events"
@@ -45,7 +46,11 @@ type ShopStore interface {
 	GetItemByID(ctx context.Context, itemID string) (*repository.Item, error)
 	IsItemOwned(ctx context.Context, userID, itemID string) (bool, error)
 	ListOwnedItemIDs(ctx context.Context, userID string) ([]string, error)
-	PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int, outbox *repository.OutboxRecord) error
+	PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []repository.OutboxRecord) error
+	NextSpendCycle(ctx context.Context, userID, itemID string) (int, error)
+	BumpSpendCycle(ctx context.Context, userID, itemID string) error
+	EnqueueOutbox(ctx context.Context, eventType string, payload []byte) (string, error)
+	MarkOutboxProcessed(ctx context.Context, id string) error
 	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
 	RefundPurchase(ctx context.Context, userID, itemID string) (*repository.RefundResult, error)
 	MarkPurchaseFulfilled(ctx context.Context, purchaseID string) error
@@ -151,26 +156,31 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		return 0, model.ErrAlreadyOwned
 	}
 
-	refItem := itemID
-	if len(refItem) > 8 {
-		refItem = refItem[:8]
+	cycle, err := s.pgRepo.NextSpendCycle(ctx, userID, itemID)
+	if err != nil {
+		return 0, fmt.Errorf("spend cycle: %w", err)
 	}
+	spendRef := fmt.Sprintf("shop:%s:%s:%d", userID, itemID, cycle)
+	refundRef := fmt.Sprintf("refund:shop:%s:%s:%d", userID, itemID, cycle)
+
 	spendResp, err := s.billing.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
 		UserId:      userID,
 		Currency:    billingPb.CurrencyType_TICKETS,
 		Amount:      int32(item.Price),
 		Reason:      "shop_purchase",
-		// billing.transactions.reference_id is varchar(100); full user+item+nano overflows → silent free purchase.
-		ReferenceId: fmt.Sprintf("shop-%s-%d", refItem, time.Now().UnixNano()),
+		ReferenceId: spendRef,
 		CheckOnly:   false,
 	})
+	alreadySpent := false
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient balance") {
 			return 0, model.ErrInsufficientFunds
 		}
-		return 0, fmt.Errorf("failed to spend tickets: %w", err)
-	}
-	if spendResp == nil || !spendResp.GetSuccess() {
+		if !isDuplicateRef(err) {
+			return 0, fmt.Errorf("failed to spend tickets: %w", err)
+		}
+		alreadySpent = true
+	} else if spendResp == nil || !spendResp.GetSuccess() {
 		msg := "spend rejected"
 		if spendResp != nil && spendResp.GetMessage() != "" {
 			msg = spendResp.GetMessage()
@@ -178,66 +188,63 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		if strings.Contains(msg, "insufficient balance") {
 			return 0, model.ErrInsufficientFunds
 		}
-		return 0, fmt.Errorf("failed to spend tickets: %s", msg)
+		if !isDuplicateRef(errors.New(msg)) {
+			return 0, fmt.Errorf("failed to spend tickets: %s", msg)
+		}
+		alreadySpent = true
 	}
 
+	purchaseID := uuid.NewString()
 	event := map[string]interface{}{
-		"user_id":   userID,
-		"item_id":   itemID,
-		"item_name": item.Name,
-		"price":     item.Price,
-		"category":  item.Category,
-		"timestamp": time.Now().Unix(),
+		"user_id":     userID,
+		"item_id":     itemID,
+		"item_name":   item.Name,
+		"price":       item.Price,
+		"category":    item.Category,
+		"purchase_id": purchaseID,
+		"timestamp":   time.Now().Unix(),
 	}
 	eventData, _ := json.Marshal(event)
+	paid := events.PurchasePaid{
+		EventUUID:    uuid.NewString(),
+		PurchaseUUID: purchaseID,
+		UserUUID:     userID,
+		ItemUUID:     itemID,
+		Price:        int32(item.Price),
+	}
+	paidBody, mErr := paid.Marshal()
+	if mErr != nil {
+		return 0, fmt.Errorf("marshal purchase.paid: %w", mErr)
+	}
 
-	if err := s.pgRepo.PurchaseItemWithStock(ctx, userID, itemID, item.Price, &repository.OutboxRecord{
-		EventType: "shop.purchased",
-		Payload:   eventData,
+	if err := s.pgRepo.PurchaseItemWithStock(ctx, userID, itemID, purchaseID, item.Price, []repository.OutboxRecord{
+		{EventType: "shop.purchased", Payload: eventData},
+		{EventType: kafka.TopicPurchasePaid, Payload: paidBody},
 	}); err != nil {
+		if isDuplicateRef(err) {
+			return 0, model.ErrAlreadyOwned
+		}
 		log.Printf("CRITICAL: tickets spent but purchase failed for user %s, item %s: %v — refunding", userID, itemID, err)
+		outboxID := s.enqueueRefund(ctx, userID, itemID, item.Price, refundRef, err)
+		_ = s.pgRepo.BumpSpendCycle(ctx, userID, itemID)
 		if _, refundErr := s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
 			UserId:      userID,
 			Currency:    billingPb.CurrencyType_TICKETS,
 			Amount:      int32(item.Price),
 			Reason:      "shop_purchase_refund",
-			ReferenceId: fmt.Sprintf("refund-%s-%d", refItem, time.Now().UnixNano()),
-		}); refundErr != nil {
+			ReferenceId: refundRef,
+		}); refundErr != nil && !isDuplicateRef(refundErr) {
+			metrics.PurchaseRefundFailures.Inc()
 			log.Printf("CRITICAL: refund also failed for user %s, item %s: %v", userID, itemID, refundErr)
-			event := map[string]interface{}{
-				"user_id":   userID,
-				"item_id":   itemID,
-				"price":     item.Price,
-				"error":     err.Error(),
-				"refund":    refundErr.Error(),
-				"timestamp": time.Now().Unix(),
-			}
-			eventData, _ := json.Marshal(event)
-			s.js.Publish("shop.purchase.failed", eventData)
+			return 0, fmt.Errorf("failed to record purchase: %w", err)
+		}
+		if outboxID != "" {
+			_ = s.pgRepo.MarkOutboxProcessed(ctx, outboxID)
 		}
 		return 0, fmt.Errorf("failed to record purchase: %w", err)
 	}
-
-	if s.js != nil || s.kafkaProd != nil {
-		paid := events.PurchasePaid{
-			EventUUID:    newEventID(),
-			PurchaseUUID: newEventID(),
-			UserUUID:     userID,
-			ItemUUID:     itemID,
-			Price:        int32(item.Price),
-		}
-		if body, mErr := paid.Marshal(); mErr == nil {
-			if s.js != nil {
-				if _, err := s.js.Publish(kafka.TopicPurchasePaid, body); err != nil {
-					log.Printf("⚠️ Failed to publish NATS purchase.paid: %v", err)
-				}
-			}
-			if s.kafkaProd != nil {
-				if err := s.kafkaProd.Send(ctx, []byte(paid.PurchaseUUID), body); err != nil {
-					log.Printf("⚠️ Failed to publish kafka purchase.paid: %v", err)
-				}
-			}
-		}
+	if alreadySpent {
+		log.Printf("shop: replayed spend %s for user %s item %s", spendRef, userID, itemID)
 	}
 
 	gameID := ""
@@ -251,7 +258,79 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 
 	metrics.RecordOrder(float64(item.Price))
 
-	return spendResp.NewBalance, nil
+	if spendResp != nil {
+		return spendResp.NewBalance, nil
+	}
+	bal, balErr := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
+		UserId:   userID,
+		Currency: billingPb.CurrencyType_TICKETS,
+	})
+	if balErr != nil || bal == nil {
+		return 0, nil
+	}
+	return bal.GetBalance(), nil
+}
+
+func (s *shopService) enqueueRefund(ctx context.Context, userID, itemID string, price int, referenceID string, cause error) string {
+	body, _ := json.Marshal(map[string]any{
+		"user_id":      userID,
+		"item_id":      itemID,
+		"amount":       price,
+		"reference_id": referenceID,
+		"error":        cause.Error(),
+	})
+	id, err := s.pgRepo.EnqueueOutbox(ctx, "billing.refund", body)
+	if err != nil {
+		log.Printf("shop: enqueue refund %s: %v", referenceID, err)
+		return ""
+	}
+	return id
+}
+
+func (s *shopService) creditCancel(ctx context.Context, userID string, refund *repository.RefundResult) (int32, error) {
+	if refund == nil || refund.PurchaseID == "" || refund.Price <= 0 {
+		bal, err := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
+			UserId:   userID,
+			Currency: billingPb.CurrencyType_TICKETS,
+		})
+		if err != nil || bal == nil {
+			return 0, err
+		}
+		return bal.GetBalance(), nil
+	}
+	refID := fmt.Sprintf("cancel-%s", refund.PurchaseID)
+	addResp, err := s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
+		UserId:      userID,
+		Currency:    billingPb.CurrencyType_TICKETS,
+		Amount:      int32(refund.Price),
+		Reason:      "shop_purchase_cancel",
+		ReferenceId: refID,
+	})
+	if err != nil {
+		if isDuplicateRef(err) {
+			bal, balErr := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
+				UserId:   userID,
+				Currency: billingPb.CurrencyType_TICKETS,
+			})
+			if balErr != nil || bal == nil {
+				return 0, nil
+			}
+			return bal.GetBalance(), nil
+		}
+		return 0, err
+	}
+	if addResp == nil {
+		return 0, nil
+	}
+	return addResp.GetNewBalance(), nil
+}
+
+func isDuplicateRef(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "duplicate") || strings.Contains(s, "23505") || strings.Contains(s, "unique constraint")
 }
 
 func (s *shopService) GetInventory(ctx context.Context, userID string) ([]repository.Item, error) {
@@ -297,36 +376,23 @@ func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string)
 		}
 		return nil, err
 	}
-	if refund.AlreadyRefunded {
-		bal, _ := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
-			UserId:   userID,
-			Currency: billingPb.CurrencyType_TICKETS,
-		})
-		var newBal int32
-		if bal != nil {
-			newBal = bal.GetBalance()
+	if !refund.AlreadyRefunded {
+		if bumpErr := s.pgRepo.BumpSpendCycle(ctx, userID, itemID); bumpErr != nil {
+			log.Printf("shop: bump spend cycle user=%s item=%s: %v", userID, itemID, bumpErr)
 		}
-		return &CancelResult{
-			NewBalance:      newBal,
-			AlreadyRefunded: true,
-		}, nil
 	}
 
-	refID := fmt.Sprintf("cancel-%s", refund.PurchaseID)
-	if len(refID) > 100 {
-		refID = refID[:100]
-	}
-	addResp, err := s.billing.AddCurrency(ctx, &billingPb.AddCurrencyRequest{
-		UserId:      userID,
-		Currency:    billingPb.CurrencyType_TICKETS,
-		Amount:      int32(refund.Price),
-		Reason:      "shop_purchase_cancel",
-		ReferenceId: refID,
-	})
+	newBal, err := s.creditCancel(ctx, userID, refund)
 	if err != nil {
 		log.Printf("CRITICAL: purchase refunded in shop but AddCurrency failed user=%s item=%s purchase=%s: %v",
 			userID, itemID, refund.PurchaseID, err)
 		return nil, fmt.Errorf("failed to refund tickets: %w", err)
+	}
+	if refund.AlreadyRefunded {
+		return &CancelResult{
+			NewBalance:      newBal,
+			AlreadyRefunded: true,
+		}, nil
 	}
 
 	gameID := ""
@@ -338,10 +404,6 @@ func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string)
 	_ = s.redisRepo.Delete(ctx, "shop:items:all:")
 	_ = s.redisRepo.Delete(ctx, fmt.Sprintf("balance:%s:tickets", userID))
 
-	newBal := int32(0)
-	if addResp != nil {
-		newBal = addResp.GetNewBalance()
-	}
 	return &CancelResult{
 		NewBalance:     newBal,
 		RefundedAmount: int32(refund.Price),

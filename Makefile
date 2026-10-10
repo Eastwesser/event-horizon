@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase obs-check daily seed-admin seed-shop seed-themes seed-history seed-v110 seed-lb-demo seed-card-artists fe-build fe-preview
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy wait-postgres test-all test-unit test-smoke test-k6 test-k6-purchase obs-check daily seed-admin seed-shop seed-themes seed-history seed-v110 seed-lb-demo seed-card-artists fe-build fe-preview
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -245,14 +245,36 @@ patroni-auth-up:
 # Thin (default): NATS + apps + fulfillment/notification/analytics + ClickHouse + obs.
 # Heavy: same + Kafka broker (optional dual-write when KAFKA_BROKERS=kafka:9092).
 # k3s: make deploy-k3s — separate, leave manifests untouched.
+# Published Postgres containers that migrate-all talks to.
+# First boot after reboot runs initdb; a fixed sleep races goose and the second deploy "fixes" it.
+PG_CONTAINERS := event-horizon-postgres event-horizon-postgres-game event-horizon-postgres-billing event-horizon-postgres-leaderboard event-horizon-postgres-profile event-horizon-postgres-shop event-horizon-postgres-inventory event-horizon-postgres-history
+
+wait-postgres:
+	@echo "Waiting until Postgres accepts connections..."
+	@for c in $(PG_CONTAINERS); do \
+		i=0; \
+		until docker exec $$c pg_isready -U eventhorizon >/dev/null 2>&1; do \
+			i=$$((i+1)); \
+			if [ $$i -gt 90 ]; then echo "$$c not ready after 3 minutes"; exit 1; fi; \
+			sleep 2; \
+		done; \
+		echo "  $$c ready"; \
+	done
+
+# Databases only. Apps stay down until goose finishes, so the first boot after a reboot
+# does not hit "connection refused" on :5460–:5469.
+PG_SERVICES := postgres postgres-game postgres-billing postgres-leaderboard postgres-profile postgres-shop postgres-inventory postgres-history
+
 deploy:
 	@echo "🚀 Building nats-hub..."
 	$(MAKE) build-nats-hub
-	@echo "🚀 Starting thin stack (NATS path; Kafka OFF)..."
-	$(COMPOSE) up -d
-	@sleep 5
+	@echo "🚀 Starting Postgres (thin stack, Kafka OFF)..."
+	$(COMPOSE) up -d $(PG_SERVICES)
+	$(MAKE) wait-postgres
 	@echo "📦 Running migrations..."
 	$(MAKE) migrate-all
+	@echo "🚀 Starting the rest of the thin stack..."
+	$(COMPOSE) up -d
 	@echo "✅ Thin stack ready"
 	@echo "   🎯 Gateway: http://localhost:8079"
 	@echo "   📊 Grafana: http://localhost:3000"

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -49,12 +50,12 @@ import (
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/config"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/dto"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/middleware"
-	gwhook "github.com/Eastwesser/event-horizon/services/gateway/internal/webhook"
 	"github.com/Eastwesser/event-horizon/services/gateway/internal/ratelimit"
+	gwhook "github.com/Eastwesser/event-horizon/services/gateway/internal/webhook"
 	historyPb "github.com/Eastwesser/event-horizon/services/history/proto"
 	inventoryPb "github.com/Eastwesser/event-horizon/services/inventory/proto"
-	notificationPb "github.com/Eastwesser/event-horizon/services/notification/proto"
 	leaderboardPb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
+	notificationPb "github.com/Eastwesser/event-horizon/services/notification/proto"
 	paymentPb "github.com/Eastwesser/event-horizon/services/payment/proto"
 	profilePb "github.com/Eastwesser/event-horizon/services/profile/proto"
 	shopPb "github.com/Eastwesser/event-horizon/services/shop/proto"
@@ -240,7 +241,29 @@ func writePaymentConfirmError(c *gin.Context, err error) {
 }
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: originAllowed,
+}
+
+// originAllowed accepts the page that loaded the app (same host), localhost, and WS_ALLOWED_ORIGINS.
+// An empty Origin is a non-browser client; the handler still requires a token.
+func originAllowed(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	if strings.EqualFold(u.Host, r.Host) || strings.HasPrefix(u.Host, "localhost:") || u.Host == "localhost" || strings.HasPrefix(u.Host, "127.0.0.1:") || u.Host == "127.0.0.1" {
+		return true
+	}
+	for _, allowed := range strings.Split(os.Getenv("WS_ALLOWED_ORIGINS"), ",") {
+		if strings.TrimSpace(allowed) == origin {
+			return true
+		}
+	}
+	return false
 }
 
 type WSClient struct {
@@ -552,6 +575,31 @@ func runGateway() {
 	})
 
 	r.GET("/ws/leaderboard", func(c *gin.Context) {
+		if !originAllowed(c.Request) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "origin not allowed"})
+			return
+		}
+		token := strings.TrimSpace(c.Query("token"))
+		if token == "" {
+			token, _ = middleware.ExtractBearerToken(c.GetHeader("Authorization"))
+		}
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			return
+		}
+		resp, err := authClient.GetClient().ValidateToken(c.Request.Context(), &authPb.ValidateTokenRequest{Token: token})
+		if err != nil {
+			if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+		if resp == nil || !resp.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			return
+		}
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			log.Printf("WebSocket upgrade failed: %v", err)
@@ -1482,14 +1530,14 @@ func runGateway() {
 				}
 			}
 			purchases = append(purchases, gin.H{
-				"id":            p.GetId(),
-				"item_id":       p.GetItemId(),
-				"item_name":     names[p.GetItemId()],
-				"buyer_email":   email,
-				"price":         p.GetPrice(),
-				"status":        p.GetStatus(),
-				"purchased_at":  p.GetPurchasedAt(),
-				"refunded_at":   p.GetRefundedAt(),
+				"id":           p.GetId(),
+				"item_id":      p.GetItemId(),
+				"item_name":    names[p.GetItemId()],
+				"buyer_email":  email,
+				"price":        p.GetPrice(),
+				"status":       p.GetStatus(),
+				"purchased_at": p.GetPurchasedAt(),
+				"refunded_at":  p.GetRefundedAt(),
 			})
 		}
 
@@ -1549,11 +1597,11 @@ func runGateway() {
 		if js != nil && app != nil {
 			adminIDs := listAdminUserIDs(c.Request.Context(), authClient, authCB)
 			payload, _ := json.Marshal(map[string]any{
-				"event":           "author.application.submitted",
-				"application_id":  app.GetId(),
-				"user_id":         app.GetUserId(),
-				"display_name":    app.GetDisplayName(),
-				"admin_ids":       adminIDs,
+				"event":          "author.application.submitted",
+				"application_id": app.GetId(),
+				"user_id":        app.GetUserId(),
+				"display_name":   app.GetDisplayName(),
+				"admin_ids":      adminIDs,
 			})
 			if _, err := js.Publish("author.application.submitted", payload); err != nil {
 				log.Printf("publish author.application.submitted: %v", err)
