@@ -154,8 +154,10 @@ func (a *App) initDomain(_ context.Context) error {
 func (a *App) initWorkers(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(context.Background())
 	go worker.NewInboxConsumer(a.di.js, a.di.inbox, a.log).Start(runCtx)
-	go a.consumePurchaseNATS(runCtx)
-	if a.cfg.KafkaBrokers != "" {
+	if a.di.js != nil {
+		go a.consumePurchaseNATS(runCtx)
+	}
+	if a.di.js == nil && a.cfg.KafkaBrokers != "" {
 		go func() {
 			a.log.Info("notification consuming Kafka purchase topics")
 			if err := a.di.consumer.Consume(runCtx, a.di.notifier.Handle); err != nil && runCtx.Err() == nil {

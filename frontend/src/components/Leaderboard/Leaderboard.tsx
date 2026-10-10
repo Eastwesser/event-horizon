@@ -1,6 +1,7 @@
 // frontend/src/components/Leaderboard/Leaderboard.tsx
 import { useEffect, useState, useRef } from 'react';
 import { getLeaderboard } from '../../services/api';
+import { getAccessToken } from '../../lib/auth';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
@@ -54,7 +55,10 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws/leaderboard`);
+    const token = getAccessToken();
+    if (!token) return;
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${window.location.host}/ws/leaderboard?token=${encodeURIComponent(token)}`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {

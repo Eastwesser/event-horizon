@@ -12,18 +12,18 @@ import (
 )
 
 type Item struct {
-	ID            string
-	Name          string
-	Description   string
-	Price         int
-	Category      string
-	GameID        *string
-	ImageURL      string
-	Available     bool
-	Owned         bool
-	PurchasedAt   *time.Time
-	PurchasePrice int
-	PurchaseID    string
+	ID              string
+	Name            string
+	Description     string
+	Price           int
+	Category        string
+	GameID          *string
+	ImageURL        string
+	Available       bool
+	Owned           bool
+	PurchasedAt     *time.Time
+	PurchasePrice   int
+	PurchaseID      string
 	RefundableUntil *time.Time
 	FulfilledAt     *time.Time
 	CanCancel       bool
@@ -297,16 +297,17 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 		FOR UPDATE OF p
 	`, userID, itemID).Scan(&purchaseID, &price, &refundableUntil, &fulfilledAt, &category)
 	if err == sql.ErrNoRows {
-		var already bool
-		_ = tx.QueryRowContext(ctx, `
-			SELECT EXISTS(
-				SELECT 1 FROM purchases
-				WHERE user_id = $1 AND item_id = $2
-				  AND (status = 'REFUNDED' OR refunded_at IS NOT NULL)
-			)
-		`, userID, itemID).Scan(&already)
-		if already {
-			return &RefundResult{AlreadyRefunded: true}, nil
+		var alreadyID string
+		var alreadyPrice int
+		qerr := tx.QueryRowContext(ctx, `
+			SELECT id, price FROM purchases
+			WHERE user_id = $1 AND item_id = $2
+			  AND (status = 'REFUNDED' OR refunded_at IS NOT NULL)
+			ORDER BY refunded_at DESC NULLS LAST
+			LIMIT 1
+		`, userID, itemID).Scan(&alreadyID, &alreadyPrice)
+		if qerr == nil {
+			return &RefundResult{PurchaseID: alreadyID, Price: alreadyPrice, AlreadyRefunded: true}, nil
 		}
 		return nil, fmt.Errorf("purchase not found")
 	}
@@ -367,9 +368,47 @@ type OutboxRecord struct {
 	Payload   []byte
 }
 
-// PurchaseItemWithStock — покупка с проверкой стока. If outbox is set, the event
-// is written in the same TX (worker publishes to NATS).
-func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, itemID string, price int, outbox *OutboxRecord) error {
+// NextSpendCycle returns the stable billing cycle for this player+item.
+// Parallel clicks share it. BumpSpendCycle moves it after a refund.
+func (r *PostgresShopRepo) NextSpendCycle(ctx context.Context, userID, itemID string) (int, error) {
+	var cycle int
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO purchase_claims (user_id, item_id, cycle)
+		VALUES ($1, $2, 1)
+		ON CONFLICT (user_id, item_id) DO UPDATE SET cycle = purchase_claims.cycle
+		RETURNING cycle
+	`, userID, itemID).Scan(&cycle)
+	return cycle, err
+}
+
+// BumpSpendCycle advances the claim so the next purchase uses a new reference_id.
+func (r *PostgresShopRepo) BumpSpendCycle(ctx context.Context, userID, itemID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE purchase_claims SET cycle = cycle + 1 WHERE user_id = $1 AND item_id = $2
+	`, userID, itemID)
+	return err
+}
+
+// EnqueueOutbox writes one event outside the purchase transaction (compensation).
+func (r *PostgresShopRepo) EnqueueOutbox(ctx context.Context, eventType string, payload []byte) (string, error) {
+	var id string
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO outbox (event_type, payload) VALUES ($1, $2) RETURNING id
+	`, eventType, payload).Scan(&id)
+	return id, err
+}
+
+// MarkOutboxProcessed closes a row the worker would otherwise retry.
+func (r *PostgresShopRepo) MarkOutboxProcessed(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE outbox SET processed = true, processed_at = NOW() WHERE id = $1
+	`, id)
+	return err
+}
+
+// PurchaseItemWithStock — покупка с проверкой стока. purchaseID is the row id
+// and the PurchaseUUID of every outbox event written in this transaction.
+func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []OutboxRecord) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -401,18 +440,20 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
 		return err
 	}
 
-	// Добавляем в историю покупок
 	_, err = tx.ExecContext(ctx, `
-        INSERT INTO purchases (user_id, item_id, price, status, refundable_until)
-        VALUES ($1, $2, $3, 'COMPLETED', NOW() + INTERVAL '7 days')`, userID, itemID, price)
+        INSERT INTO purchases (id, user_id, item_id, price, status, refundable_until)
+        VALUES ($1, $2, $3, $4, 'COMPLETED', NOW() + INTERVAL '7 days')`, purchaseID, userID, itemID, price)
 	if err != nil {
 		return err
 	}
 
-	if outbox != nil && outbox.EventType != "" && len(outbox.Payload) > 0 {
+	for _, rec := range records {
+		if rec.EventType == "" || len(rec.Payload) == 0 {
+			continue
+		}
 		if _, err := tx.ExecContext(ctx, `
             INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
-			outbox.EventType, outbox.Payload); err != nil {
+			rec.EventType, rec.Payload); err != nil {
 			return err
 		}
 	}

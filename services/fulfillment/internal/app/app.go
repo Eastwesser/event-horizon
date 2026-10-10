@@ -118,8 +118,8 @@ func (a *App) RunUntilSignal(ctx context.Context) error {
 		}()
 	}
 
-	// Optional Kafka path (heavy deploy with KAFKA_BROKERS set).
-	if a.cfg.KafkaBrokers != "" {
+	// Kafka only when JetStream is down. Both transports would fulfill the same order twice.
+	if a.js == nil && a.cfg.KafkaBrokers != "" {
 		go func() {
 			a.log.Info("fulfillment consuming Kafka", "topic", kafka.TopicPurchasePaid)
 			if err := a.consumer.Consume(runCtx, a.svc.HandlePurchasePaid); err != nil && runCtx.Err() == nil {

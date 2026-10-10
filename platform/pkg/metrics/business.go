@@ -19,6 +19,18 @@ var (
 			Help: "Sum of item prices for successful shop purchases",
 		},
 	)
+	PurchasesFulfilledTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "purchases_fulfilled_total",
+			Help: "purchase.fulfilled events published by fulfillment",
+		},
+	)
+	PurchaseRefundFailures = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "shop_purchase_refund_failures_total",
+			Help: "Shop could not refund tickets immediately after a failed purchase; outbox will retry",
+		},
+	)
 	AssemblyDurationSeconds = promauto.NewHistogram(
 		prometheus.HistogramOpts{
 			Name:    "assembly_duration_seconds",

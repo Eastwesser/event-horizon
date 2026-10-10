@@ -90,10 +90,11 @@ func TestShop_PurchaseItemWithStock_AndVersionBump(t *testing.T) {
 		t.Fatalf("seed item: %v", err)
 	}
 
-	if err := repo.PurchaseItemWithStock(ctx, userID, itemID, 50, &repository.OutboxRecord{
+	purchaseID := uuid.NewString()
+	if err := repo.PurchaseItemWithStock(ctx, userID, itemID, purchaseID, 50, []repository.OutboxRecord{{
 		EventType: "shop.purchased",
 		Payload:   []byte(`{"user_id":"` + userID + `","item_id":"` + itemID + `"}`),
-	}); err != nil {
+	}}); err != nil {
 		t.Fatalf("purchase: %v", err)
 	}
 
@@ -124,10 +125,10 @@ func TestShop_PurchaseItemWithStock_AndVersionBump(t *testing.T) {
 
 	// exhaust stock
 	u2 := uuid.NewString()
-	if err := repo.PurchaseItemWithStock(ctx, u2, itemID, 50, nil); err != nil {
+	if err := repo.PurchaseItemWithStock(ctx, u2, itemID, uuid.NewString(), 50, nil); err != nil {
 		t.Fatalf("second purchase: %v", err)
 	}
-	err = repo.PurchaseItemWithStock(ctx, uuid.NewString(), itemID, 50, nil)
+	err = repo.PurchaseItemWithStock(ctx, uuid.NewString(), itemID, uuid.NewString(), 50, nil)
 	if err == nil {
 		t.Fatal("expected out of stock")
 	}

@@ -32,8 +32,8 @@ type TokenPair struct {
 }
 
 type authService struct {
-	repo  repository.UserRepository
-	cache *repository.RedisAuthRepo
+	repo   repository.UserRepository
+	cache  *repository.RedisAuthRepo
 	tokens *jwtauth.Manager
 }
 
@@ -146,7 +146,9 @@ func (s *authService) ValidateToken(ctx context.Context, tokenString string) (st
 		exists, cacheErr := s.cache.SessionExists(ctx, claims.JTI)
 		if cacheErr != nil {
 			log.Printf("auth: Redis session check failed: %v", cacheErr)
-		} else if !exists {
+			return "", "", "", model.ErrSessionStoreUnavailable
+		}
+		if !exists {
 			return "", "", "", model.ErrSessionRevoked
 		}
 	}
@@ -162,7 +164,9 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*T
 		ok, cacheErr := s.cache.RefreshExists(ctx, claims.JTI)
 		if cacheErr != nil {
 			log.Printf("auth: Redis refresh check failed: %v", cacheErr)
-		} else if !ok {
+			return nil, model.ErrSessionStoreUnavailable
+		}
+		if !ok {
 			return nil, model.ErrSessionRevoked
 		}
 		_ = s.cache.DeleteRefresh(ctx, claims.JTI, claims.UserID)

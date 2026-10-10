@@ -81,6 +81,9 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, status.Error(codes.InvalidArgument, "refresh_token required")
 	}
 	pair, err := h.authService.RefreshToken(ctx, req.RefreshToken)
+	if errors.Is(err, model.ErrSessionStoreUnavailable) {
+		return nil, status.Error(codes.Unavailable, err.Error())
+	}
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
@@ -119,6 +122,9 @@ func (h *AuthHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 	}
 
 	userID, email, role, err := h.authService.ValidateToken(ctx, req.Token)
+	if errors.Is(err, model.ErrSessionStoreUnavailable) {
+		return nil, status.Error(codes.Unavailable, err.Error())
+	}
 	if err != nil {
 		return &pb.ValidateTokenResponse{Valid: false}, nil
 	}

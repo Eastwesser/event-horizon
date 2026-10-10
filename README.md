@@ -5,10 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.0-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.1-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.0** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy.
+**Event Horizon v1.1.1** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy.
 
 | | |
 |---|---|
@@ -97,10 +97,33 @@ make deploy-k3s
 Готово! Всё поднимется автоматически:
 
 - PostgreSQL, Redis, NATS, ClickHouse, Jaeger, Prometheus, Grafana (+ apps)
-- Миграции баз данных
+- Миграции баз данных — после `pg_isready` на всех Postgres (первый `make deploy` после перезагрузки машины дожидается баз, затем goose)
 - Микросервисы: Auth, Game, Billing, Leaderboard, Shop, Inventory, Profile, Payment, Authors, History, Analytics, Fulfillment, Notification, NATS Hub, …
 - Purchase path: Shop → NATS `purchase.paid` → Fulfillment / Notification
 - Опционально: Kafka (`make deploy-heavy`), k3s (`make deploy-k3s`)
+
+---
+
+## 🪟 Windows
+
+На Windows проект запускается из Ubuntu в WSL2. Makefile написан на bash.
+
+1. Поставь [Docker Desktop](https://www.docker.com/products/docker-desktop/) и включи **Use the WSL 2 based engine**. В Settings → Resources → WSL integration включи дистрибутив Ubuntu.
+2. Поставь Ubuntu из Microsoft Store, если его ещё нет. Клонируй репозиторий в домашний каталог Linux (`~/event_horizon`). Том Postgres на `/mnt/c` работает очень медленно.
+3. В Ubuntu: `sudo apt update && sudo apt install -y make golang-go git`. Миграции применяет goose:
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+echo 'export PATH="$HOME/go/bin:$PATH"' >> ~/.bashrc
+```
+
+4. `cp .env.example .env`, затем `make deploy`. Первый старт поднимает Postgres, ждёт `pg_isready` и только потом запускает goose и остальные сервисы. Шлюз открывается в браузере Windows: `http://localhost:8079` (WSL2 отдаёт localhost на хост).
+
+Сборка `nats-hub` и миграции идут через `make deploy` внутри Ubuntu. Из PowerShell контейнеры можно поднять отдельно:
+
+```powershell
+docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d
+```
 
 ---
 
@@ -316,7 +339,8 @@ Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.202
 | Game Outbox | [`confluence/architecture/GAME_OUTBOX.md`](confluence/architecture/GAME_OUTBOX.md) |
 | Patroni HA roadmap | [`deployments/patroni/README.md`](deployments/patroni/README.md) |
 | Issues & fixes (v1.0.8) | [`confluence/history/2026-08/30.08.2026/Issues.md`](confluence/history/2026-08/30.08.2026/Issues.md) |
-| Pre-prod debt checklist | [`confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md`](confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md) |
+| Что осталось на v1.1 | [`confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md) |
+| DevOps на потом | [`confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md) |
 | Технический долг | [`confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md`](confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md) |
 | CHANGELOG | [`CHANGELOG.md`](CHANGELOG.md) |
 
@@ -369,278 +393,48 @@ Do **not** run 10k VUs on this VM — that is not “10k DAU”; it will OOM / t
 
 ## 🔮 Планы на следующие спринты
 
-**Чеклист (tick boxes):** [`confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md`](confluence/architecture/FINAL_DETAILS.md/TODO_FINAL_PRE_PROD_DETAILS.md)
+Статус на **v1.1.0** (10.10.2026). Ниже — то, что уже в продукте, что осталось лично, и что лежит в парковке.
 
-Классификация — 3 оси
-Для каждой задачи:
+Живые списки:
 
-Сложность: XS / S / M / L / XL.
+- что закрыто и что осталось лично: [`LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md)
+- идеи на потом: [`DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md)
 
-Риск: низкий / средний / высокий (что может сломаться).
+### Уже в продукте
 
-Зависимость: что должно быть до.
+- **v1.0.9** — каталог Берсерк, тонкий list DTO, отмена покупки, отзывы Noiz
+- **v1.0.7–v1.0.8** — circuit breaker на gRPC gateway, OpenAPI `/docs`, Payment / Authors / History / Analytics, покупка через NATS, секреты из `.env`
+- **v1.0.6** — CI (GitHub Actions), Ansible, манифесты k3s
+- **v1.1.0** — публичный `/api/v1`, буст за лампочки, достижения, полировка Hanoi / Gears / Hexagon / Pancaker / компаньон, Grafana, прогон CORE k6
 
-🟢 Быстрые победы (XS–S, 1–3 дня)
-Здесь и сейчас, минимальный риск.
+### Инженерный хвост v1.1
 
-#	Задача	Сложность	Риск	Зачем
-1	PUT 403 investigation	XS	низкий	30 минут. Выяснить причину.
-2	Emoji → SVG / PNG в UI	S	низкий	1-2 дня. Заменить ~20 эмодзи в навигации / кнопках / флагах.
-3	Rate Limiter (100/сек per user)	S	низкий	Стандартный middleware.
-4	Retry с джиттером в gateway	S	низкий	gRPC-клиенты. 1 день.
-5	Alerts в Telegram (Alertmanager)	S	низкий	Готовый Alertmanager. 1 день.
-6	Circuit Breaker + Bulkhead	S	низкий	У тебя уже есть circuit breaker. Bulkhead — добавить.
-Итого: ~5-7 дней, низкий риск, каждая задача закрывается отдельно.
+Закрыт. Разбор — в `LEFT_TO_FINISH.md`.
 
-🟡 Средние (M, 1 неделя)
-Требуют плана, но предсказуемы.
+### Осталось снаружи кода
 
-#	Задача	Сложность	Риск	Зависимость
-7	/shop/items thin DTO	M	низкий	—
-8	Bottleneck fix — server-side page	M	средний	Нужен bottleneck если 1000+
-9	Laмпочки как бусты в играх	M	средний	Game service + UI
-10	Уровни сложности (1–20)	M	средний	Game service
-11	Достижения (achievements)	M	средний	Новая фича, БД
-12	Юнит-тесты ≥70%	M	низкий	Долгая задача, но параллельно
-13	OpenAPI/Swagger для всех сервисов	M	низкий	Docs, но нужно по всем сервисам
-14	Service Discovery (Consul)	M	средний	Инфраструктура
-15	Helm-чарты для k3s	M	средний	DevOps
-Итого: ~2-3 недели, средний риск, часть — параллельно.
+- стикеры на Miro
+- `git tag v1.1.0`
+- единый хром мини-игр
+- арт тамагочи по референсу
+- выплаты авторам (C4), витрина на 108 авторов и 3D остаются закрытыми
 
-🔴 Крупные (L–XL)
-Требуют декомпозиции на под-волны.
+### Парковка
 
-🟠 C. Author registration (XL)
-Разбить на 4 под-волны:
+Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`.
 
-C1. Заявка (S).
+### Если открывать следующий эпик
 
-Route /register-author (auth user).
+Отдельное решение, когда появится время:
 
-Форма: имя, портфолио, причина.
-
-POST /api/authors/apply.
-
-Запись в БД: pending.
-
-C2. Admin approval (M).
-
-/admin → вкладка «Заявки».
-
-Список pending, кнопки approve / reject.
-
-Approve → role=author, отправка уведомления.
-
-C3. Author dashboard (L).
-
-/author/dashboard.
-
-Мои карты (list + filter).
-
-Создать карту (уже есть /inventory, но только свои).
-
-Продажи (из shop).
-
-C4. Payouts / analytics (L).
-
-Сколько заработал (лампочки / билетики).
-
-Выплаты.
-
-Требует обсуждения модели монетизации — что автор получает? % от продаж?
-
-Итого: 3-4 недели, высокий риск (новые эндпоинты, БД, роли, монетизация).
-
-🟠 Bottleneck (L)
-Зависимость: сделать до того, как каталог вырастет до 1000+.
-
-Server-side pagination / filter / sort на /inventory/items.
-
-Клиент запрашивает по странице, не весь каталог.
-
-Плюс: меньший DTO.
-
-Минус: сложнее UI (URL state).
-
-Итого: 1-2 недели.
-
-🟠 Реальные товары (M)
-Заменить placeholder (Ключница Дракон → Берсерк ККИ).
-
-Удалить старые тестовые items.
-
-Оставить только карточки ККИ.
-
-Плюс: Cursor может сделать SQL/script.
-
-Минус: ручное решение — какие товары оставить, какие удалить.
-
-Итого: 2-3 дня.
-
-🟠 Полиш игр (M-L per game)
-5 игр, каждую — отдельно.
-
-Flappy — текстуры, звук?
-
-Towers — анимации, GAME OVER.
-
-Hanoi — детали drag.
-
-Memory — флип, скины.
-
-Hexagon — геймплей.
-
-Итого: ~1 неделя на все 5, если делать параллельно.
-
-🟠 Deploy / k3s / Ansible (L)
-Уже частично сделано:
-
-✅ CI/CD GitHub Actions.
-
-✅ Ansible.
-
-✅ k3s.
-
-🟧 Helm-чарты.
-
-🟧 Service Discovery.
-
-Итого: 2-3 недели на полный prod-ready.
-
-🟠 Нагрузочное тестирование + оптимизация БД (M-L)
-k6 + индексы.
-
-Прогнать сценарии под нагрузкой.
-
-Замерить RPS / latency.
-
-Оптимизировать индексы.
-
-Итого: 1-2 недели.
-
-📋 Единый план — по приоритетам
-Волна 1 — Быстрые победы (1-2 недели, XS–S)
-Начать сразу, минимум риска.
-
-PUT 403 investigation (XS).
-
-Emoji → SVG (S).
-
-Retry + jitter (S).
-
-Alerts в Telegram (S).
-
-Circuit Breaker + Bulkhead (S).
-
-Rate Limiter (S).
-
-Итого: ~5-7 дней, каждая независима.
-
-Волна 2 — Техдолг + контент (2-3 недели, M)
-/shop/items thin DTO (M).
-
-Реальные товары — placeholder → Берсерк (M).
-
-Полиш игр (M).
-
-Laмпочки, уровни (M).
-
-Волна 3 — Крупная фича (3-4 недели, L-XL)
-C. Author registration — разбить на под-волны:
-
-C1. Заявка.
-
-C2. Admin approval.
-
-C3. Dashboard.
-
-C4. Payouts / monetization.
-
-Перед C — обсудить монетизацию — что автор получает?
-
-Волна 4 — Инфраструктура (параллельно)
-Helm-чарты, Service Discovery (M).
-
-k6 нагрузка + оптимизация БД (M-L).
-
-Юнит-тесты ≥70% (M) — параллельно всему.
-
-Волна 5 — Долгосрочное
-Bottleneck fix — перед 1000+ картами.
-
-Observability — уже работает, добавить алерты.
-
-NATS cluster — работает.
-
-🎯 Что я рекомендую начать с
-Три задачи — как «разогрев»:
-
-PUT 403 investigation (30 минут).
-
-Emoji → SVG (1-2 дня).
-
-Retry + jitter (1 день).
-
-Почему:
-
-PUT 403 — быстрый вопрос, ты знаешь ответ сразу.
-
-Emoji → SVG — визуально заметно, контент.
-
-Retry + jitter — стабилизирует gateway.
-
-Потом — /shop/items thin DTO + реальные товары — логическое завершение v1.0.9.
-
-Потом — C. Author registration (большая фича).
-
-Что я держу в карте
-Закрыто (v1.0.9 на GitHub):
-
-См. предыдущий разбор.
-
-Backlog — единый план:
-
-Волна 1 — XS-S:
-
-🟧 PUT 403 investigation (XS)
-
-🟧 Emoji → SVG (S)
-
-🟧 Retry + jitter (S)
-
-🟧 Alerts Telegram (S)
-
-🟧 Circuit Breaker + Bulkhead (S)
-
-🟧 Rate Limiter (S)
-
-Волна 2 — M:
-
-🟧 /shop/items thin DTO
-
-🟧 Реальные товары
-
-🟧 Полиш игр
-
-🟧 Laмпочки / уровни
-
-Волна 3 — L-XL:
-
-🟧 C. Author registration (4 под-волны)
-
-Волна 4 — инфра:
-
-🟧 Helm, Consul
-
-🟧 k6, индексы
-
-🟧 Юнит-тесты
-
-Волна 5 — долгосрочное:
-
-🟧 Bottleneck fix (перед 1000+)
-
-🟧 Observability alerts
+| Задача | Зачем |
+|--------|--------|
+| Пагинация каталога на сервере | Имеет смысл до 1000+ карт |
+| Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
+| Юнит-тесты, порог покрытия | В CI порог ≥70% не включён |
+| Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
+| Rate limit | Продуктовый лимит, не баг |
+| Emoji → SVG | Когда текущие иконки мешают в интерфейсе |
 
 ---
 
@@ -654,7 +448,18 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.0** (07–10.10.2026) · badge above · optional git tag when you say so
+Текущая: **v1.1.1** (10.10.2026)
+
+### Что нового в v1.1.1
+
+- Покупка пишет `purchase.paid` в outbox с настоящим `purchases.id`. Воркер публикует с `FOR UPDATE SKIP LOCKED`.
+- Списание билетиков идёт со стабильным `reference_id` на цикл покупки. Повтор клика не списывает второй раз. Упавший возврат дожимает воркер.
+- Повтор отмены снова зовёт `AddCurrency` с ключом `cancel-{id}`. Уникальный ключ не задваивает деньги.
+- Сокет `/ws/leaderboard` требует токен и свой Origin.
+- Fulfillment и notification читают Kafka только когда JetStream не поднят.
+- Упавший Redis на проверке сессии отдаёт 503, а не «токен жив».
+- На дашборде Grafana есть ряд «paid → fulfilled» и счётчик неудачных возвратов.
+- Первый `make deploy` после перезагрузки ждёт `pg_isready`, потом goose.
 
 ### Что нового в v1.1.0
 
