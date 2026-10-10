@@ -15,15 +15,28 @@
 | **Repository** | [github.com/Eastwesser/event-horizon](https://github.com/Eastwesser/event-horizon) |
 | **Architecture** | Clean Architecture · Gateway HTTP **`/api/v1/*`** → gRPC |
 | **Security** | JWT in Redis, bcrypt cost 12, rate limits, secrets via env |
-| **v1.1.0 pack** | [`09.10.2026/YET_TO_DO_ITEMS.md`](confluence/history/2026-10/09.10.2026/YET_TO_DO_ITEMS.md) · [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md) |
+| **v1.1.0 pack** | [`LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md) · [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md) · [`DAILY_OPS.md`](confluence/history/2026-10/09.10.2026/DAILY_OPS.md) |
+| **Load (measured)** | [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md) · [`SUITABLE_SERVER.md`](confluence/history/2026-10/09.10.2026/SUITABLE_SERVER.md) |
 | **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI [`/docs`](http://localhost:8079/docs) when running |
 | **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
 
-### v1.1.0 highlights (07–09.10.2026)
+### v1.1.0 highlights (07–10.10.2026)
 
 - `/api/v1` public REST · shop/inventory polish · achievements · history NATS  
 - Companion daily tickets · avatar upload · nick→LB · record-beaten deep-link  
 - Mobile safe-area + game touch targets · Miro stickers pack · security audit RU  
+- Ops close: gateway v1 rewrite, Pancaker score trust, Grafana provision, CORE k6 verdict  
+
+### Future decisions (not blockers)
+
+| Track | Status |
+|-------|--------|
+| Miro board polish / Boosty posts / presentations | **You IRL** — research tomorrow |
+| Optional `git tag v1.1.0` | Ask when ready (marker on commit, not a branch) |
+| Unified game chrome · Tamagotchi art pass | Soft polish |
+| C4 payouts · 108 login authors · full 3D | **Locked** until product OK |
+| Loki / Tempo / node-exporter / SLO burn / multi-DB scrape | Dream list — [`DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md) |
+| Next hardware for load demos | Prefer **8 vCPU / 32 GiB** — see SUITABLE_SERVER |
 
 ---
 
@@ -340,12 +353,17 @@ cd services/auth && go get github.com/stretchr/testify@v1.11.1
 # then regenerate mocks via //go:generate on UserRepository
 ```
 
-Нагрузочное тестирование (k6):
+Нагрузочное тестирование (k6) — **CORE** (не legacy 500 VU):
 
 ```bash
-cd deployments/k6
-k6 run loadtest.js
+make test-k6                          # browse.js — default ~20 VU
+K6_VUS=20 K6_DURATION=60s make test-k6
+K6_VUS=5 make test-k6-purchase
 ```
+
+Measured on ~8 GiB VM (10.10.2026): **20 VU browse PASS** (~50 RPS, p95 429 ms, 0% errors); 50 VU still 100% OK but p95 ~960 ms.  
+Verdict: [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md).  
+Do **not** run 10k VUs on this VM — that is not “10k DAU”; it will OOM / thrash (see below in version notes).
 
 ---
 
@@ -636,7 +654,17 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.0.9** (03.10.2026)
+Текущая: **v1.1.0** (07–10.10.2026) · badge above · optional git tag when you say so
+
+### Что нового в v1.1.0
+
+- **API:** public REST under `/api/v1/*` (legacy `/api/*` rewritten); OpenAPI + FE + k6 aligned  
+- **Games / FE:** boost gate, Pancaker score fix (hexagon empty-moves trust), Hanoi multipliers, Gears skins, Companion daily gift, LB level-1 only, profile edit disclosure  
+- **Ops:** Grafana dashboard provision fix, Prom alerts expand, `make daily` / `obs-check`, cold-boot healthchecks  
+- **Load:** CORE k6 browse/purchase; verdict on 8 GiB VM — 20 VU green ceiling  
+- **Docs:** postmortem API v1, DAILY_OPS, SUITABLE_SERVER, DREAM_DEVOPS_IDEAS, interview EH answers  
+
+**10k DAU vs 10k VUs:** planning model ≈ 10k *daily active users* (~30–50 RPS peak), **not** 10 000 concurrent k6 VUs. On an 8 GiB all-in-one compose host, `K6_VUS=10000` will die (RAM + bcrypt/login + PG pools). Use CORE 20–50 VU locally; move load demos to ~8c/32G.
 
 ### Что нового в v1.0.9
 
