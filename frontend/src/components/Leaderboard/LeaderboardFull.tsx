@@ -58,8 +58,8 @@ export function LeaderboardFull() {
 
   useEffect(() => {
     setLoading(true);
-    const level = selectedGame === 'flappy' ? selectedLevel : 1;
-    getLeaderboard(selectedGame, 50, level)
+    // Product: single board per game (level=1). Multi-level Flappy UI is commented out.
+    getLeaderboard(selectedGame, 50, 1)
       .then(({ data }) => {
         const raw = Array.isArray(data?.entries) ? data.entries : [];
         setEntries(
@@ -114,6 +114,7 @@ export function LeaderboardFull() {
         ))}
       </div>
 
+      {/* Flappy levels 2–3 unused in product — keep single global board (level=1).
       {selectedGame === 'flappy' && (
         <div className="mb-4 flex flex-wrap gap-2">
           {[1, 2, 3].map((lvl) => (
@@ -127,6 +128,7 @@ export function LeaderboardFull() {
           ))}
         </div>
       )}
+      */}
 
       {loading ? (
         <div className="flex justify-center py-16">

@@ -50,6 +50,7 @@ export function HexagonGame() {
     isGameOver,
     finalScore,
     setGameOver,
+    submitScore,
     boosted,
     boostHighlight,
     lastSubmitRanked,
@@ -158,7 +159,10 @@ export function HexagonGame() {
         }
         help={
           <>
-            <p>Перетаскивайте стопки с подноса на соседние гексы того же вкуса, чтобы сливать блины.</p>
+            <p>
+              Кладите стопки только на пустые гексы. Соседние клетки того же вкуса сливаются
+              автоматически — нельзя наслаивать блины на уже занятую клетку.
+            </p>
             <p>
               Соберите ≥10 на клетке — стопка исчезнет и даст очки. Уровень растёт по очкам (каждые
               +50 к цели после порога) — аркадный progress, не выбор сложности.
@@ -207,6 +211,8 @@ export function HexagonGame() {
         <GameOverActions
           onNewGame={() => void beginRun()}
           onHome={handleBack}
+          onSave={() => void submitScore()}
+          saveLabel={lastSubmitRanked === true ? 'Сохранено' : 'Сохранить рекорд'}
           busy={boostBusy}
         />
       </Modal>

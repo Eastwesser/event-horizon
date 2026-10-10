@@ -452,11 +452,15 @@ func runGateway() {
 	// GIN ROUTER SECTION
 	r := gin.Default()
 
-	// Canonical HTTP prefix is /api/v1/*. Legacy /api/* (without v1) is rewritten once.
+	// Canonical HTTP prefix is /api/v1/*. Legacy /api/* is rewritten and re-dispatched
+	// (Gin matches routes before middleware, so mutating Path alone is not enough).
 	r.Use(func(c *gin.Context) {
 		p := c.Request.URL.Path
 		if strings.HasPrefix(p, "/api/") && !strings.HasPrefix(p, "/api/v1/") {
 			c.Request.URL.Path = "/api/v1/" + strings.TrimPrefix(p, "/api/")
+			r.HandleContext(c)
+			c.Abort()
+			return
 		}
 		c.Next()
 	})

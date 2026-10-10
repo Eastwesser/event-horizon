@@ -14,7 +14,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: prometheus
             model:
-              expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~"gateway.*"}[5m])) by (le))
+              expr: histogram_quantile(0.95, sum(rate(gateway_request_duration_seconds_bucket[5m])) by (le))
               refId: A
           - refId: C
             relativeTimeRange: { from: 300, to: 0 }
@@ -32,15 +32,15 @@ groups:
         annotations:
           summary: Gateway p95 > 2s for 5m
 
-      - uid: eh-circuit-open
-        title: Circuit breaker open
+      - uid: eh-gateway-5xx
+        title: Gateway 5xx rate high
         condition: C
         data:
           - refId: A
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: prometheus
             model:
-              expr: max(circuit_breaker_state) by (service) == 1
+              expr: sum(rate(gateway_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(gateway_requests_total[5m])), 1e-9)
               refId: A
           - refId: C
             relativeTimeRange: { from: 300, to: 0 }
@@ -49,11 +49,11 @@ groups:
               type: threshold
               expression: A
               conditions:
-                - evaluator: { type: gt, params: [0] }
+                - evaluator: { type: gt, params: [0.05] }
                   operator: { type: and }
                   reducer: { type: last }
                   type: query
-        for: 2m
+        for: 5m
         labels: { severity: critical }
         annotations:
-          summary: A service circuit breaker is open
+          summary: Gateway 5xx ratio > 5% for 5m

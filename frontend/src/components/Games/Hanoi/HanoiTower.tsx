@@ -85,10 +85,22 @@ function solveHanoi(n: number, from: number, to: number, aux: number): [number, 
   ];
 }
 
-/** Очки: 1000 - (лишние ходы × 20), минимум 100 — та же формула, что у Мемонии. */
-function calculateScore(moves: number, minMoves: number): number {
+/** Stage multipliers (Denis): 3→×1 … 8→×2. */
+const DISK_SCORE_MULT: Record<number, number> = {
+  3: 1,
+  4: 1.2,
+  5: 1.3,
+  6: 1.5,
+  7: 1.8,
+  8: 2,
+};
+
+/** Base 1000 - (лишние ходы × 20), мин. 100, then × stage mult. */
+function calculateScore(moves: number, minMoves: number, diskCount: number): number {
   const excess = Math.max(0, moves - minMoves);
-  return Math.max(100, 1000 - excess * 20);
+  const base = Math.max(100, 1000 - excess * 20);
+  const mult = DISK_SCORE_MULT[diskCount] ?? 1;
+  return Math.round(base * mult);
 }
 
 export function HanoiTower() {
@@ -309,7 +321,7 @@ export function HanoiTower() {
   };
 
   const handleSubmitScore = async () => {
-    const score = calculateScore(moves, minMoves);
+    const score = calculateScore(moves, minMoves, diskCount);
     try {
       const userId = localStorage.getItem('userId');
       const userEmail = localStorage.getItem('userEmail');
@@ -398,7 +410,7 @@ export function HanoiTower() {
       : moves > minMoves
         ? 'border-warning/30 [&_span:last-child]:text-warning'
         : '';
-  const finalScore = calculateScore(moves, minMoves);
+  const finalScore = calculateScore(moves, minMoves, diskCount);
 
   return (
     <GameShell
@@ -435,6 +447,9 @@ export function HanoiTower() {
           {started && (
             <span className="rounded-sm border border-white/10 px-3 py-1.5 text-sm text-text-secondary">
               Колец: <span className="text-text-primary">{diskCount}</span>
+              <span className="ml-2 text-horizon-gold">
+                ×{DISK_SCORE_MULT[diskCount] ?? 1}
+              </span>
             </span>
           )}
           <Button
@@ -588,7 +603,7 @@ export function HanoiTower() {
           </p>
         )}
         <GameOverActions
-          onNewGame={() => void resetGame()}
+          onNewGame={() => void beginRun()}
           onHome={handleBack}
           onSave={() => {
             if (!scoreSaved) void handleSubmitScore();

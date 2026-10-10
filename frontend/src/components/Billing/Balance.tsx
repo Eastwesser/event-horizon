@@ -30,7 +30,8 @@ export function invalidateBalanceCache(): void {
   }
 }
 
-async function fetchBalancesOnce(): Promise<Balances> {
+/** Shared fetch for Boost gate / companion gift (uses short TTL cache). */
+export async function fetchBalancesOnce(): Promise<Balances> {
   const now = Date.now();
   if (cached && now - cachedAt < CACHE_MS) return cached;
   if (inflight) return inflight;

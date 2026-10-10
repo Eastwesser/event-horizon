@@ -1,17 +1,5 @@
 groups:
-  - name: event_horizon_business
-    rules:
-      - alert: HighOrderRate
-        expr: rate(orders_total[1m]) > 10
-        for: 1m
-        labels:
-          severity: warning
-          service: shop
-        annotations:
-          summary: "Shop purchases exceed 10/min"
-          description: "orders_total rate is {{ $value }} per second over 1m window"
-
-  - name: event_horizon_services
+  - name: event_horizon_availability
     rules:
       - alert: GatewayDown
         expr: up{job="gateway"} == 0
@@ -20,8 +8,8 @@ groups:
           severity: critical
           service: gateway
         annotations:
-          summary: "Gateway is down"
-          description: "Prometheus scrape target gateway is down for >1m"
+          summary: "Gateway scrape target is down"
+          description: "instance={{ $labels.instance }} down >1m"
 
       - alert: AuthDown
         expr: up{job="auth"} == 0
@@ -63,6 +51,16 @@ groups:
           summary: "Leaderboard is down"
           description: "Prometheus scrape target leaderboard is down for >1m"
 
+      - alert: ShopDown
+        expr: up{job="shop"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: shop
+        annotations:
+          summary: "Shop is down"
+          description: "Prometheus scrape target shop is down for >1m"
+
       - alert: InventoryDown
         expr: up{job="inventory"} == 0
         for: 2m
@@ -72,3 +70,114 @@ groups:
         annotations:
           summary: "Inventory is down"
           description: "Prometheus scrape target inventory is down for >2m"
+
+      - alert: BalancerDown
+        expr: up{job="balancer"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: balancer
+        annotations:
+          summary: "Balancer is down"
+          description: "Public entrypoint scrape is down >1m"
+
+      - alert: PaymentDown
+        expr: up{job="payment"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: payment
+        annotations:
+          summary: "Payment is down"
+          description: "Prometheus scrape target payment is down for >2m"
+
+      - alert: NotificationDown
+        expr: up{job="notification"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: notification
+        annotations:
+          summary: "Notification is down"
+          description: "Bells / record-beaten path degraded >2m"
+
+      - alert: NATSExporterDown
+        expr: up{job="nats"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: nats
+        annotations:
+          summary: "NATS exporter scrape is down"
+          description: "Bus metrics unavailable >2m"
+
+      - alert: PostgresExporterDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "Postgres exporter is down"
+          description: "DB metrics unavailable >2m"
+
+      - alert: RedisExporterDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis exporter is down"
+          description: "Cache metrics unavailable >2m"
+
+  - name: event_horizon_sli
+    rules:
+      - alert: HighGatewayErrorRate
+        expr: |
+          (
+            sum(rate(gateway_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(gateway_requests_total[5m])), 1e-9)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: gateway
+        annotations:
+          summary: "Gateway 5xx rate > 5% for 5m"
+          description: "error_ratio={{ $value | humanizePercentage }}"
+
+      - alert: HighGatewayLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(gateway_request_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: gateway
+        annotations:
+          summary: "Gateway p95 latency > 2s for 5m"
+          description: "p95={{ $value }}s"
+
+      - alert: HighOrderRate
+        expr: rate(orders_total[1m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: shop
+        annotations:
+          summary: "Shop purchases exceed 10/min"
+          description: "orders_total rate is {{ $value }} per second over 1m window"
+
+      - alert: HighRedisMemory
+        expr: redis_memory_used_bytes > 500 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory > 500MiB for 10m"
+          description: "used_bytes={{ $value }}"

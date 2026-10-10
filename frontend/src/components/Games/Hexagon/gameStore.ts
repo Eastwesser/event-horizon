@@ -160,82 +160,51 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newTiles = [...tiles];
     let newTray = [...tray];
     
-    // Если гекс пустой
-    if (targetTile.type === 'empty' as const) {
-      let totalCount = trayItem.count;
-      let mergedTiles = [coord];
-      
-      const neighbors = getNeighbors(coord);
-      for (const neighbor of neighbors) {
-        const neighborTile = newTiles.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
-        if (neighborTile && neighborTile.type !== 'empty' as const && neighborTile.type === trayItem.type) {
-          totalCount += neighborTile.count;
-          mergedTiles.push(neighbor);
-        }
-      }
-      
-      newTiles = newTiles.map(t => {
-        if (mergedTiles.some(m => m.q === t.coord.q && m.r === t.coord.r)) {
-          return { ...t, type: 'empty' as const, count: 0 };
-        }
-        return t;
-      });
-      
-      newTiles = newTiles.map(t => {
-        if (t.coord.q === coord.q && t.coord.r === coord.r) {
-          return { ...t, type: trayItem.type, count: totalCount };
-        }
-        return t;
-      });
-      
-      newTray = tray.filter(t => t.id !== trayId);
-      set({ tiles: newTiles, tray: newTray });
-      
-      if (newTray.length === 0) {
-        get().refreshTray();
-      }
-      
-      setTimeout(() => get().checkAndClearStack(coord), 50);
-      setTimeout(() => get().mergeStacks(coord), 100);
-    } 
-    else if (targetTile.type === trayItem.type) {
-      let totalCount = targetTile.count + trayItem.count;
-      let mergedTiles = [coord];
-      
-      const neighbors = getNeighbors(coord);
-      for (const neighbor of neighbors) {
-        const neighborTile = newTiles.find(t => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
-        if (neighborTile && neighborTile.type !== 'empty' as const && neighborTile.type === trayItem.type) {
-          totalCount += neighborTile.count;
-          mergedTiles.push(neighbor);
-        }
-      }
-      
-      newTiles = newTiles.map(t => {
-        if (mergedTiles.some(m => m.q === t.coord.q && m.r === t.coord.r)) {
-          return { ...t, type: 'empty' as const, count: 0 };
-        }
-        return t;
-      });
-      
-      newTiles = newTiles.map(t => {
-        if (t.coord.q === coord.q && t.coord.r === coord.r) {
-          return { ...t, type: trayItem.type, count: totalCount };
-        }
-        return t;
-      });
-      
-      newTray = tray.filter(t => t.id !== trayId);
-      set({ tiles: newTiles, tray: newTray });
-      
-      if (newTray.length === 0) {
-        get().refreshTray();
-      }
-      
-      setTimeout(() => get().checkAndClearStack(coord), 50);
-      setTimeout(() => get().mergeStacks(coord), 100);
+    // Occupied cell: reject pile-on. Merge only via empty drop + neighbor slip.
+    if (targetTile.type !== ('empty' as const)) {
+      return;
     }
-    
+
+    let totalCount = trayItem.count;
+    const mergedTiles = [coord];
+
+    const neighbors = getNeighbors(coord);
+    for (const neighbor of neighbors) {
+      const neighborTile = newTiles.find((t) => t.coord.q === neighbor.q && t.coord.r === neighbor.r);
+      if (
+        neighborTile &&
+        neighborTile.type !== ('empty' as const) &&
+        neighborTile.type === trayItem.type
+      ) {
+        totalCount += neighborTile.count;
+        mergedTiles.push(neighbor);
+      }
+    }
+
+    newTiles = newTiles.map((t) => {
+      if (mergedTiles.some((m) => m.q === t.coord.q && m.r === t.coord.r)) {
+        return { ...t, type: 'empty' as const, count: 0 };
+      }
+      return t;
+    });
+
+    newTiles = newTiles.map((t) => {
+      if (t.coord.q === coord.q && t.coord.r === coord.r) {
+        return { ...t, type: trayItem.type, count: totalCount };
+      }
+      return t;
+    });
+
+    newTray = tray.filter((t) => t.id !== trayId);
+    set({ tiles: newTiles, tray: newTray });
+
+    if (newTray.length === 0) {
+      get().refreshTray();
+    }
+
+    setTimeout(() => get().checkAndClearStack(coord), 50);
+    setTimeout(() => get().mergeStacks(coord), 100);
+
     setTimeout(() => get().checkGameOver(), 200);
     get().checkLevelUp();
   },
@@ -365,7 +334,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   submitScore: async () => {
-    const { isGameOver, boosted, boostId, finalScore, score } = get();
+    const { isGameOver, boosted, boostId, finalScore, score, gameMoves } = get();
     if (!isGameOver) return;
 
     const userEmail = localStorage.getItem('userEmail') || '';
@@ -396,6 +365,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     const submitLevel = 1;
 
     try {
+      // Audit trail for BE; empty list is OK — hexagon validator trusts client score (MVP).
+      const moves = gameMoves.map((m) => ({
+        from_x: m.fromX,
+        from_y: m.fromY,
+        to_x: m.toX,
+        to_y: m.toY,
+        timestamp: m.timestamp,
+      }));
       const body: Record<string, unknown> = {
         user_id: userId,
         game_id: 'hexagon',
@@ -404,7 +381,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         user_email: userEmail,
         nickname,
         seed: `game_seed_${Date.now()}`,
-        moves: [],
+        moves,
       };
       if (boosted && boostId) body.boost_id = boostId;
 

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getNickname } from '../../../lib/nickname';
-import { Balance } from '../../Billing/Balance';
+import { Balance, invalidateBalanceCache } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
@@ -170,6 +170,7 @@ export function CompanionGame() {
       const again = data?.already_claimed
         ? ' (уже было на сервере)'
         : '';
+      invalidateBalanceCache();
       setNotif({
         message: `Подарок дня: +${DAILY_GIFT_POINTS} к заботе и +${tickets} билетиков${again}.`,
         type: 'success',

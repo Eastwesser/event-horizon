@@ -1,4 +1,4 @@
-.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase seed-admin seed-shop seed-themes seed-history seed-v110 seed-lb-demo seed-card-artists fe-build fe-preview
+.PHONY: up down logs ps clean migrate-all migrate-profile restart status deploy deploy-heavy deploy-full deploy-kafka stop-heavy test-all test-unit test-smoke test-k6 test-k6-purchase obs-check daily seed-admin seed-shop seed-themes seed-history seed-v110 seed-lb-demo seed-card-artists fe-build fe-preview
 
 # Always pass repo-root .env so ${JWT_SECRET} etc. substitute correctly.
 COMPOSE := docker compose --env-file .env -f deployments/docker-compose.cluster.yml
@@ -66,17 +66,49 @@ test-smoke:
 	@echo "Smoke: curl /health|/ready on local metrics ports (cluster must be up)"
 	@set -e; \
 	for url in \
+	  http://127.0.0.1:8079/ready \
+	  http://127.0.0.1:8081/ready \
 	  http://127.0.0.1:9091/health \
 	  http://127.0.0.1:9092/health \
 	  http://127.0.0.1:9093/health \
+	  http://127.0.0.1:9094/ready \
+	  http://127.0.0.1:9095/ready \
+	  http://127.0.0.1:9096/ready \
+	  http://127.0.0.1:9098/ready \
+	  http://127.0.0.1:9099/ready \
+	  http://127.0.0.1:9101/ready \
+	  http://127.0.0.1:9102/ready \
 	  http://127.0.0.1:9103/ready \
 	  http://127.0.0.1:9104/ready \
 	  http://127.0.0.1:9105/ready \
-	  http://127.0.0.1:9106/ready \
-	  http://127.0.0.1:8081/ready; do \
+	  http://127.0.0.1:9106/ready; do \
 	  echo "→ $$url"; \
 	  curl -fsS -o /dev/null --max-time 3 "$$url" || echo "SKIP/FAIL $$url (is compose up?)"; \
 	done
+
+# Prometheus targets + Grafana + Alertmanager reachability (see confluence/.../DAILY_OPS.md).
+obs-check:
+	@echo "🔍 Observability check"
+	@curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:9090/-/ready && echo "OK prometheus :9090" || echo "FAIL prometheus"
+	@ok=0; for i in 1 2 3 4 5 6 7 8 9 10; do \
+	  if curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:3000/api/health 2>/dev/null; then ok=1; break; fi; \
+	  sleep 2; \
+	done; \
+	if [ "$$ok" = 1 ]; then echo "OK grafana :3000"; else echo "FAIL grafana (still starting or crash-loop — check: docker logs event-horizon-grafana)"; fi
+	@curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:9193/-/ready && echo "OK alertmanager :9193" || echo "FAIL alertmanager"
+	@curl -fsS -o /dev/null --max-time 3 http://127.0.0.1:16686/ && echo "OK jaeger :16686" || echo "FAIL jaeger"
+	@echo "--- Prometheus targets (down only) ---"
+	@curl -fsS --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=up==0' \
+	  | jq -r '.data.result[]? | "DOWN\t\(.metric.job)\t\(.metric.instance)"' \
+	  || echo "(jq/prometheus query failed — is stack up?)"
+	@echo "--- up count ---"
+	@curl -fsS --max-time 5 'http://127.0.0.1:9090/api/v1/query?query=count(up==1)' \
+	  | jq -r '"UP targets: \(.data.result[0].value[1] // "n/a")"' \
+	  || true
+
+# Morning one-liner: containers + health + observability.
+daily: status test-smoke obs-check
+	@echo "✅ daily check done — Grafana http://localhost:3000  Prom http://localhost:9090/targets"
 
 # CORE k6 (Wave 4): browse.js @ balancer :8079 — not the legacy 500 VU blast.
 # Credentials: EH_K6_* env, or scripts/.env.seed.admin (SEED_ADMIN_EMAIL/PASSWORD).

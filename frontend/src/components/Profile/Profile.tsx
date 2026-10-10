@@ -61,6 +61,7 @@ export function Profile() {
   const [nickSaving, setNickSaving] = useState(false);
   const [nickError, setNickError] = useState<string | null>(null);
   const [avatar, setAvatar] = useState(() => getAvatarUrl(userId));
+  const [editingProfile, setEditingProfile] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -192,26 +193,42 @@ export function Profile() {
             <Icon name="pen" className="h-4 w-4 text-text-muted" />
           </button>
           <p className="text-sm text-text-secondary">{email}</p>
-          {userId ? (
-            <details className="mt-1">
-              <summary className="cursor-pointer text-xs text-text-muted hover:text-text-secondary">
-                Показать ID
-              </summary>
-              <p className="mt-1 break-all font-hud text-xs text-text-muted">{userId}</p>
-            </details>
-          ) : null}
-          <div className="mt-3 max-w-md">
-            <InventoryImageUrlField
-              value={avatar}
-              onChange={(url) => {
-                setAvatar(url);
-                setAvatarUrl(url, userId);
-              }}
-            />
-            <p className="mt-1 text-xs text-text-muted">
-              PNG/JPG/WebP, до 2 МБ. Квадрат смотрится лучше.
-            </p>
+          <div className="mt-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditingProfile((v) => !v)}
+            >
+              {editingProfile ? 'Скрыть редактирование' : 'Изменить профиль'}
+            </Button>
           </div>
+          {editingProfile ? (
+            <div className="mt-3 max-w-md space-y-3 rounded-sm border border-white/10 bg-void/40 p-3">
+              {userId ? (
+                <div>
+                  <p className="text-xs font-medium text-text-muted">User ID</p>
+                  <p className="mt-0.5 break-all font-hud text-xs text-text-secondary">{userId}</p>
+                </div>
+              ) : null}
+              <div>
+                <p className="mb-1 text-xs font-medium text-text-muted">Аватар</p>
+                <InventoryImageUrlField
+                  value={avatar}
+                  onChange={(url) => {
+                    setAvatar(url);
+                    setAvatarUrl(url, userId);
+                  }}
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  PNG/JPG/WebP, до 2 МБ. Квадрат смотрится лучше. Сохраняется локально.
+                </p>
+              </div>
+              <Button type="button" size="sm" variant="ghost" onClick={openNickModal}>
+                Сменить ник
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
 
