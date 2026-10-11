@@ -115,6 +115,18 @@ func (r *PostgresRepo) CompletePaymentAndActivateSubscription(
 		return err
 	}
 
+	authorShare := sub.AmountRub * 85 / 100
+	platformShare := sub.AmountRub - authorShare
+	_, err = tx.Exec(ctx, `
+		INSERT INTO revenue_splits (payment_id, amount_rub, author_share_rub, platform_share_rub)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (payment_id) DO NOTHING`,
+		paymentID, sub.AmountRub, authorShare, platformShare,
+	)
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit(ctx)
 }
 

@@ -61,7 +61,7 @@ func ValidateSelect(sql string) error {
 	forbidden := []string{
 		" insert ", " update ", " delete ", " drop ", " alter ", " create ",
 		" truncate ", " grant ", " revoke ", " copy ", " call ", " do ",
-		" into ", // blocks SELECT INTO
+		" into ", " union ", " except ", " intersect ",
 	}
 	padded := " " + lower + " "
 	for _, f := range forbidden {
@@ -82,7 +82,7 @@ func (c *Client) Query(ctx context.Context, sql string, limit int) (string, erro
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	// wrap to enforce row cap without rewriting user SQL semantics too hard
+	// limit is an int this process clamped. The inner text already passed ValidateSelect.
 	wrapped := fmt.Sprintf("SELECT * FROM (%s) AS _mcp_q LIMIT %d", sql, limit)
 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

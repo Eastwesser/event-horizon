@@ -14,6 +14,9 @@ import (
 
 type User = model.User
 
+// UserRepository is the auth user store.
+// SQL is built with pkg/sqb. The statement text holds $1, $2; emails and password hashes stay in the args slice.
+//
 //go:generate mockery --name=UserRepository --dir=. --output=mocks --outpkg=mocks --filename=user_repository_mock.go --with-expecter
 type UserRepository interface {
 	Create(ctx context.Context, email, passwordHash, role string) (string, error)
@@ -166,11 +169,11 @@ func (r *PostgresUserRepo) ListUsers(ctx context.Context, query string, limit, o
 
 	q := strings.TrimSpace(query)
 	var (
-		total          int64
-		listSQL        string
-		listArgs       []any
-		countSQL       string
-		countArgs      []any
+		total     int64
+		listSQL   string
+		listArgs  []any
+		countSQL  string
+		countArgs []any
 	)
 
 	if q == "" {

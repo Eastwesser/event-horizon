@@ -26,7 +26,8 @@ func NewPostgresRepo(db *sql.DB) *PostgresRepo {
 
 // ---------------------- Вспомогательные функции ----------------------
 
-// toPostgresFilter преобразует map фильтров в SQL условия и аргументы.
+// toPostgresFilter turns a fixed set of filter keys into placeholders.
+// Column names are written here, never taken from the request. Values go in args.
 func toPostgresFilter(filters map[string]interface{}) ([]string, []interface{}, int) {
 	var conditions []string
 	var args []interface{}
@@ -466,12 +467,12 @@ func (r *PostgresRepo) GetStats(ctx context.Context) (*model.Stats, error) {
 
 // GetByAuthor возвращает все товары автора (с пагинацией по умолчанию 1000).
 func (r *PostgresRepo) GetByAuthor(ctx context.Context, authorID string) ([]*model.Item, int64, error) {
-    return r.SearchItems(ctx, map[string]interface{}{"author_id": authorID}, 1000, 0)
+	return r.SearchItems(ctx, map[string]interface{}{"author_id": authorID}, 1000, 0)
 }
 
 // GetByType возвращает все товары указанного типа (с пагинацией по умолчанию 1000).
 func (r *PostgresRepo) GetByType(ctx context.Context, itemType string) ([]*model.Item, int64, error) {
-    return r.SearchItems(ctx, map[string]interface{}{"type": itemType}, 1000, 0)
+	return r.SearchItems(ctx, map[string]interface{}{"type": itemType}, 1000, 0)
 }
 
 // ---------------------- Outbox методы (только для PostgreSQL) ----------------------

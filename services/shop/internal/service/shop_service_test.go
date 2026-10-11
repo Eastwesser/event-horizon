@@ -69,6 +69,10 @@ func (m *mockShopStore) PurchaseItemWithStock(_ context.Context, _, _, _ string,
 }
 func (m *mockShopStore) NextSpendCycle(context.Context, string, string) (int, error) { return 1, nil }
 func (m *mockShopStore) BumpSpendCycle(context.Context, string, string) error        { return nil }
+func (m *mockShopStore) SavePurchaseSaga(_ context.Context, s repository.PurchaseSaga) (string, string, error) {
+	return s.ID, s.PurchaseID, nil
+}
+func (m *mockShopStore) MarkPurchaseSaga(context.Context, string, string) error { return nil }
 func (m *mockShopStore) EnqueueOutbox(context.Context, string, []byte) (string, error) {
 	return "ob1", nil
 }

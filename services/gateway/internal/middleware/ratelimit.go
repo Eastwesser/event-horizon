@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -31,6 +32,9 @@ func RateLimitMiddleware(limiter *ratelimit.RateLimiter) gin.HandlerFunc {
 
 		case path == "/ws/leaderboard":
 			allowed = limiter.AllowWebSocket(c.ClientIP())
+
+		case path == "/docs" || path == "/openapi.yaml" || strings.HasPrefix(path, "/docs/"):
+			allowed = limiter.AllowDocs(c.ClientIP())
 
 		case path == "/health" || path == "/ready" || path == "/metrics":
 			allowed = true

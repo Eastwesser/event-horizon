@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log/slog"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ func (w *OutboxWorker) Start(ctx context.Context) {
 			return
 		case <-ticker.C:
 			w.processBatch(ctx)
+			w.resumeSagas(ctx)
 		}
 	}
 }
@@ -133,4 +135,108 @@ func isDuplicateRef(err error) bool {
 	}
 	s := strings.ToLower(err.Error())
 	return strings.Contains(s, "duplicate") || strings.Contains(s, "23505") || strings.Contains(s, "unique constraint")
+}
+
+type sagaResume struct {
+	id         string
+	userID     string
+	itemID     string
+	purchaseID string
+	refundRef  string
+	price      int
+}
+
+// resumeSagas finishes a purchase that died after billing spent tickets
+// and before the shop row was committed. The row lock is released before the billing call.
+func (w *OutboxWorker) resumeSagas(ctx context.Context) {
+	tx, err := w.db.BeginTx(ctx, nil)
+	if err != nil {
+		slog.Error("shop saga: begin", "err", err)
+		return
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `
+		SELECT id::text, user_id, item_id, purchase_id::text, refund_ref, price
+		FROM purchase_sagas
+		WHERE state IN ('spent', 'compensating')
+		  AND updated_at < NOW() - INTERVAL '30 seconds'
+		ORDER BY updated_at
+		LIMIT 10
+		FOR UPDATE SKIP LOCKED
+	`)
+	if err != nil {
+		slog.Error("shop saga: query", "err", err)
+		return
+	}
+
+	var refunds []sagaResume
+	for rows.Next() {
+		var s sagaResume
+		if err := rows.Scan(&s.id, &s.userID, &s.itemID, &s.purchaseID, &s.refundRef, &s.price); err != nil {
+			slog.Error("shop saga: scan", "err", err)
+			continue
+		}
+		var stocked bool
+		if err := tx.QueryRowContext(ctx, `
+			SELECT EXISTS(SELECT 1 FROM purchases WHERE id = $1::uuid)
+		`, s.purchaseID).Scan(&stocked); err != nil {
+			slog.Error("shop saga: purchase lookup", "id", s.id, "err", err)
+			continue
+		}
+		if stocked {
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE purchase_sagas SET state = 'stocked', updated_at = NOW() WHERE id = $1::uuid
+			`, s.id); err != nil {
+				slog.Error("shop saga: mark stocked", "id", s.id, "err", err)
+			}
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE purchase_sagas SET state = 'compensating', updated_at = NOW() WHERE id = $1::uuid
+		`, s.id); err != nil {
+			slog.Error("shop saga: mark compensating", "id", s.id, "err", err)
+			continue
+		}
+		refunds = append(refunds, s)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		slog.Error("shop saga: rows", "err", err)
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		slog.Error("shop saga: commit", "err", err)
+		return
+	}
+
+	for _, s := range refunds {
+		if w.compensate == nil {
+			slog.Error("shop saga: compensator is not wired", "id", s.id)
+			continue
+		}
+		body, _ := json.Marshal(map[string]any{
+			"user_id":      s.userID,
+			"item_id":      s.itemID,
+			"amount":       s.price,
+			"reference_id": s.refundRef,
+			"error":        "saga resume",
+		})
+		if err := w.compensate(ctx, body); err != nil && !isDuplicateRef(err) {
+			slog.Error("shop saga: refund", "id", s.id, "err", err)
+			continue
+		}
+		if _, err := w.db.ExecContext(ctx, `
+			UPDATE purchase_claims SET cycle = cycle + 1
+			WHERE user_id = $1::uuid AND item_id = $2::uuid
+		`, s.userID, s.itemID); err != nil {
+			slog.Error("shop saga: bump cycle", "id", s.id, "err", err)
+			continue
+		}
+		if _, err := w.db.ExecContext(ctx, `
+			UPDATE purchase_sagas SET state = 'compensated', updated_at = NOW() WHERE id = $1::uuid
+		`, s.id); err != nil {
+			slog.Error("shop saga: mark compensated", "id", s.id, "err", err)
+		}
+	}
 }

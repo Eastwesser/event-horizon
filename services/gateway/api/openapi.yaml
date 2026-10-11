@@ -371,6 +371,91 @@ paths:
         '401':
           description: Unauthorized
 
+  /api/v1/billing/balance:
+    get:
+      summary: Get one currency balance for the signed-in player
+      description: user id comes from the access token. A user_id query parameter is ignored.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: currency
+          required: true
+          schema:
+            type: string
+            enum: [lamps, tickets]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currency:
+                    type: string
+                  balance:
+                    type: integer
+                  updated_at:
+                    type: integer
+        '400':
+          description: currency is required
+        '401':
+          description: Unauthorized
+
+  /api/v1/billing/transactions:
+    get:
+      summary: List the signed-in player's ticket or lamp ledger
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: currency
+          required: true
+          schema:
+            type: string
+            enum: [lamps, tickets]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        currency:
+                          type: string
+                        amount:
+                          type: integer
+                        balance_after:
+                          type: integer
+                        reason:
+                          type: string
+                        created_at:
+                          type: integer
+        '401':
+          description: Unauthorized
+
   # ===== GAME =====
   /api/v1/game/submit:
     post:
@@ -1180,12 +1265,41 @@ paths:
         '401':
           description: Unauthorized
 
+  /api/v1/ws-ticket:
+    post:
+      summary: Issue a one-time leaderboard socket ticket
+      description: |
+        Returns a 30-second ticket stored in Redis. The browser opens
+        `/ws/leaderboard?ticket=` with it. The access token stays in the
+        Authorization header of this POST and is not placed in the socket URL.
+        The ticket is deleted on first use.
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Ticket issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    type: string
+                  expires_in:
+                    type: integer
+                    example: 30
+        '401':
+          description: Unauthorized
+        '503':
+          description: Redis unavailable
+
   # ===== WEBSOCKET =====
   /ws/leaderboard:
     get:
       summary: WebSocket connection for real-time leaderboard updates
       description: |
-        Подключитесь к этому эндпоинту через WebSocket.
+        Browser clients send `?ticket=` from POST /api/v1/ws-ticket.
+        A raw JWT in `?token=` is rejected. Non-browser clients may pass
+        `Authorization: Bearer` on the upgrade request.
         При каждом обновлении топа (кто-то побил рекорд) вы будете получать сообщение.
 
         **Пример сообщения:**
