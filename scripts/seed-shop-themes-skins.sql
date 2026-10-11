@@ -30,8 +30,41 @@ WHERE id IN (
   'c586a47f-b6d3-49d3-a627-26903aa5e26e', -- Карточки со зверями
   'be87a17f-8208-4442-8395-19a3540edcf3', -- Космические блины
   '68da9951-0925-48d2-a755-511ecf05e5d7', -- Космические блоки
-  '6a1de8dd-9457-4aa4-99a7-78267aee731d'  -- Космические трубы
+  '6a1de8dd-9457-4aa4-99a7-78267aee731d', -- Космические трубы
+  'c3333333-3333-4333-8333-333333333301', -- Подсолнух
+  'c3333333-3333-4333-8333-333333333302', -- Роза
+  'c3333333-3333-4333-8333-333333333303'  -- Анютины глазки
 );
+
+INSERT INTO items (id, name, description, price, category, game_id, image_url, available, stock, version)
+VALUES
+  (
+    'c3333333-3333-4333-8333-333333333301',
+    'Подсолнух',
+    'Тёплые шестерни Gears в палитре подсолнуха. Косметика игры.',
+    400, 'game_skin', 'gears', '/images/brand/planet-hero.png', true, 999, 1
+  ),
+  (
+    'c3333333-3333-4333-8333-333333333302',
+    'Роза',
+    'Шестерни Gears в розовой палитре. Косметика игры.',
+    400, 'game_skin', 'gears', '/images/brand/logo-minimal.png', true, 999, 1
+  ),
+  (
+    'c3333333-3333-4333-8333-333333333303',
+    'Анютины глазки',
+    'Шестерни Gears в фиолетово-жёлтой палитре анютиных глазок. Косметика игры.',
+    500, 'game_skin', 'gears', '/images/brand/planet-hero.png', true, 999, 1
+  )
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  price = EXCLUDED.price,
+  category = EXCLUDED.category,
+  game_id = EXCLUDED.game_id,
+  image_url = EXCLUDED.image_url,
+  available = true,
+  stock = EXCLUDED.stock;
 
 -- Profile themes (≥1) — digital cosmetics, cheap tickets.
 INSERT INTO items (id, name, description, price, category, game_id, image_url, available, stock, version)
