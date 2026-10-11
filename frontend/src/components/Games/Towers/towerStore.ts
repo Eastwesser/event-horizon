@@ -3,12 +3,17 @@ import { create } from 'zustand';
 import api from '../../../services/api';
 import { getNickname } from '../../../lib/nickname';
 
+export type Slab = { x: number; z: number; w: number; d: number };
+export type TravelAxis = 'x' | 'z';
+export type Scrap = Slab & { dy: number; life: number; lift: number; hue: number };
+
 interface TowerState {
-  towerBlocks: number[];
+  tower: Slab[];
   towerHeight: number;
-  currentBlockX: number;
-  blockWidth: number;
+  mover: Slab;
+  axis: TravelAxis;
   direction: 1 | -1;
+  scraps: Scrap[];
   score: number;
   /** In-run floor height (UI only — never sent as submit level). */
   floor: number;
@@ -60,12 +65,32 @@ function minWidthForDifficulty(d: number): number {
   return Math.min(12, 6 + Math.floor((clampDiff(d) - 1) * 0.67));
 }
 
+/** Flush enough that a sliver must not show. World units, about 2 screen px. */
+const PERFECT_PX = 3;
+export const LAYER = 16;
+
+function baseSlab(size: number): Slab {
+  return { x: -size / 2, z: -size / 2, w: size, d: size };
+}
+
+function moverFrom(placed: Slab, axis: TravelAxis): Slab {
+  if (axis === 'x') return { ...placed, x: placed.x - placed.w - 28 };
+  return { ...placed, z: placed.z - placed.d - 28 };
+}
+
+function tickScraps(scraps: Scrap[]): Scrap[] {
+  return scraps
+    .map((s) => ({ ...s, dy: s.dy + 5, life: s.life - 1 }))
+    .filter((s) => s.life > 0 && s.dy < 240);
+}
+
 export const useTowerStore = create<TowerState>((set, get) => ({
-  towerBlocks: [],
+  tower: [],
   towerHeight: 0,
-  currentBlockX: (GAME_WIDTH - 100) / 2,
-  blockWidth: 100,
+  mover: baseSlab(100),
+  axis: 'x',
   direction: 1,
+  scraps: [],
   score: 0,
   floor: 1,
   difficulty: 1,
@@ -90,14 +115,15 @@ export const useTowerStore = create<TowerState>((set, get) => ({
   startGame: (opts) => {
     get().stopLoop();
     const difficulty = clampDiff(opts?.difficulty ?? get().difficulty);
-    const w = startWidthForDifficulty(difficulty);
+    const base = baseSlab(startWidthForDifficulty(difficulty));
 
     set({
-      towerBlocks: [w],
+      tower: [base],
       towerHeight: 1,
-      currentBlockX: (GAME_WIDTH - w) / 2,
-      blockWidth: w,
+      mover: moverFrom(base, 'x'),
+      axis: 'x',
       direction: 1,
+      scraps: [],
       score: 0,
       floor: 1,
       difficulty,
@@ -111,8 +137,8 @@ export const useTowerStore = create<TowerState>((set, get) => ({
     });
 
     const gameLoop = setInterval(() => {
-      const { gameOver, started } = get();
-      if (!gameOver && started) {
+      const { gameOver, started, scraps } = get();
+      if (started && (!gameOver || scraps.length > 0)) {
         get().update();
       }
     }, 1000 / 60);
@@ -121,85 +147,139 @@ export const useTowerStore = create<TowerState>((set, get) => ({
   },
 
   update: () => {
-    const { currentBlockX, blockWidth, direction, BASE_SPEED, GAME_WIDTH, difficulty, boosted } =
+    const { mover, axis, direction, tower, BASE_SPEED, difficulty, boosted, gameOver, scraps } =
       get();
-    const speedMul = boosted ? 0.55 : 1;
-    const speed = (BASE_SPEED + (difficulty - 1) * 0.4) * speedMul;
-
-    let newX = currentBlockX + direction * speed;
-    let newDirection = direction;
-
-    if (newX <= 0) {
-      newX = 0;
-      newDirection = 1;
-    } else if (newX + blockWidth >= GAME_WIDTH) {
-      newX = GAME_WIDTH - blockWidth;
-      newDirection = -1;
+    const nextScraps = tickScraps(scraps);
+    if (gameOver || tower.length === 0) {
+      set({ scraps: nextScraps });
+      return;
     }
 
-    set({
-      currentBlockX: newX,
-      direction: newDirection,
-    });
+    const speedMul = boosted ? 0.55 : 1;
+    const speed = (BASE_SPEED * 0.85 + (difficulty - 1) * 0.35) * speedMul;
+    const last = tower[tower.length - 1];
+    const size = axis === 'x' ? mover.w : mover.d;
+    const anchor = axis === 'x' ? last.x : last.z;
+    const anchorSize = axis === 'x' ? last.w : last.d;
+    const min = anchor - size - 36;
+    const max = anchor + anchorSize + 36;
+
+    let pos = (axis === 'x' ? mover.x : mover.z) + direction * speed;
+    let nextDir = direction;
+    if (pos <= min) {
+      pos = min;
+      nextDir = 1;
+    } else if (pos + size >= max) {
+      pos = max - size;
+      nextDir = -1;
+    }
+
+    const next = { ...mover };
+    if (axis === 'x') next.x = pos;
+    else next.z = pos;
+    set({ mover: next, direction: nextDir, scraps: nextScraps });
   },
 
   dropBlock: () => {
-    const {
-      currentBlockX,
-      blockWidth,
-      towerBlocks,
-      GAME_WIDTH,
-      score,
-      combo,
-      gameOver,
-      started,
-      difficulty,
-    } = get();
+    const { mover, axis, tower, scraps, score, combo, gameOver, started, difficulty } = get();
 
-    if (gameOver || !started) return;
+    if (gameOver || !started || tower.length === 0) return;
 
-    const lastBlockWidth = towerBlocks[towerBlocks.length - 1];
-    const towerLeft = (GAME_WIDTH - lastBlockWidth) / 2;
-    const towerRight = towerLeft + lastBlockWidth;
+    const last = tower[tower.length - 1];
+    const m0 = axis === 'x' ? mover.x : mover.z;
+    const span = axis === 'x' ? mover.w : mover.d;
+    const m1 = m0 + span;
+    const t0 = axis === 'x' ? last.x : last.z;
+    const tSpan = axis === 'x' ? last.w : last.d;
+    const t1 = t0 + tSpan;
     const grace = softFailPx(difficulty);
-    const blockLeft = currentBlockX;
-    const blockRight = currentBlockX + blockWidth;
 
-    const overlapLeft = Math.max(blockLeft, towerLeft - grace);
-    const overlapRight = Math.min(blockRight, towerRight + grace);
-    const overlap = overlapRight - overlapLeft;
+    const flush =
+      Math.abs(m0 - t0) <= PERFECT_PX && Math.abs(span - tSpan) <= 1;
+    if (flush) {
+      const nextAxis: TravelAxis = axis === 'x' ? 'z' : 'x';
+      const placed = { ...last };
+      const stack = [...tower, placed];
+      set({
+        tower: stack,
+        towerHeight: stack.length,
+        mover: moverFrom(placed, nextAxis),
+        axis: nextAxis,
+        direction: 1,
+        score: score + get().calculateBlockScore(),
+        floor: stack.length,
+        combo: combo + 1,
+      });
+      return;
+    }
 
+    const overlap = Math.min(m1, t1 + grace) - Math.max(m0, t0 - grace);
     if (overlap <= 0) {
-      set({ gameOver: true });
+      const miss: Scrap = {
+        ...mover,
+        dy: 0,
+        life: 42,
+        lift: tower.length * LAYER,
+        hue: tower.length + 1,
+      };
+      set({ gameOver: true, scraps: [...scraps, miss] });
       void get().submitScore();
       return;
     }
 
-    // Soft-fail: grace hit keeps a thin slab; perfect stack keeps real overlap.
-    const realOverlapLeft = Math.max(blockLeft, towerLeft);
-    const realOverlapRight = Math.min(blockRight, towerRight);
-    const realOverlap = realOverlapRight - realOverlapLeft;
-    const newBlockWidth = Math.max(realOverlap > 0 ? realOverlap : Math.min(overlap, 8), 5);
+    const real0 = Math.max(m0, t0);
+    const real1 = Math.min(m1, t1);
+    const real = real1 - real0;
+    const kept = Math.max(real > 0 ? real : Math.min(overlap, 8), 5);
+    const kept0 = real > 0 ? real0 : Math.max(t0, Math.min(m0, t1 - kept));
 
-    const blockScore = get().calculateBlockScore();
-    const newScore = score + blockScore;
-    const newCombo = combo + 1;
-    const newTowerBlocks = [...towerBlocks, newBlockWidth];
+    const cuts: Scrap[] = [];
+    const lift = tower.length * LAYER;
+    const hue = tower.length + 1;
+    const scrap = (piece: Slab): Scrap => ({ ...piece, dy: 0, life: 42, lift, hue });
+    if (m0 < kept0 - 0.5) {
+      const cut = kept0 - m0;
+      cuts.push(
+        scrap(
+          axis === 'x'
+            ? { x: m0, z: mover.z, w: cut, d: mover.d }
+            : { x: mover.x, z: m0, w: mover.w, d: cut },
+        ),
+      );
+    }
+    if (m1 > kept0 + kept + 0.5) {
+      const cut = m1 - (kept0 + kept);
+      cuts.push(
+        scrap(
+          axis === 'x'
+            ? { x: kept0 + kept, z: mover.z, w: cut, d: mover.d }
+            : { x: mover.x, z: kept0 + kept, w: mover.w, d: cut },
+        ),
+      );
+    }
+
+    const placed: Slab =
+      axis === 'x'
+        ? { x: kept0, z: last.z, w: kept, d: last.d }
+        : { x: last.x, z: kept0, w: last.w, d: kept };
+    const stack = [...tower, placed];
+    const nextAxis: TravelAxis = axis === 'x' ? 'z' : 'x';
+    const tooThin = kept < minWidthForDifficulty(difficulty);
 
     set({
-      towerBlocks: newTowerBlocks,
-      towerHeight: newTowerBlocks.length,
-      blockWidth: newBlockWidth,
-      currentBlockX: (GAME_WIDTH - newBlockWidth) / 2,
-      score: newScore,
-      floor: newTowerBlocks.length,
-      combo: newCombo,
+      tower: stack,
+      towerHeight: stack.length,
+      mover: moverFrom(placed, nextAxis),
+      axis: nextAxis,
+      direction: 1,
+      scraps: [...scraps, ...cuts],
+      score: score + get().calculateBlockScore(),
+      floor: stack.length,
+      combo: combo + 1,
+      gameOver: tooThin,
     });
 
-    if (newBlockWidth < minWidthForDifficulty(difficulty)) {
-      set({ gameOver: true });
-      void get().submitScore();
-    }
+    if (tooThin) void get().submitScore();
   },
 
   calculateBlockScore: () => {

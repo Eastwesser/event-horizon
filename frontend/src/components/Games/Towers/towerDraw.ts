@@ -42,115 +42,99 @@ function shade(hex: string, amount: number): string {
   return `rgb(${t(r)}, ${t(g)}, ${t(b)})`;
 }
 
+function cloud(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, 28 * s, 16 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + 22 * s, y - 6 * s, 22 * s, 14 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(x - 20 * s, y - 4 * s, 18 * s, 12 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export function drawBackground(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#12162a');
-  g.addColorStop(0.55, '#1a1a2e');
-  g.addColorStop(1, '#0e1220');
+  g.addColorStop(0, '#6e9ed4');
+  g.addColorStop(0.55, '#b9d7f2');
+  g.addColorStop(1, '#efe2c4');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  // Soft floor band
-  const floor = ctx.createLinearGradient(0, h - 56, 0, h);
-  floor.addColorStop(0, 'rgba(232, 184, 74, 0)');
-  floor.addColorStop(1, 'rgba(232, 184, 74, 0.08)');
-  ctx.fillStyle = floor;
-  ctx.fillRect(0, h - 56, w, 56);
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  cloud(ctx, 70, 54, 1);
+  cloud(ctx, 250, 86, 0.85);
+  cloud(ctx, 340, 40, 0.7);
+
+  ctx.fillStyle = '#e7c98a';
+  ctx.fillRect(0, h - 36, w, 36);
+  ctx.fillStyle = '#d7b56e';
+  ctx.fillRect(0, h - 36, w, 4);
 }
 
-export function drawBlock(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  color: string,
-) {
-  if (w <= 0 || h <= 0) return;
+export type IsoSlab = { x: number; z: number; w: number; d: number };
 
-  ctx.save();
-  const body = ctx.createLinearGradient(x, y, x + w, y);
-  body.addColorStop(0, shade(color, -28));
-  body.addColorStop(0.35, color);
-  body.addColorStop(0.65, shade(color, 18));
-  body.addColorStop(1, shade(color, -22));
-  ctx.fillStyle = body;
-  ctx.fillRect(x, y, w, h);
+const KX = 0.78;
+const KZ = 0.46;
+const THICK = 13;
+const BASE_Y = 418;
 
-  // Top bevel
-  ctx.fillStyle = 'rgba(255,255,255,0.22)';
-  ctx.fillRect(x, y, w, 3);
-  // Bottom edge
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
-  ctx.fillRect(x, y + h - 3, w, 3);
-  // Left highlight / right shadow
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.fillRect(x, y, 3, h);
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(x + w - 3, y, 3, h);
-
-  // Grain lines
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  const slots = Math.min(4, Math.max(1, Math.floor(w / 28)));
-  for (let j = 0; j < slots; j++) {
-    const lx = x + 6 + ((j + 0.5) * (w - 12)) / slots;
-    ctx.fillRect(lx, y + 5, 2, h - 10);
-  }
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-  ctx.restore();
+function project(x: number, z: number, lift: number) {
+  return {
+    x: 200 + (x - z) * KX,
+    y: BASE_Y + (x + z) * KZ - lift,
+  };
 }
 
-export function drawMovingBlock(
+function quad(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  color: string,
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  c: { x: number; y: number },
+  d: { x: number; y: number },
 ) {
-  ctx.save();
-  ctx.shadowBlur = 14;
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  drawBlock(ctx, x, y, w, h, color);
-  ctx.shadowBlur = 0;
-  // Outer glow ring
-  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(x - 1, y - 1, w + 2, h + 2);
-  ctx.restore();
-}
-
-export function drawDirectionChevron(
-  ctx: CanvasRenderingContext2D,
-  direction: 1 | -1,
-  gameWidth: number,
-  blockY: number,
-  blockH: number,
-) {
-  const cy = blockY + blockH / 2;
-  const size = 10;
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.beginPath();
-  if (direction === 1) {
-    const tipX = gameWidth - 18;
-    ctx.moveTo(tipX, cy);
-    ctx.lineTo(tipX - size, cy - size);
-    ctx.lineTo(tipX - size, cy + size);
-  } else {
-    const tipX = 18;
-    ctx.moveTo(tipX, cy);
-    ctx.lineTo(tipX + size, cy - size);
-    ctx.lineTo(tipX + size, cy + size);
-  }
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.lineTo(c.x, c.y);
+  ctx.lineTo(d.x, d.y);
   ctx.closePath();
   ctx.fill();
-  ctx.restore();
 }
 
-export function stackStartY(gameHeight: number): number {
-  return gameHeight - 50;
+export function drawIsoSlab(
+  ctx: CanvasRenderingContext2D,
+  slab: IsoSlab,
+  lift: number,
+  color: string,
+  dy = 0,
+) {
+  if (slab.w <= 0.5 || slab.d <= 0.5) return;
+  const a = project(slab.x, slab.z, lift);
+  const b = project(slab.x + slab.w, slab.z, lift);
+  const c = project(slab.x + slab.w, slab.z + slab.d, lift);
+  const d = project(slab.x, slab.z + slab.d, lift);
+  a.y += dy;
+  b.y += dy;
+  c.y += dy;
+  d.y += dy;
+  const down = (p: { x: number; y: number }) => ({ x: p.x, y: p.y + THICK });
+
+  ctx.fillStyle = shade(color, -46);
+  quad(ctx, b, c, down(c), down(b));
+  ctx.fillStyle = shade(color, -22);
+  quad(ctx, d, c, down(c), down(d));
+  ctx.fillStyle = shade(color, 36);
+  quad(ctx, a, b, c, d);
+  ctx.strokeStyle = 'rgba(42, 33, 24, 0.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.lineTo(c.x, c.y);
+  ctx.lineTo(d.x, d.y);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+/** Screen y of the back corner, used to keep the top of the stack in frame. */
+export function isoTopY(x: number, z: number, lift: number): number {
+  return project(x, z, lift).y;
 }

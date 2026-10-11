@@ -1,6 +1,6 @@
-# 8. Tamagotchi — v1.1.2
+# 8. Tamagotchi — v1.1.2.1
 
-Статус: план. Код: `frontend/src/components/Games/Companion/CompanionGame.tsx`.
+Статус: перерисовано, ждёт проверки. Код: `frontend/src/components/Games/Companion/`. Комната и зверь — один контур, не набор отдельных овалов.
 
 Сейчас: `tamagotchi.png`. Цель: правая половина `reference8/The TOMAGOCHI.png` (питомец в комнате). Левая половина и `TOMAGOCHI INTERFACE.png` — второй экран, коллекция подарков.
 

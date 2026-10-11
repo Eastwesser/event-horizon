@@ -15,15 +15,8 @@ import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
 import { boostHelpLines } from '../../../lib/gameBoostCopy';
 import { cn } from '../../../lib/cn';
-import {
-  BLOCK_HEIGHT,
-  blockColor,
-  drawBackground,
-  drawBlock,
-  drawDirectionChevron,
-  drawMovingBlock,
-  stackStartY,
-} from './towerDraw';
+import { blockColor, drawBackground, drawIsoSlab, isoTopY } from './towerDraw';
+import { LAYER } from './towerStore';
 import './TowerGame.css';
 
 function IconBlocks({ cosmic }: { cosmic: boolean }) {
@@ -58,9 +51,9 @@ export function TowerGame() {
   } = useGameBoost('towers');
 
   const {
-    towerBlocks,
-    currentBlockX,
-    blockWidth,
+    tower,
+    mover,
+    scraps,
     score,
     floor,
     difficulty,
@@ -68,7 +61,6 @@ export function TowerGame() {
     gameOver,
     started,
     boosted,
-    direction,
     GAME_WIDTH,
     GAME_HEIGHT,
     startGame,
@@ -174,32 +166,38 @@ export function TowerGame() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     drawBackground(ctx, GAME_WIDTH, GAME_HEIGHT);
 
-    const startY = stackStartY(GAME_HEIGHT);
-    const h = BLOCK_HEIGHT - 2;
+    const focus = tower.length > 0 ? tower[tower.length - 1] : mover;
+    const focusLift = Math.max(0, tower.length - 1) * LAYER;
+    const cameraY = Math.max(0, 90 - isoTopY(focus.x, focus.z, focusLift));
 
-    for (let i = 0; i < towerBlocks.length; i++) {
-      const blockW = towerBlocks[i];
-      const blockX = (GAME_WIDTH - blockW) / 2;
-      const blockY = startY - i * BLOCK_HEIGHT;
-      drawBlock(ctx, blockX, blockY, blockW, h, blockColor(i + 1, cosmic));
+    ctx.save();
+    ctx.translate(0, cameraY);
+
+    tower.forEach((slab, i) => {
+      drawIsoSlab(ctx, slab, i * LAYER, blockColor(i + 1, cosmic));
+    });
+
+    for (const scrap of scraps) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.15, scrap.life / 42);
+      drawIsoSlab(ctx, scrap, scrap.lift, blockColor(scrap.hue, cosmic), scrap.dy);
+      ctx.restore();
     }
 
     if (started && !gameOver) {
-      const currentY = startY - towerBlocks.length * BLOCK_HEIGHT;
-      const color = blockColor(towerBlocks.length + 1, cosmic);
-      drawMovingBlock(ctx, currentBlockX, currentY, blockWidth, h, color);
-      drawDirectionChevron(ctx, direction, GAME_WIDTH, currentY, h);
+      drawIsoSlab(ctx, mover, tower.length * LAYER, blockColor(tower.length + 1, cosmic));
     }
+    ctx.restore();
   }, [
-    towerBlocks,
-    currentBlockX,
-    blockWidth,
+    tower,
+    mover,
+    scraps,
     gameOver,
     started,
     GAME_WIDTH,
     GAME_HEIGHT,
     cosmic,
-    direction,
+    skinsLoading,
   ]);
 
   const getMultiplierDisplay = () => {
