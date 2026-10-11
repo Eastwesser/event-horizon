@@ -1124,6 +1124,8 @@ services:
       - INVENTORY_ADDR=inventory:50059
       - PAYMENT_ADDR=payment:50058
       - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
+      - DOCS_USER=${DOCS_USER:-docs}
+      - DOCS_PASSWORD=${DOCS_PASSWORD:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
@@ -1169,6 +1171,8 @@ services:
       - INVENTORY_ADDR=inventory:50059
       - PAYMENT_ADDR=payment:50058
       - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
+      - DOCS_USER=${DOCS_USER:-docs}
+      - DOCS_PASSWORD=${DOCS_PASSWORD:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057
@@ -1211,6 +1215,8 @@ services:
       - INVENTORY_ADDR=inventory:50059   # 👈 НОВОЕ!
       - PAYMENT_ADDR=payment:50058
       - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
+      - DOCS_USER=${DOCS_USER:-docs}
+      - DOCS_PASSWORD=${DOCS_PASSWORD:-}
       - AUTHORS_ADDR=authors:50061
       - HISTORY_ADDR=history:50062
       - ANALYTICS_ADDR=analytics:50057

@@ -17,7 +17,7 @@
 | **Security** | JWT in Redis, bcrypt cost 12, rate limits, secrets via env |
 | **v1.1.0 pack** | [`LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md) · [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md) · [`DAILY_OPS.md`](confluence/history/2026-10/09.10.2026/DAILY_OPS.md) |
 | **Load (measured)** | [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md) · [`SUITABLE_SERVER.md`](confluence/history/2026-10/09.10.2026/SUITABLE_SERVER.md) |
-| **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI [`/docs`](http://localhost:8079/docs) when running |
+| **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI `/docs` только с `DOCS_PASSWORD` (без пароля адрес отвечает 404) |
 | **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
 
 ### v1.1.0 highlights (07–10.10.2026)
@@ -149,7 +149,7 @@ docker compose --env-file .env -f deployments/docker-compose.cluster.yml up -d
 | GET/POST | /api/v1/authors/… | Авторы |
 | GET | /api/v1/history | История |
 | GET | /api/v1/analytics/… | Аналитика (admin) |
-| GET | /openapi.yaml · /docs | OpenAPI + Swagger UI |
+| GET | /openapi.yaml · /docs | OpenAPI + Swagger UI, только если задан `DOCS_PASSWORD` |
 | WS | /ws/leaderboard | Real-time LB |
 
 | Кто | Как |
@@ -283,36 +283,46 @@ Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.202
 
 ### Микросервисы
 
-| Сервис | gRPC | Metrics | БД | Redis |
-|--------|------|---------|-----|-------|
-| Auth | 50051 | 9091 | PG 5460 | 6379 |
-| Game | 50052 | 9092 | PG 5461 | — |
-| Billing | 50053 | 9093 | PG 5462 | 6381 |
-| Leaderboard | 50054 | 9094 | PG 5463 | 6382 |
-| Shop | 50055 | 9095 | PG 5465 | 6383 |
-| Analytics | 50057 | 9106 | ClickHouse 8123/9000 | — |
+Порты ниже — те, что проброшены на хост в `deployments/docker-compose.cluster.yml`. Внутри сети контейнеров Postgres слушает 5432, Redis 6379.
+
+| Сервис | gRPC / HTTP | Metrics на хосте | Postgres на хосте | Redis на хосте |
+|--------|-------------|------------------|-------------------|----------------|
+| Auth | 50051 | 9091 | 5460 `eventhorizon` | 6379 |
+| Game | 50052 | 9092 | 5461 `eventhorizon_game` | — |
+| Billing | 50053 | 9093 | 5462 `eventhorizon_billing` | 6381 |
+| Leaderboard | 50054 | 9094 | 5463 `eventhorizon_leaderboard` | 6382 |
+| Shop | 50055 | 9095 | 5465 `eventhorizon_shop` | 6383 |
+| Analytics | 50057 | 9106 | ClickHouse 8123 / 9000 | — |
 | Fulfillment | — | 9101 | — | — |
-| Notification | — | 9102 | — | — |
-| Payment | 50058 | 9103 | PG 5467 | 6386 |
-| Inventory | 50059 | 9096 | PG / Mongo | Redis |
-| Profile | 50060 | 9099 | PG 5464 | — |
-| Authors | 50061 | 9104 | PG 5468 | 6387 |
-| History | 50062 | 9105 | PG 5469 | — |
-| Gateway | HTTP 8081-8083 | 9095-9097 | — | — |
+| Notification | 50063 | 9102 | 5470 `eventhorizon_notification` | — |
+| Payment | 50058 | 9103 | 5467 `eventhorizon_payment` | 6386 |
+| Inventory | 50059 | 9096 | 5466 `eventhorizon_inventory` | 6384 |
+| Profile | 50060 | 9099 | 5464 `eventhorizon_profile` | 6385 |
+| Authors | 50061 | 9104 | 5468 `eventhorizon_authors` | 6387 |
+| History | 50062 | 9105 | 5469 `eventhorizon_history` | — |
+| Gateway | HTTP 8081, 8082, 8083 | не проброшен | — | 6379 (общий с Auth) |
 | Balancer | HTTP 8079 | 9098 | — | — |
+
+Gateway слушает метрики внутри контейнера (`9095`, `9096`, `9097`). На хост они не выведены: `9095` и `9096` на хосте — это Shop и Inventory, `9097` — NATS Hub. Prometheus ходит по именам `gateway:9095`, `shop:9095` внутри docker-сети, это разные контейнеры. Redis `6380` (`redis-game`) поднят, процесс Game к нему не подключён. Mongo в этом compose нет: Inventory пишет в Postgres.
 
 ### Инфраструктура
 
 | Сервис | Порт(ы) | Назначение |
 |--------|---------|------------|
-| NATS-1 | 4222, 8222 | Узел кластера |
-| NATS-2 | 4223, 8223 | Узел кластера |
-| NATS-3 | 4224, 8224 | Узел кластера |
-| NATS Hub | — | Создаёт Stream EVENTS |
-| ClickHouse | 8123, 9000 | Analytics OLAP |
-| Jaeger UI | 16686 | Трассировка |
+| NATS-1 | 4222 клиент, 8222 мониторинг, 6222 кластер | Узел |
+| NATS-2 | 4223, 8223, 6223 | Узел |
+| NATS-3 | 4224, 8224, 6224 | Узел |
+| NATS Hub | 9097 | Создаёт Stream EVENTS, свои метрики |
+| NATS Exporter | 7777 | `/metrics` |
+| ClickHouse | 8123 HTTP, 9000 native | Analytics OLAP |
+| Jaeger | 16686 UI, 4317 OTLP gRPC, 4318 OTLP HTTP | Трассировка |
 | Prometheus | 9090 | Метрики |
 | Grafana | 3000 | Дашборды |
+| Alertmanager | 9193 → контейнер 9093 | Алерты |
+| Kafka (профиль heavy) | 19092 → контейнер 9092 | Не входит в `make deploy` |
+| Postgres exporter | 9187 | Метрики auth-БД |
+| Redis exporter | 9121 | Метрики Redis |
+| Qdrant (профиль qdrant) | 6333 | Не входит в обычный подъём |
 
 ---
 
@@ -321,10 +331,13 @@ Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.202
 | Игра | Описание | Скины |
 |------|----------|-------|
 | Flappy Bird | Лети и не врезайся в трубы | Золотая птичка, Радужные трубы |
-| Hexagon | Гексагональный пазл с блинами | Космические блины |
-| Towers (Башенки) | Строй башню из падающих блоков | Радужные блоки |
-| Memory | Найди пары фруктов | Карточки со зверями |
-| Hanoi (Ханойская башня) | Классика 3 стержня / кольца 3–8 | — |
+| Pancaker (Hexagon) | Гексагональный пазл с блинами | Космические блины |
+| Builder (Towers) | Строй башню из падающих блоков | Радужные блоки |
+| Memonia (Memory) | Найди пары фруктов | Карточки со зверями |
+| Hanoi | Классика: 3 стержня, кольца 3–8 | — |
+| 2048 | Собирай плитки до 2048 | — |
+| Gears | Собирай шестерни на поле | — |
+| Tamagotchi | Корми спутника и забирай дневной подарок | — |
 
 ---
 
@@ -342,6 +355,8 @@ Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.202
 | Что осталось на v1.1 | [`confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md) |
 | DevOps на потом | [`confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md) |
 | Технический долг | [`confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md`](confluence/tech_debt/CURRENT_DEBT/STILL_TECH_DEBT.md) |
+| MCP для Cursor | [`services/mcp/README.md`](services/mcp/README.md) |
+| Волна 11.10 | [`confluence/history/2026-10/11.10.2026/FINISHERS.md`](confluence/history/2026-10/11.10.2026/FINISHERS.md) |
 | CHANGELOG | [`CHANGELOG.md`](CHANGELOG.md) |
 
 ---
@@ -351,7 +366,7 @@ Full command kit + Prom/Grafana gap list: [`confluence/history/2026-10/09.10.202
 - **Секреты не коммитятся** — скопируй [`.env.example`](.env.example) → `.env`, задай `JWT_SECRET` и `POSTGRES_PASSWORD`.
 - **JWT** — задаётся через `JWT_SECRET`; Auth предупреждает при дефолтном ключе.
 - **Пароли в compose** (`eventhorizon`, Patroni stubs) — только для локальной разработки; в k3s — Kubernetes Secrets.
-- **OpenAPI** — канонический контракт: [`docs/openapi.yaml`](docs/openapi.yaml), Swagger UI на `/docs`.
+- **OpenAPI** — канонический контракт: [`docs/openapi.yaml`](docs/openapi.yaml). `GET /docs` и `GET /openapi.yaml` отвечают 404, пока не задан `DOCS_PASSWORD`.
 - Вопросы по безопасности — Issue или eastwesser@gmail.com.
 
 ---
@@ -411,30 +426,31 @@ Do **not** run 10k VUs on this VM — that is not “10k DAU”; it will OOM / t
 
 Закрыт. Разбор — в `LEFT_TO_FINISH.md`.
 
-### Осталось снаружи кода
+### Что ещё не код
 
 - стикеры на Miro
-- `git tag v1.1.0`
-- единый хром мини-игр
-- арт тамагочи по референсу
-- выплаты авторам (C4), витрина на 108 авторов и 3D остаются закрытыми
+- единый хром мини-игр и арт тамагочи
+- витрина на 108 авторов и 3D: нет текстов и ассетов
+- смена пароля: отдельный сценарий auth, не недостающий глагол
+- WAF и пентест: это контур перед приложением и отчёт человека, не флаг в репозитории
+- ротация `JWT_SECRET`
+
+Доля 85/15 пишется в `revenue_splits` при закрытии подписки. Перевода на карту автора нет.
+
+Тег `v1.1.1` стоит на коммите с сагой покупки, билетом сокета, закрытым `/docs` и этой таблицей портов.
 
 ### Парковка
 
-Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`.
+Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`. Rate limit на gateway уже стоит.
 
 ### Если открывать следующий эпик
-
-Отдельное решение, когда появится время:
 
 | Задача | Зачем |
 |--------|--------|
 | Пагинация каталога на сервере | Имеет смысл до 1000+ карт |
 | Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
-| Юнит-тесты, порог покрытия | В CI порог ≥70% не включён |
+| Порог покрытия в CI | Юнит-тесты есть, порог ≥70% не включён |
 | Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
-| Rate limit | Продуктовый лимит, не баг |
-| Emoji → SVG | Когда текущие иконки мешают в интерфейсе |
 
 ---
 
@@ -448,14 +464,17 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.1** (10.10.2026)
+Текущая: **v1.1.1** (11.10.2026)
 
 ### Что нового в v1.1.1
 
-- Покупка пишет `purchase.paid` в outbox с настоящим `purchases.id`. Воркер публикует с `FOR UPDATE SKIP LOCKED`.
-- Списание билетиков идёт со стабильным `reference_id` на цикл покупки. Повтор клика не списывает второй раз. Упавший возврат дожимает воркер.
+- Покупка пишет `purchase.paid` в outbox с настоящим `purchases.id`. Воркер shop и game публикует с `FOR UPDATE SKIP LOCKED`.
+- Списание билетиков идёт со стабильным `reference_id` на цикл покупки. Повтор клика не списывает второй раз. Строка `purchase_sagas` дожимает покупку, если процесс умер после списания.
 - Повтор отмены снова зовёт `AddCurrency` с ключом `cancel-{id}`. Уникальный ключ не задваивает деньги.
-- Сокет `/ws/leaderboard` требует токен и свой Origin.
+- Сокет `/ws/leaderboard` открывается одноразовым билетом (`POST /api/v1/ws-ticket`), не JWT в query. Origin проверяется.
+- `GET /docs` и `GET /openapi.yaml` скрыты, пока не задан `DOCS_PASSWORD`. Swagger UI лежит в репозитории.
+- Успешная подписка пишет `revenue_splits`: автору 85%, платформе остаток. Перевода автору нет.
+- `GET /api/v1/billing/balance` и `GET /api/v1/billing/transactions` читают id из токена.
 - Fulfillment и notification читают Kafka только когда JetStream не поднят.
 - Упавший Redis на проверке сессии отдаёт 503, а не «токен жив».
 - На дашборде Grafana есть ряд «paid → fulfilled» и счётчик неудачных возвратов.

@@ -125,8 +125,11 @@ export const submitScore = (userId: string, gameId: string, level: number, seed:
 export const getLeaderboard = (gameId: string, limit = 10, level = 1) =>
   api.get('/leaderboard', { params: { game_id: gameId, limit, level } });
 
-export const getBalance = (userId: string, currency: 'lamps' | 'tickets') =>
-  api.get('/billing/balance', { params: { user_id: userId, currency } });
+export const getBalance = (_userId: string, currency: 'lamps' | 'tickets') =>
+  api.get('/billing/balance', { params: { currency } });
+
+export const getTransactions = (currency: 'lamps' | 'tickets', limit = 20, offset = 0) =>
+  api.get('/billing/transactions', { params: { currency, limit, offset } });
 
 export const getAllBalances = (userId: string) =>
   api.get('/billing/balance/all', { params: { user_id: userId } });

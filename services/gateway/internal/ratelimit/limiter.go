@@ -68,6 +68,13 @@ func (rl *RateLimiter) AllowLogin(ip string) bool {
 	return allowed
 }
 
+// AllowDocs limits guesses against the documentation password (20 requests per minute per IP).
+func (rl *RateLimiter) AllowDocs(ip string) bool {
+	key := fmt.Sprintf("rl:docs:%s", ip)
+	allowed, _ := rl.Allow(context.Background(), key, 20, time.Minute)
+	return allowed
+}
+
 // AllowWebSocket для WebSocket соединений (100 соединений в минуту с одного IP)
 func (rl *RateLimiter) AllowWebSocket(ip string) bool {
 	key := fmt.Sprintf("rl:ws:%s", ip)

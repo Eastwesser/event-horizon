@@ -1,6 +1,10 @@
 # Event Horizon MCP server
 
-stdio MCP server for Cursor / Claude Desktop. Tools:
+This is a local stdio process for Cursor. It is not an HTTP API and it is not on the player path. The gateway still serves the game. MCP lets an agent look at the running stack: JetStream, a read-only SQL query, Redis keys, and the Prydwen notes. There is no `get_user_balance` tool. Balances stay on `GET /api/v1/billing/balance`.
+
+`confluence/architecture/MCP_WHEN.md` is an old note that says MCP was not needed yet. The server in this directory is the one that actually runs.
+
+Tools:
 
 | Tool | Purpose |
 |------|---------|

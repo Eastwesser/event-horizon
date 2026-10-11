@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -66,6 +68,28 @@ const (
 	RoleAuthor = "author"
 	RoleAdmin  = "admin"
 )
+
+func parseBillingCurrency(raw string) (billingPb.CurrencyType, bool) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "lamps":
+		return billingPb.CurrencyType_LAMPS, true
+	case "tickets":
+		return billingPb.CurrencyType_TICKETS, true
+	default:
+		return billingPb.CurrencyType_CURRENCY_UNSPECIFIED, false
+	}
+}
+
+func billingCurrencyName(c billingPb.CurrencyType) string {
+	switch c {
+	case billingPb.CurrencyType_LAMPS:
+		return "lamps"
+	case billingPb.CurrencyType_TICKETS:
+		return "tickets"
+	default:
+		return ""
+	}
+}
 
 func withUserRole(ctx context.Context, c *gin.Context) context.Context {
 	return metadata.AppendToOutgoingContext(ctx,
@@ -245,7 +269,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // originAllowed accepts the page that loaded the app (same host), localhost, and WS_ALLOWED_ORIGINS.
-// An empty Origin is a non-browser client; the handler still requires a token.
+// An empty Origin is a non-browser client; the handler still requires a bearer token or a one-time ticket.
 func originAllowed(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
@@ -264,6 +288,28 @@ func originAllowed(r *http.Request) bool {
 		}
 	}
 	return false
+}
+
+// issueWSTicket stores a random 30-second Redis key.
+// The browser puts that ticket in the socket URL and keeps the JWT in the Authorization header.
+func issueWSTicket(ctx context.Context, rdb *redis.Client, userID string) (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	ticket := hex.EncodeToString(buf)
+	if err := rdb.Set(ctx, "ws:ticket:"+ticket, userID, 30*time.Second).Err(); err != nil {
+		return "", err
+	}
+	return ticket, nil
+}
+
+// consumeWSTicket deletes the key on the first read, so the same ticket cannot open a second socket.
+func consumeWSTicket(ctx context.Context, rdb *redis.Client, ticket string) (string, error) {
+	if len(ticket) < 16 || len(ticket) > 64 {
+		return "", redis.Nil
+	}
+	return rdb.GetDel(ctx, "ws:ticket:"+ticket).Result()
 }
 
 type WSClient struct {
@@ -473,7 +519,18 @@ func runGateway() {
 	}
 
 	// GIN ROUTER SECTION
-	r := gin.Default()
+	// gin.Default logs the raw URL, which would keep a socket ticket in the access log.
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		c.Next()
+		log.Printf("%s %s %d %s", c.Request.Method, path, c.Writer.Status(), time.Since(start).Round(time.Millisecond))
+	})
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.RejectUnsafeRequest())
+	r.Use(middleware.LimitJSONBody())
 
 	// Canonical HTTP prefix is /api/v1/*. Legacy /api/* is rewritten and re-dispatched
 	// (Gin matches routes before middleware, so mutating Path alone is not enough).
@@ -548,30 +605,36 @@ func runGateway() {
 
 	registerUploadRoutes(r, cfg, authClient)
 
-	// Week-1: expose OpenAPI + Swagger UI (canonical HTTP contract)
-	r.GET("/openapi.yaml", func(c *gin.Context) {
+	// OpenAPI stays off the public internet unless DOCS_PASSWORD is set.
+	docsGate := middleware.DocsGate(cfg.DocsUser, cfg.DocsPassword)
+	r.GET("/openapi.yaml", docsGate, func(c *gin.Context) {
 		c.Data(http.StatusOK, "application/yaml; charset=utf-8", api.OpenAPIYAML)
 	})
-	r.GET("/docs", func(c *gin.Context) {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		_, _ = c.Writer.Write([]byte(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <title>Event Horizon API</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"/>
-</head>
-<body>
-  <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-  <script>
-    window.ui = SwaggerUIBundle({
-      url: '/openapi.yaml',
-      dom_id: '#swagger-ui'
-    });
-  </script>
-</body>
-</html>`))
+	r.GET("/docs/swagger-ui.css", docsGate, func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/css; charset=utf-8", api.SwaggerCSS)
+	})
+	r.GET("/docs/swagger-ui-bundle.js", docsGate, func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/javascript; charset=utf-8", api.SwaggerJS)
+	})
+	r.GET("/docs/swagger-init.js", docsGate, func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/javascript; charset=utf-8", api.SwaggerInit)
+	})
+	r.GET("/docs", docsGate, func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(api.DocsHTML))
+	})
+
+	r.POST("/api/v1/ws-ticket", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		userID := middleware.UserID(c)
+		if userID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing user"})
+			return
+		}
+		ticket, err := issueWSTicket(c.Request.Context(), rdb, userID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "ticket store unavailable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"ticket": ticket, "expires_in": 30})
 	})
 
 	r.GET("/ws/leaderboard", func(c *gin.Context) {
@@ -579,26 +642,34 @@ func runGateway() {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "origin not allowed"})
 			return
 		}
-		token := strings.TrimSpace(c.Query("token"))
-		if token == "" {
-			token, _ = middleware.ExtractBearerToken(c.GetHeader("Authorization"))
-		}
-		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+		if strings.TrimSpace(c.Query("token")) != "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "use a one-time ticket from POST /api/v1/ws-ticket"})
 			return
 		}
-		resp, err := authClient.GetClient().ValidateToken(c.Request.Context(), &authPb.ValidateTokenRequest{Token: token})
-		if err != nil {
-			if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
-				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+		if ticket := strings.TrimSpace(c.Query("ticket")); ticket != "" {
+			if _, err := consumeWSTicket(c.Request.Context(), rdb, ticket); err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired ticket"})
 				return
 			}
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-			return
-		}
-		if resp == nil || !resp.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
-			return
+		} else {
+			token, _ := middleware.ExtractBearerToken(c.GetHeader("Authorization"))
+			if token == "" {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing ticket"})
+				return
+			}
+			resp, err := authClient.GetClient().ValidateToken(c.Request.Context(), &authPb.ValidateTokenRequest{Token: token})
+			if err != nil {
+				if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
+					c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+					return
+				}
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+				return
+			}
+			if resp == nil || !resp.Valid {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+				return
+			}
 		}
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -896,6 +967,78 @@ func runGateway() {
 			"lamps":   lamps,
 			"tickets": tickets,
 		})
+	})
+
+	r.GET("/api/v1/billing/balance", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		currency, ok := parseBillingCurrency(c.Query("currency"))
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "currency must be lamps or tickets"})
+			return
+		}
+		out, err := throughBreaker(billingCB, c, func() (any, error) {
+			return billingClient.GetBalance(c.Request.Context(), &billingPb.GetBalanceRequest{
+				UserId:   middleware.UserID(c),
+				Currency: currency,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*billingPb.GetBalanceResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"currency":   billingCurrencyName(resp.GetCurrency()),
+			"balance":    resp.GetBalance(),
+			"updated_at": resp.GetUpdatedAt(),
+		})
+	})
+
+	r.GET("/api/v1/billing/transactions", middleware.RequireAuth(authClient), func(c *gin.Context) {
+		currency, ok := parseBillingCurrency(c.Query("currency"))
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "currency must be lamps or tickets"})
+			return
+		}
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+		if limit <= 0 {
+			limit = 20
+		}
+		if limit > 100 {
+			limit = 100
+		}
+		offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+		if offset < 0 {
+			offset = 0
+		}
+		out, err := throughBreaker(billingCB, c, func() (any, error) {
+			return billingClient.GetTransactionHistory(c.Request.Context(), &billingPb.GetTransactionHistoryRequest{
+				UserId:   middleware.UserID(c),
+				Currency: currency,
+				Limit:    int32(limit),
+				Offset:   int32(offset),
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*billingPb.GetTransactionHistoryResponse)
+		items := make([]gin.H, 0, len(resp.GetTransactions()))
+		for _, tx := range resp.GetTransactions() {
+			items = append(items, gin.H{
+				"id":            tx.GetId(),
+				"currency":      billingCurrencyName(tx.GetCurrency()),
+				"amount":        tx.GetAmount(),
+				"balance_after": tx.GetBalanceAfter(),
+				"reason":        tx.GetReason(),
+				"created_at":    tx.GetCreatedAt(),
+			})
+		}
+		c.JSON(http.StatusOK, gin.H{"transactions": items, "total": resp.GetTotal()})
 	})
 
 	// Inventory client is needed by shop purchase (decrement catalog stock) and
@@ -2661,8 +2804,9 @@ func runGateway() {
 	})
 
 	srv := &http.Server{
-		Addr:    "0.0.0.0:" + cfg.Port,
-		Handler: r,
+		Addr:              "0.0.0.0:" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	go func() {

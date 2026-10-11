@@ -49,6 +49,8 @@ type ShopStore interface {
 	PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []repository.OutboxRecord) error
 	NextSpendCycle(ctx context.Context, userID, itemID string) (int, error)
 	BumpSpendCycle(ctx context.Context, userID, itemID string) error
+	SavePurchaseSaga(ctx context.Context, saga repository.PurchaseSaga) (string, string, error)
+	MarkPurchaseSaga(ctx context.Context, id, state string) error
 	EnqueueOutbox(ctx context.Context, eventType string, payload []byte) (string, error)
 	MarkOutboxProcessed(ctx context.Context, id string) error
 	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
@@ -133,6 +135,8 @@ func (s *shopService) applyOwnedFlags(ctx context.Context, userID string, items 
 	}
 }
 
+// PurchaseItem spends tickets in billing, then writes stock and the outbox in the shop database.
+// The returned int32 is the ticket balance after a successful spend.
 func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (int32, error) {
 	item, err := s.pgRepo.GetItemByID(ctx, itemID)
 	if err != nil {
@@ -162,6 +166,13 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 	}
 	spendRef := fmt.Sprintf("shop:%s:%s:%d", userID, itemID, cycle)
 	refundRef := fmt.Sprintf("refund:shop:%s:%s:%d", userID, itemID, cycle)
+	sagaID, purchaseID, err := s.pgRepo.SavePurchaseSaga(ctx, repository.PurchaseSaga{
+		ID: uuid.NewString(), UserID: userID, ItemID: itemID, PurchaseID: uuid.NewString(),
+		SpendRef: spendRef, RefundRef: refundRef, Price: item.Price, State: "started",
+	})
+	if err != nil {
+		return 0, fmt.Errorf("purchase saga: %w", err)
+	}
 
 	spendResp, err := s.billing.SpendCurrency(ctx, &billingPb.SpendCurrencyRequest{
 		UserId:      userID,
@@ -174,9 +185,11 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 	alreadySpent := false
 	if err != nil {
 		if strings.Contains(err.Error(), "insufficient balance") {
+			_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "aborted")
 			return 0, model.ErrInsufficientFunds
 		}
 		if !isDuplicateRef(err) {
+			_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "aborted")
 			return 0, fmt.Errorf("failed to spend tickets: %w", err)
 		}
 		alreadySpent = true
@@ -186,15 +199,17 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 			msg = spendResp.GetMessage()
 		}
 		if strings.Contains(msg, "insufficient balance") {
+			_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "aborted")
 			return 0, model.ErrInsufficientFunds
 		}
 		if !isDuplicateRef(errors.New(msg)) {
+			_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "aborted")
 			return 0, fmt.Errorf("failed to spend tickets: %s", msg)
 		}
 		alreadySpent = true
 	}
+	_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "spent")
 
-	purchaseID := uuid.NewString()
 	event := map[string]interface{}{
 		"user_id":     userID,
 		"item_id":     itemID,
@@ -222,8 +237,10 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		{EventType: kafka.TopicPurchasePaid, Payload: paidBody},
 	}); err != nil {
 		if isDuplicateRef(err) {
+			_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "stocked")
 			return 0, model.ErrAlreadyOwned
 		}
+		_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "compensating")
 		log.Printf("CRITICAL: tickets spent but purchase failed for user %s, item %s: %v — refunding", userID, itemID, err)
 		outboxID := s.enqueueRefund(ctx, userID, itemID, item.Price, refundRef, err)
 		_ = s.pgRepo.BumpSpendCycle(ctx, userID, itemID)
@@ -241,8 +258,10 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 		if outboxID != "" {
 			_ = s.pgRepo.MarkOutboxProcessed(ctx, outboxID)
 		}
+		_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "compensated")
 		return 0, fmt.Errorf("failed to record purchase: %w", err)
 	}
+	_ = s.pgRepo.MarkPurchaseSaga(ctx, sagaID, "stocked")
 	if alreadySpent {
 		log.Printf("shop: replayed spend %s for user %s item %s", spendRef, userID, itemID)
 	}
@@ -271,6 +290,8 @@ func (s *shopService) PurchaseItem(ctx context.Context, userID, itemID string) (
 	return bal.GetBalance(), nil
 }
 
+// enqueueRefund stores a billing.refund outbox row so a crashed process can still return the tickets.
+// An empty id means the insert failed and only the in-process refund remains.
 func (s *shopService) enqueueRefund(ctx context.Context, userID, itemID string, price int, referenceID string, cause error) string {
 	body, _ := json.Marshal(map[string]any{
 		"user_id":      userID,
@@ -287,6 +308,8 @@ func (s *shopService) enqueueRefund(ctx context.Context, userID, itemID string, 
 	return id
 }
 
+// creditCancel pays tickets back for a cancelled purchase.
+// reference_id is cancel-{purchaseID}, so a repeated cancel does not credit twice.
 func (s *shopService) creditCancel(ctx context.Context, userID string, refund *repository.RefundResult) (int32, error) {
 	if refund == nil || refund.PurchaseID == "" || refund.Price <= 0 {
 		bal, err := s.billing.GetBalance(ctx, &billingPb.GetBalanceRequest{
@@ -325,6 +348,7 @@ func (s *shopService) creditCancel(ctx context.Context, userID string, refund *r
 	return addResp.GetNewBalance(), nil
 }
 
+// isDuplicateRef is true when Postgres or billing already stored this reference_id (SQLSTATE 23505).
 func isDuplicateRef(err error) bool {
 	if err == nil {
 		return false
@@ -345,6 +369,8 @@ func (s *shopService) GetInventory(ctx context.Context, userID string) ([]reposi
 	return items, nil
 }
 
+// canCancelInventoryItem is the player-facing refund window.
+// Physical goods close once fulfillment has set fulfilled_at.
 func canCancelInventoryItem(item repository.Item, now time.Time) bool {
 	if item.PurchaseID == "" || item.RefundableUntil == nil {
 		return false
@@ -410,6 +436,8 @@ func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string)
 	}, nil
 }
 
+// checkMerchAllowed asks payment whether this player may buy a physical item.
+// Without an active subscription the purchase stops before any tickets are spent.
 func (s *shopService) checkMerchAllowed(ctx context.Context, userID string) error {
 	if s.payment == nil {
 		return fmt.Errorf("merch purchases require payment service")

@@ -368,6 +368,39 @@ type OutboxRecord struct {
 	Payload   []byte
 }
 
+// PurchaseSaga is the orchestrator row for one buy that touches billing and shop.
+type PurchaseSaga struct {
+	ID         string
+	UserID     string
+	ItemID     string
+	PurchaseID string
+	SpendRef   string
+	RefundRef  string
+	Price      int
+	State      string
+}
+
+// SavePurchaseSaga inserts the orchestrator row for this spend key.
+// A retry of the same key returns the original saga id and purchase id.
+func (r *PostgresShopRepo) SavePurchaseSaga(ctx context.Context, s PurchaseSaga) (string, string, error) {
+	var id, purchaseID string
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO purchase_sagas (id, user_id, item_id, purchase_id, spend_ref, refund_ref, price, state)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+		ON CONFLICT (spend_ref) DO UPDATE SET updated_at = purchase_sagas.updated_at
+		RETURNING id::text, purchase_id::text
+	`, s.ID, s.UserID, s.ItemID, s.PurchaseID, s.SpendRef, s.RefundRef, s.Price, s.State).Scan(&id, &purchaseID)
+	return id, purchaseID, err
+}
+
+// MarkPurchaseSaga moves the orchestrator to the next state.
+func (r *PostgresShopRepo) MarkPurchaseSaga(ctx context.Context, id, state string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE purchase_sagas SET state = $2, updated_at = NOW() WHERE id = $1
+	`, id, state)
+	return err
+}
+
 // NextSpendCycle returns the stable billing cycle for this player+item.
 // Parallel clicks share it. BumpSpendCycle moves it after a refund.
 func (r *PostgresShopRepo) NextSpendCycle(ctx context.Context, userID, itemID string) (int, error) {

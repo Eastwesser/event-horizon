@@ -1,7 +1,6 @@
 // frontend/src/components/Leaderboard/Leaderboard.tsx
 import { useEffect, useState, useRef } from 'react';
-import { getLeaderboard } from '../../services/api';
-import { getAccessToken } from '../../lib/auth';
+import api, { getLeaderboard } from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FilterChip } from '../ui/FilterChip';
@@ -54,33 +53,42 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
 
   useEffect(() => {
     if (!isOpen) return;
+    let cancelled = false;
 
-    const token = getAccessToken();
-    if (!token) return;
-    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${window.location.host}/ws/leaderboard?token=${encodeURIComponent(token)}`);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
+    const connect = async () => {
       try {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          setEntries(data.filter(Boolean));
-        } else if (data.entries && Array.isArray(data.entries)) {
-          setEntries(data.entries.filter(Boolean));
-        } else {
-          void fetchLeaderboard(selectedGame);
-        }
-      } catch (e) {
-        console.error('Failed to parse:', e);
+        const { data } = await api.post<{ ticket?: string }>('/ws-ticket');
+        if (cancelled || !data?.ticket) return;
+        const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws = new WebSocket(
+          `${proto}://${window.location.host}/ws/leaderboard?ticket=${encodeURIComponent(data.ticket)}`,
+        );
+        wsRef.current = ws;
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (Array.isArray(payload)) {
+              setEntries(payload.filter(Boolean));
+            } else if (payload.entries && Array.isArray(payload.entries)) {
+              setEntries(payload.entries.filter(Boolean));
+            } else {
+              void fetchLeaderboard(selectedGame);
+            }
+          } catch (e) {
+            console.error('Failed to parse:', e);
+          }
+        };
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+      } catch (err) {
+        console.error('Failed to open leaderboard socket:', err);
       }
     };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    void connect();
 
     return () => {
+      cancelled = true;
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close();
       }
