@@ -8,10 +8,12 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   className?: string;
+  /** Bottom keeps the playfield visible above the card. */
+  align?: 'center' | 'bottom';
 }
 
 /** Portaled to document.body so fixed centering is never trapped by GameShell / transformed ancestors. */
-export function Modal({ open, onClose, title, children, className }: ModalProps) {
+export function Modal({ open, onClose, title, children, className, align = 'center' }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -30,7 +32,10 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-void/80 p-4 sm:p-6"
+      className={cn(
+        'fixed inset-0 z-[100] flex p-4 sm:p-6',
+        align === 'bottom' ? 'items-end justify-center bg-void/35' : 'items-center justify-center bg-void/80',
+      )}
       onClick={onClose}
     >
       <div

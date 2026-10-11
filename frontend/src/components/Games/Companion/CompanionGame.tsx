@@ -9,9 +9,11 @@ import { Balance, invalidateBalanceCache } from '../../Billing/Balance';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
+import { growthFromStreak, growthLabel, nextMemento, type Species } from './CompanionArt';
+import { CompanionDevice } from './CompanionScene';
 
-type Species = 'звезда' | 'кот' | 'дракон' | 'кактус';
 type Mood = 'happy' | 'ok' | 'sad' | 'critical';
+type Care = 'feed' | 'play' | 'rest';
 
 interface Pet {
   name: string;
@@ -22,6 +24,8 @@ interface Pet {
   joy: number;
   lastCareAt: number; // ms
   careStreak: number;
+  /** Objects left by the daily gift. They stay in the room. */
+  mementos: string[];
 }
 
 const STORAGE_KEY = 'eh_companion_pet_v1';
@@ -32,8 +36,17 @@ const SPECIES: { id: Species; emoji: string; label: string }[] = [
   { id: 'звезда', emoji: '⭐', label: 'Звезда' },
   { id: 'кот', emoji: '🐱', label: 'Кот' },
   { id: 'дракон', emoji: '🐉', label: 'Дракон' },
-  { id: 'кактус', emoji: '🌵', label: 'Кактус' },
+  { id: 'лисичка', emoji: '🦊', label: 'Лисичка' },
+  { id: 'зайчик', emoji: '🐰', label: 'Зайчик' },
 ];
+
+const SPECIES_IDS = new Set<string>(SPECIES.map((s) => s.id));
+
+function normalizeSpecies(raw: unknown): Species {
+  if (raw === 'кактус') return 'лисичка';
+  if (typeof raw === 'string' && SPECIES_IDS.has(raw)) return raw as Species;
+  return 'звезда';
+}
 const COLORS = ['#c9a227', '#7c9cff', '#5ec8b8', '#e07a5f', '#b388ff'];
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -50,7 +63,13 @@ function loadPet(): Pet | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as Pet;
+    const parsed = JSON.parse(raw) as Pet;
+    if (!parsed || typeof parsed.name !== 'string') return null;
+    return {
+      ...parsed,
+      species: normalizeSpecies(parsed.species),
+      mementos: Array.isArray(parsed.mementos) ? parsed.mementos : [],
+    };
   } catch {
     return null;
   }
@@ -94,6 +113,11 @@ export function CompanionGame() {
   const [giftClaimed, setGiftClaimed] = useState(() => dailyGiftClaimedToday());
   /** Points from today's gift — included in save score. */
   const [giftPoints, setGiftPoints] = useState(() => (dailyGiftClaimedToday() ? DAILY_GIFT_POINTS : 0));
+  const [lastAction, setLastAction] = useState<Care | null>(null);
+  const [playTick, setPlayTick] = useState(0);
+  const [albumOpen, setAlbumOpen] = useState(false);
+  const [revealId, setRevealId] = useState<string | null>(null);
+  const [revealFull, setRevealFull] = useState(false);
 
   useEffect(() => {
     if (!pet) return;
@@ -113,7 +137,18 @@ export function CompanionGame() {
   const mood = useMemo(() => (pet ? moodOf(pet) : 'ok'), [pet]);
   const baseScore = pet ? careScore(pet) : 0;
   const score = Math.min(10000, baseScore + giftPoints);
-  const speciesMeta = SPECIES.find((s) => s.id === pet?.species);
+  const pose =
+    lastAction === 'rest'
+      ? 'rest'
+      : lastAction === 'play'
+        ? 'play'
+        : mood === 'sad' || mood === 'critical'
+          ? 'sad'
+          : 'idle';
+  const growth = pet ? growthFromStreak(pet.careStreak) : 1;
+  const growthLine = pet
+    ? `Ур. ${pet.careStreak} · ${growthLabel(growth)}`
+    : '';
 
   const create = () => {
     const name = draftName.trim() || 'Странник';
@@ -126,6 +161,7 @@ export function CompanionGame() {
       joy: 80,
       lastCareAt: Date.now(),
       careStreak: 1,
+      mementos: [],
     };
     setPet(p);
   };
@@ -137,6 +173,8 @@ export function CompanionGame() {
     if (kind === 'feed') next = { ...next, hunger: Math.min(100, next.hunger + 28) };
     if (kind === 'play') next = { ...next, joy: Math.min(100, next.joy + 28), energy: Math.max(0, next.energy - 8) };
     if (kind === 'rest') next = { ...next, energy: Math.min(100, next.energy + 32) };
+    setLastAction(kind);
+    if (kind === 'play') setPlayTick((n) => n + 1);
     const dayGap = (now - next.lastCareAt) / 86_400_000;
     const streak = dayGap <= 1.5 ? next.careStreak + (dayGap >= 0.4 ? 1 : 0) : 1;
     next = { ...next, lastCareAt: now, careStreak: Math.min(365, streak) };
@@ -166,6 +204,16 @@ export function CompanionGame() {
             }
           : p,
       );
+      const gained = nextMemento(pet.mementos ?? []);
+      if (gained) {
+        setPet((p) => (p ? { ...p, mementos: [...(p.mementos ?? []), gained] } : p));
+        setRevealId(gained);
+        setRevealFull(false);
+        setAlbumOpen(false);
+      } else {
+        setRevealId(null);
+        setRevealFull(true);
+      }
       const tickets = data?.tickets_granted ?? 1000;
       const again = data?.already_claimed
         ? ' (уже было на сервере)'
@@ -265,6 +313,10 @@ export function CompanionGame() {
             Это не гонка за лидербордом. Раз в день — подарок: +{DAILY_GIFT_POINTS} к заботе и
             +1000 билетиков на кошелёк.
           </p>
+          <p>
+            Серия заботы растёт, если приходить почти каждый день. От неё меняется форма: малыш
+            (1–6 дн.), растёт (7–20), вырос (21+).
+          </p>
         </>
       }
     >
@@ -314,68 +366,39 @@ export function CompanionGame() {
           <Button onClick={create}>Создать</Button>
         </div>
       ) : (
-        <div className="flex w-full max-w-sm flex-col items-center gap-4">
-          <div
-            className="relative flex w-full flex-col items-center rounded-lg border border-white/10 px-4 py-8"
-            style={{
-              background:
-                'linear-gradient(180deg, #1a2238 0%, #12182a 45%, #0c101c 100%), repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.03) 18px, rgba(255,255,255,0.03) 19px)',
+        <div className="flex w-full flex-col items-center gap-2">
+          <CompanionDevice
+            name={pet.name}
+            species={pet.species}
+            color={pet.color}
+            levelLine={growthLine}
+            growth={growth}
+            hunger={pet.hunger}
+            energy={pet.energy}
+            joy={pet.joy}
+            mood={mood}
+            moodLine={moodLine}
+            pose={pose}
+            playTick={playTick}
+            mementos={pet.mementos ?? []}
+            showBowl={lastAction === 'feed' || (pet.mementos ?? []).includes('bowl')}
+            albumOpen={albumOpen}
+            onToggleAlbum={() => setAlbumOpen((open) => !open)}
+            revealId={revealId}
+            revealFull={revealFull}
+            onCloseReveal={() => {
+              setRevealId(null);
+              setRevealFull(false);
             }}
-          >
-            <div
-              className="pointer-events-none absolute inset-x-6 top-3 h-10 rounded-full opacity-40 blur-xl"
-              style={{ background: pet.color }}
-              aria-hidden
-            />
-            <div
-              className="relative flex h-40 w-40 flex-col items-center justify-center rounded-full border border-white/15 shadow-elevated transition-transform duration-500"
-              style={{
-                background: `radial-gradient(circle at 35% 30%, ${pet.color}55, #0c0e16 70%)`,
-              }}
-            >
-              <span className="text-6xl" aria-hidden>
-                {speciesMeta?.emoji}
-              </span>
-              <span className="mt-1 font-display text-lg text-text-primary">{pet.name}</span>
-            </div>
-            <p className="relative mt-3 text-xs text-text-muted">Комната питомца</p>
-          </div>
-          <p className="text-center text-sm text-text-secondary">{moodLine}</p>
-          {giftClaimed ? (
-            <p className="text-center text-xs text-horizon-gold">
-              Подарок дня получен{giftPoints > 0 ? ` (+${giftPoints})` : ''}
-            </p>
-          ) : (
-            <p className="text-center text-xs text-text-muted">
-              Можно забрать подарок дня — +{DAILY_GIFT_POINTS} к заботе
-            </p>
-          )}
-          <div className="grid w-full grid-cols-3 gap-2 text-center text-xs text-text-muted">
-            {(
-              [
-                ['Сытость', pet.hunger],
-                ['Энергия', pet.energy],
-                ['Радость', pet.joy],
-              ] as const
-            ).map(([label, v]) => (
-              <div key={label} className="rounded-sm border border-white/10 bg-nebula p-2">
-                <div className="mb-1 text-text-secondary">{label}</div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-horizon-gold transition-all duration-500"
-                    style={{ width: `${v}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-text-muted">Серия заботы: {pet.careStreak} дн.</p>
+          />
           <Button
             size="sm"
             variant="ghost"
             onClick={() => {
               localStorage.removeItem(STORAGE_KEY);
               setPet(null);
+              setLastAction(null);
+              setAlbumOpen(false);
             }}
           >
             Создать нового
