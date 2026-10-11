@@ -1,0 +1,73 @@
+.gears-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.gears-skins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gears-well {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px;
+  border: 3px solid #c6a15a;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #3d4a62 0%, #1a2234 100%);
+  box-shadow:
+    0 0 0 2px #2a2118,
+    0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.gears-well canvas {
+  display: block;
+  width: auto;
+  max-width: min(320px, 100%);
+  max-height: min(48dvh, 360px);
+  height: auto;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.gears-tray {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 2px solid #c6a15a;
+  border-radius: 14px;
+  background: #1b2438;
+}
+
+.gears-tray-slot {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  opacity: 0.7;
+}
+
+.gears-tray-slot--next {
+  width: 52px;
+  height: 52px;
+  opacity: 1;
+  border-radius: 10px;
+  outline: 2px solid #e8b84a;
+  outline-offset: 2px;
+  background: rgba(232, 184, 74, 0.12);
+}
+
+.gears-tray-slot canvas {
+  display: block;
+}

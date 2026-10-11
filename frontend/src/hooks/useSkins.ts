@@ -16,6 +16,11 @@ export interface GameSkins {
   memory: {
     hasAnimalCards: boolean;
   };
+  gears: {
+    hasSunflower: boolean;
+    hasRose: boolean;
+    hasPansy: boolean;
+  };
 }
 
 const EMPTY_SKINS: GameSkins = {
@@ -23,6 +28,7 @@ const EMPTY_SKINS: GameSkins = {
   hexagon: { hasSpacePancakes: false },
   towers: { hasCosmicBlocks: false },
   memory: { hasAnimalCards: false },
+  gears: { hasSunflower: false, hasRose: false, hasPansy: false },
 };
 
 function normalizeInventoryPayload(data: unknown): unknown[] {
@@ -85,6 +91,18 @@ export function useSkins() {
             hasAnimalCards: items.some(
               (item) =>
                 item.game_id === 'memory' && nameMatches(item.name, ['карточки со зверями']),
+            ),
+          },
+          gears: {
+            hasSunflower: items.some(
+              (item) => item.game_id === 'gears' && nameMatches(item.name, ['подсолнух']),
+            ),
+            hasRose: items.some(
+              (item) => item.game_id === 'gears' && nameMatches(item.name, ['роза']),
+            ),
+            hasPansy: items.some(
+              (item) =>
+                item.game_id === 'gears' && nameMatches(item.name, ['анютины глазки', 'анютины']),
             ),
           },
         });

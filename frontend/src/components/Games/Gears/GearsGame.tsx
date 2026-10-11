@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getNickname } from '../../../lib/nickname';
 import { useGameBoost } from '../../../hooks/useGameBoost';
+import { useSkins } from '../../../hooks/useSkins';
 import { Balance } from '../../Billing/Balance';
+import { Spinner } from '../../ui/Spinner';
 import { GameShell, ScoreChip } from '../../ui/GameShell';
 import { Button } from '../../ui/Button';
 import { Modal } from '../../ui/Modal';
@@ -14,8 +16,24 @@ import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
 import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { drawAim, drawGear, drawMergeFlash, drawWell } from './gearsDraw';
+import './gears.css';
 
-type Orb = { id: number; x: number; y: number; vx: number; vy: number; level: number; settled: boolean };
+type Orb = {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  level: number;
+  settled: boolean;
+  rot: number;
+};
+
+type Flash = { x: number; y: number; r: number; life: number };
+
+const QUEUE_LEN = 5;
+const FLASH_LIFE = 16;
 
 const W = 320;
 const H = 420;
@@ -91,90 +109,43 @@ function spawnLevel(): number {
   return 4;
 }
 
-function drawGear(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  r: number,
-  color: string,
-  level: number,
-  alpha = 1,
-  flower = false,
-) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  if (flower) {
-    // Petal blob for sunflower/rose/pansy skins only — metal stays a real gear.
-    const petals = 6 + (level % 3);
-    for (let i = 0; i < petals; i++) {
-      const ang = (i / petals) * Math.PI * 2 - Math.PI / 2;
-      const px = x + Math.cos(ang) * r * 0.55;
-      const py = y + Math.sin(ang) * r * 0.55;
-      ctx.beginPath();
-      ctx.ellipse(px, py, r * 0.42, r * 0.28, ang, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.38, 0, Math.PI * 2);
-    ctx.fillStyle = '#3a2a10';
-    ctx.fill();
-  } else {
-    // Classic spur gear: more teeth + deeper valleys so it doesn't read as a star/prize.
-    const teeth = 10 + Math.min(level, 6);
-    const tip = r;
-    const valley = r * 0.68;
-    const root = r * 0.62;
-    ctx.beginPath();
-    for (let i = 0; i < teeth; i++) {
-      const a0 = (i / teeth) * Math.PI * 2 - Math.PI / 2;
-      const a1 = ((i + 0.35) / teeth) * Math.PI * 2 - Math.PI / 2;
-      const a2 = ((i + 0.5) / teeth) * Math.PI * 2 - Math.PI / 2;
-      const a3 = ((i + 0.85) / teeth) * Math.PI * 2 - Math.PI / 2;
-      const pts: [number, number][] = [
-        [x + Math.cos(a0) * valley, y + Math.sin(a0) * valley],
-        [x + Math.cos(a1) * tip, y + Math.sin(a1) * tip],
-        [x + Math.cos(a2) * tip, y + Math.sin(a2) * tip],
-        [x + Math.cos(a3) * valley, y + Math.sin(a3) * valley],
-        [x + Math.cos(((i + 1) / teeth) * Math.PI * 2 - Math.PI / 2) * root, y + Math.sin(((i + 1) / teeth) * Math.PI * 2 - Math.PI / 2) * root],
-      ];
-      for (let p = 0; p < pts.length; p++) {
-        if (i === 0 && p === 0) ctx.moveTo(pts[p][0], pts[p][1]);
-        else ctx.lineTo(pts[p][0], pts[p][1]);
-      }
-    }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 1.25;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.36, 0, Math.PI * 2);
-    ctx.fillStyle = '#12141c';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.14, 0, Math.PI * 2);
-    ctx.fillStyle = '#8a90a0';
-    ctx.fill();
-  }
-  ctx.fillStyle = '#e8e8f0';
-  ctx.font = 'bold 11px ui-monospace, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(String(level), x, y);
-  ctx.restore();
+function makeQueue(): number[] {
+  return Array.from({ length: QUEUE_LEN }, () => spawnLevel());
+}
+
+function TrayGear({
+  level,
+  color,
+  size,
+  flower,
+}: {
+  level: number;
+  color: string;
+  size: number;
+  flower: boolean;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, size, size);
+    drawGear(ctx, size / 2, size / 2, size / 2 - 2, color, level, 1, flower, 0);
+  }, [level, color, size, flower]);
+  return <canvas ref={ref} width={size} height={size} aria-hidden />;
 }
 
 export function GearsGame() {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const orbsRef = useRef<Orb[]>([]);
-  const nextRef = useRef(spawnLevel());
+  const queueRef = useRef<number[]>(makeQueue());
+  const flashesRef = useRef<Flash[]>([]);
   const aimXRef = useRef(W / 2);
   const droppingRef = useRef(false);
   const [score, setScore] = useState(0);
-  const [nextPreview, setNextPreview] = useState(nextRef.current);
+  const [queue, setQueue] = useState<number[]>(() => queueRef.current);
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -198,10 +169,24 @@ export function GearsGame() {
     boostError,
     setBoostError,
   } = useGameBoost('gears');
+  const { skins, loading: skinsLoading } = useSkins();
+  const ownedFlower = {
+    sunflower: skins.gears.hasSunflower,
+    rose: skins.gears.hasRose,
+    pansy: skins.gears.hasPansy,
+  };
+  const hasFlowerMerch = ownedFlower.sunflower || ownedFlower.rose || ownedFlower.pansy;
 
   useEffect(() => {
     localStorage.setItem(SKIN_KEY, skin);
   }, [skin]);
+
+  useEffect(() => {
+    if (skinsLoading) return;
+    if (skin !== 'metal' && !ownedFlower[skin as 'sunflower' | 'rose' | 'pansy']) {
+      setSkin('metal');
+    }
+  }, [skinsLoading, skin, ownedFlower.sunflower, ownedFlower.rose, ownedFlower.pansy]);
 
   useEffect(() => {
     if (boostError) {
@@ -217,8 +202,9 @@ export function GearsGame() {
       setRunBoostId(boostId);
       boostedRef.current = boosted;
       orbsRef.current = [];
-      nextRef.current = spawnLevel();
-      setNextPreview(nextRef.current);
+      queueRef.current = makeQueue();
+      setQueue([...queueRef.current]);
+      flashesRef.current = [];
       scoreRef.current = 0;
       setScore(0);
       setWon(false);
@@ -232,7 +218,7 @@ export function GearsGame() {
 
   const drop = useCallback(() => {
     if (won || lost || droppingRef.current) return;
-    const level = nextRef.current;
+    const level = queueRef.current[0];
     const r = RADIUS[level];
     const jitter = (Math.random() - 0.5) * 8;
     orbsRef.current.push({
@@ -243,9 +229,12 @@ export function GearsGame() {
       vy: 0.4,
       level,
       settled: false,
+      rot: 0,
     });
-    nextRef.current = boostedRef.current ? level : spawnLevel();
-    setNextPreview(nextRef.current);
+    if (!boostedRef.current) {
+      queueRef.current = [...queueRef.current.slice(1), spawnLevel()];
+    }
+    setQueue([...queueRef.current]);
     droppingRef.current = true;
     setTimeout(() => {
       droppingRef.current = false;
@@ -266,6 +255,7 @@ export function GearsGame() {
         o.vy += 0.18;
         o.x += o.vx;
         o.y += o.vy;
+        o.rot += o.vx * 0.05;
         const r = RADIUS[o.level];
         if (o.x < r) {
           o.x = r;
@@ -305,15 +295,19 @@ export function GearsGame() {
               remove.add(a.id);
               remove.add(b.id);
               const nl = a.level + 1;
+              const mx = (a.x + b.x) / 2;
+              const my = (a.y + b.y) / 2;
               add.push({
                 id: idSeq++,
-                x: (a.x + b.x) / 2,
-                y: (a.y + b.y) / 2,
+                x: mx,
+                y: my,
                 vx: 0,
                 vy: -1.2,
                 level: nl,
                 settled: false,
+                rot: 0,
               });
+              flashesRef.current.push({ x: mx, y: my, r: RADIUS[nl], life: FLASH_LIFE });
               scoreRef.current += nl * 10;
               setScore(scoreRef.current);
               if (nl >= MAX_LEVEL) setWon(true);
@@ -355,24 +349,25 @@ export function GearsGame() {
       }
 
       ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = 'rgba(12,14,22,0.95)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(255,80,80,0.35)';
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(0, dangerY);
-      ctx.lineTo(W, dangerY);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      drawWell(ctx, W, H, dangerY);
+      const flower = skin !== 'metal';
+      const COLORS = colorsRef.current;
       if (!droppingRef.current && !lost && !won) {
-        const lvl = nextRef.current;
+        const lvl = queueRef.current[0];
         const r = RADIUS[lvl];
-        const COLORS = colorsRef.current;
-        drawGear(ctx, aimXRef.current, r + 8, r, COLORS[lvl], lvl, 0.35, skin !== 'metal');
+        const gx = aimXRef.current;
+        const gy = r + 8;
+        drawAim(ctx, gx, gy + r, H - 10);
+        drawGear(ctx, gx, gy, r, COLORS[lvl], lvl, 0.4, flower, 0);
       }
       for (const o of orbsRef.current) {
-        const COLORS = colorsRef.current;
-        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level, 1, skin !== 'metal');
+        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level, 1, flower, o.rot);
+      }
+      flashesRef.current = flashesRef.current
+        .map((f) => ({ ...f, life: f.life - 1 }))
+        .filter((f) => f.life > 0);
+      for (const f of flashesRef.current) {
+        drawMergeFlash(ctx, f.x, f.y, f.r, f.life / FLASH_LIFE);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -421,6 +416,14 @@ export function GearsGame() {
 
   const handleBack = () => navigate('/#games');
 
+  if (skinsLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-void">
+        <Spinner size={56} />
+      </div>
+    );
+  }
+
   return (
     <GameShell
       title="Gears"
@@ -430,7 +433,7 @@ export function GearsGame() {
       stats={
         <>
           <ScoreChip label="Счёт" value={score} />
-          <ScoreChip label="След." value={nextPreview} />
+          <ScoreChip label="След." value={queue[0]} />
           <ScoreChip label="Цель" value={MAX_LEVEL} />
         </>
       }
@@ -458,33 +461,55 @@ export function GearsGame() {
         </>
       }
     >
-      <div className="mb-3 flex flex-wrap justify-center gap-2">
-        {(
-          [
-            ['metal', 'Металл'],
-            ['sunflower', 'Подсолнух'],
-            ['rose', 'Роза'],
-            ['pansy', 'Анютины'],
-          ] as const
-        ).map(([id, label]) => (
-          <Button
-            key={id}
-            size="sm"
-            variant={skin === id ? 'secondary' : 'ghost'}
-            onClick={() => setSkin(id)}
-          >
-            {label}
-          </Button>
-        ))}
+      <div className="gears-stage">
+        {hasFlowerMerch && (
+          <div className="gears-skins">
+            {(
+              [
+                ['metal', 'Металл', true],
+                ['sunflower', 'Подсолнух', ownedFlower.sunflower],
+                ['rose', 'Роза', ownedFlower.rose],
+                ['pansy', 'Анютины глазки', ownedFlower.pansy],
+              ] as const
+            )
+              .filter(([, , show]) => show)
+              .map(([id, label]) => (
+                <Button
+                  key={id}
+                  size="sm"
+                  variant={skin === id ? 'secondary' : 'ghost'}
+                  onClick={() => setSkin(id)}
+                >
+                  {label}
+                </Button>
+              ))}
+          </div>
+        )}
+        <div className="gears-well">
+          <canvas
+            ref={canvasRef}
+            width={W}
+            height={H}
+            onPointerMove={(e) => onPointer(e.clientX, e.currentTarget.getBoundingClientRect())}
+            onClick={() => drop()}
+          />
+        </div>
+        <div className="gears-tray" aria-label="Следующие шестерни">
+          {queue.map((lvl, i) => (
+            <div
+              key={`${i}-${lvl}`}
+              className={['gears-tray-slot', i === 0 ? 'gears-tray-slot--next' : ''].filter(Boolean).join(' ')}
+            >
+              <TrayGear
+                level={lvl}
+                color={(COLOR_PALETTES[skin] || COLOR_PALETTES.metal)[lvl]}
+                size={i === 0 ? 48 : 32}
+                flower={skin !== 'metal'}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={W}
-        height={H}
-        className="mx-auto max-w-full touch-none rounded-md border border-white/10"
-        onPointerMove={(e) => onPointer(e.clientX, e.currentTarget.getBoundingClientRect())}
-        onClick={() => drop()}
-      />
       <Modal open={won} onClose={() => setWon(false)} title={`Собрана ${MAX_LEVEL}!`}>
         <p className="mb-4 text-text-secondary">Счёт: {score}.</p>
         {runBoosted && <p className="mb-4 text-sm text-horizon-gold">{boostUnrankedToast()}</p>}
