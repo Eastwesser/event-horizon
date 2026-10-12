@@ -34,13 +34,21 @@
 }
 
 /* ========== HEX GRID — fills stage (~90% of leftover viewport), no page scroll ========== */
+.hex-stage {
+  background: linear-gradient(180deg, #3a4450 0%, #2a3340 100%);
+  border: 3px solid #c6a15a;
+  border-radius: 16px;
+  box-shadow: 0 0 0 2px #2a2118;
+  padding: 0.5rem 0.5rem 0.35rem;
+}
+
 .hex-grid-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
+  padding: 0.35rem;
+  background: transparent;
+  border-radius: 12px;
   margin: 0;
   width: 100%;
   flex: 1 1 auto;
@@ -129,9 +137,9 @@
 
 /* ========== TRAY ========== */
 .tray {
-  margin-top: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(0, 0, 0, 0.3);
+  margin-top: 0.2rem;
+  padding: 0.4rem 0.75rem 0.55rem;
+  background: rgba(18, 20, 28, 0.45);
   border-radius: 12px;
   flex-shrink: 0;
   width: 100%;
@@ -154,13 +162,14 @@
 .tray-stack {
   width: 64px;
   height: 64px;
-  border-radius: 12px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   cursor: grab;
 }
 
@@ -168,15 +177,6 @@
   transform: scale(1.05);
 }
 
-.tray-stack .emoji {
-  font-size: 1.5rem;
-}
-
-.tray-stack .count {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 1px 6px;
-  border-radius: 12px;
+.tray-stack--picked {
+  box-shadow: 0 0 0 2px #c9a227;
 }

@@ -6,7 +6,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { HexGrid } from './HexGrid';
 import { Tray } from './Tray';
 import { Balance } from '../../Billing/Balance';
-import { Leaderboard } from '../../Leaderboard/Leaderboard';
 import { useGameStore } from './gameStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
@@ -17,7 +16,7 @@ import { Spinner } from '../../ui/Spinner';
 import Notification from '../../Common/Notification/Notification';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
 import { pluralBliny } from '../../../lib/pluralize';
 import { Icon } from '../../ui/Icon';
 import { cn } from '../../../lib/cn';
@@ -28,6 +27,7 @@ export function HexagonGame() {
   const { skins, loading: skinsLoading } = useSkins();
   const [useSpacePancakes, setUseSpacePancakes] = useState(false);
   const [runReady, setRunReady] = useState(false);
+  const [picked, setPicked] = useState<{ id: number; type: string; count: number } | null>(null);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   );
@@ -45,6 +45,7 @@ export function HexagonGame() {
     level,
     tiles,
     tray,
+    targetScore,
     initGame,
     addPancakeToHex,
     isGameOver,
@@ -83,6 +84,7 @@ export function HexagonGame() {
     try {
       const { boostId, boosted: isBoosted } = await armBoost();
       initGame({ boosted: isBoosted, boostId });
+      setPicked(null);
       setRunReady(true);
     } catch {
       /* handled */
@@ -91,6 +93,7 @@ export function HexagonGame() {
 
   const handleDrop = (item: { id: number }, coord: { q: number; r: number }) => {
     addPancakeToHex(item.id, coord);
+    setPicked(null);
   };
 
   const handleEndGame = () => {
@@ -114,6 +117,7 @@ export function HexagonGame() {
       <GameShell
         title="Pancaker"
         onBack={handleBack}
+        gameId="hexagon"
         actions={<Balance />}
         width="wide"
         stats={
@@ -128,6 +132,7 @@ export function HexagonGame() {
               value={level}
               className="[&_span:last-child]:text-photon-cyan"
             />
+            <ScoreChip label="Цель" value={`${score}/${targetScore}`} />
           </>
         }
         controls={
@@ -138,7 +143,6 @@ export function HexagonGame() {
             <Button variant="danger" size="sm" onClick={handleEndGame} disabled={!runReady}>
               Завершить
             </Button>
-            <Leaderboard gameId="hexagon" />
             {skins.hexagon.hasSpacePancakes && (
               <button
                 type="button"
@@ -157,21 +161,7 @@ export function HexagonGame() {
             <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
           </>
         }
-        help={
-          <>
-            <p>
-              Кладите стопки только на пустые гексы. Соседние клетки того же вкуса сливаются
-              автоматически — нельзя наслаивать блины на уже занятую клетку.
-            </p>
-            <p>
-              Соберите ≥10 на клетке — стопка исчезнет и даст очки. Уровень растёт по очкам (каждые
-              +50 к цели после порога) — аркадный progress, не выбор сложности.
-            </p>
-            {boostHelpLines('hexagon').map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </>
-        }
+        help={<GameHelp gameId="hexagon" />}
       >
         {saveMessage && (
           <Notification
@@ -181,14 +171,22 @@ export function HexagonGame() {
           />
         )}
         {runReady ? (
-          <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 overflow-hidden">
+          <div className="hex-stage flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 overflow-hidden">
             <HexGrid
               tiles={tiles}
               onDrop={handleDrop}
               skinMode={spaceActive ? 'space' : 'default'}
               boostHighlight={boostHighlight}
+              picked={picked}
             />
-            <Tray stacks={tray} skinMode={spaceActive ? 'space' : 'default'} />
+            <Tray
+              stacks={tray}
+              skinMode={spaceActive ? 'space' : 'default'}
+              pickedId={picked?.id ?? null}
+              onPick={(stack) =>
+                setPicked((cur) => (cur?.id === stack.id ? null : { id: stack.id, type: stack.type, count: stack.count }))
+              }
+            />
           </div>
         ) : (
           <p className="p-6 text-text-secondary">Нажмите Старт — boost по желанию (ниже / в «Как играть»)</p>

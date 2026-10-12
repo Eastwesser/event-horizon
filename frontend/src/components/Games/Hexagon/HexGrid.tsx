@@ -6,11 +6,8 @@ import {
   hexToPixel,
   getHexagonPoints,
   HEX_GRID,
-  pancakeEmoji,
-  pancakeColor,
-  EMPTY_COLOR,
-  HEX_STROKE,
 } from '../../../utils/hexagon';
+import { HexPancakeStack } from './pancakeChip';
 
 interface HexTile {
   coord: HexCoord;
@@ -29,31 +26,8 @@ interface HexGridProps {
   onDrop: (item: DragPancake, coord: HexCoord) => void;
   skinMode?: 'default' | 'space';
   boostHighlight?: boolean;
+  picked?: DragPancake | null;
 }
-
-const spaceEmojis: Record<string, string> = {
-  nutella: '🌙',
-  strawberry: '⭐',
-  fish: '🌌',
-  sausage: '☄️',
-  chicken: '🪐',
-  caesar: '🌠',
-  cranberry: '✨',
-  pancake: '☀️',
-  default: '🌌',
-};
-
-const spaceColors: Record<string, string> = {
-  nutella: '#1a1228',
-  strawberry: '#1c1830',
-  fish: '#12182a',
-  sausage: '#0f1a2e',
-  chicken: '#1c1410',
-  caesar: '#1a1220',
-  cranberry: '#0e1a18',
-  pancake: '#1a1810',
-  default: '#12141c',
-};
 
 function coordKey(c: HexCoord): string {
   return `${c.q},${c.r}`;
@@ -63,7 +37,13 @@ function sameCoord(a: HexCoord | null | undefined, b: HexCoord): boolean {
   return !!a && a.q === b.q && a.r === b.r;
 }
 
-export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = false }: HexGridProps) {
+export function HexGrid({
+  tiles,
+  onDrop,
+  skinMode = 'default',
+  boostHighlight = false,
+  picked = null,
+}: HexGridProps) {
   const RADIUS = 35;
   const points = getHexagonPoints(RADIUS);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -202,21 +182,7 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = 
     if (!isOver) setHoverCoord(null);
   }, [isOver]);
 
-  const getPancakeEmoji = (type: string) => {
-    if (skinMode === 'space') {
-      return spaceEmojis[type] || spaceEmojis.default || '🌌';
-    }
-    return pancakeEmoji[type as keyof typeof pancakeEmoji] || '🥞';
-  };
-
-  const getPancakeColorFn = (type: string) => {
-    if (skinMode === 'space') {
-      return spaceColors[type] || spaceColors.default || '#6C5CE7';
-    }
-    return pancakeColor[type as keyof typeof pancakeColor] || '#DEB887';
-  };
-
-  const dragging = !!dragItem;
+  const dragging = !!dragItem || !!picked;
 
   return (
     <div
@@ -238,9 +204,9 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = 
           const { x, y } = hexToPixel(coord.q, coord.r);
           const type = tile?.type || 'empty';
           const count = tile?.count || 0;
-          const fillColor = type === 'empty' ? EMPTY_COLOR : getPancakeColorFn(type);
           const key = coordKey(coord);
-          const validTarget = dragging && isValidPlacement(tile, dragItem?.type);
+          const activeType = dragItem?.type ?? picked?.type;
+          const validTarget = dragging && isValidPlacement(tile, activeType);
           const hovered = sameCoord(hoverCoord, coord);
           const cellClass = [
             'hex-cell',
@@ -254,40 +220,33 @@ export function HexGrid({ tiles, onDrop, skinMode = 'default', boostHighlight = 
             .join(' ');
 
           return (
-            <g key={key} transform={`translate(${x + offsetX}, ${y + offsetY})`}>
+            <g
+              key={key}
+              transform={`translate(${x + offsetX}, ${y + offsetY})`}
+              onClick={() => {
+                if (!picked) return;
+                const valid = isValidPlacement(tile, picked.type);
+                onDrop(picked, coord);
+                if (!valid) triggerShake();
+                else pulseHex(coord);
+              }}
+              style={{ cursor: picked ? (type === 'empty' ? 'copy' : 'not-allowed') : 'default' }}
+            >
               <g className={cellClass}>
-                <polygon
-                  points={points}
-                  fill={fillColor}
-                  stroke={HEX_STROKE}
-                  strokeWidth="2"
-                  opacity={isOver && !dragging ? 0.9 : 1}
-                />
-                {type !== 'empty' && (
-                  <>
-                    <text
-                      x="0"
-                      y="-6"
-                      textAnchor="middle"
-                      fill="#fff"
-                      fontSize="18"
-                      fontWeight="bold"
-                      style={{ textShadow: '1px 1px 0 #000' }}
-                    >
-                      {getPancakeEmoji(type)}
-                    </text>
-                    <text
-                      x="0"
-                      y="18"
-                      textAnchor="middle"
-                      fill="#ffd700"
-                      fontSize="12"
-                      fontWeight="bold"
-                      style={{ textShadow: '1px 1px 0 #000' }}
-                    >
-                      x{count}
-                    </text>
-                  </>
+                {type === 'empty' ? (
+                  <polygon
+                    points={points}
+                    fill="#1c222c"
+                    stroke="#4a5564"
+                    strokeWidth="1"
+                  />
+                ) : (
+                  <HexPancakeStack
+                    type={type}
+                    count={count}
+                    radius={RADIUS}
+                    space={skinMode === 'space'}
+                  />
                 )}
               </g>
             </g>

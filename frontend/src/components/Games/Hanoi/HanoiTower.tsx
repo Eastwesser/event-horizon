@@ -11,7 +11,7 @@ import Notification from '../../Common/Notification/Notification';
 import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
 import './HanoiTower.css';
 
 type Pegs = [number[], number[], number[]];
@@ -19,16 +19,51 @@ type Pegs = [number[], number[], number[]];
 /** Board geometry always assumes this many rings (rod height + width scale). */
 const MAX_DISKS = 8;
 
+/** Stained-wood tints — not candy capsules. */
 const RING_COLORS = [
-  '#ff6b6b',
-  '#ffa94d',
-  '#ffd43b',
-  '#69db7c',
-  '#4dabf7',
-  '#9775fa',
-  '#f783ac',
-  '#20c997',
+  '#b85c4a',
+  '#c47a3a',
+  '#c9a227',
+  '#6b8f4e',
+  '#5a7a9a',
+  '#7a5c9a',
+  '#c07088',
+  '#4a8f7a',
 ];
+
+function diskTone(disk: number): CSSProperties {
+  return { ['--disk-color' as string]: RING_COLORS[(disk - 1) % RING_COLORS.length] };
+}
+
+function DiskView({
+  disk,
+  className,
+  style,
+}: {
+  disk: number;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <div className={className} style={{ ...diskTone(disk), ...style }} aria-hidden>
+      <svg className="hanoi-disk-svg" viewBox="0 0 200 40" preserveAspectRatio="none">
+        <ellipse className="hanoi-disk-side" cx="100" cy="27" rx="96" ry="11" />
+        <rect className="hanoi-disk-side" x="4" y="13" width="192" height="14" />
+        <ellipse className="hanoi-disk-face" cx="100" cy="13" rx="96" ry="11" />
+        <ellipse className="hanoi-disk-bore" cx="100" cy="13" rx="12" ry="5" />
+        <ellipse
+          cx="100"
+          cy="13"
+          rx="12"
+          ry="5"
+          fill="none"
+          stroke="rgba(42, 33, 24, 0.45)"
+          strokeWidth="1.2"
+        />
+      </svg>
+    </div>
+  );
+}
 
 const PEG_LABELS = ['A', 'B', 'C'];
 
@@ -373,7 +408,7 @@ export function HanoiTower() {
       left: toRect.left + toRect.width / 2,
       top: toRect.top + 40,
       transform: 'translateX(-50%)',
-      background: RING_COLORS[(animating.disk - 1) % RING_COLORS.length],
+      ...diskTone(animating.disk),
     };
   };
 
@@ -387,7 +422,7 @@ export function HanoiTower() {
       left: fromRect.left + fromRect.width / 2,
       top: fromRect.top + 40,
       transform: 'translateX(-50%)',
-      background: RING_COLORS[(animating.disk - 1) % RING_COLORS.length],
+      ...diskTone(animating.disk),
     };
   };
 
@@ -416,7 +451,8 @@ export function HanoiTower() {
     <GameShell
       title="Hanoi"
       onBack={handleBack}
-      width="narrow"
+      gameId="hanoi"
+      width="wide"
       actions={<Balance />}
       stats={
         <>
@@ -480,16 +516,7 @@ export function HanoiTower() {
           )}
         </>
       }
-      help={
-        <>
-          <p>Выберите число колец (3–8), затем нажмите «Старт» — таймер пойдёт с этой кнопки.</p>
-          <p>Перенесите все кольца со стержня A на стержень C</p>
-          <p>Нельзя класть большее кольцо на меньшее</p>
-          {boostHelpLines('hanoi').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </>
-      }
+      help={<GameHelp gameId="hanoi" />}
     >
       {saveMessage && (
         <Notification
@@ -533,7 +560,7 @@ export function HanoiTower() {
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handlePegClick(pegIndex)}
           >
-            <span className="hanoi-peg-label">Стержень {PEG_LABELS[pegIndex]}</span>
+            <span className="hanoi-peg-label">{PEG_LABELS[pegIndex]}</span>
             <div className="hanoi-rod" />
             <div className="hanoi-base" />
             <div className="hanoi-peg-stack">
@@ -545,16 +572,12 @@ export function HanoiTower() {
                   isTop &&
                   animating.disk === disk;
                 return (
-                  <div
+                  <DiskView
                     key={`${pegIndex}-${disk}-${i}`}
+                    disk={disk}
                     className={`hanoi-ring ${isTop && selectedPeg === pegIndex ? 'hanoi-ring--top-selected' : ''} ${isMoving ? 'hanoi-ring--hidden' : ''}`}
-                    style={{
-                      width: ringWidthCss(disk),
-                      background: RING_COLORS[(disk - 1) % RING_COLORS.length],
-                    }}
-                  >
-                    {disk}
-                  </div>
+                    style={{ width: ringWidthCss(disk) }}
+                  />
                 );
               })}
             </div>
@@ -563,12 +586,10 @@ export function HanoiTower() {
       </div>
 
       {animating && floatStyle && (
-        <div className="hanoi-floating-ring" style={floatStyle}>
-          {animating.disk}
-        </div>
+        <DiskView className="hanoi-floating-ring hanoi-ring" disk={animating.disk} style={floatStyle} />
       )}
 
-      <Modal open={won} onClose={() => setWon(false)} title="Победа">
+      <Modal open={won} onClose={() => setWon(false)} title="Победа" align="bottom" className="max-w-sm">
         <p className="text-text-secondary">Все кольца на месте!</p>
 
         <div className="mt-4 space-y-1.5 text-text-secondary">
