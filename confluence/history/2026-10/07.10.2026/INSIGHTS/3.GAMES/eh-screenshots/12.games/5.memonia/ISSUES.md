@@ -1,6 +1,6 @@
-# 5. Memonia — v1.1.2
+# 5. Memonia — v1.1.2.4
 
-Статус: план. Код: `frontend/src/components/Games/Memonia/` (`memory.css`, `MemoryCard.tsx`).
+Статус: сетка и лица в коде, ждёт проверки. Код: `frontend/src/components/Games/Memonia/`.
 
 Сейчас: `memonia1.png` (до старта поле пустое), `memonia2.png` (дырявая сетка), `memonia3.png` (модалка победы). Цель: `reference5/memory.jpeg` — плотная цветная сетка, на лице карточки рисунок, а не символ шрифта.
 
