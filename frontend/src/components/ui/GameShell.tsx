@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 import { PageHeader } from './PageHeader';
 import { PageShell } from './PageShell';
 import { cn } from '../../lib/cn';
+import { Leaderboard } from '../Leaderboard/Leaderboard';
+import { useTopScore } from '../../hooks/useTopScore';
+import type { GameTabId } from '../../lib/gameIcons';
 
 interface GameShellProps {
   title: string;
@@ -13,6 +16,8 @@ interface GameShellProps {
   help?: ReactNode;
   width?: 'narrow' | 'wide';
   className?: string;
+  /** In-game leaderboard button + live top score. Back stays on the left. */
+  gameId?: GameTabId;
 }
 
 /**
@@ -32,7 +37,10 @@ export function GameShell({
   help,
   width = 'wide',
   className,
+  gameId,
 }: GameShellProps) {
+  const top = useTopScore(gameId);
+
   return (
     <PageShell
       width={width}
@@ -44,12 +52,24 @@ export function GameShell({
         title={title}
         onBack={onBack}
         backLabel="На главную"
-        actions={actions}
+        actions={
+          <>
+            {gameId ? <Leaderboard gameId={gameId} /> : null}
+            {actions}
+          </>
+        }
         className="mb-1.5 shrink-0 !pb-1.5 sm:mb-2"
       />
 
-      {stats && (
+      {(stats || gameId) && (
         <div className="mb-1.5 flex shrink-0 flex-wrap items-center justify-center gap-1.5 sm:mb-2 sm:gap-2 sm:justify-start">
+          {gameId ? (
+            <ScoreChip
+              label="Топ"
+              value={top == null ? '—' : top}
+              className="[&_span:last-child]:text-horizon-gold"
+            />
+          ) : null}
           {stats}
         </div>
       )}
@@ -69,7 +89,7 @@ export function GameShell({
       {help && (
         <details className="mt-1.5 shrink-0 rounded-md border border-white/10 bg-nebula p-2.5 text-sm text-text-secondary">
           <summary className="cursor-pointer font-semibold text-indigo-soft">Как играть?</summary>
-          <div className="mt-2 max-h-24 space-y-1 overflow-y-auto">{help}</div>
+          <div className="mt-2 max-h-32 space-y-1 overflow-y-auto">{help}</div>
         </details>
       )}
     </PageShell>

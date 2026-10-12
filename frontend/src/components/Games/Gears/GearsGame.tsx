@@ -15,7 +15,7 @@ import Notification from '../../Common/Notification/Notification';
 import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
 import { drawAim, drawGear, drawMergeFlash, drawWell } from './gearsDraw';
 import './gears.css';
 
@@ -428,6 +428,7 @@ export function GearsGame() {
     <GameShell
       title="Gears"
       onBack={handleBack}
+      gameId="gears"
       width="narrow"
       actions={<Balance />}
       stats={
@@ -448,18 +449,7 @@ export function GearsGame() {
           <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </>
       }
-      help={
-        <>
-          <p>
-            Соединяй шестерёнки одного уровня — они сливаются в следующий. Цель: собрать самую
-            большую (уровень {MAX_LEVEL}).
-          </p>
-          <p>Не заполняй поле выше красной линии — иначе переполнение.</p>
-          {boostHelpLines('gears').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </>
-      }
+      help={<GameHelp gameId="gears" />}
     >
       <div className="gears-stage">
         {hasFlowerMerch && (

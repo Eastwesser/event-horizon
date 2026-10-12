@@ -5,13 +5,18 @@ import { useMemoryStore } from './memoryStore';
 import { useSkins } from '../../../hooks/useSkins';
 import { useGameBoost } from '../../../hooks/useGameBoost';
 import { MemoryBoard } from './MemoryBoard';
+import { MemoryCard } from './MemoryCard';
 import { Modal } from '../../ui/Modal';
 import { Icon } from '../../ui/Icon';
 import Notification from '../../Common/Notification/Notification';
 import { Balance } from '../../Billing/Balance';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameShell, ScoreChip } from '../../ui/GameShell';
+import { Button } from '../../ui/Button';
+import { Spinner } from '../../ui/Spinner';
+import { GameHelp } from '../../../lib/GameHelp';
+import { cn } from '../../../lib/cn';
 import './memory.css';
 
 function pluralMoves(n: number): string {
@@ -106,20 +111,50 @@ export function MemoryGame() {
 
   if (skinsLoading) {
     return (
-      <div className="memory-game-container">
-        <div className="memory-game-header">
-          <div className="memory-stats">
-            <div className="memory-stat">
-              <span className="stat-label">Загрузка...</span>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-void">
+        <Spinner size={56} />
       </div>
     );
   }
 
   return (
-    <div className="memory-game-container">
+    <GameShell
+      title="Memonia"
+      onBack={handleBack}
+      gameId="memory"
+      width="wide"
+      actions={<Balance />}
+      stats={
+        <>
+          <ScoreChip label="Пары" value={`${matchedPairs}/${totalPairs}`} />
+          <ScoreChip label="Ходы" value={moves} />
+          <ScoreChip label="Очки" value={score} className="[&_span:last-child]:text-horizon-gold" />
+        </>
+      }
+      controls={
+        <>
+          <Button size="sm" variant="primary" onClick={handleNewGame} disabled={boostBusy}>
+            {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
+          </Button>
+          {skins.memory.hasAnimalCards && (
+            <button
+              type="button"
+              className={cn(
+                'rounded-sm border px-3 py-1.5 text-sm transition-colors',
+                useAnimalCards
+                  ? 'border-photon-cyan/50 bg-photon-cyan/15 text-photon-cyan'
+                  : 'border-white/10 text-text-secondary hover:border-white/20 hover:text-text-primary',
+              )}
+              onClick={toggleAnimalCards}
+            >
+              {useAnimalCards ? 'Карточки со зверями' : 'Карточки с фруктами'}
+            </button>
+          )}
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+        </>
+      }
+      help={<GameHelp gameId="memory" />}
+    >
       {saveMessage && (
         <Notification
           type={saveMessage.type}
@@ -128,60 +163,22 @@ export function MemoryGame() {
         />
       )}
 
-      <div className="memory-game-header">
-        <h1 className="memory-game-title">Memonia</h1>
-        <div className="memory-stats">
-          <Balance />
-          <div className="memory-stat">
-            <span className="stat-label">Пары</span>
-            <span className="stat-value">
-              {matchedPairs}/{totalPairs}
-            </span>
-          </div>
-          <div className="memory-stat">
-            <span className="stat-label">Ходы</span>
-            <span className="stat-value">{moves}</span>
-          </div>
-          <div className="memory-stat memory-stat--score">
-            <span className="stat-label">Очки</span>
-            <span className="stat-value">{score}</span>
-          </div>
-
-          {skins.memory.hasAnimalCards && (
-            <button
-              type="button"
-              className={`memory-skin-btn ${useAnimalCards ? 'active' : ''}`}
-              onClick={toggleAnimalCards}
-              title={useAnimalCards ? 'Вернуть фрукты' : 'Показать зверей'}
-            >
-              {useAnimalCards ? 'Карточки со зверями' : 'Карточки с фруктами'}
-            </button>
-          )}
-        </div>
-
-        <div className="memory-buttons" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={handleNewGame}
-              className="memory-btn memory-btn--new"
-              disabled={boostBusy}
-            >
-              {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
-            </button>
-            <button type="button" onClick={handleBack} className="memory-btn memory-btn--back">
-              На главную
-            </button>
-          </div>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
-        </div>
-      </div>
-
       <div className="memory-board-wrapper">
         {runReady ? (
           <MemoryBoard skin={useAnimalCards && skins.memory.hasAnimalCards ? 'animals' : 'default'} />
         ) : (
-          <p className="text-text-secondary p-6">Нажмите Старт — boost по желанию (ниже / в «Как играть»)</p>
+          <div className="memory-board" aria-hidden>
+            {Array.from({ length: 30 }, (_, i) => (
+              <MemoryCard
+                key={`preview-${i}`}
+                emoji=""
+                flipped={false}
+                matched={false}
+                onClick={() => {}}
+                disabled
+              />
+            ))}
+          </div>
         )}
       </div>
 
@@ -212,17 +209,6 @@ export function MemoryGame() {
           busy={boostBusy}
         />
       </Modal>
-
-      <div className="memory-rules">
-        <details>
-          <summary>Как играть?</summary>
-          <p>Найди все пары карточек за минимум ходов.</p>
-          <p>Идеально: 15 ходов → 1000 очков</p>
-          {boostHelpLines('memory').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </details>
-      </div>
-    </div>
+    </GameShell>
   );
 }

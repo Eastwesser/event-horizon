@@ -9,7 +9,8 @@ import LoadingSpinner from '../Common/Spinner/LoadingSpinner';
 import { paymentApi } from '../../services/paymentApi';
 import { inventoryApi } from '../../services/inventoryApi';
 import { useShopStore, type ShopItem, type PurchasedItem } from './shopStore';
-import { inventoryToShopItem } from '../../lib/shopItemMap';
+import { getShopItems } from '../../services/api';
+import { inventoryToShopItem, isShopCosmetic, shopApiToItem } from '../../lib/shopItemMap';
 import { formatTicketAmount } from '../../lib/formatPrice';
 import { Card } from '../ui/Card';
 import {
@@ -84,7 +85,17 @@ export const Shop: React.FC = () => {
       { primary: PurchasedItem; qty: number; latestAt: number }
     >();
     for (const p of inventory) {
-      const key = p.item_id || p.id;
+      const cat = (p.item?.category || p.item?.type || '').toLowerCase();
+      const name = (p.item?.name || '').trim().toLowerCase();
+      const digital =
+        Boolean(name) &&
+        (cat.includes('game_skin') ||
+          cat.includes('profile_theme') ||
+          cat.includes('скин') ||
+          cat.includes('skin') ||
+          cat.includes('theme') ||
+          cat.includes('тема'));
+      const key = digital ? `name:${name}` : p.item_id || p.item?.id || p.id;
       const at = Date.parse(p.purchased_at) || 0;
       const prev = byItem.get(key);
       if (!prev) {
@@ -186,10 +197,13 @@ export const Shop: React.FC = () => {
         const ownedIds = new Set(
           useShopStore.getState().inventory.map((p) => p.item_id)
         );
-        const response = await inventoryApi.searchAllItems();
+        const [invRes, shopRes] = await Promise.all([
+          inventoryApi.searchAllItems(),
+          getShopItems(),
+        ]);
         if (cancelled) return;
         const patches = useShopStore.getState().catalogPatches;
-        const mapped = (response.items ?? []).map((item) => {
+        const mapped = (invRes.items ?? []).map((item) => {
           const base = inventoryToShopItem(item, ownedIds.has(item.id));
           const patch = patches[item.id];
           if (!patch) return base;
@@ -202,6 +216,14 @@ export const Shop: React.FC = () => {
             available: (stock ?? 1) > 0,
           };
         });
+        const seen = new Set(mapped.map((it) => it.id));
+        const shopRows = Array.isArray(shopRes.data) ? shopRes.data : [];
+        for (const raw of shopRows) {
+          const extra = shopApiToItem(raw as Record<string, unknown>, ownedIds.has(String((raw as { id?: string }).id)));
+          if (!extra.id || seen.has(extra.id) || !isShopCosmetic(extra)) continue;
+          seen.add(extra.id);
+          mapped.unshift(extra);
+        }
         setCatalog(mapped);
       } catch (e) {
         console.error('Failed to load inventory catalog for shop', e);

@@ -13,7 +13,7 @@ import Notification from '../../Common/Notification/Notification';
 import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
 import { cn } from '../../../lib/cn';
 import { blockColor, drawBackground, drawIsoSlab, isoTopY } from './towerDraw';
 import { LAYER } from './towerStore';
@@ -219,6 +219,7 @@ export function TowerGame() {
     <GameShell
       title="Builder"
       onBack={handleBack}
+      gameId="towers"
       actions={<Balance />}
       width="narrow"
       stats={
@@ -288,17 +289,7 @@ export function TowerGame() {
           )}
         </>
       }
-      help={
-        <>
-          <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы положить блок на башню</p>
-          <p>Чем точнее попадание, тем шире будет следующий блок. Комбо растёт за точные укладки.</p>
-          <p>Уровни 1–10: выше уровень — быстрее блок и уже старт. Этаж — высота башни (не в лидерборд).</p>
-          <p>Промах — игра окончена. На низких уровнях есть небольшой запас на ошибку.</p>
-          {boostHelpLines('towers').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </>
-      }
+      help={<GameHelp gameId="towers" />}
     >
       {saveMessage && (
         <Notification

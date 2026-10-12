@@ -1,6 +1,7 @@
-// frontend/src/components/Games/Hexagon/Tray.tsx
 import { useDrag } from 'react-dnd';
-import { pancakeEmoji, pancakeColor, type PancakeType } from '../../../utils/hexagon';
+import { type PancakeType } from '../../../utils/hexagon';
+import { TrayPancakeStack } from './pancakeChip';
+import { cn } from '../../../lib/cn';
 
 interface TrayStack {
   id: number;
@@ -10,49 +11,41 @@ interface TrayStack {
 
 interface TrayProps {
   stacks: TrayStack[];
-  skinMode?: 'default' | 'space'; // ← добавить
+  skinMode?: 'default' | 'space';
+  pickedId?: number | null;
+  onPick?: (stack: TrayStack) => void;
 }
 
-// Космические эмодзи - используем реальные типы
-const spaceEmojis: Record<string, string> = {
-  nutella: '🌙',
-  strawberry: '⭐',
-  fish: '🌌',
-  sausage: '☄️',
-  chicken: '🪐',
-  caesar: '🌠',
-  cranberry: '✨',
-  pancake: '☀️',
-  default: '🌌',
-};
-
-// Космические цвета — тёмная подложка под эмодзи (не розовый кринж)
-const spaceColors: Record<string, string> = {
-  nutella: '#1a1228',
-  strawberry: '#1c1830',
-  fish: '#12182a',
-  sausage: '#0f1a2e',
-  chicken: '#1c1410',
-  caesar: '#1a1220',
-  cranberry: '#0e1a18',
-  pancake: '#1a1810',
-  default: '#12141c',
-};
-
-export function Tray({ stacks, skinMode = 'default' }: TrayProps) {
+export function Tray({ stacks, skinMode = 'default', pickedId = null, onPick }: TrayProps) {
   return (
     <div className="tray">
       <h3>Поднос</h3>
       <div className="tray-stacks">
         {stacks.map((stack) => (
-          <TrayStack key={stack.id} stack={stack} skinMode={skinMode} />
+          <TrayStackItem
+            key={stack.id}
+            stack={stack}
+            skinMode={skinMode}
+            picked={pickedId === stack.id}
+            onPick={onPick}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function TrayStack({ stack, skinMode }: { stack: TrayStack; skinMode?: 'default' | 'space' }) {
+function TrayStackItem({
+  stack,
+  skinMode,
+  picked,
+  onPick,
+}: {
+  stack: TrayStack;
+  skinMode?: 'default' | 'space';
+  picked: boolean;
+  onPick?: (stack: TrayStack) => void;
+}) {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: 'pancake',
     item: { id: stack.id, type: stack.type, count: stack.count },
@@ -61,32 +54,15 @@ function TrayStack({ stack, skinMode }: { stack: TrayStack; skinMode?: 'default'
     }),
   }));
 
-  const getEmoji = () => {
-    if (skinMode === 'space') {
-      return spaceEmojis[stack.type] || spaceEmojis.default || '🌌';
-    }
-    return pancakeEmoji[stack.type] || '🥞';
-  };
-
-  const getColor = () => {
-    if (skinMode === 'space') {
-      return spaceColors[stack.type] || spaceColors.default || '#6C5CE7';
-    }
-    return pancakeColor[stack.type] || '#DEB887';
-  };
-
   return (
-    <div
+    <button
+      type="button"
       ref={dragRef as any}
-      className="tray-stack"
-      style={{
-        backgroundColor: getColor(),
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
-      }}
+      className={cn('tray-stack', picked && 'tray-stack--picked')}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+      onClick={() => onPick?.(stack)}
     >
-      <span className="emoji">{getEmoji()}</span>
-      <span className="count">x{stack.count}</span>
-    </div>
+      <TrayPancakeStack type={stack.type} count={stack.count} space={skinMode === 'space'} />
+    </button>
   );
 }

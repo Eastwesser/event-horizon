@@ -19,26 +19,27 @@ import Notification from '../../Common/Notification/Notification';
 import { Icon } from '../../ui/Icon';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
+import './twenty48.css';
 
 type Board = number[][];
 
 const SIZE = 4;
 const SWIPE_MIN_PX = 28;
-const TILE_COLORS: Record<number, string> = {
-  0: 'bg-white/5 text-transparent',
-  2: 'bg-[#1e2a44] text-indigo-soft',
-  4: 'bg-[#243356] text-indigo-soft',
-  8: 'bg-[#3d4a2a] text-horizon-gold',
-  16: 'bg-[#4a5528] text-horizon-gold',
-  32: 'bg-[#5c3d20] text-horizon-gold-hot',
-  64: 'bg-[#6b2f28] text-horizon-gold-hot',
-  128: 'bg-[#2a3d5c] text-photon-cyan',
-  256: 'bg-[#2f456b] text-photon-cyan',
-  512: 'bg-[#354f7a] text-photon-cyan',
-  1024: 'bg-[#3d2a5c] text-horizon-gold',
-  2048: 'bg-horizon-gold text-void',
-};
+function tileClass(v: number): string {
+  if (v <= 0) return 't48-tile';
+  if (v >= 2048) return 't48-tile t48-tile--2048';
+  return `t48-tile t48-tile--${v}`;
+}
+
+function spawnedCell(beforeSpawn: Board, after: Board): string | null {
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (beforeSpawn[r][c] === 0 && after[r][c] !== 0) return `${r}-${c}`;
+    }
+  }
+  return null;
+}
 
 function emptyBoard(): Board {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
@@ -142,6 +143,7 @@ export function Twenty48Game() {
   const [runBoostId, setRunBoostId] = useState<string | null>(null);
   const [undoSnap, setUndoSnap] = useState<{ board: Board; score: number } | null>(null);
   const [undoUsed, setUndoUsed] = useState(false);
+  const [spawnKey, setSpawnKey] = useState<string | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const {
     useBoost,
@@ -170,6 +172,7 @@ export function Twenty48Game() {
       setWon(false);
       setUndoSnap(null);
       setUndoUsed(false);
+      setSpawnKey(null);
       setLastRanked(null);
     } catch {
       /* handled */
@@ -185,6 +188,7 @@ export function Twenty48Game() {
         setUndoSnap({ board: clone(board), score });
       }
       const next = spawn(res.board);
+      setSpawnKey(spawnedCell(res.board, next));
       const nextScore = score + res.gained;
       setBoard(next);
       setScore(nextScore);
@@ -307,7 +311,8 @@ export function Twenty48Game() {
     <GameShell
       title="2048"
       onBack={handleBack}
-      width="narrow"
+      gameId="twenty48"
+      width="wide"
       actions={<Balance />}
       stats={
         <>
@@ -325,41 +330,40 @@ export function Twenty48Game() {
               Undo (1)
             </Button>
           )}
-          <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
-            {saving ? '…' : 'Сохранить'}
-          </Button>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </>
       }
       help={
         <>
-          <p>Стрелки, WASD, свайп или перетаскивание мышью — сдвиг плиток. Собери плитку 2048.</p>
-          {boostHelpLines('twenty48').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
+          <GameHelp gameId="twenty48" />
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
         </>
       }
     >
-      <div
-        className="grid w-full max-w-sm touch-none grid-cols-4 gap-2 rounded-md border border-white/10 bg-nebula p-2"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerLeave={() => {
-          touchStart.current = null;
-        }}
-      >
-        {board.flatMap((row, r) =>
-          row.map((v, c) => (
-            <div
-              key={`${r}-${c}-${v}`}
-              className={`flex aspect-square items-center justify-center rounded-sm font-hud text-lg font-bold tabular-nums transition-all duration-200 sm:text-xl ${TILE_COLORS[v] ?? 'bg-indigo/40 text-text-primary'}`}
-            >
-              {v || ''}
-            </div>
-          )),
-        )}
+      <div className="t48-stage">
+        <div
+          className="t48-board"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerLeave={() => {
+            touchStart.current = null;
+          }}
+        >
+          {board.flatMap((row, r) =>
+            row.map((v, c) => {
+              const id = `${r}-${c}`;
+              return (
+                <div
+                  key={id}
+                  className={`${tileClass(v)}${spawnKey === id ? ' t48-tile--spawn' : ''}`}
+                >
+                  {v || ''}
+                </div>
+              );
+            }),
+          )}
+        </div>
       </div>
       <div className="mt-3 grid grid-cols-4 gap-2 sm:hidden">
         {(['up', 'left', 'down', 'right'] as const).map((d) => (

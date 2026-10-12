@@ -11,6 +11,7 @@ import { Button } from '../../ui/Button';
 import Notification from '../../Common/Notification/Notification';
 import { growthFromStreak, growthLabel, nextMemento, type Species } from './CompanionArt';
 import { CompanionDevice } from './CompanionScene';
+import { GameHelp } from '../../../lib/GameHelp';
 
 type Mood = 'happy' | 'ok' | 'sad' | 'critical';
 type Care = 'feed' | 'play' | 'rest';
@@ -273,6 +274,7 @@ export function CompanionGame() {
     <GameShell
       title="Tamagotchi"
       onBack={handleBack}
+      gameId="companion"
       width="narrow"
       actions={<Balance />}
       stats={
@@ -306,19 +308,7 @@ export function CompanionGame() {
           </>
         ) : undefined
       }
-      help={
-        <>
-          <p>Играй со своим питомцем: корми, играй, дай отдохнуть. Без давления и дедлайнов.</p>
-          <p>
-            Это не гонка за лидербордом. Раз в день — подарок: +{DAILY_GIFT_POINTS} к заботе и
-            +1000 билетиков на кошелёк.
-          </p>
-          <p>
-            Серия заботы растёт, если приходить почти каждый день. От неё меняется форма: малыш
-            (1–6 дн.), растёт (7–20), вырос (21+).
-          </p>
-        </>
-      }
+      help={<GameHelp gameId="companion" />}
     >
       {!pet ? (
         <div className="w-full max-w-sm space-y-4 rounded-md border border-white/10 bg-nebula p-4">

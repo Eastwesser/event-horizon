@@ -5,8 +5,8 @@
 
 :root {
   --hanoi-max-disks: 8;
-  --hanoi-ring-h: 28px;
-  --hanoi-ring-gap: 4px;
+  --hanoi-ring-h: 32px;
+  --hanoi-ring-gap: 7px;
   --hanoi-stack-h: calc(var(--hanoi-max-disks) * (var(--hanoi-ring-h) + var(--hanoi-ring-gap)));
   --hanoi-rod-h: var(--hanoi-stack-h);
   --hanoi-peg-min: 160px;
@@ -17,11 +17,13 @@
   justify-content: space-around;
   align-items: flex-end;
   gap: 0.75rem;
-  min-height: calc(var(--hanoi-stack-h) + 64px);
+  min-height: calc(var(--hanoi-stack-h) + 72px);
   min-width: min(100%, calc(3 * var(--hanoi-peg-min) + 2rem));
-  padding: 0.75rem 0.5rem 0;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 20px;
+  padding: 1rem 0.75rem 1.1rem;
+  background: linear-gradient(180deg, #4a5848 0%, #2c352c 100%);
+  border: 3px solid #c6a15a;
+  border-radius: 18px;
+  box-shadow: 0 0 0 2px #2a2118;
   position: relative;
   transform-origin: center center;
 }
@@ -120,9 +122,13 @@
 }
 
 .hanoi-peg-label {
-  font-size: 0.75rem;
-  opacity: 0.6;
-  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 4;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #f6ead0;
+  opacity: 0.7;
+  margin-bottom: 0.35rem;
 }
 
 .hanoi-peg-stack {
@@ -139,59 +145,66 @@
 
 .hanoi-rod {
   position: absolute;
+  left: 0;
+  right: 0;
   bottom: 12px;
-  width: 8px;
-  height: var(--hanoi-rod-h);
-  background: linear-gradient(180deg, #8b7355 0%, #5c4a32 100%);
-  border-radius: 4px;
-  z-index: 0;
+  width: 14px;
+  height: calc(var(--hanoi-rod-h) + 20px);
+  margin-inline: auto;
+  background: linear-gradient(90deg, #5c4030 0%, #c4a574 50%, #6b5344 100%);
+  border-radius: 7px;
+  box-shadow: inset -3px 0 5px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .hanoi-base {
   position: absolute;
+  left: 0;
+  right: 0;
   bottom: 0;
-  width: 92%;
-  height: 14px;
-  background: linear-gradient(180deg, #6b5344 0%, #3d2f24 100%);
-  border-radius: 6px;
-  z-index: 1;
+  width: 72%;
+  height: 28px;
+  margin-inline: auto;
+  background: radial-gradient(ellipse at 50% 45%, #a67c52 0%, #5c4030 70%, #3d2f24 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 #2a2118;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .hanoi-ring {
-  /* Gloss / volume: specular highlight + soft rim */
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.35),
-    0 2px 4px rgba(0, 0, 0, 0.35);
-  height: var(--hanoi-ring-h);
-  border-radius: 14px;
-  margin: calc(var(--hanoi-ring-gap) / 2) 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: rgba(0, 0, 0, 0.65);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.25);
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.05) 40%,
-    rgba(0, 0, 0, 0.12) 100%
-  );
-  background-blend-mode: soft-light;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-  z-index: 3;
   position: relative;
+  z-index: 3;
   flex-shrink: 0;
+  height: var(--hanoi-ring-h);
+  margin: calc(var(--hanoi-ring-gap) / 2) 0;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.hanoi-disk-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.hanoi-disk-face {
+  fill: var(--disk-color);
+}
+
+.hanoi-disk-side {
+  fill: color-mix(in srgb, var(--disk-color) 68%, #2a2118);
+}
+
+.hanoi-disk-bore {
+  fill: #2a2118;
 }
 
 .hanoi-ring--top-selected {
-  transform: translateY(-6px);
-  box-shadow: 0 6px 12px rgba(255, 215, 0, 0.4);
+  transform: translateY(-16px);
+  filter: drop-shadow(0 8px 10px rgba(232, 184, 74, 0.45));
 }
 
 .hanoi-ring--hidden {
@@ -201,29 +214,17 @@
 .hanoi-floating-ring {
   position: fixed;
   height: var(--hanoi-ring-h);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
   z-index: 1000;
   pointer-events: none;
   box-sizing: border-box;
   transition: left 0.25s ease, top 0.25s ease;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.45));
 }
 
 @media (max-width: 600px) {
   :root {
     --hanoi-ring-h: 24px;
-    --hanoi-ring-gap: 3px;
+    --hanoi-ring-gap: 5px;
     --hanoi-peg-min: 110px;
-  }
-
-  .hanoi-ring,
-  .hanoi-floating-ring {
-    font-size: 0.55rem;
   }
 }

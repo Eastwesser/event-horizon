@@ -14,18 +14,21 @@ import Notification from '../../Common/Notification/Notification';
 import { Balance } from '../../Billing/Balance';
 import { BoostCheckbox, boostUnrankedToast } from '../BoostCheckbox';
 import { GameOverActions } from '../GameOverActions';
-import { boostHelpLines } from '../../../lib/gameBoostCopy';
+import { GameHelp } from '../../../lib/GameHelp';
 import { cn } from '../../../lib/cn';
 import {
   FLAPPY_H,
   FLAPPY_W,
   drawBird,
+  drawCity,
   drawClouds,
+  drawGround,
   drawPipe,
   drawScore,
   drawSky,
   drawStars,
   drawStartHint,
+  previewPipe,
 } from './flappyDraw';
 import './FlappyGame.css';
 
@@ -94,6 +97,7 @@ export function FlappyGame() {
     boosted,
     level,
     PIPE_SPEED,
+    PIPE_GAP,
     lastSubmitRanked,
     lastSubmitMessage,
   } = useFlappyStore();
@@ -255,20 +259,24 @@ export function FlappyGame() {
     ctx.clearRect(0, 0, FLAPPY_W, FLAPPY_H);
     drawSky(ctx, FLAPPY_W, FLAPPY_H);
     drawStars(ctx, FLAPPY_W, FLAPPY_H, starScrollRef.current);
+    drawCity(ctx, FLAPPY_W, FLAPPY_H, starScrollRef.current * 1.6);
     drawClouds(ctx, FLAPPY_W, cloudScrollRef.current);
 
     const cosmic = useCosmicPipes && skins.flappy.hasCosmicPipes;
     const golden = useGoldenBird && skins.flappy.hasGoldenBird;
 
-    for (const pipe of pipes) {
+    const pipesToDraw =
+      !started && !gameOver && pipes.length === 0 ? [previewPipe(PIPE_GAP)] : pipes;
+    for (const pipe of pipesToDraw) {
       drawPipe(ctx, pipe, 60, FLAPPY_H, cosmic);
     }
 
+    drawGround(ctx, FLAPPY_W, FLAPPY_H, cloudScrollRef.current * 1.4);
     drawBird(ctx, birdY, BIRD_SIZE, birdVelocity, golden);
     drawScore(ctx, score, FLAPPY_W);
 
     if (!started && !gameOver) {
-      drawStartHint(ctx, FLAPPY_W, FLAPPY_H);
+      drawStartHint(ctx, FLAPPY_W);
     }
   }, [
     birdY,
@@ -281,6 +289,7 @@ export function FlappyGame() {
     useCosmicPipes,
     useGoldenBird,
     PIPE_SPEED,
+    PIPE_GAP,
   ]);
 
   const handleCanvasClick = () => {
@@ -313,6 +322,7 @@ export function FlappyGame() {
     <GameShell
       title="Flappy Bird"
       onBack={handleBack}
+      gameId="flappy"
       width="wide"
       actions={<Balance />}
       stats={
@@ -398,17 +408,7 @@ export function FlappyGame() {
           )}
         </>
       }
-      help={
-        <>
-          <p>Нажимайте ПРОБЕЛ или кликайте мышкой, чтобы птичка летела вверх</p>
-          <p>Не врезайтесь в трубы и не падайте на землю</p>
-          <p>Уровни 1–10: выше уровень — уже и быстрее трубы; щель чуть варьируется от трубы к трубе</p>
-          <p>Очки за трубу × уровень (L1 ≠ L10). Лидерборд отдельный на каждый уровень</p>
-          {boostHelpLines('flappy').map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        </>
-      }
+      help={<GameHelp gameId="flappy" />}
     >
       {saveMessage && (
         <Notification

@@ -180,7 +180,7 @@ export const useShopStore = create<ShopState>()(
             const currentPrice = item.price || item.Price || 0;
             return {
               id: item.purchase_id || item.purchaseId || item.id || item.Id || crypto.randomUUID(),
-              item_id: item.id || item.Id || '',
+              item_id: item.item_id || item.itemId || item.id || item.Id || '',
               purchased_at:
                 item.purchased_at ||
                 item.created_at ||

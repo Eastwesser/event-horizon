@@ -51,10 +51,10 @@ export const MemoryCard = memo(({
     >
       <div className="memory-card__inner">
         <div className="memory-card__front" style={frontStyle}>
-          <span className="memory-card__emoji">{emoji}</span>
+          {emoji ? <span className="memory-card__emoji">{emoji}</span> : null}
         </div>
         <div className="memory-card__back" style={cardStyle}>
-          <span className="memory-card__question">?</span>
+          <span className="memory-card__pattern" aria-hidden />
         </div>
       </div>
     </div>
