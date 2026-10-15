@@ -67,3 +67,24 @@ export function stockLabel(stock: number | null | undefined): string | null {
   if (stock === 0) return 'Нет в наличии';
   return `В наличии: ${stock}`;
 }
+
+/**
+ * Цифровой товар: скины, темы, игровые предметы.
+ * У них нет физического запаса — «В наличии: N» показывать не нужно.
+ * Физический мерч (карточки, брелоки, картины, фенечки) — не цифровой.
+ */
+export function isDigitalItem(item: {
+  category?: string;
+  type?: string;
+  attributes?: Record<string, unknown>;
+}): boolean {
+  const cat = `${item.category || ''} ${item.type || ''}`.toLowerCase();
+  const attrs = item.attributes || {};
+  return (
+    Boolean(attrs.game_id) ||
+    cat.includes('skin') ||
+    cat.includes('скин') ||
+    cat.includes('theme') ||
+    cat.includes('тема')
+  );
+}
