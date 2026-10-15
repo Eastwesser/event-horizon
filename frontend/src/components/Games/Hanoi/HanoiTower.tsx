@@ -527,7 +527,14 @@ export function HanoiTower() {
             </Button>
           )}
           {!started && (
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'hanoi'} />
+            // <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'hanoi'} />
+            <BoostCheckbox 
+            gameId="hanoi" 
+            useBoost={useBoost} 
+            onChange={setUseBoost} 
+            disabled={boostBusy} 
+            collapsed={false} 
+            />
           )}
         </>
       }

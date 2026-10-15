@@ -1,4 +1,3 @@
-// import { getHexagonPoints, pancakeEmoji, type PancakeType } from '../../../utils/hexagon';
 import { getHexagonPoints, pancakeEmoji, spacePancakeEmoji, type PancakeType } from '../../../utils/hexagon';
 
 export const CHIP_FACE: Record<PancakeType, string> = {
@@ -37,10 +36,6 @@ function shade(hex: string, amt: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-// function emojiFor_OLD(type: string): string {
-//   return pancakeEmoji[type as PancakeType] ?? '🥞';
-// }
-
 function emojiFor(type: string, space: boolean): string {
   const table = space ? spacePancakeEmoji : pancakeEmoji;
   return table[type as PancakeType] ?? '🥞';
@@ -64,15 +59,7 @@ export function HexPancakeStack({
   const lowestCenterY = radius - chipR;
   const points = getHexagonPoints(chipR);
   const topCenterY = lowestCenterY - (visible - 1) * gap;
-  // <text
-  //   x="0"
-  //   y={topCenterY + 5}
-  //   textAnchor="middle"
-  //   fontSize="16"
-  //   style={{ pointerEvents: 'none' }}
-  // >
-  //   {emojiFor(type, space)}
-  // </text>
+
   return (
     <g>
       {Array.from({ length: visible }, (_, i) => {
@@ -129,14 +116,6 @@ export function TrayPancakeStack({
   const x = 4;
   const w = 48;
   const h = 13;
-  // <text
-  //   x="28"
-  //   y={32 - (visible - 1) * 7 + 11}
-  //   textAnchor="middle"
-  //   fontSize="14"
-  // >
-  //   {emojiFor(type, space)}
-  // </text>
   return (
     <svg viewBox="0 0 56 60" width="56" height="56" aria-hidden>
       {Array.from({ length: visible }, (_, i) => {
@@ -178,4 +157,3 @@ export function TrayPancakeStack({
     </svg>
   );
 }
-
