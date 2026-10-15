@@ -64,17 +64,15 @@ export function HexPancakeStack({
   const lowestCenterY = radius - chipR;
   const points = getHexagonPoints(chipR);
   const topCenterY = lowestCenterY - (visible - 1) * gap;
-
-  <text
-    x="0"
-    y={topCenterY + 5}
-    textAnchor="middle"
-    fontSize="16"
-    style={{ pointerEvents: 'none' }}
-  >
-    {emojiFor(type, space)}
-  </text>
-
+  // <text
+  //   x="0"
+  //   y={topCenterY + 5}
+  //   textAnchor="middle"
+  //   fontSize="16"
+  //   style={{ pointerEvents: 'none' }}
+  // >
+  //   {emojiFor(type, space)}
+  // </text>
   return (
     <g>
       {Array.from({ length: visible }, (_, i) => {
@@ -131,16 +129,14 @@ export function TrayPancakeStack({
   const x = 4;
   const w = 48;
   const h = 13;
-
-  <text
-    x="28"
-    y={32 - (visible - 1) * 7 + 11}
-    textAnchor="middle"
-    fontSize="14"
-  >
-    {emojiFor(type, space)}
-  </text>
-
+  // <text
+  //   x="28"
+  //   y={32 - (visible - 1) * 7 + 11}
+  //   textAnchor="middle"
+  //   fontSize="14"
+  // >
+  //   {emojiFor(type, space)}
+  // </text>
   return (
     <svg viewBox="0 0 56 60" width="56" height="56" aria-hidden>
       {Array.from({ length: visible }, (_, i) => {
@@ -182,3 +178,4 @@ export function TrayPancakeStack({
     </svg>
   );
 }
+

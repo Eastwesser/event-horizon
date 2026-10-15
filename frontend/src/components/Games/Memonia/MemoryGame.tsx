@@ -137,7 +137,9 @@ export function MemoryGame() {
           <Button size="sm" variant="primary" onClick={handleNewGame} disabled={boostBusy}>
             {boostBusy ? 'Старт…' : runReady ? 'Новая игра' : 'Старт'}
           </Button>
+
           {skins.memory.hasAnimalCards && (
+
             <button
               type="button"
               className={cn(
@@ -148,12 +150,16 @@ export function MemoryGame() {
               )}
               onClick={toggleAnimalCards}
             >
+
               {useAnimalCards ? 'Карточки со зверями' : 'Карточки с фруктами'}
+              
             </button>
           )}
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
+
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'memory'} />
         </>
       }
+
       help={<GameHelp gameId="memory" />}
     >
       {saveMessage && (
