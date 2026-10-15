@@ -41,6 +41,7 @@ const SPECIES: { id: Species; emoji: string; label: string }[] = [
   { id: 'зайчик', emoji: '🐰', label: 'Зайчик' },
 ];
 
+
 const SPECIES_IDS = new Set<string>(SPECIES.map((s) => s.id));
 
 function normalizeSpecies(raw: unknown): Species {

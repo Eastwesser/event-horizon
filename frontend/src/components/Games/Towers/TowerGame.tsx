@@ -286,7 +286,7 @@ export function TowerGame() {
             Сохранить рекорд
           </Button>
           {!midRun && (
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'towers'} />
           )}
         </>
       }

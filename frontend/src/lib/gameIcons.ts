@@ -38,3 +38,4 @@ export const GAME_LB_TABS: { id: GameTabId; label: string; icon: IconName }[] = 
   { id: 'companion', label: 'Tamagotchi', icon: gameIcon('companion') },
 ];
 
+

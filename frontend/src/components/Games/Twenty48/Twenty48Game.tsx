@@ -331,12 +331,12 @@ export function Twenty48Game() {
               Undo (1)
             </Button>
           )}
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'twenty48'} />
         </>
       }
       help={
         <>
           <GameHelp gameId="twenty48" />
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
         </>
       }
     >

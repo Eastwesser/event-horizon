@@ -158,7 +158,7 @@ export function HexagonGame() {
                 Космические блины
               </button>
             )}
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'hexagon'} />
           </>
         }
         help={<GameHelp gameId="hexagon" />}

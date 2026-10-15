@@ -5,19 +5,13 @@ import { fetchBalancesOnce } from '../Billing/Balance';
 import { Icon } from '../ui/Icon';
 import { BOOST_EFFECT_BY_GAME } from '../../lib/gameBoostCopy';
 
-// type Props_old = {
-//   useBoost: boolean;
-//   onChange: (checked: boolean) => void;
-//   disabled?: boolean;
-//   /** Compact: hide long warning until opened (default true — less eye-sore). */
-//   collapsed?: boolean;
-// };
-
 type Props = {
   gameId: string;
   useBoost: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  /** Compact: hide effect until opened (default true — less eye-sore). */
+  collapsed?: boolean;
 };
 
 // /** Shared pre-game boost control — tucked away; full copy in help. */
@@ -101,7 +95,13 @@ type Props = {
 // }
 
 /** Shared pre-game boost control — explains effect right away. */
-export function BoostCheckbox({ gameId, useBoost, onChange, disabled }: Props) {
+export function BoostCheckbox({
+  gameId,
+  useBoost,
+  onChange,
+  disabled,
+  collapsed = true,
+}: Props) {
   const [lamps, setLamps] = useState<number | null>(null);
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export function BoostCheckbox({ gameId, useBoost, onChange, disabled }: Props) {
   const gated = Boolean(disabled || broke);
   const effectText = BOOST_EFFECT_BY_GAME[gameId] || 'Облегчает игру';
 
-  return (
+  const body = (
     <div className="flex max-w-sm flex-col gap-1 text-xs text-text-secondary">
       <label className="flex cursor-pointer items-center gap-2">
         <input
@@ -158,14 +158,22 @@ export function BoostCheckbox({ gameId, useBoost, onChange, disabled }: Props) {
       </p>
     </div>
   );
+
+  if (!collapsed) return body;
+
+  return (
+    <details className="max-w-sm rounded-sm border border-white/10 bg-nebula/40 px-2 py-1.5 text-text-secondary open:pb-2">
+      <summary className="cursor-pointer list-none text-xs text-text-muted marker:content-none [&::-webkit-details-marker]:hidden">
+        <span className="underline decoration-white/20 underline-offset-2 hover:text-text-secondary">
+          Boost (опционально)
+        </span>
+      </summary>
+      <div className="mt-2">{body}</div>
+    </details>
+  );
 }
 
 export function boostUnrankedToast(): string {
   return 'Забег с Boost не будет учтен в Leaderboard';
 }
 
-// Что изменилось v.1.1.2.x:
-// Убран collapsed и details. Теперь он всегда развернут.
-// Добавлен проп gameId.
-// Показывается эффект буста для конкретной игры.
-// Убрано дублирование про «билетики».
