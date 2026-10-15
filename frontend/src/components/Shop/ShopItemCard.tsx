@@ -8,7 +8,7 @@ import { CardImage } from '../ui/CardImage';
 import { Icon, IconLabel } from '../ui/Icon';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { itemFallbackIcon } from '../../lib/itemIcons';
-import { stockLabel } from '../../lib/shopItemMap';
+import { stockLabel, isDigitalItem } from '../../lib/shopItemMap';
 import { cardFlagBadges } from './cardAttributes';
 
 interface ShopItemCardProps {
@@ -29,14 +29,14 @@ const categoryLabels: Record<string, string> = {
 };
 
 function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps) {
-  const imageSrc = item.image_url || item.images?.[0] || item.icon_url || '';
+  const isDigital = isDigitalItem(item);
+  const imageSrc = isDigital
+    ? ''
+    : item.image_url || item.images?.[0] || item.icon_url || '';
   const canAfford = balance >= item.price_tickets;
   const isOwned = item.owned || false;
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
-  // const isDigital = Boolean(item.game_id);
-  const attrs = (item.attributes || {}) as Record<string, unknown>;
-  const isDigital = Boolean(attrs.game_id);
   const categoryLabel = categoryLabels[item.category] || categoryLabels[item.type] || 'Товар';
   const icon = itemFallbackIcon(item);
   const flagBadges = item.attributes ? cardFlagBadges(item.attributes) : [];

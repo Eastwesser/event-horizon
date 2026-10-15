@@ -14,13 +14,14 @@ import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
 import { Icon } from '../ui/Icon';
 import { formatTicketAmount, formatTicketPrice } from '../../lib/formatPrice';
-import { stockLabel } from '../../lib/shopItemMap';
+import { stockLabel, isDigitalItem } from '../../lib/shopItemMap';
 import { loadCatalogNav, navNeighbors } from '../../lib/catalogNav';
 import { CardAttributesView, CardFlagBadges } from './cardAttributes';
 import { NoizReviewBlock } from './NoizReviewBlock';
 import PurchaseModal from './PurchaseModal';
 import CancelPurchaseModal from './CancelPurchaseModal';
 import { itemFallbackIcon } from '../../lib/itemIcons';
+
 
 const ELEMENT_RU: Record<string, string> = {
   mountains: 'Горы',
@@ -194,8 +195,8 @@ export function ShopItemDetail() {
   // ── Derived values (single source of truth) ─────────────────────────
   const attrs = (item.attributes || {}) as Record<string, unknown>;
   const gameId = typeof attrs.game_id === 'string' ? attrs.game_id : undefined;
-  const isDigital = Boolean(gameId);
-  const image = item.images?.[0];
+  const isDigital = isDigitalItem(item);
+  const image = isDigital ? undefined : item.images?.[0];
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
   const cardText =
