@@ -281,3 +281,17 @@
 ## История
 
 - **2026-10-15** — каталог паттернов собран (17 сервисов, 333 паттерна). Roadmap составлен.
+
+IDEAs updated:
+
+## Идеи на потом
+
+- Сервер можно попробовать купить за 50$ (8 vCPU / 32 GiB — Hetzner / DO / Vultr).
+- Надо довести механику лампочек до ума (экономика, визуализация, ежедневный бонус).
+- Gin matches routes before middleware v1 — хрупко, проверить и добавить тест.
+- `make ride-on` — Makefile target: `make deploy` → `cd frontend && npm install && npm run dev`. В конце — `ALL SYSTEMS NOMINAL`.
+- Добавить фичу «Ваш рекорд побили»: уведомление на BELL, когда другой игрок обогнал.
+- Унифицировать интерфейс всех игр (одинаковое количество кнопок, одинаковые позиции).
+- `make seed-v110` — засев магазина, добавить заметку в `DAILY_OPS.md` или `README.md`.
+
+Collides with: /home/denismatveev/event_horizon/confluence/history/2026-10/15.10.2026/FUTURE_TASKS.md
