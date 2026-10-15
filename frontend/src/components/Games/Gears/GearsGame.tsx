@@ -373,7 +373,7 @@ export function GearsGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [won, lost, skin]);
+  }, [won, lost, skin, skinsLoading]);
 
   const onPointer = (clientX: number, rect: DOMRect) => {
     const x = ((clientX - rect.left) / rect.width) * W;
