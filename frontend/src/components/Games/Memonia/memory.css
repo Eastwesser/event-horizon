@@ -105,7 +105,12 @@
 .memory-board-wrapper {
   overflow-x: auto;
   padding: 1rem 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 
 .memory-board {
   display: grid;
@@ -114,6 +119,9 @@
   width: min(100%, 560px);
   margin: 0 auto;
   transform-origin: center center;
+  /*aspect-ratio заставит сетку держать пропорции. max-height не даст ей растянуться.*/
+  aspect-ratio: 6 / 5;
+  max-height: 60dvh;
 }
 
 .memory-board--mismatch {

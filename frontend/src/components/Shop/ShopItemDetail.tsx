@@ -1,3 +1,4 @@
+// frontend/src/components/Shop/ShopItemDetail.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { inventoryApi, type InventoryItem } from '../../services/inventoryApi';
@@ -19,6 +20,7 @@ import { CardAttributesView, CardFlagBadges } from './cardAttributes';
 import { NoizReviewBlock } from './NoizReviewBlock';
 import PurchaseModal from './PurchaseModal';
 import CancelPurchaseModal from './CancelPurchaseModal';
+import { itemFallbackIcon } from '../../lib/itemIcons';
 
 const ELEMENT_RU: Record<string, string> = {
   mountains: 'Горы',
@@ -53,18 +55,18 @@ export function ShopItemDetail() {
   const [merchAllowed, setMerchAllowed] = useState<boolean | null>(null);
   const [merchBlockReason, setMerchBlockReason] = useState('');
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(
-    null
+    null,
   );
   const touchX = useRef<number | null>(null);
 
   const ownedPurchase = useMemo(
     () => inventory.find((p) => p.item_id === id || p.item?.id === id),
-    [inventory, id]
+    [inventory, id],
   );
   const refundAmount =
     ownedPurchase?.purchase_price || ownedPurchase?.item?.price_tickets || item?.price || 0;
 
-  const nav = useMemo(() => navNeighbors(id || '', loadCatalogNav()), [id, item]);
+  const nav = useMemo(() => navNeighbors(id || '', loadCatalogNav()), [id]);
 
   useEffect(() => {
     fetchBalance();
@@ -137,22 +139,12 @@ export function ShopItemDetail() {
               ? Math.max(0, item.stock - 1)
               : item.stock;
 
-      setItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              stock: remaining ?? prev.stock,
-            }
-          : prev
-      );
+      setItem((prev) => (prev ? { ...prev, stock: remaining ?? prev.stock } : prev));
       setOwned(true);
       setShowModal(false);
       setNotice({ type: 'success', message: `${item.name} куплен!` });
     } catch (e: any) {
-      setNotice({
-        type: 'error',
-        message: e.message || 'Ошибка при покупке',
-      });
+      setNotice({ type: 'error', message: e.message || 'Ошибка при покупке' });
     }
   };
 
@@ -169,33 +161,20 @@ export function ShopItemDetail() {
               ? item.stock + 1
               : item.stock;
 
-      setItem((prev) =>
-        prev
-          ? {
-              ...prev,
-              stock: remaining ?? prev.stock,
-            }
-          : prev
-      );
+      setItem((prev) => (prev ? { ...prev, stock: remaining ?? prev.stock } : prev));
       setOwned(false);
       setShowCancelModal(false);
-      const refunded =
-        result?.refunded_amount ?? result?.refundedAmount ?? refundAmount;
+      const refunded = result?.refunded_amount ?? result?.refundedAmount ?? refundAmount;
       setNotice({
         type: 'success',
         message: `Покупка отменена. Возвращено ${formatTicketAmount(refunded)}.`,
       });
     } catch (e: any) {
-      setNotice({
-        type: 'error',
-        message: e.message || 'Ошибка при отмене покупки',
-      });
+      setNotice({ type: 'error', message: e.message || 'Ошибка при отмене покупки' });
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner fullscreen />;
-  }
+  if (loading) return <LoadingSpinner fullscreen />;
 
   if (error || !item) {
     return (
@@ -212,15 +191,17 @@ export function ShopItemDetail() {
     );
   }
 
-  const image = item.images?.[0];
+  // ── Derived values (single source of truth) ─────────────────────────
   const attrs = (item.attributes || {}) as Record<string, unknown>;
+  const gameId = typeof attrs.game_id === 'string' ? attrs.game_id : undefined;
+  const isDigital = Boolean(gameId);
+  const image = item.images?.[0];
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
   const cardText =
     (typeof attrs.card_text === 'string' && attrs.card_text.trim()) ||
     (item.description || '').trim();
-  const flavor =
-    typeof attrs.flavor_text === 'string' ? attrs.flavor_text.trim() : '';
+  const flavor = typeof attrs.flavor_text === 'string' ? attrs.flavor_text.trim() : '';
 
   const setName = typeof attrs.set_name === 'string' ? attrs.set_name : '';
   const year = typeof attrs.year === 'number' ? attrs.year : null;
@@ -230,15 +211,11 @@ export function ShopItemDetail() {
     (typeof attrs.artist === 'string' && attrs.artist) ||
     '';
   const element =
-    typeof attrs.element === 'string'
-      ? ELEMENT_RU[attrs.element] || attrs.element
-      : '';
+    typeof attrs.element === 'string' ? ELEMENT_RU[attrs.element] || attrs.element : '';
 
-  const metaParts = [
-    setName,
-    year != null ? String(year) : '',
-    artist || artistId,
-  ].filter(Boolean);
+  const metaParts = [setName, year != null ? String(year) : '', artist || artistId].filter(
+    Boolean,
+  );
 
   const listBack = loadCatalogNav()?.listPath || '/shop';
   const shopItem = inventoryToShopItem(item, owned);
@@ -268,20 +245,10 @@ export function ShopItemDetail() {
 
       {(nav.prevId || nav.nextId) && (
         <div className="mb-4 flex items-center justify-between gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!nav.prevId}
-            onClick={() => goNeighbor(nav.prevId)}
-          >
+          <Button variant="ghost" size="sm" disabled={!nav.prevId} onClick={() => goNeighbor(nav.prevId)}>
             ← Пред
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!nav.nextId}
-            onClick={() => goNeighbor(nav.nextId)}
-          >
+          <Button variant="ghost" size="sm" disabled={!nav.nextId} onClick={() => goNeighbor(nav.nextId)}>
             След →
           </Button>
         </div>
@@ -310,7 +277,16 @@ export function ShopItemDetail() {
             className="mx-auto max-h-[32rem] w-full max-w-sm bg-nebula"
             fit="contain"
             fixedAspect={false}
-            fallback={<Icon name="cards" className="h-16 w-16 text-text-muted" />}
+            fallback={
+              <Icon
+                name={itemFallbackIcon({
+                  category: item.type,
+                  type: item.type,
+                  game_id: gameId,
+                })}
+                className="h-16 w-16 text-text-muted"
+              />
+            }
           />
         </div>
 
@@ -320,9 +296,7 @@ export function ShopItemDetail() {
               {setName ? <span>{setName}</span> : null}
               {setName && year != null ? <span> · </span> : null}
               {year != null ? <span>{year}</span> : null}
-              {(setName || year != null) && (artist || artistId) ? (
-                <span> · </span>
-              ) : null}
+              {(setName || year != null) && (artist || artistId) ? <span> · </span> : null}
               {artistId ? (
                 <Link
                   to={`/authors/${encodeURIComponent(artistId)}`}
@@ -343,12 +317,8 @@ export function ShopItemDetail() {
               <Icon name="ticket" className="h-3.5 w-3.5" />
               {formatTicketPrice(item.price)}
             </span>
-            {stockText !== null && (
-              <span
-                className={
-                  outOfStock ? 'text-text-muted' : 'text-text-secondary'
-                }
-              >
+            {stockText !== null && !isDigital && (
+              <span className={outOfStock ? 'text-text-muted' : 'text-text-secondary'}>
                 {stockText}
               </span>
             )}
@@ -422,18 +392,12 @@ export function ShopItemDetail() {
                   </>
                 ) : (
                   <Button
-                    variant={
-                      !outOfStock && balance >= item.price ? 'primary' : 'ghost'
-                    }
+                    variant={!outOfStock && balance >= item.price ? 'primary' : 'ghost'}
                     size="sm"
                     disabled={outOfStock || balance < item.price || buying}
                     onClick={() => void handleBuyClick()}
                   >
-                    {outOfStock
-                      ? 'Нет в наличии'
-                      : balance < item.price
-                        ? 'Не хватает'
-                        : 'Купить'}
+                    {outOfStock ? 'Нет в наличии' : balance < item.price ? 'Не хватает' : 'Купить'}
                   </Button>
                 )}
               </div>
@@ -467,3 +431,9 @@ export function ShopItemDetail() {
     </PageShell>
   );
 }
+
+// Что изменилось
+// const nav = useMemo(() => navNeighbors(id || '', loadCatalogNav()), [id]); — убрал item из зависимостей (было [id, item]). Это не критично, но item не нужен для navNeighbors.
+// attrs и gameId теперь объявлены в одном месте — сразу после if (!item). Раньше attrs объявлялся ниже, и приходилось повторно кастить item.attributes в fallback. Теперь всё чисто.
+// isDigital = Boolean(gameId) — использует attrs.game_id, а не item.game_id. Это правильно, потому что InventoryItem не имеет game_id напрямую.
+// fallback использует gameId из attrs — без повторного каста.

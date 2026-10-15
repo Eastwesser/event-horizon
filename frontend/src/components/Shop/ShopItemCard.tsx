@@ -34,6 +34,9 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
   const isOwned = item.owned || false;
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
+  // const isDigital = Boolean(item.game_id);
+  const attrs = (item.attributes || {}) as Record<string, unknown>;
+  const isDigital = Boolean(attrs.game_id);
   const categoryLabel = categoryLabels[item.category] || categoryLabels[item.type] || 'Товар';
   const icon = itemFallbackIcon(item);
   const flagBadges = item.attributes ? cardFlagBadges(item.attributes) : [];
@@ -50,9 +53,7 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
           alt={item.name}
           className="w-full shrink-0"
           fit="cover"
-          fallback={
-            <Icon name={icon} className="h-12 w-12 text-text-muted" />
-          }
+          fallback={<Icon name={icon} className="h-12 w-12 text-text-muted" />}
         />
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
           <div className="mb-2 flex items-start justify-between gap-2">
@@ -79,12 +80,8 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
             </div>
           ) : null}
           <div className="mt-auto pt-3">
-            {stockText !== null && (
-              <p
-                className={`text-xs ${
-                  outOfStock ? 'text-text-muted' : 'text-text-secondary'
-                }`}
-              >
+            {stockText !== null && !isDigital && (
+              <p className={`text-xs ${outOfStock ? 'text-text-muted' : 'text-text-secondary'}`}>
                 {stockText}
               </p>
             )}
