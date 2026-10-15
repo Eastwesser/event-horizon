@@ -5,10 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.1-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.1** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy.
+**Event Horizon v1.1.3** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. Frontend polish v1.1.2 + backend patterns catalog v1.1.3.
 
 | | |
 |---|---|
@@ -19,6 +19,12 @@
 | **Load (measured)** | [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md) · [`SUITABLE_SERVER.md`](confluence/history/2026-10/09.10.2026/SUITABLE_SERVER.md) |
 | **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI `/docs` только с `DOCS_PASSWORD` (без пароля адрес отвечает 404) |
 | **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
+
+### v1.1.3 highlights (15.10.2026)
+
+- **Patterns catalog:** `confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md` — 17 сервисов, 333 паттерна (Facade, Saga, Outbox, Circuit Breaker, RAG, TF-IDF, Least Conn, WebSocket ticket, etc.)
+- **Roadmap:** `confluence/tech_debt/FUTURE_EVENT_HORIZON.md` — i18n (RU/EN/DE/ES), tech debt, games polish, users & prod, observability & security
+- **Frontend v1.1.2:** BoostCheckbox per-game effects · Gears canvas fix · Pancaker space emojis · Hanoi disk bore · Memonia layout · ShopItemCard `isDigitalItem` (hide 998 stock for skins/themes) · Flappy hint «Нажмите пробел»
 
 ### v1.1.0 highlights (07–10.10.2026)
 
@@ -64,6 +70,10 @@
 │ ClickHouse    │ async ──► Profile / Leaderboard / Notification / Fulfillment  │
 │ :8123/:9000   │ Leaderboard Redis Sorted Set ──WS──► Client                   │
 └───────────────┴───────────────────────────────────────────────────────────────┘
+
+> **Fulfillment** — эмуляция сборки заказа (delay 10s). 
+> По факту наличия товара, я просто ищу его, достаю из коробки и упаковываю для отправки.
+> Заменится на реальный WMS API в будущем. См. `FUTURE_EVENT_HORIZON.md` → Tech Debt.
 ```
 
 **Deploy profiles (v1.1.0):** `make deploy` = thin stack (NATS + apps + ClickHouse + Prometheus/Grafana/Jaeger + fulfillment/notification/analytics). Kafka is opt-in: `make deploy-heavy` / `make stop-heavy`. Seeds: `make seed-v110`, `make seed-lb-demo`, `make seed-card-artists`.
@@ -358,6 +368,8 @@ Gateway слушает метрики внутри контейнера (`9095`,
 | MCP для Cursor | [`services/mcp/README.md`](services/mcp/README.md) |
 | Волна 11.10 | [`confluence/history/2026-10/11.10.2026/FINISHERS.md`](confluence/history/2026-10/11.10.2026/FINISHERS.md) |
 | CHANGELOG | [`CHANGELOG.md`](CHANGELOG.md) |
+| Паттерны (17 сервисов, 333 паттерна) | [`confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md`](confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md) |
+| 15th Oct 2026 Roadmap (i18n, tech debt, games) | [`confluence/tech_debt/FUTURE_EVENT_HORIZON.md`](confluence/tech_debt/FUTURE_EVENT_HORIZON.md) |
 
 ---
 
@@ -408,6 +420,8 @@ Do **not** run 10k VUs on this VM — that is not “10k DAU”; it will OOM / t
 
 ## 🔮 Планы на следующие спринты
 
+Статус на **v1.1.3** (15.10.2026).
+
 Статус на **v1.1.0** (10.10.2026). Ниже — то, что уже в продукте, что осталось лично, и что лежит в парковке.
 
 Живые списки:
@@ -451,6 +465,9 @@ Consul, Helm как повседневный деплой, Alertmanager → Tele
 | Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
 | Порог покрытия в CI | Юнит-тесты есть, порог ≥70% не включён |
 | Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
+| i18n (RU/EN/DE/ES) | Смена языка сессии, флаг рядом с бургером |
+
+Подробный roadmap: [`FUTURE_EVENT_HORIZON.md`](confluence/tech_debt/FUTURE_EVENT_HORIZON.md).
 
 ---
 
@@ -464,7 +481,27 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.1** (11.10.2026). Картинка игр ниже — рабочая копия, тег `v1.1.2` ещё не ставили.
+Текущая: **v1.1.3** (15.10.2026). 
+
+BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3
+
+Только докуменация и фронтенд-полировка. Бэкенд не менялся.
+
+**Patterns catalog.** 17 сервисов прочитаны, 333 паттерна задокументированы: Facade, Repository, Port, Adapter, Decorator, Strategy, Saga, Outbox, Circuit Breaker, Retry, Rate Limiter, RAG, TF-IDF, Least Connections, WebSocket Ticket, HMAC, SQL Sandbox, и др. Файл: `confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md`.
+
+**Roadmap.** `confluence/tech_debt/FUTURE_EVENT_HORIZON.md` — i18n (RU/EN/DE/ES), tech debt, games polish, users & prod, observability & security.
+
+**Фронтенд v1.1.2 (в составе v1.1.3):**
+- BoostCheckbox — per-game эффект буста, `gameId` проброшен.
+- Pancaker — космические эмодзи.
+- Gears — исправлен рендер канваса (`skinsLoading` в `useEffect`).
+- Hanoi — дырки дисков интегрированы в диск.
+- Memonia — поле не схлопывается (CSS `aspect-ratio`).
+- Flappy — «Нажмите пробел».
+- ShopItemCard / ShopItemDetail — `isDigitalItem`, скрытие «В наличии: 998» для скинов и тем.
+- `itemIcons` — fallback-иконка из `GAME_ICON`.
 
 ### Что нового в v1.1.2
 
