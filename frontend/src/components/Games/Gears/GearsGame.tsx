@@ -446,7 +446,7 @@ export function GearsGame() {
           <Button size="sm" onClick={() => void submit()} disabled={saving || score === 0}>
             Сохранить
           </Button>
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
         </>
       }
       help={<GameHelp gameId="gears" />}

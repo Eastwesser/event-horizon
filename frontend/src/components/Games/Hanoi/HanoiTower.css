@@ -28,6 +28,7 @@
   transform-origin: center center;
 }
 
+
 .hanoi-board--shake {
   animation: eh-hanoi-shake 420ms ease-out;
 }

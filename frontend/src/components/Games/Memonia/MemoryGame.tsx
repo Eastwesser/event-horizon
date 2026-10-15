@@ -28,6 +28,7 @@ function pluralMoves(n: number): string {
   return `${n} ходов`;
 }
 
+
 export function MemoryGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
@@ -150,7 +151,7 @@ export function MemoryGame() {
               {useAnimalCards ? 'Карточки со зверями' : 'Карточки с фруктами'}
             </button>
           )}
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
         </>
       }
       help={<GameHelp gameId="memory" />}

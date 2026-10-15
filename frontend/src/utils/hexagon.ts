@@ -54,6 +54,12 @@ export const pancakeEmoji: Record<PancakeType, string> = {
   chicken: '🍗', caesar: '🥗', cranberry: '🍒', pancake: '🥞',
 };
 
+// НОВЫЙ словарь для космических блинов
+export const spacePancakeEmoji: Record<PancakeType, string> = {
+  nutella: '🌌', strawberry: '🪐', fish: '👽', sausage: '🚀',
+  chicken: '☄️', caesar: '🛸', cranberry: '💫', pancake: '🌠',
+};
+
 export const pancakeColor: Record<PancakeType, string> = {
   nutella: '#8B4513', strawberry: '#FF6B6B', fish: '#FFA500', sausage: '#CD5C5C',
   chicken: '#FFD700', caesar: '#90EE90', cranberry: '#FF69B4', pancake: '#DEB887',

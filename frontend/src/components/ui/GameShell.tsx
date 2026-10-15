@@ -20,6 +20,7 @@ interface GameShellProps {
   gameId?: GameTabId;
 }
 
+
 /**
  * Fit-to-viewport: outer shell is exactly 100dvh with no page scroll.
  * Stage flexes into leftover space after header/stats/controls/help.

@@ -35,6 +35,7 @@ function diskTone(disk: number): CSSProperties {
   return { ['--disk-color' as string]: RING_COLORS[(disk - 1) % RING_COLORS.length] };
 }
 
+
 function DiskView({
   disk,
   className,
@@ -44,22 +45,36 @@ function DiskView({
   className?: string;
   style?: CSSProperties;
 }) {
+  // return (
+  //   <div className={className} style={{ ...diskTone(disk), ...style }} aria-hidden>
+  //     <svg className="hanoi-disk-svg" viewBox="0 0 200 40" preserveAspectRatio="none">
+  //       <ellipse className="hanoi-disk-side" cx="100" cy="27" rx="96" ry="11" />
+  //       <rect className="hanoi-disk-side" x="4" y="13" width="192" height="14" />
+  //       <ellipse className="hanoi-disk-face" cx="100" cy="13" rx="96" ry="11" />
+  //       <ellipse className="hanoi-disk-bore" cx="100" cy="13" rx="12" ry="5" />
+  //       <ellipse
+  //         cx="100"
+  //         cy="13"
+  //         rx="12"
+  //         ry="5"
+  //         fill="none"
+  //         stroke="rgba(42, 33, 24, 0.45)"
+  //         strokeWidth="1.2"
+  //       />
+  //     </svg>
+  //   </div>
+  // );
+
   return (
     <div className={className} style={{ ...diskTone(disk), ...style }} aria-hidden>
       <svg className="hanoi-disk-svg" viewBox="0 0 200 40" preserveAspectRatio="none">
         <ellipse className="hanoi-disk-side" cx="100" cy="27" rx="96" ry="11" />
         <rect className="hanoi-disk-side" x="4" y="13" width="192" height="14" />
         <ellipse className="hanoi-disk-face" cx="100" cy="13" rx="96" ry="11" />
-        <ellipse className="hanoi-disk-bore" cx="100" cy="13" rx="12" ry="5" />
-        <ellipse
-          cx="100"
-          cy="13"
-          rx="12"
-          ry="5"
-          fill="none"
-          stroke="rgba(42, 33, 24, 0.45)"
-          strokeWidth="1.2"
-        />
+        
+        {/* Уменьшаем "дырку" и добавляем обводку стержня */}
+        <ellipse className="hanoi-disk-bore" cx="100" cy="13" rx="8" ry="3.5" />
+        <ellipse cx="100" cy="13" rx="8" ry="3.5" fill="none" stroke="#5c4030" strokeWidth="2" />
       </svg>
     </div>
   );
@@ -512,7 +527,7 @@ export function HanoiTower() {
             </Button>
           )}
           {!started && (
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
           )}
         </>
       }

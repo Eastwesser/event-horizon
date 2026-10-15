@@ -238,7 +238,7 @@ export function drawStartHint(ctx: CanvasRenderingContext2D, _w: number) {
   ctx.fillStyle = '#f6ead0';
   ctx.shadowColor = '#000';
   ctx.shadowBlur = 4;
-  ctx.fillText('Пробел', 100, 168);
+  ctx.fillText('Нажмите пробел', 100, 168);  // было 'Пробел'
   ctx.restore();
 }
 
@@ -246,3 +246,4 @@ export function previewPipe(gap: number): PipeDraw {
   const topHeight = 150;
   return { x: 520, topHeight, bottomY: topHeight + gap };
 }
+

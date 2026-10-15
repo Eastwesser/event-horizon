@@ -404,7 +404,7 @@ export function FlappyGame() {
             Сохранить рекорд
           </Button>
           {!started && (
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
           )}
         </>
       }
