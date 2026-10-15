@@ -34,6 +34,7 @@ const PANCAKE_TYPES: PancakeType[] = [
   'pancake',
 ];
 
+
 /** Boost: all tray slots share one type; otherwise random per slot. */
 function makeTrayStacks(boosted: boolean): TrayStack[] {
   const mono =

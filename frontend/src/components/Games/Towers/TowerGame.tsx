@@ -29,6 +29,7 @@ function IconBlocks({ cosmic }: { cosmic: boolean }) {
   );
 }
 
+
 export function TowerGame() {
   const navigate = useNavigate();
   const token = localStorage.getItem('accessToken');
@@ -285,7 +286,7 @@ export function TowerGame() {
             Сохранить рекорд
           </Button>
           {!midRun && (
-            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+            <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
           )}
         </>
       }

@@ -41,6 +41,7 @@ function spawnedCell(beforeSpawn: Board, after: Board): string | null {
   return null;
 }
 
+
 function emptyBoard(): Board {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
 }
@@ -335,7 +336,7 @@ export function Twenty48Game() {
       help={
         <>
           <GameHelp gameId="twenty48" />
-          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} />
+          <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={''} />
         </>
       }
     >
