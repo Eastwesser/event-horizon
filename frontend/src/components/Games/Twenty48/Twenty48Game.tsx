@@ -26,6 +26,7 @@ type Board = number[][];
 
 const SIZE = 4;
 const SWIPE_MIN_PX = 28;
+
 function tileClass(v: number): string {
   if (v <= 0) return 't48-tile';
   if (v >= 2048) return 't48-tile t48-tile--2048';
@@ -40,7 +41,6 @@ function spawnedCell(beforeSpawn: Board, after: Board): string | null {
   }
   return null;
 }
-
 
 function emptyBoard(): Board {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
@@ -334,11 +334,7 @@ export function Twenty48Game() {
           <BoostCheckbox useBoost={useBoost} onChange={setUseBoost} disabled={boostBusy} gameId={'twenty48'} />
         </>
       }
-      help={
-        <>
-          <GameHelp gameId="twenty48" />
-        </>
-      }
+      help={<GameHelp gameId="twenty48" />}
     >
       <div className="t48-stage">
         <div
