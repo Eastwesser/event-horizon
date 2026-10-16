@@ -411,11 +411,6 @@ make test-k6                          # browse.js — default ~20 VU
 K6_VUS=20 K6_DURATION=60s make test-k6
 K6_VUS=5 make test-k6-purchase
 ```
-
-Measured on ~8 GiB VM (10.10.2026): **20 VU browse PASS** (~50 RPS, p95 429 ms, 0% errors); 50 VU still 100% OK but p95 ~960 ms.  
-Verdict: [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md).  
-Do **not** run 10k VUs on this VM — that is not “10k DAU”; it will OOM / thrash (see below in version notes).
-
 ---
 
 ## 🔮 Планы на следующие спринты
