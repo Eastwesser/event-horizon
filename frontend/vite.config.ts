@@ -24,6 +24,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: apiProxy,
+    // DANGER (TEST ONLY):
+    // host: '0.0.0.0',      // ← добавил: слушать все интерфейсы
+    // ws: false,            // ← добавил: отключить HMR WebSocket
+    // allowedHosts: true,   // ← добавил: пускать любой хост (Quick Tunnel)
   },
   preview: {
     port: 4173,
