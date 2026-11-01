@@ -1102,6 +1102,7 @@ services:
     command: ["/gateway"]
     ports:
       - "8081:8080"
+      - "6060:6060"   # порт для pprof
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/ready"]
       interval: 15s
