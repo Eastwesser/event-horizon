@@ -25,8 +25,40 @@ func NewGRPCHandler(svc *service.InventoryService) *GRPCHandler {
     }
 }
 
+// Валидатор отрицательных чисел
+func validateItem(item *model.Item) error {
+	if item.Price < 0 {
+		return status.Error(codes.InvalidArgument, "price cannot be negative")
+	}
+	if item.Stock < 0 {
+		return status.Error(codes.InvalidArgument, "stock cannot be negative")
+	}
+	// Проверка отрицательных числовых атрибутов (market_rub, health, cost, move и т.д.)
+	for key, val := range item.Attributes {
+		switch v := val.(type) {
+		case float64:
+			if v < 0 {
+				return status.Errorf(codes.InvalidArgument, "attribute %q cannot be negative", key)
+			}
+		case int:
+			if v < 0 {
+				return status.Errorf(codes.InvalidArgument, "attribute %q cannot be negative", key)
+			}
+		case int64:
+			if v < 0 {
+				return status.Errorf(codes.InvalidArgument, "attribute %q cannot be negative", key)
+			}
+		}
+	}
+	return nil
+}
+
 func (h *GRPCHandler) CreateItem(ctx context.Context, req *pb.CreateItemRequest) (*pb.ItemResponse, error) {
     item := converter.ItemFromCreateRequest(req)
+
+    if err := validateItem(item); err != nil {
+        return nil, err
+    }
 
     if err := h.service.CreateItem(ctx, item); err != nil {
         return nil, status.Errorf(codes.Internal, "failed to create item: %v", err)
@@ -56,6 +88,10 @@ func (h *GRPCHandler) GetItem(ctx context.Context, req *pb.GetItemRequest) (*pb.
 
 func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*pb.ItemResponse, error) {
     item := converter.ItemFromUpdateRequest(req)
+
+    if err := validateItem(item); err != nil {
+		return nil, err
+	}
 
     if err := h.service.UpdateItem(ctx, item); err != nil {
         return nil, mapInventoryErr(err, "failed to update item")
