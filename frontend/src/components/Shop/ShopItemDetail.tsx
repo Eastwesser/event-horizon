@@ -32,6 +32,7 @@ const ELEMENT_RU: Record<string, string> = {
   neutral: 'Нейтралы',
 };
 
+
 export function ShopItemDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

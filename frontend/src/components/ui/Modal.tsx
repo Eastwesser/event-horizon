@@ -42,19 +42,35 @@ export function Modal({ open, onClose, title, children, className, align = 'cent
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'eh-modal-title' : undefined}
+        // className={cn(
+        //   'eh-ring w-full max-w-lg rounded-lg border border-indigo/25 bg-nebula-elevated p-6 shadow-elevated sm:p-8',
+        //   'max-h-[90vh] overflow-y-auto',
+        //   className,
+        // )}
         className={cn(
-          'eh-ring w-full max-w-lg rounded-lg border border-indigo/25 bg-nebula-elevated p-6 shadow-elevated sm:p-8',
-          'max-h-[90vh] overflow-y-auto',
+          'eh-ring flex w-full max-w-lg flex-col rounded-lg border border-indigo/25 bg-nebula-elevated shadow-elevated',
+          'max-h-[90vh]',
           className,
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {title && (
+        {/* {title && (
           <h2 id="eh-modal-title" className="mb-4 font-display text-2xl font-semibold text-text-primary">
             {title}
           </h2>
         )}
-        {children}
+        {children} */}
+        {title && (
+          <div className="border-b border-white/10 px-6 pb-4 pt-6 sm:px-8 sm:pt-8">
+            <h2 id="eh-modal-title" className="font-display text-2xl font-semibold text-text-primary">
+              {title}
+            </h2>
+          </div>
+        )}
+        <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-8 sm:py-6">
+          {children}
+        </div>
+        
       </div>
     </div>,
     document.body,

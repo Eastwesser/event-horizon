@@ -23,6 +23,7 @@ export const InventoryItemDetail: React.FC = () => {
 
   const nav = useMemo(() => navNeighbors(id || '', loadCatalogNav()), [id, selectedItem]);
 
+  
   useEffect(() => {
     setTextOpen(false);
     if (id) fetchItem(id);

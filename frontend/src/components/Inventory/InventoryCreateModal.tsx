@@ -12,7 +12,15 @@ const inputClass =
   'w-full rounded-sm border border-white/10 bg-nebula px-3 py-2 text-sm text-text-primary focus:border-photon-cyan/50';
 const labelClass = 'mb-1 block text-sm text-text-secondary';
 
-const CARD_ELEMENTS = ['лес', 'горы', 'степи', 'тьма', 'болото', 'нейтрал'] as const;
+const CARD_ELEMENTS = [
+  { value: 'woods', label: 'Лес' },
+  { value: 'mountains', label: 'Горы' },
+  { value: 'swamps', label: 'Болота' },
+  { value: 'steppes', label: 'Степи' },
+  { value: 'darkness', label: 'Тьма' },
+  { value: 'neutral', label: 'Нейтрал' },
+] as const;
+
 const CARD_RARITIES = [
   { value: 'common', label: 'Обычная' },
   { value: 'uncommon', label: 'Необычная' },
@@ -20,7 +28,17 @@ const CARD_RARITIES = [
   { value: 'ultra', label: 'Ультра' },
 ] as const;
 
-/** EH tickets from ₽ market × 1000 (CARDS_PRICING: 10₽ → 10_000 tickets). Foil ×2. */
+const AVAILABLE_ICONS = [
+  { type: 'regen', label: 'Регенерация' },
+  { type: 'armor', label: 'Доспех' },
+  { type: 'counter', label: 'Фишка' },
+  { type: 'strike', label: 'Атака' },
+  { type: 'tap', label: 'Поворот' },
+  { type: 'instant', label: 'Мгновенно' },
+  { type: 'direct', label: 'Направленный' },
+  { type: 'stamina', label: 'Стойкость' },
+] as const;
+
 function suggestTickets(rubles: number, foil: boolean): number {
   const base = Math.max(0, Math.round(rubles * 1000));
   return foil ? base * 2 : base;
@@ -31,48 +49,88 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [formData, setFormData] = useState({
-    type: 'брелок',
+    type: 'карточка',
     name: '',
     description: '',
     price: 100000,
     stock: 1,
   });
+
   const [card, setCard] = useState({
-    element: 'лес',
+    element: 'woods',
     rarity: 'common',
     set: '7',
     artist: '',
-    year: '2006',
+    year: '2026',
     market_rub: '10',
     foil: false,
     card_no: '',
+    health: '',
+    strike: '',
+    card_text: '',
+    flavor_text: '',
+    type_main: 'creature',
+    type_sub: '',
+    cost_tier: 'rank_and_file',
+    cost: '',
+    move: '',
   });
+
+  const [icons, setIcons] = useState<Record<string, number | string>>({});
+
+  const handleIconChange = (type: string, value: string) => {
+    setIcons((prev) => ({ ...prev, [type]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const trimmed = imageUrl.trim();
+      
+      const iconsArray = Object.entries(icons)
+        .filter(([_, val]) => val !== '' && val !== undefined)
+        .map(([type, val]) => ({
+          type,
+          value: Math.max(0, Number(val) || 0),
+        }));
+
+      const rub = Math.max(1, Number(card.market_rub) || 1);
+      
       const attributes: Record<string, unknown> =
         formData.type === 'карточка'
           ? {
               element: card.element,
               rarity: card.rarity,
-              set: Number(card.set) || 0,
+              set: Math.max(0, Number(card.set) || 0),
               artist: card.artist.trim(),
-              year: Number(card.year) || 0,
+              year: Math.max(0, Number(card.year) || 0),
               foil: card.foil,
               card_no: card.card_no.trim(),
-              market_rub: Number(card.market_rub) || 0,
+              market_rub: rub,
+              health: Math.max(0, Number(card.health) || 0),
+              strike: card.strike.trim(),
+              card_text: card.card_text.trim(),
+              flavor_text: card.flavor_text.trim(),
+              type_main: card.type_main,
+              type_sub: card.type_sub.trim(),
+              cost_tier: card.cost_tier,
+              icons: iconsArray,
+              cost: Math.max(0, Number(card.cost) || 0),
+              move: Math.max(0, Number(card.move) || 0),
+              class: card.type_sub ? [card.type_sub.trim()] : [],
             }
           : {};
+
       const price =
         formData.type === 'карточка'
-          ? suggestTickets(Number(card.market_rub) || 0, card.foil)
-          : formData.price;
+          ? suggestTickets(rub, card.foil)
+          : Math.max(0, formData.price);
+
       await createItem({
         ...formData,
         price,
+        stock: Math.max(0, Number(formData.stock) || 0),
         attributes,
         images: trimmed ? [trimmed] : [],
       });
@@ -85,8 +143,9 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
   };
 
   return (
-    <Modal open onClose={onClose} title="Создать товар">
-      <form onSubmit={handleSubmit} className="flex max-h-[80vh] flex-col gap-5 overflow-y-auto">
+    <Modal open onClose={onClose} title="Создать товар" className="max-w-3xl">
+      {/* <form onSubmit={handleSubmit} className="flex max-h-[80vh] flex-col gap-5 overflow-y-auto"> */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
           <label className={labelClass}>Тип товара</label>
           <select
@@ -108,12 +167,11 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
-            placeholder={formData.type === 'карточка' ? 'Слепыш' : undefined}
             className={inputClass}
           />
         </div>
         <div>
-          <label className={labelClass}>Описание</label>
+          <label className={labelClass}>Описание (краткое)</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -121,133 +179,135 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({ onCl
           />
         </div>
 
-        {formData.type === 'карточка' ? (
+        {formData.type === 'карточка' && (
           <div className="space-y-3 rounded-sm border border-white/10 bg-void/40 p-3">
-            <p className="text-xs text-text-muted">
-              Берсерк / ККИ: цена в билетиках = ₽×1000 (фойл ×2). Пример: 10₽ → 10 000.
-            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Стихия</label>
-                <select
-                  className={inputClass}
-                  value={card.element}
-                  onChange={(e) => setCard({ ...card, element: e.target.value })}
-                >
-                  {CARD_ELEMENTS.map((el) => (
-                    <option key={el} value={el}>
-                      {el}
-                    </option>
-                  ))}
+                <select className={inputClass} value={card.element} onChange={(e) => setCard({ ...card, element: e.target.value })}>
+                  {CARD_ELEMENTS.map((el) => <option key={el.value} value={el.value}>{el.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelClass}>Редкость</label>
-                <select
-                  className={inputClass}
-                  value={card.rarity}
-                  onChange={(e) => setCard({ ...card, rarity: e.target.value })}
-                >
-                  {CARD_RARITIES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
+                <select className={inputClass} value={card.rarity} onChange={(e) => setCard({ ...card, rarity: e.target.value })}>
+                  {CARD_RARITIES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelClass}>Сет</label>
-                <input
-                  className={inputClass}
-                  value={card.set}
-                  onChange={(e) => setCard({ ...card, set: e.target.value })}
-                  placeholder="7"
-                />
+                <input type="number" min="0" className={inputClass} value={card.set} onChange={(e) => setCard({ ...card, set: e.target.value })} />
               </div>
               <div>
                 <label className={labelClass}>Год</label>
-                <input
-                  className={inputClass}
-                  value={card.year}
-                  onChange={(e) => setCard({ ...card, year: e.target.value })}
-                />
+                <input type="number" min="0" className={inputClass} value={card.year} onChange={(e) => setCard({ ...card, year: e.target.value })} />
               </div>
               <div>
                 <label className={labelClass}>Автор арта</label>
-                <input
-                  className={inputClass}
-                  value={card.artist}
-                  onChange={(e) => setCard({ ...card, artist: e.target.value })}
-                  placeholder="ark_cj"
-                />
+                <input className={inputClass} value={card.artist} onChange={(e) => setCard({ ...card, artist: e.target.value })} />
               </div>
               <div>
                 <label className={labelClass}>№ в серии</label>
-                <input
-                  className={inputClass}
-                  value={card.card_no}
-                  onChange={(e) => setCard({ ...card, card_no: e.target.value })}
-                />
+                <input className={inputClass} value={card.card_no} onChange={(e) => setCard({ ...card, card_no: e.target.value })} />
               </div>
               <div>
                 <label className={labelClass}>Рынок ≈ ₽</label>
-                <input
-                  type="number"
-                  className={inputClass}
-                  value={card.market_rub}
-                  onChange={(e) => setCard({ ...card, market_rub: e.target.value })}
-                />
+                <input type="number" min="1" className={inputClass} value={card.market_rub} onChange={(e) => setCard({ ...card, market_rub: e.target.value })} />
               </div>
               <div className="flex items-end pb-2">
                 <label className="flex items-center gap-2 text-sm text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={card.foil}
-                    onChange={(e) => setCard({ ...card, foil: e.target.checked })}
-                  />
+                  <input type="checkbox" checked={card.foil} onChange={(e) => setCard({ ...card, foil: e.target.checked })} />
                   Фойл (×2 цена)
                 </label>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-3 mt-3">
+              <div>
+                <label className={labelClass}>Тип (Карта)</label>
+                <select className={inputClass} value={card.type_main} onChange={(e) => setCard({ ...card, type_main: e.target.value })}>
+                  <option value="creature">Существо</option>
+                  <option value="artifact">Артефакт</option>
+                  <option value="land">Местность</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Класс (Карта)</label>
+                <input className={inputClass} value={card.type_sub} onChange={(e) => setCard({ ...card, type_sub: e.target.value })} placeholder="Тролль..." />
+              </div>
+              <div>
+                <label className={labelClass}>Стоимость (Ряд)</label>
+                <select className={inputClass} value={card.cost_tier} onChange={(e) => setCard({ ...card, cost_tier: e.target.value })}>
+                  <option value="rank_and_file">Рядовая</option>
+                  <option value="elite">Элитная</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Стоимость (в углу)</label>
+                <input type="number" min="0" className={inputClass} value={card.cost} onChange={(e) => setCard({ ...card, cost: e.target.value })} placeholder="3" />
+              </div>
+              <div>
+                <label className={labelClass}>Ход</label>
+                <input type="number" min="0" className={inputClass} value={card.move} onChange={(e) => setCard({ ...card, move: e.target.value })} placeholder="1" />
+              </div>
+              <div>
+                <label className={labelClass}>Здоровье (Бой)</label>
+                <input type="number" min="0" className={inputClass} value={card.health} onChange={(e) => setCard({ ...card, health: e.target.value })} />
+              </div>
+              <div>
+                <label className={labelClass}>Удар (Бой)</label>
+                <input className={inputClass} value={card.strike} onChange={(e) => setCard({ ...card, strike: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 pt-3 mt-3">
+              <label className={labelClass}>Иконки (свойства)</label>
+              <div className="flex flex-col gap-2">
+                {AVAILABLE_ICONS.map((icon) => (
+                  <div key={icon.type} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={icons[icon.type] !== undefined && icons[icon.type] !== ''}
+                      onChange={(e) => handleIconChange(icon.type, e.target.checked ? '1' : '')}
+                    />
+                    <span className="text-sm text-text-secondary">{icon.label}</span>
+                    {icons[icon.type] !== undefined && icons[icon.type] !== '' && (
+                      <input type="number" min="0" className="w-14 rounded-sm border border-white/10 bg-nebula px-1 py-0.5 text-xs" value={icons[icon.type] || ''} onChange={(e) => handleIconChange(icon.type, e.target.value)} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Текст карты (Правила)</label>
+              <textarea className={`${inputClass} min-h-20`} value={card.card_text} onChange={(e) => setCard({ ...card, card_text: e.target.value })} />
+            </div>
+            <div>
+              <label className={labelClass}>Художественный текст (Flavor)</label>
+              <textarea className={`${inputClass} min-h-10`} value={card.flavor_text} onChange={(e) => setCard({ ...card, flavor_text: e.target.value })} />
             </div>
             <p className="text-sm text-horizon-gold">
               Цена в магазине: {suggestTickets(Number(card.market_rub) || 0, card.foil)} билетиков
             </p>
           </div>
-        ) : (
+        )}
+
+        {formData.type !== 'карточка' && (
           <div>
             <label className={labelClass}>Цена (билетики)</label>
-            <input
-              type="number"
-              step="1"
-              min={0}
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-              required
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-text-muted">
-              Физический мерч — от 100 000 билетиков.
-            </p>
+            <input type="number" step="1" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} required className={inputClass} />
           </div>
         )}
 
         <div>
           <label className={labelClass}>Количество (поштучно)</label>
-          <input
-            type="number"
-            value={formData.stock}
-            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-            className={inputClass}
-          />
+          <input type="number" min="0" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })} className={inputClass} />
         </div>
         <InventoryImageUrlField value={imageUrl} onChange={setImageUrl} />
         <div className="mt-2 flex justify-end gap-3">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Отмена
-          </Button>
-          <Button type="submit" variant="primary" disabled={loading}>
-            {loading ? 'Создание...' : 'Создать'}
-          </Button>
+          <Button type="button" variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button type="submit" variant="primary" disabled={loading}>{loading ? 'Создание...' : 'Создать'}</Button>
         </div>
       </form>
     </Modal>
