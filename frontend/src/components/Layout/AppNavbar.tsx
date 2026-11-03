@@ -167,7 +167,7 @@ export function AppNavbar() {
                       onClick={() => go('/author/dashboard')}
                       className="block w-full px-4 py-2.5 text-left text-sm text-text-secondary transition-colors hover:bg-white/5 hover:text-indigo-soft"
                     >
-                      <IconLabel name="pen">Автор</IconLabel>
+                      <IconLabel name="pen">Кабинет автора</IconLabel>
                     </button>
                   </div>
                 )}

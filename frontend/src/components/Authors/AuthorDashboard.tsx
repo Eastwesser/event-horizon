@@ -21,8 +21,9 @@ const TYPES = ['', 'карточка', 'мерч', 'брелок', 'картин
 export function AuthorDashboard() {
   const navigate = useNavigate();
   const { isAuthor, isAdmin, loading: roleLoading } = useUserRole();
-  const selfId = localStorage.getItem('userId') || '';
 
+  // Состояния
+  const [myAuthorId, setMyAuthorId] = useState<string>('');
   const [tab, setTab] = useState<Tab>('cards');
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [itemsError, setItemsError] = useState('');
@@ -48,19 +49,31 @@ export function AuthorDashboard() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [profileFlash, setProfileFlash] = useState('');
 
+  // 1. Проверка роли
   useEffect(() => {
     if (!roleLoading && !isAuthor) {
       navigate('/register-author', { replace: true });
     }
   }, [roleLoading, isAuthor, navigate]);
 
+  // 2. Загрузка ID автора (нужно для фильтрации товаров)
+  useEffect(() => {
+    if (!isAuthor) return;
+    void authorsApi.getMe()
+      .then((a) => setMyAuthorId(a.user_id))
+      .catch((err) => console.error('Не удалось загрузить ID автора', err));
+  }, [isAuthor]);
+
+  // 3. Загрузка товаров
   const loadItems = useCallback(() => {
-    if (!selfId && !isAdmin) return;
+    // Если мы не админ и ID еще не загрузился — ждем
+    if (!isAdmin && !myAuthorId) return;
+    
     setItemsLoading(true);
     setItemsError('');
     void inventoryApi
       .searchAllItems({
-        author_id: selfId || undefined,
+        author_id: isAdmin ? undefined : myAuthorId, // Админ видит всё, автор — только своё
         include_deleted: 1,
         type: typeFilter || undefined,
         query: query.trim() || undefined,
@@ -68,13 +81,15 @@ export function AuthorDashboard() {
       .then((res) => setItems(res.items))
       .catch(() => setItemsError('Не удалось загрузить товары'))
       .finally(() => setItemsLoading(false));
-  }, [selfId, isAdmin, typeFilter, query]);
+  }, [myAuthorId, isAdmin, typeFilter, query]);
 
+  // Вызов загрузки товаров при переключении на вкладку
   useEffect(() => {
     if (!isAuthor || tab !== 'cards') return;
     loadItems();
   }, [isAuthor, tab, loadItems]);
 
+  // 4. Загрузка продаж
   const loadSales = useCallback(() => {
     setSalesLoading(true);
     setSalesError('');
@@ -94,6 +109,7 @@ export function AuthorDashboard() {
     loadSales();
   }, [isAuthor, tab, loadSales]);
 
+  // 5. Загрузка профиля
   const loadProfile = useCallback(() => {
     setProfileLoading(true);
     setProfileError('');

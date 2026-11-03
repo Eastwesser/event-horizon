@@ -25,32 +25,29 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
   softManage = false,
   onChanged,
 }) => {
-  const { isAuthor } = useUserRole();
+  const { isAuthor, isAdmin } = useUserRole();
   const { deleteItem } = useInventory();
   const [showEditModal, setShowEditModal] = useState(false);
   const [busy, setBusy] = useState(false);
+  
+  // ФИКС: Проверка прав
+  const currentUserId = localStorage.getItem('userId');
+  const isOwner = isAdmin || (currentUserId && item.author_id === currentUserId);
+  
   const deleted = Boolean(item.deleted || item.attributes?._deleted);
 
   const handleDelete = async () => {
-    if (softManage) {
-      if (!window.confirm(`Удалить «${item.name}» из витрины? (soft delete)`)) return;
-      setBusy(true);
-      try {
+    if (!window.confirm(`Удалить «${item.name}»?`)) return;
+    setBusy(true);
+    try {
+      if (softManage) {
         await inventoryApi.softDeleteItem(item.id);
-        onChanged?.();
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-    if (window.confirm(`Удалить товар "${item.name}"?`)) {
-      setBusy(true);
-      try {
+      } else {
         await deleteItem(item.id);
-        onChanged?.();
-      } finally {
-        setBusy(false);
       }
+      onChanged?.();
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -104,7 +101,9 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
             </div>
           </div>
         </Link>
-        {isAuthor && (
+        
+        {/* ФИКС: Показываем кнопки только владельцу или админу */}
+        {isAuthor && isOwner && (
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
             {!deleted && (
               <Button
@@ -145,7 +144,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({
         )}
       </Card>
 
-      {showEditModal && isAuthor && !deleted && (
+      {showEditModal && isAuthor && isOwner && !deleted && (
         <InventoryEditModal
           item={item}
           onClose={() => {

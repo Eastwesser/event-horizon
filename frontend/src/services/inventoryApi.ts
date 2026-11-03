@@ -15,6 +15,7 @@ export interface InventoryItem {
   updated_at: string;
   deleted?: boolean;
   deleted_at?: string;
+  version?: number;
 }
 
 export interface CreateItemRequest {
@@ -35,6 +36,7 @@ export interface UpdateItemRequest {
   stock?: number;
   attributes?: Record<string, any>;
   images?: string[];
+  version?: number;
 }
 
 export interface SearchItemsRequest {

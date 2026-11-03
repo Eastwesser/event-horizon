@@ -47,7 +47,8 @@ export const InventoryImageUrlField: React.FC<InventoryImageUrlFieldProps> = ({
       <label className={labelClass}>Изображение (URL или файл)</label>
       <div className="flex items-center gap-2">
         <input
-          type="url"
+          // type="url"
+          type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://… или загрузите файл"

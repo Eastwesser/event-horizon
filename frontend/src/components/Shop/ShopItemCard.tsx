@@ -18,6 +18,7 @@ interface ShopItemCardProps {
   detailTo?: string;
 }
 
+// ИСПРАВЛЕНО v.1.1.3.1: Добавлен ключ "карточка"
 const categoryLabels: Record<string, string> = {
   game_skin: 'Скин',
   merch: 'Мерч',
@@ -37,7 +38,10 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
   const isOwned = item.owned || false;
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
+  
+  // Теперь категория "карточка" превратится в "Карточка"
   const categoryLabel = categoryLabels[item.category] || categoryLabels[item.type] || 'Товар';
+  
   const icon = itemFallbackIcon(item);
   const flagBadges = item.attributes ? cardFlagBadges(item.attributes) : [];
   const to = detailTo || `/shop/item/${item.id}`;

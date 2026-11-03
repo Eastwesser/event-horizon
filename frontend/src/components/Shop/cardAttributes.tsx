@@ -5,6 +5,8 @@ import { Icon, type IconName } from '../ui/Icon';
 
 export type CardIcon = { type?: string; value?: number | null };
 
+
+
 /** Berserk icon chips — SVG glyphs (Wave 1 Emoji → SVG). */
 const ICON_META: Record<string, { label: string; icon: IconName }> = {
   armor: { label: 'Доспех', icon: 'armor' },
@@ -181,10 +183,11 @@ export function CardPurchaseSummary({ attrs }: { attrs?: Record<string, unknown>
   if (asBool(attrs.noir)) rows.push({ label: 'Нуар', value: 'Да' });
   if (asBool(attrs.flying)) rows.push({ label: 'Летающий', value: 'Да' });
 
-  const hp = asNumber(attrs.hp);
+  const hp = asNumber(attrs.health) ?? asNumber(attrs.hp);
+
   if (hp != null) rows.push({ label: 'HP', value: String(hp) });
 
-  const attackDice = asString(attrs.attack_dice);
+  const attackDice = asString(attrs.strike) || asString(attrs.attack_dice);
   const attackType = asString(attrs.attack_type);
   const attack = [attackType, attackDice].filter(Boolean).join(' ');
   if (attack) rows.push({ label: 'Удар', value: attack });
@@ -240,11 +243,12 @@ export function CardAttributesView({
       ? [asString(attrs.class)]
       : [];
 
-  const hp = asNumber(attrs.hp);
+  // ФИКС: Добавили fallback на наши новые поля (health, strike)
+  const hp = asNumber(attrs.health) ?? asNumber(attrs.hp);
   const move = asNumber(attrs.move);
-  const cost = asNumber(attrs.cost);
+  const cost = asNumber(attrs.cost) ?? asNumber(attrs.market_rub); // Если cost нет, берем market_rub
   const cardNo = asNumber(attrs.card_no);
-  const setNumber = asNumber(attrs.set_number);
+  const setNumber = asNumber(attrs.set_number) ?? asNumber(attrs.set); // Если set_number нет, берем set
   const year = asNumber(attrs.year);
 
   const element = asString(attrs.element);
@@ -252,8 +256,11 @@ export function CardAttributesView({
   const costTier = asString(attrs.cost_tier);
   const typeMain = asString(attrs.type_main);
   const typeSub = asString(attrs.type_sub);
-  const attackDice = asString(attrs.attack_dice);
+  
+  // ФИКС: Удар
+  const attackDice = asString(attrs.strike) || asString(attrs.attack_dice);
   const attackType = asString(attrs.attack_type);
+  
   const setName = asString(attrs.set_name);
   const artist =
     asString(attrs.artist_display) ||
@@ -279,6 +286,12 @@ export function CardAttributesView({
           <CardIconChips icons={icons} />
         </Row>
       </Section>
+
+      {attrs.card_text ? (
+        <div className="rounded-sm border border-white/10 bg-white/5 p-3 text-sm italic text-text-secondary whitespace-pre-wrap">
+          {asString(attrs.card_text)}
+        </div>
+      ) : null}
 
       <Section title="Карта">
         <Row label="Выпуск">
