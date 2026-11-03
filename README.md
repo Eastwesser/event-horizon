@@ -5,10 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.1-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. Frontend polish v1.1.2 + backend patterns catalog v1.1.3.
+**Event Horizon v1.1.3.1** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. Frontend polish v1.1.2 + backend patterns catalog v1.1.3.
 
 | | |
 |---|---|
@@ -476,9 +476,37 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.3** (15.10.2026). 
+Текущая: **v1.1.3.1** (03.11.2026).
 
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3.1
+
+Патч-релиз, сфокусированный на критических исправлениях UX в кабинете автора, стабильности редактирования карточек ККИ и безопасности бэкенда.
+
+**Фронтенд**: Кабинет автора и Навигация
+
+- AppNavbar — пункт меню «Автор» переименован в «Кабинет автора» для устранения путаницы с общей страницей «Авторы». Улучшена человеко-ориентированность UI.
+
+- Modal — исправлен конфликт ширины (max-w-lg перебивал max-w-3xl). Добавлен проп align для позиционирования. Заголовок теперь зафиксирован, скроллится только тело формы (решает проблему «уезжающей» шапки при длинных формах).
+
+- InventoryEditModal — починен рендеринг полей ККИ (isCard). Если бэкенд присылал кривой item.type, форма теперь распознает карточку по маркерам в attributes (market_rub, element).
+
+- InventoryEditModal — починено сохранение текста (card_text). Ранее текст терялся из-за неверного условия при формировании attributes.
+
+- InventoryEditModal — починен пересчет цены. Убрана путаница между price и market_rub, цена в билетиках теперь корректно пересчитывается и отправляется на бэк.
+
+- InventoryEditModal — удален дублирующийся вызов updateItem, из-за которого при сохранении улетало два запроса и возникал конфликт версий.
+
+- inventoryApi — добавлено поле version в UpdateItemRequest. Включает оптимистичную блокировку (защита от перезаписи устаревшими данными).
+
+**Бэкенд**: Inventory
+
+- grpc_handler.go — добавлен validateItem. Теперь бэкенд отклоняет создание и обновление товаров с отрицательными price, stock и отрицательными значениями в attributes (закрывает баг с «Совой колдуна» и market_rub: -1).
+
+#### Зафиксировано в техдолг (P0):
+
+IDOR в Inventory — на бэкенде отсутствует проверка author_id при вызове UpdateItem/DeleteItem. Фронт скрывает кнопки, но нужна проверка на уровне gRPC.
 
 ### Что нового в v1.1.3
 
