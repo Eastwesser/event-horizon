@@ -42,3 +42,7 @@ func (r *RedisBillingRepo) DeleteBalance(ctx context.Context, userID string, cur
     key := fmt.Sprintf("billing:%s:%s", userID, currency)
     return r.client.Del(ctx, key).Err()
 }
+
+func (r *RedisBillingRepo) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) (bool, error) {
+	return r.client.SetNX(ctx, key, value, expiration).Result()
+}

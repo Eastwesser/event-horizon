@@ -64,6 +64,7 @@ func New(ctx context.Context) (*App, error) {
 			"inventory.item.created",
 			"inventory.item.updated",
 			"inventory.item.deleted",
+			"balance.updated",
 		},
 		Storage:  nats.FileStorage,
 		MaxAge:   7 * 24 * time.Hour,
