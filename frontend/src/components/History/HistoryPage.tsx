@@ -8,6 +8,8 @@ import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { FilterChip } from '../ui/FilterChip';
 import { IconLabel } from '../ui/Icon';
+import { gameIcon } from '../../lib/gameIcons';
+import { Badge } from '../ui/Badge';
 
 const PAGE_SIZE = 50;
 
@@ -25,12 +27,13 @@ function formatTime(unix: number): string {
   return new Date(unix * 1000).toLocaleString('ru-RU');
 }
 
-function prettyPayload(raw: string): string {
-  if (!raw) return '';
+// Безопасный парсинг JSON
+function safeParse(raw: string): any {
+  if (!raw) return {};
   try {
-    return JSON.stringify(JSON.parse(raw), null, 2);
+    return JSON.parse(raw);
   } catch {
-    return raw;
+    return {};
   }
 }
 
@@ -133,19 +136,73 @@ export function HistoryPage() {
         <>
           <p className="mb-3 text-sm text-text-secondary">Всего: {total}</p>
           <ul className="flex flex-col gap-3">
-            {events.map((ev) => (
-              <Card key={ev.id} as="li">
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="font-hud text-sm font-semibold text-indigo-soft">{ev.event_type || 'event'}</span>
-                  <span className="shrink-0 text-xs text-text-muted">{formatTime(ev.created_at_unix)}</span>
-                </div>
-                {ev.payload_json && (
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-sm bg-void p-3 font-hud text-xs text-text-secondary">
-                    {prettyPayload(ev.payload_json)}
-                  </pre>
-                )}
-              </Card>
-            ))}
+            {events.map((ev) => {
+              // Парсим payload безопасно ОДИН раз для каждой карточки
+              const payload = safeParse(ev.payload_json); 
+              
+              return (
+                <Card key={ev.id} as="li">
+                  {/* Заголовок события: тип и время */}
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="font-hud text-sm font-semibold text-indigo-soft">
+                      {ev.event_type || 'event'}
+                    </span>
+                    <span className="shrink-0 text-xs text-text-muted">
+                      {formatTime(ev.created_at_unix)}
+                    </span>
+                  </div>
+
+                  {/* Тело события: красивая верстка */}
+                  <div className="mt-3 text-sm">
+                    {ev.event_type === 'score.updated' && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <IconLabel name={gameIcon(payload.game_id || 'flappy')}>
+                          Игра: {payload.game_id || 'Неизвестно'}
+                        </IconLabel>
+                        <span>•</span>
+                        <span>Результат: {payload.score || 0} очков</span>
+                        {payload.is_record && (
+                          <Badge tone="gold">Рекорд!</Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {ev.event_type === 'shop.purchased' && (
+                      <div className="flex items-center gap-2 text-text-secondary">
+                        <IconLabel name="cart">Покупка</IconLabel>
+                        <span>{payload.item_name || 'Товар'}</span>
+                        <span className="text-horizon-gold">-{payload.price || 0} билетиков</span>
+                      </div>
+                    )}
+
+                    {ev.event_type === 'user.registered' && (
+                      <div className="text-text-secondary">
+                        Добро пожаловать в Event Horizon!
+                      </div>
+                    )}
+
+                    {ev.event_type === 'payment.completed' && (
+                      <div className="text-text-secondary">
+                        Оплата подписки: {payload.plan || 'Неизвестно'}
+                      </div>
+                    )}
+
+                    {ev.event_type === 'author.upserted' && (
+                      <div className="text-text-secondary">
+                        Обновлен профиль автора: {payload.display_name || 'Без имени'}
+                      </div>
+                    )}
+
+                    {/* Fallback для тех событий, которые мы не распарсили выше */}
+                    {!['score.updated', 'shop.purchased', 'user.registered', 'payment.completed', 'author.upserted'].includes(ev.event_type) && (
+                      <div className="text-text-secondary">
+                        Событие: {ev.event_type}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </ul>
           {events.length < total && (
             <div className="mt-4 flex justify-center">
