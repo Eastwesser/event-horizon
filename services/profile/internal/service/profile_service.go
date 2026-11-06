@@ -14,6 +14,7 @@ type ProfileService interface {
 	EvaluateAndUnlock(ctx context.Context, userID string, bestScores map[string]int32, totalScore int32, gameID string, level int) error
 	UnlockCodes(ctx context.Context, userID string, codes []string) error
 	ListAchievements(ctx context.Context, userID string) ([]repository.Achievement, error)
+	UpdateNickname(ctx context.Context, userID, nickname string) error
 }
 
 type profileService struct {
@@ -68,4 +69,28 @@ func (s *profileService) UpdateProfile(ctx context.Context, profile *repository.
 	}
 
 	return nil
+}
+
+func (s *profileService) UpdateNickname(ctx context.Context, userID, nickname string) error {
+
+    profile, err := s.repo.GetProfile(ctx, userID)
+    if err != nil {
+        return err
+    }
+    if profile == nil {
+        // Если профиля еще нет, создаем его
+        profile = &repository.UserProfile{UserID: userID, Nickname: nickname}
+    } else {
+        profile.Nickname = nickname
+    }
+    
+    if err := s.repo.UpsertProfile(ctx, profile); err != nil {
+        return err
+    }
+
+    // 2. Инвалидируем кэш Redis
+    if s.cache != nil {
+        _ = s.cache.InvalidateProfile(ctx, userID)
+    }
+    return nil
 }
