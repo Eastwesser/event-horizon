@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserRole } from '../../hooks/useUserRole';
-import { authorsApi, type Author, type AuthorSaleRow } from '../../services/authorsApi';
+import { authorsApi, type Author } from '../../services/authorsApi';
 import { inventoryApi, type InventoryItem } from '../../services/inventoryApi';
 import { InventoryItemCard } from '../Inventory/InventoryItemCard';
 import { InventoryCreateModal } from '../Inventory/InventoryCreateModal';
@@ -10,9 +10,8 @@ import { PageShell } from '../ui/PageShell';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
-import { Badge } from '../ui/Badge';
-import { formatTicketPrice } from '../../lib/formatPrice';
 import { InventoryImageUrlField } from '../Inventory/InventoryImageUrlField';
+import { AuthorSales } from './AuthorSales';
 
 type Tab = 'cards' | 'sales' | 'profile';
 
@@ -33,11 +32,11 @@ export function AuthorDashboard() {
   const [showDeletedOnly, setShowDeletedOnly] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
-  const [sales, setSales] = useState<AuthorSaleRow[]>([]);
-  const [salesCount, setSalesCount] = useState(0);
-  const [ticketsEarned, setTicketsEarned] = useState(0);
-  const [salesLoading, setSalesLoading] = useState(false);
-  const [salesError, setSalesError] = useState('');
+  // const [sales, setSales] = useState<AuthorSaleRow[]>([]);
+  // const [salesCount, setSalesCount] = useState(0);
+  // const [ticketsEarned, setTicketsEarned] = useState(0);
+  // const [salesLoading, setSalesLoading] = useState(false);
+  // const [salesError, setSalesError] = useState('');
 
   const [profile, setProfile] = useState<Author | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -90,24 +89,24 @@ export function AuthorDashboard() {
   }, [isAuthor, tab, loadItems]);
 
   // 4. Загрузка продаж
-  const loadSales = useCallback(() => {
-    setSalesLoading(true);
-    setSalesError('');
-    void authorsApi
-      .getSales({ limit: 50 })
-      .then((res) => {
-        setSales(res.purchases);
-        setSalesCount(res.sales_count);
-        setTicketsEarned(res.tickets_earned);
-      })
-      .catch(() => setSalesError('Не удалось загрузить продажи'))
-      .finally(() => setSalesLoading(false));
-  }, []);
+  // const loadSales = useCallback(() => {
+  //   setSalesLoading(true);
+  //   setSalesError('');
+  //   void authorsApi
+  //     .getSales({ limit: 50 })
+  //     .then((res) => {
+  //       setSales(res.purchases);
+  //       setSalesCount(res.sales_count);
+  //       setTicketsEarned(res.tickets_earned);
+  //     })
+  //     .catch(() => setSalesError('Не удалось загрузить продажи'))
+  //     .finally(() => setSalesLoading(false));
+  // }, []);
 
-  useEffect(() => {
-    if (!isAuthor || tab !== 'sales') return;
-    loadSales();
-  }, [isAuthor, tab, loadSales]);
+  // useEffect(() => {
+  //   if (!isAuthor || tab !== 'sales') return;
+  //   loadSales();
+  // }, [isAuthor, tab, loadSales]);
 
   // 5. Загрузка профиля
   const loadProfile = useCallback(() => {
@@ -259,7 +258,8 @@ export function AuthorDashboard() {
         </div>
       )}
 
-      {tab === 'sales' && (
+      {tab === 'sales' && <AuthorSales />}  
+      {/* {tab === 'sales' && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-4">
             <Card className="min-w-[10rem] px-4 py-3">
@@ -274,6 +274,7 @@ export function AuthorDashboard() {
               Обновить
             </Button>
           </div>
+
           {salesError && (
             <Card className="border-error/30 bg-error/10 text-sm text-error">{salesError}</Card>
           )}
@@ -324,7 +325,7 @@ export function AuthorDashboard() {
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {tab === 'profile' && (
         <div className="mx-auto max-w-xl">
