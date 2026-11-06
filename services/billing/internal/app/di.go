@@ -176,6 +176,9 @@ func (a *App) initNATS(_ context.Context) error {
 	url := a.cfg.NATSConfig().URL()
 	var nc *nats.Conn
 	var lastErr error
+
+	// 1. Подключаемся к NATS с retry (10 попыток, пауза 2 секунды).
+	// NATS может стартовать чуть позже Billing в докере, поэтому ждем.
 	for i := 0; i < 10; i++ {
 		nc, lastErr = nats.Connect(url)
 		if lastErr == nil {
@@ -188,14 +191,19 @@ func (a *App) initNATS(_ context.Context) error {
 		return fmt.Errorf("nats connect after 10 attempts: %w", lastErr)
 	}
 
+	// 2. Инициализируем JetStream контекст.
+	// Он нужен для работы с Outbox (publish) и подписки на score.updated.
 	js, err := nc.JetStream()
 	if err != nil {
 		nc.Close()
 		return fmt.Errorf("jetstream: %w", err)
 	}
 
+	// 3. Сохраняем в DI-контейнер, чтобы OutboxWorker и initScoreSubscribe могли их использовать.
 	a.di.nc = nc
 	a.di.js = js
+
+	// 4. Добавляем graceful shutdown — при остановке контейнера соединение с NATS закроется корректно.
 	a.closer.AddNamed("nats", func(context.Context) error {
 		return nc.Drain()
 	})
@@ -286,29 +294,175 @@ func (a *App) initMetricsHTTP(_ context.Context) error {
 	return nil
 }
 
+// func (a *App) initScoreSubscribe(_ context.Context) error {
+// 	billingService := a.di.svc
+// 	log := a.log
+// 	_, err := a.di.js.Subscribe("score.updated", func(msg *nats.Msg) {
+// 		var event ScoreEvent
+// 		if err := json.Unmarshal(msg.Data, &event); err != nil {
+// 			log.Error("failed to unmarshal score event", "err", err)
+// 			return
+// 		}
+// 		log.Info("received score event",
+// 			"user_id", event.UserID,
+// 			"lamps", event.LampsEarned,
+// 			"tickets", event.TicketsEarned,
+// 		)
+
+// 		lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, time.Now().UnixNano())
+// 		ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, time.Now().UnixNano())
+
+// 		if event.LampsEarned > 0 {
+// 			_, err := billingService.AddCurrency(context.Background(), event.UserID,
+// 				repository.Lamps, event.LampsEarned, "game_reward", lampsRefID)
+// 			if err != nil {
+// 				log.Error("failed to add lamps", "err", err)
+// 			} else {
+// 				log.Info("added lamps", "amount", event.LampsEarned, "user_id", event.UserID)
+// 			}
+// 		}
+
+// 		if event.TicketsEarned > 0 {
+// 			_, err := billingService.AddCurrency(context.Background(), event.UserID,
+// 				repository.Tickets, event.TicketsEarned, "game_reward", ticketsRefID)
+// 			if err != nil {
+// 				log.Error("failed to add tickets", "err", err)
+// 			} else {
+// 				log.Info("added tickets", "amount", event.TicketsEarned, "user_id", event.UserID)
+// 			}
+// 		}
+
+// 		_ = msg.Ack()
+// 	}, nats.Durable("billing-durable"), nats.ManualAck())
+
+// 	if err != nil {
+// 		a.log.Warn("failed to subscribe to score.updated", "err", err)
+// 	} else {
+// 		a.log.Info("subscribed to nats", "subject", "score.updated")
+// 	}
+// 	return nil
+// }
+
+// func (a *App) initScoreSubscribe(_ context.Context) error {
+// 	billingService := a.di.svc
+// 	log := a.log
+// 	_, err := a.di.js.Subscribe("score.updated", func(msg *nats.Msg) {
+// 		var event ScoreEvent
+// 		if err := json.Unmarshal(msg.Data, &event); err != nil {
+// 			log.Error("failed to unmarshal score event", "err", err)
+// 			_ = msg.Ack() // Битый JSON не исправится ретраем
+// 			return
+// 		}
+// 		log.Info("received score event",
+// 			"user_id", event.UserID,
+// 			"lamps", event.LampsEarned,
+// 			"tickets", event.TicketsEarned,
+// 		)
+
+// 		// Используем timestamp события (или текущее время), чтобы ключи были уникальными
+// 		ts := event.Timestamp
+// 		if ts == 0 {
+// 			ts = time.Now().UnixNano()
+// 		}
+
+// 		lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, ts)
+// 		ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, ts)
+
+// 		var addErr error
+
+// 		if event.LampsEarned > 0 {
+// 			_, err := billingService.AddCurrency(context.Background(), event.UserID,
+// 				repository.Lamps, event.LampsEarned, "game_reward", lampsRefID)
+// 			if err != nil {
+// 				log.Error("failed to add lamps", "err", err)
+// 				addErr = err
+// 			} else {
+// 				log.Info("added lamps", "amount", event.LampsEarned, "user_id", event.UserID)
+// 			}
+// 		}
+
+// 		if event.TicketsEarned > 0 {
+// 			_, err := billingService.AddCurrency(context.Background(), event.UserID,
+// 				repository.Tickets, event.TicketsEarned, "game_reward", ticketsRefID)
+// 			if err != nil {
+// 				log.Error("failed to add tickets", "err", err)
+// 				addErr = err
+// 			} else {
+// 				log.Info("added tickets", "amount", event.TicketsEarned, "user_id", event.UserID)
+// 			}
+// 		}
+
+// 		// Если была ошибка начисления — Nak, чтобы попробовать еще раз.
+// 		// Если всё ок — Ack.
+// 		if addErr != nil {
+// 			_ = msg.Nak()
+// 		} else {
+// 			_ = msg.Ack()
+// 		}
+// 	}, nats.Durable("billing-durable"), nats.ManualAck())
+
+// 	if err != nil {
+// 		a.log.Warn("failed to subscribe to score.updated", "err", err)
+// 	} else {
+// 		a.log.Info("subscribed to nats", "subject", "score.updated")
+// 	}
+// 	return nil
+// }
+
+// func getenv(key, def string) string {
+// 	if v := os.Getenv(key); v != "" {
+// 		return v
+// 	}
+// 	return def
+// }
 func (a *App) initScoreSubscribe(_ context.Context) error {
 	billingService := a.di.svc
 	log := a.log
+	redisRepo := a.di.redisRepo // <--- Нужно добавить Redis в diContainer (если его там нет)
+
 	_, err := a.di.js.Subscribe("score.updated", func(msg *nats.Msg) {
 		var event ScoreEvent
 		if err := json.Unmarshal(msg.Data, &event); err != nil {
 			log.Error("failed to unmarshal score event", "err", err)
+			_ = msg.Ack()
 			return
 		}
+
+		// АНТИ-СПАМ: проверяем, не было ли такого же счета за последние 30 секунд
+		cacheKey := fmt.Sprintf("score_lock:%s:%s:%d", event.UserID, event.GameID, event.Score)
+		if redisRepo != nil {
+			// SetNX возвращает true, если ключа не было (т.е. это первое сохранение)
+			// Если ключ уже есть — значит, игрок спамит.
+			isFirst, err := redisRepo.SetNX(context.Background(), cacheKey, "1", 30*time.Second)
+			if err == nil && !isFirst {
+				log.Warn("duplicate score ignored (anti-spam)", "user", event.UserID, "game", event.GameID, "score", event.Score)
+				_ = msg.Ack() // Подтверждаем, чтобы не зацикливать
+				return
+			}
+		}
+
 		log.Info("received score event",
 			"user_id", event.UserID,
 			"lamps", event.LampsEarned,
 			"tickets", event.TicketsEarned,
 		)
 
-		lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, time.Now().UnixNano())
-		ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, time.Now().UnixNano())
+		ts := event.Timestamp
+		if ts == 0 {
+			ts = time.Now().UnixNano()
+		}
+
+		lampsRefID := fmt.Sprintf("%s-lamps-%d", event.UserID, ts)
+		ticketsRefID := fmt.Sprintf("%s-tickets-%d", event.UserID, ts)
+
+		var addErr error
 
 		if event.LampsEarned > 0 {
 			_, err := billingService.AddCurrency(context.Background(), event.UserID,
 				repository.Lamps, event.LampsEarned, "game_reward", lampsRefID)
 			if err != nil {
 				log.Error("failed to add lamps", "err", err)
+				addErr = err
 			} else {
 				log.Info("added lamps", "amount", event.LampsEarned, "user_id", event.UserID)
 			}
@@ -319,12 +473,17 @@ func (a *App) initScoreSubscribe(_ context.Context) error {
 				repository.Tickets, event.TicketsEarned, "game_reward", ticketsRefID)
 			if err != nil {
 				log.Error("failed to add tickets", "err", err)
+				addErr = err
 			} else {
 				log.Info("added tickets", "amount", event.TicketsEarned, "user_id", event.UserID)
 			}
 		}
 
-		_ = msg.Ack()
+		if addErr != nil {
+			_ = msg.Nak()
+		} else {
+			_ = msg.Ack()
+		}
 	}, nats.Durable("billing-durable"), nats.ManualAck())
 
 	if err != nil {
