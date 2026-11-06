@@ -419,6 +419,39 @@ func (a *App) initSubscriptions(_ context.Context) error {
 	} else {
 		a.log.Info("subscribed to nats", "subject", kafka.TopicBoostStarted)
 	}
+	// Подписка на смену ника
+	_, err = js.Subscribe("event.user.nickname.updated", func(msg *nats.Msg) {
+		var payload struct {
+			UserID   string `json:"user_id"`
+			Nickname string `json:"nickname"`
+		}
+		if err := json.Unmarshal(msg.Data, &payload); err != nil {
+			a.log.Error("failed to unmarshal nickname event", "err", err)
+			_ = msg.Ack()
+			return
+		}
+		if payload.UserID == "" || payload.Nickname == "" {
+			_ = msg.Ack()
+			return
+		}
+
+		ctx := context.Background()
+		// Вызываем тот самый метод UpdateNickname, который ты написал
+		if err := svc.UpdateNickname(ctx, payload.UserID, payload.Nickname); err != nil {
+			a.log.Error("failed to update nickname from NATS", "user", payload.UserID, "err", err)
+			// Не делаем Ack, чтобы NATS попробовал еще раз при ошибке БД
+			return 
+		}
+		
+		_ = msg.Ack()
+		a.log.Info("nickname updated via NATS", "user", payload.UserID, "nickname", payload.Nickname)
+	}, nats.Durable("profile-nickname-updated"), nats.ManualAck())
+	
+	if err != nil {
+		a.log.Warn("failed to subscribe to event.user.nickname.updated", "err", err)
+	} else {
+		a.log.Info("subscribed to nats", "subject", "event.user.nickname.updated")
+	}
 
 	return nil
 }
