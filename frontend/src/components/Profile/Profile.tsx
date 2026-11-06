@@ -67,16 +67,29 @@ export function Profile() {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
+    // 1. Запрашиваем правильный ник из Auth (Whoami)
+    api.get('/auth/whoami', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.data?.nickname) {
+          setStats((prev) => ({ ...prev, nickname: res.data.nickname }));
+          localStorage.setItem(nicknameKey, res.data.nickname);
+        }
+      })
+      .catch(() => { /* ignore */ });
+
+    // 2. Тянем ачивки и рекорды из Profile (как раньше)  
     // Silent seed of seen-set (option a) + load badges / scores from API
     syncAchievements({ toast: false })
       .then(({ profile, achievements }) => {
         const best = profile.best_scores || {};
         setStats((prev) => ({
           ...prev,
-          nickname:
-            profile.nickname ||
-            localStorage.getItem(nicknameKey) ||
-            email.split('@')[0],
+          // ВАЖНО: НЕ перезаписываем ник из profile.nickname, 
+          // так как там может быть старье. Оставляем то, что уже есть (или из Whoami).
+          // nickname:
+          //   profile.nickname ||
+          //   localStorage.getItem(nicknameKey) ||
+          //   email.split('@')[0],
           totalScore: profile.total_score ?? 0,
           bestScores: {
             hexagon: best.hexagon || 0,
@@ -90,14 +103,12 @@ export function Profile() {
           },
           achievements,
         }));
-        if (profile.nickname) {
-          localStorage.setItem(nicknameKey, profile.nickname);
-        }
       })
       .catch(() => {
         /* keep local nickname fallback */
       });
 
+    // 3. Баланс  
     api
       .get('/billing/balance/all', { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
@@ -118,7 +129,33 @@ export function Profile() {
     setShowNickModal(true);
   };
 
-  const handleSetNickname = async () => {
+  // const handleSetNickname = async () => {
+  //   const newNick = nickDraft.trim();
+  //   if (!newNick) {
+  //     setNickError('Введите никнейм');
+  //     return;
+  //   }
+  //   setNickSaving(true);
+  //   setNickError(null);
+  //   try {
+  //     const token = localStorage.getItem('accessToken');
+  //     await api.post(
+  //       '/auth/update-nickname',
+  //       { nickname: newNick },
+  //       { headers: { Authorization: `Bearer ${token}` } },
+  //     );
+
+  //     setNickname(newNick, userId);
+  //     setStats((prev) => ({ ...prev, nickname: newNick }));
+  //     setShowNickModal(false);
+  //   } catch (err) {
+  //     setNickError('Не удалось обновить никнейм');
+  //     console.error(err);
+  //   } finally {
+  //     setNickSaving(false);
+  //   }
+  // };
+    const handleSetNickname = async () => {
     const newNick = nickDraft.trim();
     if (!newNick) {
       setNickError('Введите никнейм');
@@ -126,17 +163,27 @@ export function Profile() {
     }
     setNickSaving(true);
     setNickError(null);
+    
     try {
       const token = localStorage.getItem('accessToken');
+      
+      // 1. Сохраняем ник на бэкенде
       await api.post(
         '/auth/update-nickname',
         { nickname: newNick },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // 2. Обновляем локально, чтобы UI сразу показал новый ник без перезагрузки
       setNickname(newNick, userId);
       setStats((prev) => ({ ...prev, nickname: newNick }));
+      
+      // 3. Закрываем модалку
       setShowNickModal(false);
+      
+      // ВАЖНО: Никакие syncAchievements тут не нужны. 
+      // Мы не делаем window.location.reload(). Пользователь просто видит новый ник.
+      
     } catch (err) {
       setNickError('Не удалось обновить никнейм');
       console.error(err);
