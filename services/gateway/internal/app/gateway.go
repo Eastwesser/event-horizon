@@ -2679,6 +2679,26 @@ func runGateway() {
 			return
 		}
 
+		// Достаем ник из Auth (чтобы не зависеть от фронта)
+		var nickname string
+		userInfo, authErr := authClient.GetClient().GetUser(c.Request.Context(), &authPb.GetUserRequest{
+			UserId: middleware.UserID(c),
+		})
+		if authErr == nil && userInfo != nil {
+			nickname = userInfo.GetNickname()
+			// Если ника нет — fallback на email
+			if nickname == "" {
+				email := userInfo.GetEmail()
+				if idx := strings.Index(email, "@"); idx > 0 {
+					nickname = email[:idx]
+				}
+			}
+		} else {
+			log.Printf("⚠️ Failed to get user info for nickname: %v", authErr)
+			// Fallback на то, что прислал фронт (если есть)
+			nickname = req.Nickname
+		}
+
 		moves := make([]*gamePb.Move, len(req.Moves))
 		for i, m := range req.Moves {
 			moves[i] = &gamePb.Move{
@@ -2697,7 +2717,8 @@ func runGateway() {
 				Level:     req.Level,
 				Score:     req.Score,
 				UserEmail: req.UserEmail,
-				Nickname:  req.Nickname,
+				// Nickname:  req.Nickname,
+				Nickname:  nickname, // новое (из Auth, с fallback)
 				Seed:      req.Seed,
 				Moves:     moves,
 				BoostId:   req.BoostID,
