@@ -69,18 +69,45 @@ func (h *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileReque
 	}, nil
 }
 
+// func (h *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
+// 	profile := &repository.UserProfile{
+// 		UserID:     req.UserId,
+// 		Nickname:   req.Nickname,
+// 		BestScores: req.BestScores,
+// 	}
+
+// 	if req.TotalScore != nil {
+// 		profile.TotalScore = *req.TotalScore
+// 	}
+
+// 	if err := h.profileService.UpdateProfile(ctx, profile); err != nil {
+// 		return nil, status.Error(codes.Internal, err.Error())
+// 	}
+
+// 	return &pb.UpdateProfileResponse{Success: true, Message: "profile updated"}, nil
+// }
 func (h *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
-	profile := &repository.UserProfile{
-		UserID:     req.UserId,
-		Nickname:   req.Nickname,
-		BestScores: req.BestScores,
+	// Сначала достаем текущий профиль
+	existing, err := h.profileService.GetProfile(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if existing == nil {
+		existing = &repository.UserProfile{UserID: req.UserId}
 	}
 
+	// Обновляем только те поля, которые пришли (в нашем случае nickname)
+	if req.Nickname != "" {
+		existing.Nickname = req.Nickname
+	}
+	if req.BestScores != nil {
+		existing.BestScores = req.BestScores
+	}
 	if req.TotalScore != nil {
-		profile.TotalScore = *req.TotalScore
+		existing.TotalScore = *req.TotalScore
 	}
 
-	if err := h.profileService.UpdateProfile(ctx, profile); err != nil {
+	if err := h.profileService.UpdateProfile(ctx, existing); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

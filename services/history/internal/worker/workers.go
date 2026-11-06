@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -55,7 +56,8 @@ func (w *IngestWorker) Start(ctx context.Context) {
 				return
 			}
 			_ = msg.Ack()
-		}, nats.Durable("history-"+s), nats.ManualAck())
+		// }, nats.Durable("history-"+s), nats.ManualAck())
+		}, nats.Durable("history-"+strings.ReplaceAll(s, ".", "_")), nats.ManualAck())
 		if err != nil {
 			log.Printf("history subscribe %s: %v", s, err)
 		}
