@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.1
-// source: authors.proto
+// source: proto/authors.proto
 
 package authors
 
@@ -28,6 +28,7 @@ const (
 	AuthorsService_ApproveApplication_FullMethodName = "/authors.AuthorsService/ApproveApplication"
 	AuthorsService_RejectApplication_FullMethodName  = "/authors.AuthorsService/RejectApplication"
 	AuthorsService_RevertApplication_FullMethodName  = "/authors.AuthorsService/RevertApplication"
+	AuthorsService_GetMyAuthor_FullMethodName        = "/authors.AuthorsService/GetMyAuthor"
 )
 
 // AuthorsServiceClient is the client API for AuthorsService service.
@@ -46,6 +47,10 @@ type AuthorsServiceClient interface {
 	RejectApplication(ctx context.Context, in *RejectApplicationRequest, opts ...grpc.CallOption) (*RejectApplicationResponse, error)
 	// Compensating call if Auth.UpdateRole fails after approve.
 	RevertApplication(ctx context.Context, in *RevertApplicationRequest, opts ...grpc.CallOption) (*RevertApplicationResponse, error)
+	// GetMyAuthor returns the caller's own profile, including soft-deleted
+	// (active=false) ones, so a reverted author can still see their profile
+	// and the reason they were reverted (MOD-3). Used by GET /authors/me.
+	GetMyAuthor(ctx context.Context, in *GetMyAuthorRequest, opts ...grpc.CallOption) (*GetMyAuthorResponse, error)
 }
 
 type authorsServiceClient struct {
@@ -137,6 +142,15 @@ func (c *authorsServiceClient) RevertApplication(ctx context.Context, in *Revert
 	return out, nil
 }
 
+func (c *authorsServiceClient) GetMyAuthor(ctx context.Context, in *GetMyAuthorRequest, opts ...grpc.CallOption) (*GetMyAuthorResponse, error) {
+	out := new(GetMyAuthorResponse)
+	err := c.cc.Invoke(ctx, AuthorsService_GetMyAuthor_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthorsServiceServer is the server API for AuthorsService service.
 // All implementations must embed UnimplementedAuthorsServiceServer
 // for forward compatibility
@@ -153,6 +167,10 @@ type AuthorsServiceServer interface {
 	RejectApplication(context.Context, *RejectApplicationRequest) (*RejectApplicationResponse, error)
 	// Compensating call if Auth.UpdateRole fails after approve.
 	RevertApplication(context.Context, *RevertApplicationRequest) (*RevertApplicationResponse, error)
+	// GetMyAuthor returns the caller's own profile, including soft-deleted
+	// (active=false) ones, so a reverted author can still see their profile
+	// and the reason they were reverted (MOD-3). Used by GET /authors/me.
+	GetMyAuthor(context.Context, *GetMyAuthorRequest) (*GetMyAuthorResponse, error)
 	mustEmbedUnimplementedAuthorsServiceServer()
 }
 
@@ -186,6 +204,9 @@ func (UnimplementedAuthorsServiceServer) RejectApplication(context.Context, *Rej
 }
 func (UnimplementedAuthorsServiceServer) RevertApplication(context.Context, *RevertApplicationRequest) (*RevertApplicationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevertApplication not implemented")
+}
+func (UnimplementedAuthorsServiceServer) GetMyAuthor(context.Context, *GetMyAuthorRequest) (*GetMyAuthorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyAuthor not implemented")
 }
 func (UnimplementedAuthorsServiceServer) mustEmbedUnimplementedAuthorsServiceServer() {}
 
@@ -362,6 +383,24 @@ func _AuthorsService_RevertApplication_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthorsService_GetMyAuthor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyAuthorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthorsServiceServer).GetMyAuthor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthorsService_GetMyAuthor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthorsServiceServer).GetMyAuthor(ctx, req.(*GetMyAuthorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthorsService_ServiceDesc is the grpc.ServiceDesc for AuthorsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -405,7 +444,11 @@ var AuthorsService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RevertApplication",
 			Handler:    _AuthorsService_RevertApplication_Handler,
 		},
+		{
+			MethodName: "GetMyAuthor",
+			Handler:    _AuthorsService_GetMyAuthor_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "authors.proto",
+	Metadata: "proto/authors.proto",
 }

@@ -21,6 +21,10 @@ service AuthorsService {
   rpc RejectApplication(RejectApplicationRequest) returns (RejectApplicationResponse);
   // Compensating call if Auth.UpdateRole fails after approve.
   rpc RevertApplication(RevertApplicationRequest) returns (RevertApplicationResponse);
+  // GetMyAuthor returns the caller's own profile, including soft-deleted
+  // (active=false) ones, so a reverted author can still see their profile
+  // and the reason they were reverted (MOD-3). Used by GET /authors/me.
+  rpc GetMyAuthor(GetMyAuthorRequest) returns (GetMyAuthorResponse);
 }
 
 message Author {
@@ -50,6 +54,14 @@ message UpsertProfileResponse {
 
 message GetAuthorRequest {
   string user_id = 1;
+}
+
+message GetMyAuthorRequest {
+  string user_id = 1;
+}
+
+message GetMyAuthorResponse {
+  Author author = 1;
 }
 
 message GetAuthorResponse {

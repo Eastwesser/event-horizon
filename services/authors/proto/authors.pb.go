@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.1
-// source: authors.proto
+// source: proto/authors.proto
 
 package authors
 
@@ -39,7 +39,7 @@ type Author struct {
 
 func (x *Author) Reset() {
 	*x = Author{}
-	mi := &file_authors_proto_msgTypes[0]
+	mi := &file_proto_authors_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *Author) String() string {
 func (*Author) ProtoMessage() {}
 
 func (x *Author) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[0]
+	mi := &file_proto_authors_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *Author) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Author.ProtoReflect.Descriptor instead.
 func (*Author) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{0}
+	return file_proto_authors_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Author) GetId() string {
@@ -150,7 +150,7 @@ type UpsertProfileRequest struct {
 
 func (x *UpsertProfileRequest) Reset() {
 	*x = UpsertProfileRequest{}
-	mi := &file_authors_proto_msgTypes[1]
+	mi := &file_proto_authors_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +162,7 @@ func (x *UpsertProfileRequest) String() string {
 func (*UpsertProfileRequest) ProtoMessage() {}
 
 func (x *UpsertProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[1]
+	mi := &file_proto_authors_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +175,7 @@ func (x *UpsertProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpsertProfileRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{1}
+	return file_proto_authors_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *UpsertProfileRequest) GetUserId() string {
@@ -222,7 +222,7 @@ type UpsertProfileResponse struct {
 
 func (x *UpsertProfileResponse) Reset() {
 	*x = UpsertProfileResponse{}
-	mi := &file_authors_proto_msgTypes[2]
+	mi := &file_proto_authors_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +234,7 @@ func (x *UpsertProfileResponse) String() string {
 func (*UpsertProfileResponse) ProtoMessage() {}
 
 func (x *UpsertProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[2]
+	mi := &file_proto_authors_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +247,7 @@ func (x *UpsertProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertProfileResponse.ProtoReflect.Descriptor instead.
 func (*UpsertProfileResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{2}
+	return file_proto_authors_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpsertProfileResponse) GetAuthor() *Author {
@@ -266,7 +266,7 @@ type GetAuthorRequest struct {
 
 func (x *GetAuthorRequest) Reset() {
 	*x = GetAuthorRequest{}
-	mi := &file_authors_proto_msgTypes[3]
+	mi := &file_proto_authors_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -278,7 +278,7 @@ func (x *GetAuthorRequest) String() string {
 func (*GetAuthorRequest) ProtoMessage() {}
 
 func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[3]
+	mi := &file_proto_authors_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -291,7 +291,7 @@ func (x *GetAuthorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorRequest.ProtoReflect.Descriptor instead.
 func (*GetAuthorRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{3}
+	return file_proto_authors_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetAuthorRequest) GetUserId() string {
@@ -299,6 +299,94 @@ func (x *GetAuthorRequest) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+type GetMyAuthorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyAuthorRequest) Reset() {
+	*x = GetMyAuthorRequest{}
+	mi := &file_proto_authors_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyAuthorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyAuthorRequest) ProtoMessage() {}
+
+func (x *GetMyAuthorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_authors_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyAuthorRequest.ProtoReflect.Descriptor instead.
+func (*GetMyAuthorRequest) Descriptor() ([]byte, []int) {
+	return file_proto_authors_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetMyAuthorRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetMyAuthorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Author        *Author                `protobuf:"bytes,1,opt,name=author,proto3" json:"author,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyAuthorResponse) Reset() {
+	*x = GetMyAuthorResponse{}
+	mi := &file_proto_authors_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyAuthorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyAuthorResponse) ProtoMessage() {}
+
+func (x *GetMyAuthorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_authors_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyAuthorResponse.ProtoReflect.Descriptor instead.
+func (*GetMyAuthorResponse) Descriptor() ([]byte, []int) {
+	return file_proto_authors_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetMyAuthorResponse) GetAuthor() *Author {
+	if x != nil {
+		return x.Author
+	}
+	return nil
 }
 
 type GetAuthorResponse struct {
@@ -310,7 +398,7 @@ type GetAuthorResponse struct {
 
 func (x *GetAuthorResponse) Reset() {
 	*x = GetAuthorResponse{}
-	mi := &file_authors_proto_msgTypes[4]
+	mi := &file_proto_authors_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +410,7 @@ func (x *GetAuthorResponse) String() string {
 func (*GetAuthorResponse) ProtoMessage() {}
 
 func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[4]
+	mi := &file_proto_authors_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +423,7 @@ func (x *GetAuthorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthorResponse.ProtoReflect.Descriptor instead.
 func (*GetAuthorResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{4}
+	return file_proto_authors_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetAuthorResponse) GetAuthor() *Author {
@@ -355,7 +443,7 @@ type ListAuthorsRequest struct {
 
 func (x *ListAuthorsRequest) Reset() {
 	*x = ListAuthorsRequest{}
-	mi := &file_authors_proto_msgTypes[5]
+	mi := &file_proto_authors_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +455,7 @@ func (x *ListAuthorsRequest) String() string {
 func (*ListAuthorsRequest) ProtoMessage() {}
 
 func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[5]
+	mi := &file_proto_authors_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +468,7 @@ func (x *ListAuthorsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsRequest.ProtoReflect.Descriptor instead.
 func (*ListAuthorsRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{5}
+	return file_proto_authors_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListAuthorsRequest) GetLimit() int32 {
@@ -407,7 +495,7 @@ type ListAuthorsResponse struct {
 
 func (x *ListAuthorsResponse) Reset() {
 	*x = ListAuthorsResponse{}
-	mi := &file_authors_proto_msgTypes[6]
+	mi := &file_proto_authors_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -419,7 +507,7 @@ func (x *ListAuthorsResponse) String() string {
 func (*ListAuthorsResponse) ProtoMessage() {}
 
 func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[6]
+	mi := &file_proto_authors_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -432,7 +520,7 @@ func (x *ListAuthorsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAuthorsResponse.ProtoReflect.Descriptor instead.
 func (*ListAuthorsResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{6}
+	return file_proto_authors_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListAuthorsResponse) GetAuthors() []*Author {
@@ -468,7 +556,7 @@ type AuthorApplication struct {
 
 func (x *AuthorApplication) Reset() {
 	*x = AuthorApplication{}
-	mi := &file_authors_proto_msgTypes[7]
+	mi := &file_proto_authors_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -480,7 +568,7 @@ func (x *AuthorApplication) String() string {
 func (*AuthorApplication) ProtoMessage() {}
 
 func (x *AuthorApplication) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[7]
+	mi := &file_proto_authors_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -493,7 +581,7 @@ func (x *AuthorApplication) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorApplication.ProtoReflect.Descriptor instead.
 func (*AuthorApplication) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{7}
+	return file_proto_authors_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AuthorApplication) GetId() string {
@@ -587,7 +675,7 @@ type SubmitApplicationRequest struct {
 
 func (x *SubmitApplicationRequest) Reset() {
 	*x = SubmitApplicationRequest{}
-	mi := &file_authors_proto_msgTypes[8]
+	mi := &file_proto_authors_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +687,7 @@ func (x *SubmitApplicationRequest) String() string {
 func (*SubmitApplicationRequest) ProtoMessage() {}
 
 func (x *SubmitApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[8]
+	mi := &file_proto_authors_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +700,7 @@ func (x *SubmitApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitApplicationRequest.ProtoReflect.Descriptor instead.
 func (*SubmitApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{8}
+	return file_proto_authors_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SubmitApplicationRequest) GetUserId() string {
@@ -666,7 +754,7 @@ type SubmitApplicationResponse struct {
 
 func (x *SubmitApplicationResponse) Reset() {
 	*x = SubmitApplicationResponse{}
-	mi := &file_authors_proto_msgTypes[9]
+	mi := &file_proto_authors_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -678,7 +766,7 @@ func (x *SubmitApplicationResponse) String() string {
 func (*SubmitApplicationResponse) ProtoMessage() {}
 
 func (x *SubmitApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[9]
+	mi := &file_proto_authors_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -691,7 +779,7 @@ func (x *SubmitApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitApplicationResponse.ProtoReflect.Descriptor instead.
 func (*SubmitApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{9}
+	return file_proto_authors_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SubmitApplicationResponse) GetApplication() *AuthorApplication {
@@ -710,7 +798,7 @@ type GetMyApplicationRequest struct {
 
 func (x *GetMyApplicationRequest) Reset() {
 	*x = GetMyApplicationRequest{}
-	mi := &file_authors_proto_msgTypes[10]
+	mi := &file_proto_authors_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -722,7 +810,7 @@ func (x *GetMyApplicationRequest) String() string {
 func (*GetMyApplicationRequest) ProtoMessage() {}
 
 func (x *GetMyApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[10]
+	mi := &file_proto_authors_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -735,7 +823,7 @@ func (x *GetMyApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMyApplicationRequest.ProtoReflect.Descriptor instead.
 func (*GetMyApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{10}
+	return file_proto_authors_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetMyApplicationRequest) GetUserId() string {
@@ -754,7 +842,7 @@ type GetMyApplicationResponse struct {
 
 func (x *GetMyApplicationResponse) Reset() {
 	*x = GetMyApplicationResponse{}
-	mi := &file_authors_proto_msgTypes[11]
+	mi := &file_proto_authors_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +854,7 @@ func (x *GetMyApplicationResponse) String() string {
 func (*GetMyApplicationResponse) ProtoMessage() {}
 
 func (x *GetMyApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[11]
+	mi := &file_proto_authors_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +867,7 @@ func (x *GetMyApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMyApplicationResponse.ProtoReflect.Descriptor instead.
 func (*GetMyApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{11}
+	return file_proto_authors_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetMyApplicationResponse) GetApplication() *AuthorApplication {
@@ -800,7 +888,7 @@ type ListApplicationsRequest struct {
 
 func (x *ListApplicationsRequest) Reset() {
 	*x = ListApplicationsRequest{}
-	mi := &file_authors_proto_msgTypes[12]
+	mi := &file_proto_authors_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -812,7 +900,7 @@ func (x *ListApplicationsRequest) String() string {
 func (*ListApplicationsRequest) ProtoMessage() {}
 
 func (x *ListApplicationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[12]
+	mi := &file_proto_authors_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +913,7 @@ func (x *ListApplicationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApplicationsRequest.ProtoReflect.Descriptor instead.
 func (*ListApplicationsRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{12}
+	return file_proto_authors_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListApplicationsRequest) GetStatus() string {
@@ -859,7 +947,7 @@ type ListApplicationsResponse struct {
 
 func (x *ListApplicationsResponse) Reset() {
 	*x = ListApplicationsResponse{}
-	mi := &file_authors_proto_msgTypes[13]
+	mi := &file_proto_authors_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -871,7 +959,7 @@ func (x *ListApplicationsResponse) String() string {
 func (*ListApplicationsResponse) ProtoMessage() {}
 
 func (x *ListApplicationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[13]
+	mi := &file_proto_authors_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -884,7 +972,7 @@ func (x *ListApplicationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApplicationsResponse.ProtoReflect.Descriptor instead.
 func (*ListApplicationsResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{13}
+	return file_proto_authors_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListApplicationsResponse) GetApplications() []*AuthorApplication {
@@ -911,7 +999,7 @@ type ApproveApplicationRequest struct {
 
 func (x *ApproveApplicationRequest) Reset() {
 	*x = ApproveApplicationRequest{}
-	mi := &file_authors_proto_msgTypes[14]
+	mi := &file_proto_authors_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -923,7 +1011,7 @@ func (x *ApproveApplicationRequest) String() string {
 func (*ApproveApplicationRequest) ProtoMessage() {}
 
 func (x *ApproveApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[14]
+	mi := &file_proto_authors_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -936,7 +1024,7 @@ func (x *ApproveApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveApplicationRequest.ProtoReflect.Descriptor instead.
 func (*ApproveApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{14}
+	return file_proto_authors_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ApproveApplicationRequest) GetApplicationId() string {
@@ -963,7 +1051,7 @@ type ApproveApplicationResponse struct {
 
 func (x *ApproveApplicationResponse) Reset() {
 	*x = ApproveApplicationResponse{}
-	mi := &file_authors_proto_msgTypes[15]
+	mi := &file_proto_authors_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -975,7 +1063,7 @@ func (x *ApproveApplicationResponse) String() string {
 func (*ApproveApplicationResponse) ProtoMessage() {}
 
 func (x *ApproveApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[15]
+	mi := &file_proto_authors_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -988,7 +1076,7 @@ func (x *ApproveApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveApplicationResponse.ProtoReflect.Descriptor instead.
 func (*ApproveApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{15}
+	return file_proto_authors_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ApproveApplicationResponse) GetApplication() *AuthorApplication {
@@ -1016,7 +1104,7 @@ type RejectApplicationRequest struct {
 
 func (x *RejectApplicationRequest) Reset() {
 	*x = RejectApplicationRequest{}
-	mi := &file_authors_proto_msgTypes[16]
+	mi := &file_proto_authors_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1028,7 +1116,7 @@ func (x *RejectApplicationRequest) String() string {
 func (*RejectApplicationRequest) ProtoMessage() {}
 
 func (x *RejectApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[16]
+	mi := &file_proto_authors_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1041,7 +1129,7 @@ func (x *RejectApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectApplicationRequest.ProtoReflect.Descriptor instead.
 func (*RejectApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{16}
+	return file_proto_authors_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RejectApplicationRequest) GetApplicationId() string {
@@ -1074,7 +1162,7 @@ type RejectApplicationResponse struct {
 
 func (x *RejectApplicationResponse) Reset() {
 	*x = RejectApplicationResponse{}
-	mi := &file_authors_proto_msgTypes[17]
+	mi := &file_proto_authors_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1086,7 +1174,7 @@ func (x *RejectApplicationResponse) String() string {
 func (*RejectApplicationResponse) ProtoMessage() {}
 
 func (x *RejectApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[17]
+	mi := &file_proto_authors_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1099,7 +1187,7 @@ func (x *RejectApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectApplicationResponse.ProtoReflect.Descriptor instead.
 func (*RejectApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{17}
+	return file_proto_authors_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RejectApplicationResponse) GetApplication() *AuthorApplication {
@@ -1118,7 +1206,7 @@ type RevertApplicationRequest struct {
 
 func (x *RevertApplicationRequest) Reset() {
 	*x = RevertApplicationRequest{}
-	mi := &file_authors_proto_msgTypes[18]
+	mi := &file_proto_authors_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1130,7 +1218,7 @@ func (x *RevertApplicationRequest) String() string {
 func (*RevertApplicationRequest) ProtoMessage() {}
 
 func (x *RevertApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[18]
+	mi := &file_proto_authors_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1143,7 +1231,7 @@ func (x *RevertApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevertApplicationRequest.ProtoReflect.Descriptor instead.
 func (*RevertApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{18}
+	return file_proto_authors_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *RevertApplicationRequest) GetApplicationId() string {
@@ -1162,7 +1250,7 @@ type RevertApplicationResponse struct {
 
 func (x *RevertApplicationResponse) Reset() {
 	*x = RevertApplicationResponse{}
-	mi := &file_authors_proto_msgTypes[19]
+	mi := &file_proto_authors_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1174,7 +1262,7 @@ func (x *RevertApplicationResponse) String() string {
 func (*RevertApplicationResponse) ProtoMessage() {}
 
 func (x *RevertApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authors_proto_msgTypes[19]
+	mi := &file_proto_authors_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1187,7 +1275,7 @@ func (x *RevertApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevertApplicationResponse.ProtoReflect.Descriptor instead.
 func (*RevertApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_authors_proto_rawDescGZIP(), []int{19}
+	return file_proto_authors_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RevertApplicationResponse) GetApplication() *AuthorApplication {
@@ -1197,11 +1285,11 @@ func (x *RevertApplicationResponse) GetApplication() *AuthorApplication {
 	return nil
 }
 
-var File_authors_proto protoreflect.FileDescriptor
+var File_proto_authors_proto protoreflect.FileDescriptor
 
-const file_authors_proto_rawDesc = "" +
+const file_proto_authors_proto_rawDesc = "" +
 	"\n" +
-	"\rauthors.proto\x12\aauthors\"\xb5\x02\n" +
+	"\x13proto/authors.proto\x12\aauthors\"\xb5\x02\n" +
 	"\x06Author\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12!\n" +
@@ -1225,7 +1313,11 @@ const file_authors_proto_rawDesc = "" +
 	"\x15UpsertProfileResponse\x12'\n" +
 	"\x06author\x18\x01 \x01(\v2\x0f.authors.AuthorR\x06author\"+\n" +
 	"\x10GetAuthorRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"<\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"-\n" +
+	"\x12GetMyAuthorRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\">\n" +
+	"\x13GetMyAuthorResponse\x12'\n" +
+	"\x06author\x18\x01 \x01(\v2\x0f.authors.AuthorR\x06author\"<\n" +
 	"\x11GetAuthorResponse\x12'\n" +
 	"\x06author\x18\x01 \x01(\v2\x0f.authors.AuthorR\x06author\"B\n" +
 	"\x12ListAuthorsRequest\x12\x14\n" +
@@ -1290,7 +1382,7 @@ const file_authors_proto_rawDesc = "" +
 	"\x18RevertApplicationRequest\x12%\n" +
 	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\"Y\n" +
 	"\x19RevertApplicationResponse\x12<\n" +
-	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication2\x93\x06\n" +
+	"\vapplication\x18\x01 \x01(\v2\x1a.authors.AuthorApplicationR\vapplication2\xdd\x06\n" +
 	"\x0eAuthorsService\x12N\n" +
 	"\rUpsertProfile\x12\x1d.authors.UpsertProfileRequest\x1a\x1e.authors.UpsertProfileResponse\x12B\n" +
 	"\tGetAuthor\x12\x19.authors.GetAuthorRequest\x1a\x1a.authors.GetAuthorResponse\x12H\n" +
@@ -1300,99 +1392,105 @@ const file_authors_proto_rawDesc = "" +
 	"\x10ListApplications\x12 .authors.ListApplicationsRequest\x1a!.authors.ListApplicationsResponse\x12]\n" +
 	"\x12ApproveApplication\x12\".authors.ApproveApplicationRequest\x1a#.authors.ApproveApplicationResponse\x12Z\n" +
 	"\x11RejectApplication\x12!.authors.RejectApplicationRequest\x1a\".authors.RejectApplicationResponse\x12Z\n" +
-	"\x11RevertApplication\x12!.authors.RevertApplicationRequest\x1a\".authors.RevertApplicationResponseBDZBgithub.com/Eastwesser/event-horizon/services/authors/proto;authorsb\x06proto3"
+	"\x11RevertApplication\x12!.authors.RevertApplicationRequest\x1a\".authors.RevertApplicationResponse\x12H\n" +
+	"\vGetMyAuthor\x12\x1b.authors.GetMyAuthorRequest\x1a\x1c.authors.GetMyAuthorResponseBDZBgithub.com/Eastwesser/event-horizon/services/authors/proto;authorsb\x06proto3"
 
 var (
-	file_authors_proto_rawDescOnce sync.Once
-	file_authors_proto_rawDescData []byte
+	file_proto_authors_proto_rawDescOnce sync.Once
+	file_proto_authors_proto_rawDescData []byte
 )
 
-func file_authors_proto_rawDescGZIP() []byte {
-	file_authors_proto_rawDescOnce.Do(func() {
-		file_authors_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authors_proto_rawDesc), len(file_authors_proto_rawDesc)))
+func file_proto_authors_proto_rawDescGZIP() []byte {
+	file_proto_authors_proto_rawDescOnce.Do(func() {
+		file_proto_authors_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_authors_proto_rawDesc), len(file_proto_authors_proto_rawDesc)))
 	})
-	return file_authors_proto_rawDescData
+	return file_proto_authors_proto_rawDescData
 }
 
-var file_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
-var file_authors_proto_goTypes = []any{
+var file_proto_authors_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_proto_authors_proto_goTypes = []any{
 	(*Author)(nil),                     // 0: authors.Author
 	(*UpsertProfileRequest)(nil),       // 1: authors.UpsertProfileRequest
 	(*UpsertProfileResponse)(nil),      // 2: authors.UpsertProfileResponse
 	(*GetAuthorRequest)(nil),           // 3: authors.GetAuthorRequest
-	(*GetAuthorResponse)(nil),          // 4: authors.GetAuthorResponse
-	(*ListAuthorsRequest)(nil),         // 5: authors.ListAuthorsRequest
-	(*ListAuthorsResponse)(nil),        // 6: authors.ListAuthorsResponse
-	(*AuthorApplication)(nil),          // 7: authors.AuthorApplication
-	(*SubmitApplicationRequest)(nil),   // 8: authors.SubmitApplicationRequest
-	(*SubmitApplicationResponse)(nil),  // 9: authors.SubmitApplicationResponse
-	(*GetMyApplicationRequest)(nil),    // 10: authors.GetMyApplicationRequest
-	(*GetMyApplicationResponse)(nil),   // 11: authors.GetMyApplicationResponse
-	(*ListApplicationsRequest)(nil),    // 12: authors.ListApplicationsRequest
-	(*ListApplicationsResponse)(nil),   // 13: authors.ListApplicationsResponse
-	(*ApproveApplicationRequest)(nil),  // 14: authors.ApproveApplicationRequest
-	(*ApproveApplicationResponse)(nil), // 15: authors.ApproveApplicationResponse
-	(*RejectApplicationRequest)(nil),   // 16: authors.RejectApplicationRequest
-	(*RejectApplicationResponse)(nil),  // 17: authors.RejectApplicationResponse
-	(*RevertApplicationRequest)(nil),   // 18: authors.RevertApplicationRequest
-	(*RevertApplicationResponse)(nil),  // 19: authors.RevertApplicationResponse
+	(*GetMyAuthorRequest)(nil),         // 4: authors.GetMyAuthorRequest
+	(*GetMyAuthorResponse)(nil),        // 5: authors.GetMyAuthorResponse
+	(*GetAuthorResponse)(nil),          // 6: authors.GetAuthorResponse
+	(*ListAuthorsRequest)(nil),         // 7: authors.ListAuthorsRequest
+	(*ListAuthorsResponse)(nil),        // 8: authors.ListAuthorsResponse
+	(*AuthorApplication)(nil),          // 9: authors.AuthorApplication
+	(*SubmitApplicationRequest)(nil),   // 10: authors.SubmitApplicationRequest
+	(*SubmitApplicationResponse)(nil),  // 11: authors.SubmitApplicationResponse
+	(*GetMyApplicationRequest)(nil),    // 12: authors.GetMyApplicationRequest
+	(*GetMyApplicationResponse)(nil),   // 13: authors.GetMyApplicationResponse
+	(*ListApplicationsRequest)(nil),    // 14: authors.ListApplicationsRequest
+	(*ListApplicationsResponse)(nil),   // 15: authors.ListApplicationsResponse
+	(*ApproveApplicationRequest)(nil),  // 16: authors.ApproveApplicationRequest
+	(*ApproveApplicationResponse)(nil), // 17: authors.ApproveApplicationResponse
+	(*RejectApplicationRequest)(nil),   // 18: authors.RejectApplicationRequest
+	(*RejectApplicationResponse)(nil),  // 19: authors.RejectApplicationResponse
+	(*RevertApplicationRequest)(nil),   // 20: authors.RevertApplicationRequest
+	(*RevertApplicationResponse)(nil),  // 21: authors.RevertApplicationResponse
 }
-var file_authors_proto_depIdxs = []int32{
+var file_proto_authors_proto_depIdxs = []int32{
 	0,  // 0: authors.UpsertProfileResponse.author:type_name -> authors.Author
-	0,  // 1: authors.GetAuthorResponse.author:type_name -> authors.Author
-	0,  // 2: authors.ListAuthorsResponse.authors:type_name -> authors.Author
-	7,  // 3: authors.SubmitApplicationResponse.application:type_name -> authors.AuthorApplication
-	7,  // 4: authors.GetMyApplicationResponse.application:type_name -> authors.AuthorApplication
-	7,  // 5: authors.ListApplicationsResponse.applications:type_name -> authors.AuthorApplication
-	7,  // 6: authors.ApproveApplicationResponse.application:type_name -> authors.AuthorApplication
-	0,  // 7: authors.ApproveApplicationResponse.author:type_name -> authors.Author
-	7,  // 8: authors.RejectApplicationResponse.application:type_name -> authors.AuthorApplication
-	7,  // 9: authors.RevertApplicationResponse.application:type_name -> authors.AuthorApplication
-	1,  // 10: authors.AuthorsService.UpsertProfile:input_type -> authors.UpsertProfileRequest
-	3,  // 11: authors.AuthorsService.GetAuthor:input_type -> authors.GetAuthorRequest
-	5,  // 12: authors.AuthorsService.ListAuthors:input_type -> authors.ListAuthorsRequest
-	8,  // 13: authors.AuthorsService.SubmitApplication:input_type -> authors.SubmitApplicationRequest
-	10, // 14: authors.AuthorsService.GetMyApplication:input_type -> authors.GetMyApplicationRequest
-	12, // 15: authors.AuthorsService.ListApplications:input_type -> authors.ListApplicationsRequest
-	14, // 16: authors.AuthorsService.ApproveApplication:input_type -> authors.ApproveApplicationRequest
-	16, // 17: authors.AuthorsService.RejectApplication:input_type -> authors.RejectApplicationRequest
-	18, // 18: authors.AuthorsService.RevertApplication:input_type -> authors.RevertApplicationRequest
-	2,  // 19: authors.AuthorsService.UpsertProfile:output_type -> authors.UpsertProfileResponse
-	4,  // 20: authors.AuthorsService.GetAuthor:output_type -> authors.GetAuthorResponse
-	6,  // 21: authors.AuthorsService.ListAuthors:output_type -> authors.ListAuthorsResponse
-	9,  // 22: authors.AuthorsService.SubmitApplication:output_type -> authors.SubmitApplicationResponse
-	11, // 23: authors.AuthorsService.GetMyApplication:output_type -> authors.GetMyApplicationResponse
-	13, // 24: authors.AuthorsService.ListApplications:output_type -> authors.ListApplicationsResponse
-	15, // 25: authors.AuthorsService.ApproveApplication:output_type -> authors.ApproveApplicationResponse
-	17, // 26: authors.AuthorsService.RejectApplication:output_type -> authors.RejectApplicationResponse
-	19, // 27: authors.AuthorsService.RevertApplication:output_type -> authors.RevertApplicationResponse
-	19, // [19:28] is the sub-list for method output_type
-	10, // [10:19] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	0,  // 1: authors.GetMyAuthorResponse.author:type_name -> authors.Author
+	0,  // 2: authors.GetAuthorResponse.author:type_name -> authors.Author
+	0,  // 3: authors.ListAuthorsResponse.authors:type_name -> authors.Author
+	9,  // 4: authors.SubmitApplicationResponse.application:type_name -> authors.AuthorApplication
+	9,  // 5: authors.GetMyApplicationResponse.application:type_name -> authors.AuthorApplication
+	9,  // 6: authors.ListApplicationsResponse.applications:type_name -> authors.AuthorApplication
+	9,  // 7: authors.ApproveApplicationResponse.application:type_name -> authors.AuthorApplication
+	0,  // 8: authors.ApproveApplicationResponse.author:type_name -> authors.Author
+	9,  // 9: authors.RejectApplicationResponse.application:type_name -> authors.AuthorApplication
+	9,  // 10: authors.RevertApplicationResponse.application:type_name -> authors.AuthorApplication
+	1,  // 11: authors.AuthorsService.UpsertProfile:input_type -> authors.UpsertProfileRequest
+	3,  // 12: authors.AuthorsService.GetAuthor:input_type -> authors.GetAuthorRequest
+	7,  // 13: authors.AuthorsService.ListAuthors:input_type -> authors.ListAuthorsRequest
+	10, // 14: authors.AuthorsService.SubmitApplication:input_type -> authors.SubmitApplicationRequest
+	12, // 15: authors.AuthorsService.GetMyApplication:input_type -> authors.GetMyApplicationRequest
+	14, // 16: authors.AuthorsService.ListApplications:input_type -> authors.ListApplicationsRequest
+	16, // 17: authors.AuthorsService.ApproveApplication:input_type -> authors.ApproveApplicationRequest
+	18, // 18: authors.AuthorsService.RejectApplication:input_type -> authors.RejectApplicationRequest
+	20, // 19: authors.AuthorsService.RevertApplication:input_type -> authors.RevertApplicationRequest
+	4,  // 20: authors.AuthorsService.GetMyAuthor:input_type -> authors.GetMyAuthorRequest
+	2,  // 21: authors.AuthorsService.UpsertProfile:output_type -> authors.UpsertProfileResponse
+	6,  // 22: authors.AuthorsService.GetAuthor:output_type -> authors.GetAuthorResponse
+	8,  // 23: authors.AuthorsService.ListAuthors:output_type -> authors.ListAuthorsResponse
+	11, // 24: authors.AuthorsService.SubmitApplication:output_type -> authors.SubmitApplicationResponse
+	13, // 25: authors.AuthorsService.GetMyApplication:output_type -> authors.GetMyApplicationResponse
+	15, // 26: authors.AuthorsService.ListApplications:output_type -> authors.ListApplicationsResponse
+	17, // 27: authors.AuthorsService.ApproveApplication:output_type -> authors.ApproveApplicationResponse
+	19, // 28: authors.AuthorsService.RejectApplication:output_type -> authors.RejectApplicationResponse
+	21, // 29: authors.AuthorsService.RevertApplication:output_type -> authors.RevertApplicationResponse
+	5,  // 30: authors.AuthorsService.GetMyAuthor:output_type -> authors.GetMyAuthorResponse
+	21, // [21:31] is the sub-list for method output_type
+	11, // [11:21] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_authors_proto_init() }
-func file_authors_proto_init() {
-	if File_authors_proto != nil {
+func init() { file_proto_authors_proto_init() }
+func file_proto_authors_proto_init() {
+	if File_proto_authors_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authors_proto_rawDesc), len(file_authors_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_authors_proto_rawDesc), len(file_proto_authors_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_authors_proto_goTypes,
-		DependencyIndexes: file_authors_proto_depIdxs,
-		MessageInfos:      file_authors_proto_msgTypes,
+		GoTypes:           file_proto_authors_proto_goTypes,
+		DependencyIndexes: file_proto_authors_proto_depIdxs,
+		MessageInfos:      file_proto_authors_proto_msgTypes,
 	}.Build()
-	File_authors_proto = out.File
-	file_authors_proto_goTypes = nil
-	file_authors_proto_depIdxs = nil
+	File_proto_authors_proto = out.File
+	file_proto_authors_proto_goTypes = nil
+	file_proto_authors_proto_depIdxs = nil
 }
