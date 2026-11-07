@@ -95,6 +95,7 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/platform v0.0.0
+	github.com/envoyproxy/protoc-gen-validate v1.3.3
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.37.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.55.0

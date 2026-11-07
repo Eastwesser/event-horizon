@@ -6,6 +6,7 @@ import (
     "strconv"
 
     "google.golang.org/grpc/codes"
+    "google.golang.org/grpc/metadata"
     "google.golang.org/grpc/status"
 
     "github.com/Eastwesser/event-horizon/services/inventory/internal/converter"
@@ -53,6 +54,25 @@ func validateItem(item *model.Item) error {
 	return nil
 }
 
+func checkAuthorAccess(ctx context.Context, authorID string) error {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "missing metadata")
+	}
+	roles := md.Get("x-user-role")
+	userIDs := md.Get("x-user-id")
+	if len(roles) == 0 || len(userIDs) == 0 {
+		return status.Error(codes.Unauthenticated, "missing user credentials")
+	}
+	if roles[0] == "admin" {
+		return nil
+	}
+	if userIDs[0] != authorID {
+		return status.Error(codes.PermissionDenied, "you can only edit your own items")
+	}
+	return nil
+}
+
 func (h *GRPCHandler) CreateItem(ctx context.Context, req *pb.CreateItemRequest) (*pb.ItemResponse, error) {
     item := converter.ItemFromCreateRequest(req)
 
@@ -87,6 +107,15 @@ func (h *GRPCHandler) GetItem(ctx context.Context, req *pb.GetItemRequest) (*pb.
 }
 
 func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*pb.ItemResponse, error) {
+
+    existing, err := h.service.GetItem(ctx, req.Id) // или req.Id
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "item not found")
+    }
+    if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
+        return nil, err
+}
+
     item := converter.ItemFromUpdateRequest(req)
 
     if err := validateItem(item); err != nil {
@@ -105,11 +134,30 @@ func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest)
     return &pb.ItemResponse{Item: protoItem}, nil
 }
 
+// func (h *GRPCHandler) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*pb.EmptyResponse, error) {
+//     if err := h.service.DeleteItem(ctx, req.Id); err != nil {
+//         return nil, status.Errorf(codes.Internal, "failed to delete item: %v", err)
+//     }
+//     return &pb.EmptyResponse{}, nil
+// }
+
 func (h *GRPCHandler) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*pb.EmptyResponse, error) {
-    if err := h.service.DeleteItem(ctx, req.Id); err != nil {
-        return nil, status.Errorf(codes.Internal, "failed to delete item: %v", err)
-    }
-    return &pb.EmptyResponse{}, nil
+	// 1. Достаем товар из БД, чтобы узнать автора
+	existing, err := h.service.GetItem(ctx, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "item not found")
+	}
+
+	// 2. Проверяем, что это владелец (или админ)
+	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
+		return nil, err
+	}
+
+	// 3. Только теперь удаляем
+	if err := h.service.DeleteItem(ctx, req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete item: %v", err)
+	}
+	return &pb.EmptyResponse{}, nil
 }
 
 func (h *GRPCHandler) SearchItems(ctx context.Context, req *pb.SearchItemsRequest) (*pb.SearchItemsResponse, error) {
@@ -239,25 +287,51 @@ func (h *GRPCHandler) ReleaseItem(ctx context.Context, req *pb.ReleaseItemReques
 }
 
 // SoftDeleteItem - мягкое удаление
+// func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItemRequest) (*pb.EmptyResponse, error) {
+//     if err := h.service.SoftDeleteItem(ctx, req.Id); err != nil {
+//         if err == model.ErrItemNotFound {
+//             return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+//         }
+//         return nil, status.Errorf(codes.Internal, "failed to soft delete item: %v", err)
+//     }
+//     return &pb.EmptyResponse{}, nil
+// }
 func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItemRequest) (*pb.EmptyResponse, error) {
-    if err := h.service.SoftDeleteItem(ctx, req.Id); err != nil {
-        if err == model.ErrItemNotFound {
-            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
-        }
-        return nil, status.Errorf(codes.Internal, "failed to soft delete item: %v", err)
-    }
-    return &pb.EmptyResponse{}, nil
+	existing, err := h.service.GetItem(ctx, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "item not found")
+	}
+	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
+		return nil, err
+	}
+	if err := h.service.SoftDeleteItem(ctx, req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to soft delete item: %v", err)
+	}
+	return &pb.EmptyResponse{}, nil
 }
 
 // RestoreItem - восстановление после мягкого удаления
+// func (h *GRPCHandler) RestoreItem(ctx context.Context, req *pb.RestoreItemRequest) (*pb.EmptyResponse, error) {
+//     if err := h.service.RestoreItem(ctx, req.Id); err != nil {
+//         if err == model.ErrItemNotFound {
+//             return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
+//         }
+//         return nil, status.Errorf(codes.Internal, "failed to restore item: %v", err)
+//     }
+//     return &pb.EmptyResponse{}, nil
+// }
 func (h *GRPCHandler) RestoreItem(ctx context.Context, req *pb.RestoreItemRequest) (*pb.EmptyResponse, error) {
-    if err := h.service.RestoreItem(ctx, req.Id); err != nil {
-        if err == model.ErrItemNotFound {
-            return nil, status.Errorf(codes.NotFound, "item not found: %v", err)
-        }
-        return nil, status.Errorf(codes.Internal, "failed to restore item: %v", err)
-    }
-    return &pb.EmptyResponse{}, nil
+	existing, err := h.service.GetItem(ctx, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "item not found")
+	}
+	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
+		return nil, err
+	}
+	if err := h.service.RestoreItem(ctx, req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to restore item: %v", err)
+	}
+	return &pb.EmptyResponse{}, nil
 }
 
 // GetStats - статистика
