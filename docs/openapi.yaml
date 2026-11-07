@@ -1436,14 +1436,28 @@ paths:
           description: Author profile
         '403':
           description: Forbidden
+    # get:
+    #   summary: Get own author profile (author|admin)
+    #   security: [{ BearerAuth: [] }]
+    #   responses:
+    #     '200':
+    #       description: Author profile
+    #     '404':
+    #       description: No profile yet
+    #     '403':
+    #       description: Forbidden
     get:
       summary: Get own author profile (author|admin)
+      description: |
+        Возвращает профиль вызывающего, **включая soft-deleted** (`active=false`),
+        чтобы снятый автор видел свой профиль (MOD-3, P0-6). В отличие от
+        `GET /api/v1/authors/{user_id}`, который скрывает неактивных.
       security: [{ BearerAuth: [] }]
       responses:
         '200':
-          description: Author profile
+          description: Author profile (active или inactive)
         '404':
-          description: No profile yet
+          description: No profile yet (never created)
         '403':
           description: Forbidden
   /api/v1/authors/me/sales:
@@ -1566,7 +1580,11 @@ paths:
           description: authors + total
   /api/v1/authors/{user_id}:
     get:
-      summary: Get author by user id
+      summary: Get author by user id (public)
+      description: |
+        Возвращает публичный профиль автора. **404**, если автор soft-deleted
+        (`active = false`) — снят с витрины. Для своего профиля
+        используйте `GET /api/v1/authors/me` — он возвращает 200 всегда.
       parameters:
         - in: path
           name: user_id
@@ -1574,9 +1592,9 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Author
+          description: Author (active)
         '404':
-          description: Not found
+          description: Author not found or soft-deleted (active=false)
 
   # ===== HISTORY =====
   /api/v1/history:
