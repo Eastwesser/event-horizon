@@ -194,10 +194,10 @@ export const InventoryItemDetail: React.FC = () => {
           ) : null}
 
           {isCard ? (
-            <>
-              <CardAttributesView attrs={attrs} />
-              <NoizReviewBlock attrs={attrs} />
-            </>
+              <>
+                <CardAttributesView attrs={attrs} />
+                <NoizReviewBlock attrs={attrs} />
+              </>
           ) : selectedItem.attributes && Object.keys(selectedItem.attributes).length > 0 ? (
             <div>
               <h3 className="mb-2 font-display text-base font-semibold text-text-primary">
@@ -216,7 +216,16 @@ export const InventoryItemDetail: React.FC = () => {
                   )
                   .map(([key, value]) => (
                     <div key={key} className="text-sm text-text-secondary">
-                      <strong className="text-text-primary">{key}:</strong> {String(value)}
+                      <strong className="text-text-primary">{key}:</strong>{' '}
+                      {Array.isArray(value)
+                        ? value.map((v, i) => (
+                            <span key={i}>
+                              {typeof v === 'object' ? JSON.stringify(v) : String(v)}{' '}
+                            </span>
+                          ))
+                        : typeof value === 'object'
+                          ? JSON.stringify(value)
+                          : String(value)}
                     </div>
                   ))}
               </div>

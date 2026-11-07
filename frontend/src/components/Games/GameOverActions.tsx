@@ -39,7 +39,8 @@ export function GameOverActions({
         <Button
           variant="secondary"
           size="sm"
-          className="w-full justify-center"
+          // className="w-full justify-center"
+          className="flex h-full w-full items-center justify-center" // <--- добавил flex и h-full
           onClick={onSave}
           disabled={busy}
         >
