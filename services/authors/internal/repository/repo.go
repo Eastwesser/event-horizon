@@ -70,6 +70,15 @@ func (r *PostgresRepo) GetByUserID(ctx context.Context, userID string) (*model.A
 	return scanAuthor(row)
 }
 
+// GetActiveByUserID returns only active authors. Used by the public
+// GET /authors/:user_id so a soft-deleted author is not shown on the storefront.
+func (r *PostgresRepo) GetActiveByUserID(ctx context.Context, userID string) (*model.Author, error) {
+	row := r.db.QueryRow(ctx, `
+		SELECT id, user_id, display_name, bio, avatar_url, portfolio, active, created_at, updated_at, verified_at
+		FROM authors WHERE user_id = $1 AND active = true`, userID)
+	return scanAuthor(row)
+}
+
 func (r *PostgresRepo) GetPendingApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error) {
 	row := r.db.QueryRow(ctx, `
 		SELECT id, user_id, status, payload, created_at, reviewed_at, reviewed_by, reviewer_note
@@ -294,7 +303,10 @@ func (r *PostgresRepo) RejectApplication(ctx context.Context, applicationID, rev
 	return app, nil
 }
 
-// RevertApplication restores approved→pending and deletes the authors profile (Auth.UpdateRole compensation).
+// RevertApplication restores approved→pending and deactivates the authors profile
+// (Auth.UpdateRole compensation). Soft-delete keeps the row so that cross-DB
+// references (inventory.author_id, payment.revenue_splits, shop.purchases)
+// stay valid. Hard delete would orphan them silently.
 func (r *PostgresRepo) RevertApplication(ctx context.Context, applicationID string) (*model.AuthorApplication, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -320,10 +332,18 @@ func (r *PostgresRepo) RevertApplication(ctx context.Context, applicationID stri
 	if err != nil {
 		return nil, err
 	}
-	_, err = tx.Exec(ctx, `DELETE FROM authors WHERE user_id = $1`, app.UserID)
+
+	// Soft-delete: keep the row, deactivate it. Hard delete would orphan
+	// cross-DB references (inventory.author_id, payment.revenue_splits, ...).
+	_, err = tx.Exec(ctx, `
+		UPDATE authors SET active = false, updated_at = now() WHERE user_id = $1`, app.UserID)
 	if err != nil {
 		return nil, err
 	}
+	// _, err = tx.Exec(ctx, `DELETE FROM authors WHERE user_id = $1`, app.UserID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	app.Status = model.ApplicationPending
 	app.ReviewedAt = nil

@@ -15,6 +15,7 @@ import (
 type AuthorStore interface {
 	Upsert(ctx context.Context, a *model.Author, eventType string, eventPayload map[string]any) error
 	GetByUserID(ctx context.Context, userID string) (*model.Author, error)
+	GetActiveByUserID(ctx context.Context, userID string) (*model.Author, error)
 	List(ctx context.Context, limit, offset int) ([]*model.Author, int64, error)
 	GetPendingApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error)
 	GetLatestApplicationByUserID(ctx context.Context, userID string) (*model.AuthorApplication, error)
@@ -22,7 +23,7 @@ type AuthorStore interface {
 	ListApplications(ctx context.Context, status string, limit, offset int) ([]*model.AuthorApplication, int64, error)
 	ApproveApplicationInTx(ctx context.Context, applicationID, reviewerID string) (*model.AuthorApplication, *model.Author, error)
 	RejectApplication(ctx context.Context, applicationID, reviewerID, note string) (*model.AuthorApplication, error)
-	RevertApplication(ctx context.Context, applicationID string) (*model.AuthorApplication, error)
+	RevertApplication(ctx context.Context, applicationID string) (*model.AuthorApplication, error)	
 }
 
 // AuthorCache is the optional Redis port for author profiles.
@@ -68,21 +69,21 @@ func (s *AuthorsService) UpsertProfile(ctx context.Context, userID, displayName,
 	return a, nil
 }
 
-func (s *AuthorsService) GetAuthor(ctx context.Context, userID string) (*model.Author, error) {
-	if s.cache != nil {
-		if a, err := s.cache.Get(ctx, userID); err == nil {
-			return a, nil
-		}
-	}
-	a, err := s.repo.GetByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	if s.cache != nil {
-		_ = s.cache.Set(ctx, a)
-	}
-	return a, nil
-}
+// func (s *AuthorsService) GetAuthor(ctx context.Context, userID string) (*model.Author, error) {
+// 	if s.cache != nil {
+// 		if a, err := s.cache.Get(ctx, userID); err == nil {
+// 			return a, nil
+// 		}
+// 	}
+// 	a, err := s.repo.GetByUserID(ctx, userID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if s.cache != nil {
+// 		_ = s.cache.Set(ctx, a)
+// 	}
+// 	return a, nil
+// }
 
 func (s *AuthorsService) ListAuthors(ctx context.Context, limit, offset int) ([]*model.Author, int64, error) {
 	return s.repo.List(ctx, limit, offset)
@@ -191,4 +192,42 @@ func (s *AuthorsService) RevertApplication(ctx context.Context, applicationID st
 		_ = s.cache.Delete(ctx, app.UserID)
 	}
 	return app, nil
+}
+
+// GetAuthor returns only active authors (public /authors/:user_id).
+// Soft-deleted authors are reported as ErrNotFound so direct links behave
+// the same as before the soft-delete change (P0-6).
+func (s *AuthorsService) GetAuthor(ctx context.Context, userID string) (*model.Author, error) {
+	if s.cache != nil {
+		if a, err := s.cache.Get(ctx, userID); err == nil && a.Active {
+			return a, nil
+		}
+	}
+	a, err := s.repo.GetActiveByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, a)
+	}
+	return a, nil
+}
+
+// GetMyAuthor returns the caller's own author profile, including
+// soft-deleted (active=false) ones, so a reverted author can still see
+// their profile and the reason they were reverted (MOD-3).
+func (s *AuthorsService) GetMyAuthor(ctx context.Context, userID string) (*model.Author, error) {
+	if s.cache != nil {
+		if a, err := s.cache.Get(ctx, userID); err == nil {
+			return a, nil
+		}
+	}
+	a, err := s.repo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if s.cache != nil {
+		_ = s.cache.Set(ctx, a)
+	}
+	return a, nil
 }
