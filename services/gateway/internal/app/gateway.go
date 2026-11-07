@@ -1619,9 +1619,27 @@ func runGateway() {
 		c.JSON(http.StatusOK, dto.Author(resp.Author))
 	})
 
+	// r.GET("/api/v1/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
+	// 	out, err := throughBreaker(authorsCB, c, func() (any, error) {
+	// 		return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
+	// 			UserId: middleware.UserID(c),
+	// 		})
+	// 	})
+	// 	if err == circuit.ErrOpen {
+	// 		return
+	// 	}
+	// 	if handleRPCError(c, err) {
+	// 		return
+	// 	}
+	// 	resp := out.(*authorsPb.GetAuthorResponse)
+	// 	c.JSON(http.StatusOK, dto.Author(resp.Author))
+	// })
+
 	r.GET("/api/v1/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		out, err := throughBreaker(authorsCB, c, func() (any, error) {
-			return authorsClient.GetAuthor(c.Request.Context(), &authorsPb.GetAuthorRequest{
+			// /me must return soft-deleted (active=false) authors too,
+			// so a reverted author can see their profile and reason (MOD-3).
+			return authorsClient.GetMyAuthor(c.Request.Context(), &authorsPb.GetMyAuthorRequest{
 				UserId: middleware.UserID(c),
 			})
 		})
@@ -1631,7 +1649,7 @@ func runGateway() {
 		if handleRPCError(c, err) {
 			return
 		}
-		resp := out.(*authorsPb.GetAuthorResponse)
+		resp := out.(*authorsPb.GetMyAuthorResponse)
 		c.JSON(http.StatusOK, dto.Author(resp.Author))
 	})
 
