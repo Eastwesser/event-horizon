@@ -3658,3 +3658,56 @@ Event Horizon — играй, соревнуйся, побеждай! 🚀
   - Кнопки «Сохранить рекорд» в играх выровнены по центру.
 
 ==============
+
+Текущая: **v1.1.3.4** (07.11.2026).
+
+BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3.4
+
+- **P0-8 Inventory IDOR closed:** `UpdateItem` / `DeleteItem` / `SoftDeleteItem` / `RestoreItem` проверяют `author_id` на бэкенде (`checkAuthorAccess` + `x-user-id` из metadata). Чужой юзер — `403`, админ — без изменений.
+- **P0-6 Authors soft-delete:** `RevertApplication` больше не делает `DELETE FROM authors`, а ставит `active = false`. Межбазовые ссылки (`inventory.author_id`, `payment.revenue_splits`, `shop.purchases`) остаются валидными. Новый gRPC `GetMyAuthor` отделяет `/authors/me` (200 всегда, включая inactive) от `/authors/:user_id` (404 для soft-deleted).
+- **P0-5 Billing reference_id:** награды за игру берут `reference_id` из `event.Timestamp` вместо `time.Now().UnixNano()` — redelivery не задваивает. Outbox worker: `forceStreamRecreation` для залипшего лидера NATS.
+- **Test hygiene:** `make test-integration` зелёный. Authors: `TestRevertApplication_SoftDeletesAuthor` (testcontainers). Inventory: Mongo-тесты `t.Skipf`, если Mongo нет.
+
+DETAILS:
+
+### Что нового в v1.1.3.4
+
+Патч-релиз по безопасности и надёжности. Закрывает два P0 из аудита и один P0 по деньгам.
+
+**Безопасность: Inventory IDOR (P0-8)**
+
+- `grpc_handler.go`: `checkAuthorAccess(ctx, existing.AuthorID)` вызывается в `UpdateItem`, `DeleteItem`, `SoftDeleteItem`, `RestoreItem`. Сравнение идёт с `x-user-id` из metadata, а не с телом запроса.
+- `md.Get("x-user-id")` — единственный источник правды о юзере. Подделать `author_id` в body нельзя.
+- Чужой юзер получает `403 {"error":"you can only edit your own items"}`. Админ — без изменений.
+
+**Authors: soft-delete вместо hard delete (P0-6)**
+
+- `repo.RevertApplication`: `DELETE FROM authors` → `UPDATE authors SET active = false, updated_at = now()`. Строка жива, `inventory.author_id` / `payment.revenue_splits` / `shop.purchases` не осиротеют.
+- `repo.GetActiveByUserID` (новый) — только `active = true`, для публичного `GET /authors/:user_id`.
+- `repo.GetByUserID` — без фильтра, для `/authors/me`.
+- `service.GetAuthor` — публичный, только активные. `service.GetMyAuthor` (новый) — включая `active = false`.
+- `handler.GetAuthor` → `GetActiveByUserID`, `handler.GetMyAuthor` (новый) → `GetByUserID`.
+- `proto`: `rpc GetMyAuthor(GetMyAuthorRequest) returns (GetMyAuthorResponse)`.
+- `gateway.go`: `GET /api/v1/authors/me` → `GetMyAuthor`. `GET /api/v1/authors/:user_id` — не трогали, фильтр в сервисе.
+- `mapErr`: `AlreadyReviewed` → `FailedPrecondition` (409), `AlreadyPrivileged` → `PermissionDenied` (403). Раньше оба были `InvalidArgument` (400).
+
+**Billing: reference_id из события (P0-5)**
+
+- `outbox_worker.go`: `reference_id` для наград — `event.Timestamp`, не `time.Now().UnixNano()`. Redelivery больше не задваивает.
+- `forceStreamRecreation`: при `no response from stream` стрим `EVENTS` удаляется и пересоздаётся, чтобы сбросить залипшего лидера NATS. (См. комментарий в `outbox_worker.go`: core-подписка на `balance.updated` глушит `ErrNoResponders`, и `js.Publish` виснет до таймаута.)
+- `SetNX` анти-спам: `score_lock:{user_id}:{game_id}:{score}`, TTL 30s.
+
+**Test hygiene**
+
+- `revert_integration_test.go` (Authors): `uuid.NewString()` для `id`/`app_id` (в `authors.id` тип `uuid`, а `"aid-1"` не парсится → `SQLSTATE 22P02`).
+- `mongo_repo_test.go` (Inventory): `Ping` + `t.Skipf`, если Mongo нет. Раньше был `nil pointer dereference` при недоступной Mongo.
+- `make test-integration` — зелёный по всем 7 сервисам.
+
+**API / docs**
+
+- `docs/openapi.yaml`: `GET /authors/:user_id` — `404` для soft-deleted. `GET /authors/me` — `200` всегда (включая `active = false`).
+- `confluence/architecture/API_ROUTES.md`: пометки P0-6 / P0-8.
+- `confluence/history/2026-11/07.11.2026/AUTHORS_P0_6.md` — разбор soft-delete.
+- `confluence/history/2026-11/07.11.2026/FOREIGN_KEY_DELETE_ISSUES.md` — почему межбазовые ссылки требуют soft-delete.
