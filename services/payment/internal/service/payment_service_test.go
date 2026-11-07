@@ -18,12 +18,14 @@ type mockPayStore struct {
 	getSubErr   error
 	created     *model.Payment
 	setComplete bool
+	createSubErr error 
 }
 
 func (m *mockPayStore) CreatePayment(_ context.Context, p *model.Payment) error {
 	m.created = p
 	return m.createErr
 }
+
 func (m *mockPayStore) GetPayment(context.Context, string) (*model.Payment, error) {
 	if m.payment == nil {
 		return nil, errors.New("not found")
@@ -31,10 +33,12 @@ func (m *mockPayStore) GetPayment(context.Context, string) (*model.Payment, erro
 	cp := *m.payment
 	return &cp, nil
 }
+
 func (m *mockPayStore) CompletePaymentAndActivateSubscription(context.Context, string, string, *model.Subscription, string, map[string]any) error {
 	m.setComplete = true
 	return m.completeErr
 }
+
 func (m *mockPayStore) GetActiveSubscription(context.Context, string) (*model.Subscription, error) {
 	if m.getSubErr != nil {
 		return nil, m.getSubErr
@@ -64,6 +68,7 @@ func (m *mockSubCache) GetSubscription(context.Context, string) (*model.Subscrip
 	cp := *m.sub
 	return &cp, nil
 }
+
 func (m *mockSubCache) SetSubscription(_ context.Context, sub *model.Subscription) error {
 	m.sets++
 	m.sub = sub
@@ -144,5 +149,44 @@ func TestNew_DefaultSubscriptionDays(t *testing.T) {
 	s := New(&mockPayStore{}, nil, "", "", 0)
 	if s.subscriptionDays != 30 {
 		t.Fatalf("%d", s.subscriptionDays)
+	}
+}
+
+// GRANT SUBSCRIPTION 
+func (m *mockPayStore) CreateSubscription(_ context.Context, sub *model.Subscription) error {
+	return m.createSubErr
+}
+
+func (m *mockPayStore) RevokeSubscription(_ context.Context, userID string) error {
+	return nil
+}
+
+func (m *mockSubCache) DeleteSubscription(_ context.Context, userID string) error {
+	return nil
+}
+
+func TestGrantSubscription(t *testing.T) {
+	store := &mockPayStore{}
+	svc := New(store, &mockSubCache{}, "", "", 30)
+
+	sub, err := svc.GrantSubscription(context.Background(), "user-1", model.PlanPresent, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub.UserID != "user-1" || sub.Plan != model.PlanPresent {
+		t.Fatalf("%+v", sub)
+	}
+	if sub.Status != model.StatusActive {
+		t.Fatalf("expected active, got %s", sub.Status)
+	}
+}
+
+func TestRevokeSubscription(t *testing.T) {
+	store := &mockPayStore{}
+	svc := New(store, &mockSubCache{}, "", "", 30)
+
+	err := svc.RevokeSubscription(context.Background(), "user-1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
