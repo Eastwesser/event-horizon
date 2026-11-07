@@ -3621,4 +3621,40 @@ Event Horizon — играй, соревнуйся, побеждай! 🚀
 
 - workers.go — исправлена критическая ошибка подписки на NATS. Ранее при попытке создать Durable-консьюмер с точкой в имени (например, history-score.updated) NATS выдавал invalid consumer name, и события не записывались. Теперь точки заменяются на подчеркивания (strings.ReplaceAll).
 
+
+### Что нового в v1.1.3.3
+
+1. Админка: выдача и отзыв подписки
+  - Добавлен API POST /api/v1/admin/payments/grant-subscription (галочка) и revoke-subscription (крестик).
+  - В AdminPage.tsx добавлены кнопки подписки (зелёная галочка / красный крестик) под селектом ролей.
+  - В payment_service.go добавлены методы GrantSubscription и RevokeSubscription, в postgres_repo.go — CreateSubscription и RevokeSubscription (с погашением старой подписки).
+
+2. Критические баги с начислением валюты
+  - Billing: награды не начислялись при no response from stream. Исправлено: добавлен ретрай с пересозданием стрима (forceStreamRecreation) при «залипшем» лидере NATS. Теперь balance.updated публикуется успешно.
+  - Анти-спам в Billing. Добавлен SetNX в Redis с ключом score_lock:{user_id}:{game_id}:{score} и TTL 30 секунд. Повторное сохранение того же счета в течение 30 секунд игнорируется.
+  - Двойное начисление при redelivery. reference_id для наград теперь берётся из event.Timestamp, а не из time.Now().UnixNano().
+
+3. История (History)
+  - Починен Durable-консьюмер: nats.Durable("history-score_updated") (точки заменены на подчёркивания). События снова пишутся в базу.
+  - Фронтенд (HistoryPage.tsx) переведен на красивые карточки: иконки игр, результаты рекордов, суммы покупок. Убран сырой JSON.
+
+4. Лидерборд: ники вместо UUID
+  - Gateway теперь при POST /game/submit самостоятельно достаёт nickname из Auth (GetUser) и передаёт в Game. Это гарантирует, что для любой игры ник улетает в score.updated.
+  - В Leaderboard (Redis) ники сохраняются и корректно отображаются на фронте.
+
+5. Кабинет автора: Дашборд продаж
+  - Создан компонент AuthorSales.tsx. Выводит количество продаж, заработок автора (85%) и таблицу покупок с маскировкой email покупателей.
+  - AuthorDashboard.tsx очищен от дублирующегося кода.
+
+6. Профиль: синхронизация ника через NATS
+  - При смене ника в Auth Gateway публикует event.user.nickname.updated.
+  - Profile ловит это событие через NATS (Durable Consumer profile-nickname-updated) и обновляет свою базу и кэш.
+  - Теперь /profile всегда отдаёт актуальный ник.
+
+7. Фиксы UI
+  - Modal.tsx: исправлен конфликт max-w-lg / max-w-3xl, добавлен фиксированный заголовок и скролл только для тела.
+  - HanoiTower.tsx: убран align="bottom" и max-w-sm, модалка победы больше не уезжает.
+  - InventoryItemDetail.tsx: исправлен рендер [object Object] в атрибутах (иконки, массивы).
+  - Кнопки «Сохранить рекорд» в играх выровнены по центру.
+
 ==============

@@ -62,7 +62,7 @@ P2-1	Gateway: log.Printf везде — перейти на slog	Бэкенд	TE
 ### ========================= SHOP =========================
 
 🟥 P0 — Блокеры (нельзя в прод)
-P0-4	Shop: Saga started > 60s не берётся resumeSagas — деньги списаны, компенсации нет. Воркер должен брать started, проверять Billing.GetTransactions(spend_ref)	Бэкенд	TECH_DEBT_15.10, BACKEND_BIG_TECH_DEBT, FINAL_AUDIT	[дубль] [упущено]
+P0-4	Shop: Saga started > 60s не берётся resumeSagas — деньги списаны, компенсации нет. Воркер должен брать started, проверять Billing.GetTransactions(spend_ref)	Бэкенд	TECH_DEBT_15.10, BACKEND_BIG_TECH_DEBT, FINAL_AUDIT	[дубль] [упущено] ✅ Закрыто — не тащим
 P0-9	Shop: paymentClient может быть nil — мерч-гейт деградирует. Метрика merch_gate_disabled	Бэкенд	TECH_DEBT_15.10, EVENT_HORIZON_PATTERNS	[упущено]
 
 🟧 P1 — Надёжность / безопасность
@@ -72,7 +72,7 @@ P1-20	Shop: не хватает single-flight на cache stampede (Billing, Inve
 
 ### ========================= BILLING =========================
 
-🟥 P0 — Блокеры (нельзя в прод)
+🟥 P0 — Блокеры (нельзя в прод) ✅ Закрыто — не тащим
 P0-5	Billing: RewardConsumer использует time.Now().UnixNano() для reference_id → двойное начисление при redelivery. Использовать event.ReferenceID	Бэкенд	TECH_DEBT_15.10, BACKEND_BIG_TECH_DEBT	[дубль] [упущено]
 
 🟨 P2 — Гигиена / UX (бэкенд)
