@@ -611,7 +611,8 @@ export function HanoiTower() {
         <DiskView className="hanoi-floating-ring hanoi-ring" disk={animating.disk} style={floatStyle} />
       )}
 
-      <Modal open={won} onClose={() => setWon(false)} title="Победа" align="bottom" className="max-w-sm">
+      {/* <Modal open={won} onClose={() => setWon(false)} title="Победа" align="bottom" className="max-w-sm"> */}
+      <Modal open={won} onClose={() => setWon(false)} title="Победа" className="max-w-md">
         <p className="text-text-secondary">Все кольца на месте!</p>
 
         <div className="mt-4 space-y-1.5 text-text-secondary">
