@@ -37,6 +37,10 @@ func (s stubPayment) GrantSubscription(context.Context, *paymentPb.GrantSubscrip
 	return nil, errors.New("unused")
 }
 
+func (s stubPayment) RevokeSubscription(context.Context, *paymentPb.RevokeSubscriptionRequest, ...grpc.CallOption) (*paymentPb.RevokeSubscriptionResponse, error) {
+	return nil, errors.New("unused")
+}
+
 func TestCheckMerchAllowed_NilClient(t *testing.T) {
 	s := &shopService{}
 	err := s.checkMerchAllowed(context.Background(), "u1")
