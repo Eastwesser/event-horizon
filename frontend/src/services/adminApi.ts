@@ -123,6 +123,22 @@ export const adminApi = {
     return data;
   },
 
+  grantSubscription: async (userId: string, plan: string, days: number) => {
+    const { data } = await api.post('/admin/payments/grant-subscription', {
+      user_id: userId,
+      plan,
+      days,
+    });
+    return data;
+  },
+
+  revokeSubscription: async (userId: string) => {
+    const { data } = await api.post('/admin/payments/revoke-subscription', {
+      user_id: userId,
+    });
+    return data;
+  },
+
   getInventoryStats: async (): Promise<InventoryStats> => {
     const { data } = await api.get('/inventory/stats');
     return {
