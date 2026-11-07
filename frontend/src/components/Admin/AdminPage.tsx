@@ -11,6 +11,7 @@ import { Spinner } from '../ui/Spinner';
 import { AdminInventoryStats } from './AdminInventoryStats';
 import { AdminAnalytics } from './AdminAnalytics';
 import { AdminApplications } from './AdminApplications';
+import { Icon } from '../ui/Icon';
 
 type Tab = 'users' | 'applications' | 'inventory' | 'analytics';
 
@@ -47,6 +48,39 @@ export function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const grantSubscription = async (user: AdminUser) => {
+  const ok = window.confirm(`Выдать подписку пользователю ${user.email}?`);
+  if (!ok) return;
+  setBusyId(user.user_id);
+  try {
+    await adminApi.grantSubscription(user.user_id, 'present', 30);
+    // Обновляем список пользователей
+    const res = await adminApi.listUsers({ q: query || undefined, limit: PAGE_SIZE, offset });
+    setUsers(res.users);
+    setTotal(res.total);
+  } catch {
+    window.alert('Не удалось выдать подписку');
+  } finally {
+    setBusyId(null);
+  }
+};
+
+const revokeSubscription = async (user: AdminUser) => {
+  const ok = window.confirm(`Отозвать подписку у пользователя ${user.email}?`);
+  if (!ok) return;
+  setBusyId(user.user_id);
+  try {
+    await adminApi.revokeSubscription(user.user_id);
+    const res = await adminApi.listUsers({ q: query || undefined, limit: PAGE_SIZE, offset });
+    setUsers(res.users);
+    setTotal(res.total);
+  } catch {
+    window.alert('Не удалось отозвать подписку');
+  } finally {
+    setBusyId(null);
+  }
+};
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -214,25 +248,57 @@ export function AdminPage() {
                           ? new Date(u.created_at).toLocaleDateString('ru-RU')
                           : '—'}
                       </td>
+
+                      {/* ЭТО ОДНА КОЛОНКА "ДЕЙСТВИЕ" */}
                       <td className="px-3 py-2.5">
-                        <select
-                          className="rounded-sm border border-white/10 bg-nebula px-2 py-1.5 text-sm text-text-primary disabled:opacity-40"
-                          value={u.role}
-                          disabled={busyId === u.user_id || u.user_id === selfId}
-                          onChange={(e) => void changeRole(u, e.target.value as AdminRole)}
-                          title={
-                            u.user_id === selfId
-                              ? 'Нельзя менять свою роль'
-                              : 'Сменить роль'
-                          }
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {r}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex flex-col gap-2">
+                          
+                          {/* 1. Селект для ролей */}
+                          <select
+                            className="rounded-sm border border-white/10 bg-nebula px-2 py-1.5 text-sm text-text-primary disabled:opacity-40"
+                            value={u.role}
+                            disabled={busyId === u.user_id || u.user_id === selfId}
+                            onChange={(e) => void changeRole(u, e.target.value as AdminRole)}
+                            title={u.user_id === selfId ? 'Нельзя менять свою роль' : 'Сменить роль'}
+                          >
+                            {ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+
+                          {/* 2. Кнопки подписки (вне селекта, но внутри flex-col) */}
+                          <div className="flex gap-1">
+                            {!u.subscription?.active ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                title="Выдать подписку"
+                                disabled={busyId === u.user_id}
+                                onClick={() => void grantSubscription(u)}
+                              >
+                                <Icon name="check" className="h-4 w-4 text-green-500" />
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                title="Отозвать подписку"
+                                disabled={busyId === u.user_id}
+                                onClick={() => void revokeSubscription(u)}
+                              >
+                                <Icon name="x" className="h-4 w-4 text-red-500" />
+                              </Button>
+                            )}
+                          </div>
+
+                        </div>
                       </td>
+                      {/* КОНЕЦ КОЛОНКИ "ДЕЙСТВИЕ" */}
+
                     </tr>
                   ))}
                 </tbody>
