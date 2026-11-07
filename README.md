@@ -5,7 +5,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.1-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.3-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
 **Event Horizon v1.1.3.3** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. Frontend polish v1.1.2 + backend patterns catalog v1.1.3.

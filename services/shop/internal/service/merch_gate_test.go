@@ -33,6 +33,10 @@ func (s stubPayment) CanPurchaseMerch(context.Context, *paymentPb.CanPurchaseMer
 	return &paymentPb.CanPurchaseMerchResponse{Allowed: s.allowed, Reason: s.reason}, nil
 }
 
+func (s stubPayment) GrantSubscription(context.Context, *paymentPb.GrantSubscriptionRequest, ...grpc.CallOption) (*paymentPb.GrantSubscriptionResponse, error) {
+	return nil, errors.New("unused")
+}
+
 func TestCheckMerchAllowed_NilClient(t *testing.T) {
 	s := &shopService{}
 	err := s.checkMerchAllowed(context.Background(), "u1")
