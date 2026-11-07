@@ -1392,6 +1392,69 @@ func runGateway() {
 		c.JSON(http.StatusOK, gin.H{"allowed": resp.Allowed, "reason": resp.Reason})
 	})
 
+	r.POST("/api/v1/admin/payments/grant-subscription", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		var req struct {
+			UserID string `json:"user_id"`
+			Plan   string `json:"plan"`
+			Days   int32  `json:"days"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if req.UserID == "" || req.Plan == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user_id and plan are required"})
+			return
+		}
+
+		out, err := throughBreaker(paymentCB, c, func() (any, error) {
+			return paymentClient.GrantSubscription(c.Request.Context(), &paymentPb.GrantSubscriptionRequest{
+				UserId: req.UserID,
+				Plan:   req.Plan,
+				Days:   req.Days,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*paymentPb.GrantSubscriptionResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"success":         resp.Success,
+			"subscription_id": resp.SubscriptionId,
+			"expires_at_unix": resp.ExpiresAtUnix,
+		})
+	})
+
+	r.POST("/api/v1/admin/payments/revoke-subscription", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		var req struct {
+			UserID string `json:"user_id"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.UserID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+			return
+		}
+
+		out, err := throughBreaker(paymentCB, c, func() (any, error) {
+			return paymentClient.RevokeSubscription(c.Request.Context(), &paymentPb.RevokeSubscriptionRequest{
+				UserId: req.UserID,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*paymentPb.RevokeSubscriptionResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"success": resp.Success,
+			"message": resp.Message,
+		})
+	})
+
 	r.POST("/api/v1/payment/webhook", func(c *gin.Context) {
 		raw, err := c.GetRawData()
 		if err != nil || len(raw) == 0 {

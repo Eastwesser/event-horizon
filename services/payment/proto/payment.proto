@@ -11,6 +11,8 @@ service PaymentService {
   rpc ConfirmPayment(ConfirmPaymentRequest) returns (ConfirmPaymentResponse);
   rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
   rpc CanPurchaseMerch(CanPurchaseMerchRequest) returns (CanPurchaseMerchResponse);
+  rpc GrantSubscription(GrantSubscriptionRequest) returns (GrantSubscriptionResponse);
+  rpc RevokeSubscription(RevokeSubscriptionRequest) returns (RevokeSubscriptionResponse);
 }
 
 message CreateCheckoutRequest {
@@ -59,4 +61,25 @@ message CanPurchaseMerchRequest {
 message CanPurchaseMerchResponse {
   bool allowed = 1;
   string reason = 2;
+}
+
+message GrantSubscriptionRequest {
+  string user_id = 1;
+  string plan = 2;
+  int32 days = 3;
+}
+
+message GrantSubscriptionResponse {
+  bool success = 1;
+  string subscription_id = 2;
+  int64 expires_at_unix = 3;
+}
+
+message RevokeSubscriptionRequest {
+  string user_id = 1;
+}
+
+message RevokeSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
 }

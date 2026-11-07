@@ -71,6 +71,28 @@ func (h *GRPCHandler) CanPurchaseMerch(ctx context.Context, req *pb.CanPurchaseM
 	return &pb.CanPurchaseMerchResponse{Allowed: ok, Reason: reason}, nil
 }
 
+func (h *GRPCHandler) GrantSubscription(ctx context.Context, req *pb.GrantSubscriptionRequest) (*pb.GrantSubscriptionResponse, error) {
+	sub, err := h.svc.GrantSubscription(ctx, req.GetUserId(), req.GetPlan(), int(req.GetDays()))
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &pb.GrantSubscriptionResponse{
+		Success:        true,
+		SubscriptionId: sub.ID,
+		ExpiresAtUnix:  sub.ExpiresAt.Unix(),
+	}, nil
+}
+
+func (h *GRPCHandler) RevokeSubscription(ctx context.Context, req *pb.RevokeSubscriptionRequest) (*pb.RevokeSubscriptionResponse, error) {
+	if err := h.svc.RevokeSubscription(ctx, req.GetUserId()); err != nil {
+		return nil, mapErr(err)
+	}
+	return &pb.RevokeSubscriptionResponse{
+		Success: true,
+		Message: "subscription revoked",
+	}, nil
+}
+
 func mapErr(err error) error {
 	switch {
 	case errors.Is(err, model.ErrNotFound):

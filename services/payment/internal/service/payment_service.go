@@ -17,12 +17,15 @@ type PaymentStore interface {
 	GetPayment(ctx context.Context, id string) (*model.Payment, error)
 	CompletePaymentAndActivateSubscription(ctx context.Context, paymentID, providerRef string, sub *model.Subscription, eventType string, eventPayload map[string]any) error
 	GetActiveSubscription(ctx context.Context, userID string) (*model.Subscription, error)
+	CreateSubscription(ctx context.Context, sub *model.Subscription) error
+	RevokeSubscription(ctx context.Context, userID string) error
 }
 
 // SubscriptionCache is the Redis port.
 type SubscriptionCache interface {
 	GetSubscription(ctx context.Context, userID string) (*model.Subscription, error)
 	SetSubscription(ctx context.Context, sub *model.Subscription) error
+	DeleteSubscription(ctx context.Context, userID string) error
 }
 
 type PaymentService struct {
@@ -146,4 +149,41 @@ func (s *PaymentService) CanPurchaseMerch(ctx context.Context, userID string) (b
 		return false, "active subscription required to redeem merch"
 	}
 	return true, ""
+}
+
+func (s *PaymentService) GrantSubscription(ctx context.Context, userID, plan string, days int) (*model.Subscription, error) {
+	if days <= 0 {
+		days = s.subscriptionDays
+	}
+	amount, err := model.PlanAmountRub(plan)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	sub := &model.Subscription{
+		ID:        uuid.NewString(),
+		UserID:    userID,
+		Plan:      plan,
+		Status:    model.StatusActive,
+		AmountRub: amount,
+		StartsAt:  now,
+		ExpiresAt: now.Add(time.Duration(days) * 24 * time.Hour),
+	}
+	if err := s.repo.CreateSubscription(ctx, sub); err != nil {
+		return nil, err
+	}
+	if s.cache != nil {
+		_ = s.cache.SetSubscription(ctx, sub)
+	}
+	return sub, nil
+}
+
+func (s *PaymentService) RevokeSubscription(ctx context.Context, userID string) error {
+	if err := s.repo.RevokeSubscription(ctx, userID); err != nil {
+		return err
+	}
+	if s.cache != nil {
+		_ = s.cache.DeleteSubscription(ctx, userID) // нужно добавить этот метод в кэш
+	}
+	return nil
 }

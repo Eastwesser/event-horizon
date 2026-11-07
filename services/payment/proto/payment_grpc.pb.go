@@ -19,10 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	PaymentService_CreateCheckout_FullMethodName   = "/payment.PaymentService/CreateCheckout"
-	PaymentService_ConfirmPayment_FullMethodName   = "/payment.PaymentService/ConfirmPayment"
-	PaymentService_GetSubscription_FullMethodName  = "/payment.PaymentService/GetSubscription"
-	PaymentService_CanPurchaseMerch_FullMethodName = "/payment.PaymentService/CanPurchaseMerch"
+	PaymentService_CreateCheckout_FullMethodName     = "/payment.PaymentService/CreateCheckout"
+	PaymentService_ConfirmPayment_FullMethodName     = "/payment.PaymentService/ConfirmPayment"
+	PaymentService_GetSubscription_FullMethodName    = "/payment.PaymentService/GetSubscription"
+	PaymentService_CanPurchaseMerch_FullMethodName   = "/payment.PaymentService/CanPurchaseMerch"
+	PaymentService_GrantSubscription_FullMethodName  = "/payment.PaymentService/GrantSubscription"
+	PaymentService_RevokeSubscription_FullMethodName = "/payment.PaymentService/RevokeSubscription"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
@@ -33,6 +35,8 @@ type PaymentServiceClient interface {
 	ConfirmPayment(ctx context.Context, in *ConfirmPaymentRequest, opts ...grpc.CallOption) (*ConfirmPaymentResponse, error)
 	GetSubscription(ctx context.Context, in *GetSubscriptionRequest, opts ...grpc.CallOption) (*GetSubscriptionResponse, error)
 	CanPurchaseMerch(ctx context.Context, in *CanPurchaseMerchRequest, opts ...grpc.CallOption) (*CanPurchaseMerchResponse, error)
+	GrantSubscription(ctx context.Context, in *GrantSubscriptionRequest, opts ...grpc.CallOption) (*GrantSubscriptionResponse, error)
+	RevokeSubscription(ctx context.Context, in *RevokeSubscriptionRequest, opts ...grpc.CallOption) (*RevokeSubscriptionResponse, error)
 }
 
 type paymentServiceClient struct {
@@ -79,6 +83,24 @@ func (c *paymentServiceClient) CanPurchaseMerch(ctx context.Context, in *CanPurc
 	return out, nil
 }
 
+func (c *paymentServiceClient) GrantSubscription(ctx context.Context, in *GrantSubscriptionRequest, opts ...grpc.CallOption) (*GrantSubscriptionResponse, error) {
+	out := new(GrantSubscriptionResponse)
+	err := c.cc.Invoke(ctx, PaymentService_GrantSubscription_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) RevokeSubscription(ctx context.Context, in *RevokeSubscriptionRequest, opts ...grpc.CallOption) (*RevokeSubscriptionResponse, error) {
+	out := new(RevokeSubscriptionResponse)
+	err := c.cc.Invoke(ctx, PaymentService_RevokeSubscription_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility
@@ -87,6 +109,8 @@ type PaymentServiceServer interface {
 	ConfirmPayment(context.Context, *ConfirmPaymentRequest) (*ConfirmPaymentResponse, error)
 	GetSubscription(context.Context, *GetSubscriptionRequest) (*GetSubscriptionResponse, error)
 	CanPurchaseMerch(context.Context, *CanPurchaseMerchRequest) (*CanPurchaseMerchResponse, error)
+	GrantSubscription(context.Context, *GrantSubscriptionRequest) (*GrantSubscriptionResponse, error)
+	RevokeSubscription(context.Context, *RevokeSubscriptionRequest) (*RevokeSubscriptionResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -105,6 +129,12 @@ func (UnimplementedPaymentServiceServer) GetSubscription(context.Context, *GetSu
 }
 func (UnimplementedPaymentServiceServer) CanPurchaseMerch(context.Context, *CanPurchaseMerchRequest) (*CanPurchaseMerchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CanPurchaseMerch not implemented")
+}
+func (UnimplementedPaymentServiceServer) GrantSubscription(context.Context, *GrantSubscriptionRequest) (*GrantSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GrantSubscription not implemented")
+}
+func (UnimplementedPaymentServiceServer) RevokeSubscription(context.Context, *RevokeSubscriptionRequest) (*RevokeSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeSubscription not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 
@@ -191,6 +221,42 @@ func _PaymentService_CanPurchaseMerch_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaymentService_GrantSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GrantSubscriptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).GrantSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_GrantSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).GrantSubscription(ctx, req.(*GrantSubscriptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_RevokeSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeSubscriptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).RevokeSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_RevokeSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).RevokeSubscription(ctx, req.(*RevokeSubscriptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +279,14 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CanPurchaseMerch",
 			Handler:    _PaymentService_CanPurchaseMerch_Handler,
+		},
+		{
+			MethodName: "GrantSubscription",
+			Handler:    _PaymentService_GrantSubscription_Handler,
+		},
+		{
+			MethodName: "RevokeSubscription",
+			Handler:    _PaymentService_RevokeSubscription_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
