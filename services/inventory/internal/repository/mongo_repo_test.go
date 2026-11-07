@@ -17,13 +17,30 @@ import (
 // setupTestMongo поднимает тестовую MongoDB (использует testcontainers или локальный экземпляр).
 // Для CI/CD рекомендуется использовать testcontainers.
 func setupTestMongo(t *testing.T) *MongoRepo {
+	t.Helper() // чтобы в логах показывался вызывающий тест, а не setupTestMongo.
+	
 	// Используем локальную MongoDB (для разработки)
 	// В CI можно заменить на testcontainers
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-	require.NoError(t, err)
+	if err != nil {
+		t.Skipf("mongo unavailable (Docker?): %v", err)
+	}
+	// require.NoError(t, err)
+
+	// Ping — реальная проверка доступности
+	// Ping — mongo.Connect ленивый, без Ping ошибка всплывёт только на первом Insert, и repo уже создан с nil клиентом. 
+	// Ping проверяет реальное соединение.
+	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(context.Background())
+		/*
+			t.Skipf вместо require.NoError — если Mongo нет, тест скипается, а не падает. 
+			Это стандарт для integration-тестов (как в authorsPool у Authors — там t.Skipf при недоступном Docker)
+		*/
+		t.Skipf("mongo unavailable (Docker?): %v", err)
+	}
 
 	// Создаем временную базу данных для тестов
 	db := client.Database("test_inventory_" + time.Now().Format("20060102150405"))
