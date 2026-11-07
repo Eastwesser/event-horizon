@@ -61,11 +61,13 @@ test-unit:
 	(cd pkg/migrator && GOWORK=off go test ./...) || failed=1; \
 	(cd platform && GOWORK=off go test ./...) || failed=1; \
 	exit $$failed
-
+	
+# Nginx entrypoint (балансирует 2 balancer'а)
 test-smoke:
 	@echo "Smoke: curl /health|/ready on local metrics ports (cluster must be up)"
 	@set -e; \
 	for url in \
+      http://127.0.0.1/health \         
 	  http://127.0.0.1:8079/ready \
 	  http://127.0.0.1:8081/ready \
 	  http://127.0.0.1:9091/health \

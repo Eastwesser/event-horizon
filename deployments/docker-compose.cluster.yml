@@ -1245,8 +1245,32 @@ services:
       - gateway-3
     networks:
       - event-horizon-net
+  balancer-2:
+    image: eastwesser/balancer:latest
+    container_name: deployments-balancer-2
+    ports:
+      - "8080:8079" # На хосте 8080, внутри 8079
+    depends_on:
+      - gateway
+      - gateway-2
+      - gateway-3
+    networks:
+      - event-horizon-net
 
-
+  nginx:
+    image: nginx:alpine
+    container_name: deployments-nginx
+    ports:
+      - "80:80" # Теперь сайт открывается на 80 порту (http://localhost)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - balancer
+      - balancer-2
+    networks:
+      - event-horizon-net
+    restart: unless-stopped
+    
 # ============================================================
 # 6. PERSISTENT VOLUMES
 # ============================================================
