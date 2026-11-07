@@ -26,8 +26,8 @@ type RegisterRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Email    string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Password string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	// role: "user" (по умолчанию) или "author". "admin" через публичную
-	// регистрацию выдать нельзя — назначается только через UpdateRole.
+	// role is ignored for assignment: public registration always creates "user".
+	// Author/admin are granted only via UpdateRole (admin) / Wave 3 approval.
 	Role          string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
