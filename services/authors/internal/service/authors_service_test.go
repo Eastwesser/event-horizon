@@ -20,6 +20,7 @@ type mockStore struct {
 	approveFn              func(ctx context.Context, applicationID, reviewerID string) (*model.AuthorApplication, *model.Author, error)
 	rejectFn               func(ctx context.Context, applicationID, reviewerID, note string) (*model.AuthorApplication, error)
 	revertFn               func(ctx context.Context, applicationID string) (*model.AuthorApplication, error)
+	getActiveByUserIDFn    func(ctx context.Context, userID string) (*model.Author, error)
 	insertCalls            int
 	approveCalls           int
 	rejectCalls            int
@@ -91,6 +92,13 @@ func (m *mockStore) RevertApplication(ctx context.Context, applicationID string)
 		return m.revertFn(ctx, applicationID)
 	}
 	return nil, model.ErrApplicationMissing
+}
+
+func (m *mockStore) GetActiveByUserID(ctx context.Context, userID string) (*model.Author, error) {
+	if m.getActiveByUserIDFn != nil {
+		return m.getActiveByUserIDFn(ctx, userID)
+	}
+	return nil, model.ErrNotFound
 }
 
 type mockCache struct {
@@ -169,10 +177,10 @@ func TestUpsertProfile_SuccessWithPortfolioAndCache(t *testing.T) {
 
 func TestGetAuthor_CacheHit(t *testing.T) {
 	cache := &mockCache{store: map[string]*model.Author{
-		"u1": {UserID: "u1", DisplayName: "cached"},
+		"u1": {UserID: "u1", DisplayName: "cached", Active: true}, // ← Active: true
 	}}
 	store := &mockStore{
-		getByUserIDFn: func(context.Context, string) (*model.Author, error) {
+		getActiveByUserIDFn: func(context.Context, string) (*model.Author, error) { // ← было getByUserIDFn
 			t.Fatal("repo should not be called on cache hit")
 			return nil, nil
 		},
@@ -186,8 +194,8 @@ func TestGetAuthor_CacheHit(t *testing.T) {
 func TestGetAuthor_CacheMissLoadsRepo(t *testing.T) {
 	cache := &mockCache{getErr: errors.New("miss")}
 	store := &mockStore{
-		getByUserIDFn: func(_ context.Context, userID string) (*model.Author, error) {
-			return &model.Author{UserID: userID, DisplayName: "from-db"}, nil
+		getActiveByUserIDFn: func(_ context.Context, userID string) (*model.Author, error) { // ← было getByUserIDFn
+			return &model.Author{UserID: userID, DisplayName: "from-db", Active: true}, nil
 		},
 	}
 	got, err := New(store, cache).GetAuthor(context.Background(), "u1")
@@ -389,5 +397,29 @@ func TestRevertApplication_ClearsCache(t *testing.T) {
 	got, err := New(store, cache).RevertApplication(context.Background(), "app-1")
 	if err != nil || got.Status != model.ApplicationPending || cache.dels != 1 {
 		t.Fatalf("got=%+v err=%v dels=%d", got, err, cache.dels)
+	}
+}
+
+func TestGetAuthor_HidesInactive(t *testing.T) {
+	store := &mockStore{
+		getActiveByUserIDFn: func(_ context.Context, userID string) (*model.Author, error) {
+			return nil, model.ErrNotFound // soft-deleted → repo скрывает
+		},
+	}
+	_, err := New(store, nil).GetAuthor(context.Background(), "u1")
+	if !errors.Is(err, model.ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetMyAuthor_ReturnsInactive(t *testing.T) {
+	store := &mockStore{
+		getByUserIDFn: func(_ context.Context, userID string) (*model.Author, error) {
+			return &model.Author{UserID: userID, DisplayName: "Den", Active: false}, nil
+		},
+	}
+	got, err := New(store, nil).GetMyAuthor(context.Background(), "u1")
+	if err != nil || got.Active {
+		t.Fatalf("want inactive author, got %+v err=%v", got, err)
 	}
 }

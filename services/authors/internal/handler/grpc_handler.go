@@ -21,20 +21,20 @@ func NewGRPCHandler(svc *service.AuthorsService) *GRPCHandler {
 	return &GRPCHandler{svc: svc}
 }
 
-func toPB(a *model.Author) *pb.Author {
-	if a == nil {
-		return nil
-	}
-	out := &pb.Author{
-		Id: a.ID, UserId: a.UserID, DisplayName: a.DisplayName, Bio: a.Bio,
-		AvatarUrl: a.AvatarURL, Portfolio: a.Portfolio, Active: a.Active,
-		CreatedAtUnix: a.CreatedAt.Unix(), UpdatedAtUnix: a.UpdatedAt.Unix(),
-	}
-	if a.VerifiedAt != nil {
-		out.VerifiedAtUnix = a.VerifiedAt.Unix()
-	}
-	return out
-}
+// func toPB(a *model.Author) *pb.Author {
+// 	if a == nil {
+// 		return nil
+// 	}
+// 	out := &pb.Author{
+// 		Id: a.ID, UserId: a.UserID, DisplayName: a.DisplayName, Bio: a.Bio,
+// 		AvatarUrl: a.AvatarURL, Portfolio: a.Portfolio, Active: a.Active,
+// 		CreatedAtUnix: a.CreatedAt.Unix(), UpdatedAtUnix: a.UpdatedAt.Unix(),
+// 	}
+// 	if a.VerifiedAt != nil {
+// 		out.VerifiedAtUnix = a.VerifiedAt.Unix()
+// 	}
+// 	return out
+// }
 
 func applicationToPB(a *model.AuthorApplication) *pb.AuthorApplication {
 	if a == nil {
@@ -67,11 +67,21 @@ func (h *GRPCHandler) UpsertProfile(ctx context.Context, req *pb.UpsertProfileRe
 }
 
 func (h *GRPCHandler) GetAuthor(ctx context.Context, req *pb.GetAuthorRequest) (*pb.GetAuthorResponse, error) {
-	a, err := h.svc.GetAuthor(ctx, req.GetUserId())
+	a, err := h.svc.GetAuthor(ctx, req.GetUserId())   // теперь «только активные»
 	if err != nil {
 		return nil, mapErr(err)
 	}
 	return &pb.GetAuthorResponse{Author: toPB(a)}, nil
+}
+
+// GetMyAuthor returns the caller's own profile, including soft-deleted
+// (active=false) ones. Used by GET /api/v1/authors/me.
+func (h *GRPCHandler) GetMyAuthor(ctx context.Context, req *pb.GetMyAuthorRequest) (*pb.GetMyAuthorResponse, error) {
+	a, err := h.svc.GetMyAuthor(ctx, req.GetUserId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &pb.GetMyAuthorResponse{Author: toPB(a)}, nil
 }
 
 func (h *GRPCHandler) ListAuthors(ctx context.Context, req *pb.ListAuthorsRequest) (*pb.ListAuthorsResponse, error) {
@@ -153,11 +163,35 @@ func mapErr(err error) error {
 	switch {
 	case errors.Is(err, model.ErrNotFound), errors.Is(err, model.ErrApplicationMissing):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, model.ErrInvalidInput),
-		errors.Is(err, model.ErrAlreadyPrivileged),
-		errors.Is(err, model.ErrAlreadyReviewed):
+	case errors.Is(err, model.ErrAlreadyReviewed):
+		// 409 on Gateway — the application was already approved/rejected.
+		return status.Error(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, model.ErrAlreadyPrivileged):
+		// 403 on Gateway — user is already author/admin, no need to apply.
+		return status.Error(codes.PermissionDenied, err.Error())
+	case errors.Is(err, model.ErrInvalidInput):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Errorf(codes.Internal, "%v", err)
 	}
+}
+
+func toPB(a *model.Author) *pb.Author {
+	if a == nil {
+		return nil
+	}
+	out := &pb.Author{
+		Id: a.ID, UserId: a.UserID, DisplayName: a.DisplayName, Bio: a.Bio,
+		AvatarUrl: a.AvatarURL, Portfolio: a.Portfolio, Active: a.Active,
+	}
+	if !a.CreatedAt.IsZero() {
+		out.CreatedAtUnix = a.CreatedAt.Unix()
+	}
+	if !a.UpdatedAt.IsZero() {
+		out.UpdatedAtUnix = a.UpdatedAt.Unix()
+	}
+	if a.VerifiedAt != nil {
+		out.VerifiedAtUnix = a.VerifiedAt.Unix()
+	}
+	return out
 }
