@@ -146,3 +146,46 @@ func (r *PostgresRepo) GetActiveSubscription(ctx context.Context, userID string)
 	}
 	return &s, nil
 }
+
+// CreateSubscription manually inserts an active subscription (admin grant).
+// It does not create a payment or emit NATS events — this is a direct DB action.
+func (r *PostgresRepo) CreateSubscription(ctx context.Context, sub *model.Subscription) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	now := time.Now().UTC()
+
+	// 1. Гасим старую активную подписку этого пользователя (если есть)
+	_, err = tx.Exec(ctx, `
+		UPDATE subscriptions SET status = $2, updated_at = $3
+		WHERE user_id = $1 AND status = $4`,
+		sub.UserID, model.StatusExpired, now, model.StatusActive,
+	)
+	if err != nil {
+		return err
+	}
+
+	// 2. Вставляем новую
+	_, err = tx.Exec(ctx, `
+		INSERT INTO subscriptions (id, user_id, plan, status, amount_rub, payment_id, starts_at, expires_at, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		sub.ID, sub.UserID, sub.Plan, sub.Status, sub.AmountRub, nil, sub.StartsAt, sub.ExpiresAt, now, now,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (r *PostgresRepo) RevokeSubscription(ctx context.Context, userID string) error {
+	_, err := r.db.Exec(ctx, `
+		UPDATE subscriptions SET status = $2, updated_at = NOW()
+		WHERE user_id = $1 AND status = $3`,
+		userID, model.StatusExpired, model.StatusActive,
+	)
+	return err
+}

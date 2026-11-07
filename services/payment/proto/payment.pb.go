@@ -494,6 +494,222 @@ func (x *CanPurchaseMerchResponse) GetReason() string {
 	return ""
 }
 
+type GrantSubscriptionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Plan          string                 `protobuf:"bytes,2,opt,name=plan,proto3" json:"plan,omitempty"`
+	Days          int32                  `protobuf:"varint,3,opt,name=days,proto3" json:"days,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GrantSubscriptionRequest) Reset() {
+	*x = GrantSubscriptionRequest{}
+	mi := &file_proto_payment_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantSubscriptionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantSubscriptionRequest) ProtoMessage() {}
+
+func (x *GrantSubscriptionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_payment_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantSubscriptionRequest.ProtoReflect.Descriptor instead.
+func (*GrantSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return file_proto_payment_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GrantSubscriptionRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GrantSubscriptionRequest) GetPlan() string {
+	if x != nil {
+		return x.Plan
+	}
+	return ""
+}
+
+func (x *GrantSubscriptionRequest) GetDays() int32 {
+	if x != nil {
+		return x.Days
+	}
+	return 0
+}
+
+type GrantSubscriptionResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Success        bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	SubscriptionId string                 `protobuf:"bytes,2,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
+	ExpiresAtUnix  int64                  `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GrantSubscriptionResponse) Reset() {
+	*x = GrantSubscriptionResponse{}
+	mi := &file_proto_payment_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantSubscriptionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantSubscriptionResponse) ProtoMessage() {}
+
+func (x *GrantSubscriptionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_payment_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantSubscriptionResponse.ProtoReflect.Descriptor instead.
+func (*GrantSubscriptionResponse) Descriptor() ([]byte, []int) {
+	return file_proto_payment_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GrantSubscriptionResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GrantSubscriptionResponse) GetSubscriptionId() string {
+	if x != nil {
+		return x.SubscriptionId
+	}
+	return ""
+}
+
+func (x *GrantSubscriptionResponse) GetExpiresAtUnix() int64 {
+	if x != nil {
+		return x.ExpiresAtUnix
+	}
+	return 0
+}
+
+type RevokeSubscriptionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeSubscriptionRequest) Reset() {
+	*x = RevokeSubscriptionRequest{}
+	mi := &file_proto_payment_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeSubscriptionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeSubscriptionRequest) ProtoMessage() {}
+
+func (x *RevokeSubscriptionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_payment_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeSubscriptionRequest.ProtoReflect.Descriptor instead.
+func (*RevokeSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return file_proto_payment_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RevokeSubscriptionRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type RevokeSubscriptionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeSubscriptionResponse) Reset() {
+	*x = RevokeSubscriptionResponse{}
+	mi := &file_proto_payment_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeSubscriptionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeSubscriptionResponse) ProtoMessage() {}
+
+func (x *RevokeSubscriptionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_payment_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeSubscriptionResponse.ProtoReflect.Descriptor instead.
+func (*RevokeSubscriptionResponse) Descriptor() ([]byte, []int) {
+	return file_proto_payment_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RevokeSubscriptionResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RevokeSubscriptionResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_proto_payment_proto protoreflect.FileDescriptor
 
 const file_proto_payment_proto_rawDesc = "" +
@@ -533,12 +749,27 @@ const file_proto_payment_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"L\n" +
 	"\x18CanPurchaseMerchResponse\x12\x18\n" +
 	"\aallowed\x18\x01 \x01(\bR\aallowed\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason2\xe5\x02\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"[\n" +
+	"\x18GrantSubscriptionRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04plan\x18\x02 \x01(\tR\x04plan\x12\x12\n" +
+	"\x04days\x18\x03 \x01(\x05R\x04days\"\x86\x01\n" +
+	"\x19GrantSubscriptionResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12'\n" +
+	"\x0fsubscription_id\x18\x02 \x01(\tR\x0esubscriptionId\x12&\n" +
+	"\x0fexpires_at_unix\x18\x03 \x01(\x03R\rexpiresAtUnix\"4\n" +
+	"\x19RevokeSubscriptionRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"P\n" +
+	"\x1aRevokeSubscriptionResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xa0\x04\n" +
 	"\x0ePaymentService\x12Q\n" +
 	"\x0eCreateCheckout\x12\x1e.payment.CreateCheckoutRequest\x1a\x1f.payment.CreateCheckoutResponse\x12Q\n" +
 	"\x0eConfirmPayment\x12\x1e.payment.ConfirmPaymentRequest\x1a\x1f.payment.ConfirmPaymentResponse\x12T\n" +
 	"\x0fGetSubscription\x12\x1f.payment.GetSubscriptionRequest\x1a .payment.GetSubscriptionResponse\x12W\n" +
-	"\x10CanPurchaseMerch\x12 .payment.CanPurchaseMerchRequest\x1a!.payment.CanPurchaseMerchResponseBDZBgithub.com/Eastwesser/event-horizon/services/payment/proto;paymentb\x06proto3"
+	"\x10CanPurchaseMerch\x12 .payment.CanPurchaseMerchRequest\x1a!.payment.CanPurchaseMerchResponse\x12Z\n" +
+	"\x11GrantSubscription\x12!.payment.GrantSubscriptionRequest\x1a\".payment.GrantSubscriptionResponse\x12]\n" +
+	"\x12RevokeSubscription\x12\".payment.RevokeSubscriptionRequest\x1a#.payment.RevokeSubscriptionResponseBDZBgithub.com/Eastwesser/event-horizon/services/payment/proto;paymentb\x06proto3"
 
 var (
 	file_proto_payment_proto_rawDescOnce sync.Once
@@ -552,31 +783,39 @@ func file_proto_payment_proto_rawDescGZIP() []byte {
 	return file_proto_payment_proto_rawDescData
 }
 
-var file_proto_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_proto_payment_proto_goTypes = []any{
-	(*CreateCheckoutRequest)(nil),    // 0: payment.CreateCheckoutRequest
-	(*CreateCheckoutResponse)(nil),   // 1: payment.CreateCheckoutResponse
-	(*ConfirmPaymentRequest)(nil),    // 2: payment.ConfirmPaymentRequest
-	(*ConfirmPaymentResponse)(nil),   // 3: payment.ConfirmPaymentResponse
-	(*GetSubscriptionRequest)(nil),   // 4: payment.GetSubscriptionRequest
-	(*GetSubscriptionResponse)(nil),  // 5: payment.GetSubscriptionResponse
-	(*CanPurchaseMerchRequest)(nil),  // 6: payment.CanPurchaseMerchRequest
-	(*CanPurchaseMerchResponse)(nil), // 7: payment.CanPurchaseMerchResponse
+	(*CreateCheckoutRequest)(nil),      // 0: payment.CreateCheckoutRequest
+	(*CreateCheckoutResponse)(nil),     // 1: payment.CreateCheckoutResponse
+	(*ConfirmPaymentRequest)(nil),      // 2: payment.ConfirmPaymentRequest
+	(*ConfirmPaymentResponse)(nil),     // 3: payment.ConfirmPaymentResponse
+	(*GetSubscriptionRequest)(nil),     // 4: payment.GetSubscriptionRequest
+	(*GetSubscriptionResponse)(nil),    // 5: payment.GetSubscriptionResponse
+	(*CanPurchaseMerchRequest)(nil),    // 6: payment.CanPurchaseMerchRequest
+	(*CanPurchaseMerchResponse)(nil),   // 7: payment.CanPurchaseMerchResponse
+	(*GrantSubscriptionRequest)(nil),   // 8: payment.GrantSubscriptionRequest
+	(*GrantSubscriptionResponse)(nil),  // 9: payment.GrantSubscriptionResponse
+	(*RevokeSubscriptionRequest)(nil),  // 10: payment.RevokeSubscriptionRequest
+	(*RevokeSubscriptionResponse)(nil), // 11: payment.RevokeSubscriptionResponse
 }
 var file_proto_payment_proto_depIdxs = []int32{
-	0, // 0: payment.PaymentService.CreateCheckout:input_type -> payment.CreateCheckoutRequest
-	2, // 1: payment.PaymentService.ConfirmPayment:input_type -> payment.ConfirmPaymentRequest
-	4, // 2: payment.PaymentService.GetSubscription:input_type -> payment.GetSubscriptionRequest
-	6, // 3: payment.PaymentService.CanPurchaseMerch:input_type -> payment.CanPurchaseMerchRequest
-	1, // 4: payment.PaymentService.CreateCheckout:output_type -> payment.CreateCheckoutResponse
-	3, // 5: payment.PaymentService.ConfirmPayment:output_type -> payment.ConfirmPaymentResponse
-	5, // 6: payment.PaymentService.GetSubscription:output_type -> payment.GetSubscriptionResponse
-	7, // 7: payment.PaymentService.CanPurchaseMerch:output_type -> payment.CanPurchaseMerchResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: payment.PaymentService.CreateCheckout:input_type -> payment.CreateCheckoutRequest
+	2,  // 1: payment.PaymentService.ConfirmPayment:input_type -> payment.ConfirmPaymentRequest
+	4,  // 2: payment.PaymentService.GetSubscription:input_type -> payment.GetSubscriptionRequest
+	6,  // 3: payment.PaymentService.CanPurchaseMerch:input_type -> payment.CanPurchaseMerchRequest
+	8,  // 4: payment.PaymentService.GrantSubscription:input_type -> payment.GrantSubscriptionRequest
+	10, // 5: payment.PaymentService.RevokeSubscription:input_type -> payment.RevokeSubscriptionRequest
+	1,  // 6: payment.PaymentService.CreateCheckout:output_type -> payment.CreateCheckoutResponse
+	3,  // 7: payment.PaymentService.ConfirmPayment:output_type -> payment.ConfirmPaymentResponse
+	5,  // 8: payment.PaymentService.GetSubscription:output_type -> payment.GetSubscriptionResponse
+	7,  // 9: payment.PaymentService.CanPurchaseMerch:output_type -> payment.CanPurchaseMerchResponse
+	9,  // 10: payment.PaymentService.GrantSubscription:output_type -> payment.GrantSubscriptionResponse
+	11, // 11: payment.PaymentService.RevokeSubscription:output_type -> payment.RevokeSubscriptionResponse
+	6,  // [6:12] is the sub-list for method output_type
+	0,  // [0:6] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_proto_payment_proto_init() }
@@ -590,7 +829,7 @@ func file_proto_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_payment_proto_rawDesc), len(file_proto_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
