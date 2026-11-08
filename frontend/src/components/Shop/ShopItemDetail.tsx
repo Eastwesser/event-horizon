@@ -22,7 +22,6 @@ import PurchaseModal from './PurchaseModal';
 import CancelPurchaseModal from './CancelPurchaseModal';
 import { itemFallbackIcon } from '../../lib/itemIcons';
 
-
 const ELEMENT_RU: Record<string, string> = {
   mountains: 'Горы',
   woods: 'Лес',
@@ -313,17 +312,41 @@ export function ShopItemDetail() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
+
             <Badge tone="cyan">{item.type}</Badge>
             {element ? <Badge tone="indigo">{element}</Badge> : null}
+
+            {/* FE-CARD-4: Показываем класс (Компаньон), если он есть */}
+            {(() => {
+              const rawClass = attrs.class;
+
+              const classes = Array.isArray(rawClass) ? rawClass : rawClass ? [rawClass] : [];
+              if (classes.length === 0) return null;
+              return classes
+                .filter((cls) => cls && String(cls).trim() !== '') // <--- добавь фильтр
+                .map((cls: string) => (
+                  <Badge key={cls} tone="neutral">{cls}</Badge>
+                ));
+
+              // const classes = Array.isArray(rawClass) ? rawClass : rawClass ? [rawClass] : [];
+              // if (classes.length === 0) return null;
+              // // Оставляем как есть, не заменяя на Tamagotchi!
+              // return classes.map((cls: string) => (
+              //   <Badge key={cls} tone="neutral">{cls}</Badge>
+              // ));
+            })()}
             <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
+
               <Icon name="ticket" className="h-3.5 w-3.5" />
               {formatTicketPrice(item.price)}
             </span>
+
             {stockText !== null && !isDigital && (
               <span className={outOfStock ? 'text-text-muted' : 'text-text-secondary'}>
                 {stockText}
               </span>
             )}
+
           </div>
 
           <CardFlagBadges attrs={attrs} />
@@ -424,7 +447,8 @@ export function ShopItemDetail() {
 
       <CancelPurchaseModal
         isOpen={showCancelModal}
-        item={shopItem}
+        // item={shopItem}
+        item={ownedPurchase?.item || shopItem}
         refundAmount={refundAmount}
         loading={cancelling}
         onConfirm={() => void handleConfirmCancel()}

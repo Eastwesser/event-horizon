@@ -30,6 +30,7 @@ import { useEffect, useState } from 'react';
 import { getAccessToken, hydrateAuth } from './lib/auth';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { AchievementToast } from './components/Common/AchievementToast/AchievementToast';
+import { RequireRole } from './components/ui/RequireRole';
 
 hydrateAuth();
 
@@ -119,7 +120,7 @@ function App() {
           />
           <Route 
             path="/inventory" 
-            element={isAuthenticated ? <InventoryPage /> : <Navigate to="/login" />} 
+            element={isAuthenticated ? <RequireRole roles={['author', 'admin']}><InventoryPage /></RequireRole> : <Navigate to="/login" />} 
           />
           <Route 
             path="/inventory/:id" 

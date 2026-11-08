@@ -10,10 +10,12 @@ interface ModalProps {
   className?: string;
   /** Bottom keeps the playfield visible above the card. */
   align?: 'center' | 'bottom';
+  footer?: ReactNode;
 }
 
+
 /** Portaled to document.body so fixed centering is never trapped by GameShell / transformed ancestors. */
-export function Modal({ open, onClose, title, children, className, align = 'center' }: ModalProps) {
+export function Modal({ open, onClose, title, children, className, align = 'center', footer }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -38,15 +40,10 @@ export function Modal({ open, onClose, title, children, className, align = 'cent
       )}
       onClick={onClose}
     >
-      <div
+       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'eh-modal-title' : undefined}
-        // className={cn(
-        //   'eh-ring w-full max-w-lg rounded-lg border border-indigo/25 bg-nebula-elevated p-6 shadow-elevated sm:p-8',
-        //   'max-h-[90vh] overflow-y-auto',
-        //   className,
-        // )}
         className={cn(
           'eh-ring flex w-full max-w-lg flex-col rounded-lg border border-indigo/25 bg-nebula-elevated shadow-elevated',
           'max-h-[90vh]',
@@ -54,24 +51,36 @@ export function Modal({ open, onClose, title, children, className, align = 'cent
         )}
         onClick={(e) => e.stopPropagation()}
       >
+
         {/* {title && (
           <h2 id="eh-modal-title" className="mb-4 font-display text-2xl font-semibold text-text-primary">
             {title}
           </h2>
         )}
         {children} */}
+        
         {title && (
-          <div className="border-b border-white/10 px-6 pb-4 pt-6 sm:px-8 sm:pt-8">
+          <div className="border-b border-white/10 px-6 pb-4 pt-6 text-center sm:px-8 sm:pt-8">
             <h2 id="eh-modal-title" className="font-display text-2xl font-semibold text-text-primary">
               {title}
             </h2>
           </div>
         )}
+
         <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-8 sm:py-6">
-          {children}
+          <div className="mx-auto w-full max-w-lg">
+            {children}
+          </div>
         </div>
-        
+
+        {footer && (
+          <div className="border-t border-white/10 px-6 py-4 sm:px-8 sm:py-6">
+            {footer}
+          </div>
+        )}
+
       </div>
+
     </div>,
     document.body,
   );

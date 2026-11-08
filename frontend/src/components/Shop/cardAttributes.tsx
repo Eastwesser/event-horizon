@@ -126,7 +126,7 @@ export function cardFlagBadges(attrs: Record<string, unknown>): FlagBadge[] {
   if (asBool(attrs.foil)) flags.push({ key: 'foil', label: '✦ ФОЙЛ', tone: 'gold' });
   if (asBool(attrs.noir)) flags.push({ key: 'noir', label: '◐ НУАР', tone: 'neutral' });
   if (asBool(attrs.flying)) flags.push({ key: 'flying', label: 'ЛЕТАЮЩИЙ', tone: 'cyan' });
-  if (asBool(attrs.companion)) flags.push({ key: 'companion', label: 'C Tamagotchi', tone: 'success' });
+  if (asBool(attrs.companion)) flags.push({ key: 'companion', label: 'Компаньон', tone: 'success' });
   if (asBool(attrs.unique)) flags.push({ key: 'unique', label: '♛ УНИКАЛЬНАЯ', tone: 'warning' });
   if (asBool(attrs.symbiont)) flags.push({ key: 'symbiont', label: 'Симбионт', tone: 'indigo' });
   if (asBool(attrs.parasite)) flags.push({ key: 'parasite', label: 'Паразит', tone: 'indigo' });
@@ -271,7 +271,7 @@ export function CardAttributesView({
 
   return (
     <div className="space-y-4">
-      <Section title="Бой">
+      {/* <Section title="Бой">
         <Row label="Здоровье">{hp != null ? String(hp) : '—'}</Row>
         <Row label="Ход">{move != null ? String(move) : '—'}</Row>
         <Row label="Удар">
@@ -285,13 +285,36 @@ export function CardAttributesView({
         <Row label="Иконки">
           <CardIconChips icons={icons} />
         </Row>
-      </Section>
+      </Section> */}
+      <Section title="Бой">
+        <Row label="Здоровье">{hp != null ? String(hp) : '—'}</Row>
+        
+        {/* FE-CARD-2: если move === 0 (артефакт/постройка) — прочерк, не "0" */}
+        <Row label="Ход">
+          {move === 0 ? '—' : move != null ? String(move) : '—'}
+        </Row>
+        
+        <Row label="Удар">
+          {[attackType, attackDice].filter(Boolean).join(' ') || '—'}
+        </Row>
 
+        <Row label="Стоимость">
+          {cost != null
+            ? `${cost}${costTier ? ` · ${COST_TIER_RU[costTier] || costTier}` : ''}`
+            : '—'}
+        </Row>
+
+        <Row label="Иконки">
+          <CardIconChips icons={icons} />
+        </Row>
+        
+      </Section>      
+{/* 
       {attrs.card_text ? (
         <div className="rounded-sm border border-white/10 bg-white/5 p-3 text-sm italic text-text-secondary whitespace-pre-wrap">
           {asString(attrs.card_text)}
         </div>
-      ) : null}
+      ) : null} */}
 
       <Section title="Карта">
         <Row label="Выпуск">

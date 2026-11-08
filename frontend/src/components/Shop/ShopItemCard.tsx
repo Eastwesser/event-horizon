@@ -1,11 +1,11 @@
 // frontend/src/components/Shop/ShopItemCard.tsx
 import { Link } from 'react-router-dom';
-import type { ShopItem } from './shopStore';
+import { type ShopItem } from './shopStore';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { CardImage } from '../ui/CardImage';
-import { Icon, IconLabel } from '../ui/Icon';
+import { Icon } from '../ui/Icon';
 import { formatTicketPrice } from '../../lib/formatPrice';
 import { itemFallbackIcon } from '../../lib/itemIcons';
 import { stockLabel, isDigitalItem } from '../../lib/shopItemMap';
@@ -35,6 +35,9 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
     ? ''
     : item.image_url || item.images?.[0] || item.icon_url || '';
   const canAfford = balance >= item.price_tickets;
+  // const isOwned = item.owned || false;
+  // const patch = useShopStore((s) => s.catalogPatches[item.id]);
+  // const isOwned = patch?.owned ?? item.owned ?? false;
   const isOwned = item.owned || false;
   const stockText = stockLabel(item.stock);
   const outOfStock = item.stock === 0;
@@ -60,20 +63,22 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
           fallback={<Icon name={icon} className="h-12 w-12 text-text-muted" />}
         />
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <h3 className="font-display text-lg font-semibold leading-snug text-text-primary">
+
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <h3 className="font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2 min-h-[2.8rem]">
               {item.name}
             </h3>
-            <Badge tone={isOwned ? 'success' : 'indigo'}>
-              {isOwned ? (
-                <IconLabel name="check" iconClassName="h-3 w-3">
-                  В инвентаре
-                </IconLabel>
-              ) : (
-                categoryLabel
-              )}
-            </Badge>
+            <div className="shrink-0 pt-1">
+              <Badge tone={isOwned ? 'success' : 'indigo'}>
+                {isOwned ? (
+                  <Icon name="check" className="h-3 w-3" title="В инвентаре" />
+                ) : (
+                  categoryLabel
+                )}
+              </Badge>
+            </div>
           </div>
+
           {flagBadges.length > 0 ? (
             <div className="mb-2 flex flex-wrap gap-1">
               {flagBadges.map((f) => (

@@ -50,6 +50,14 @@ export function clearAuth(): void {
   localStorage.removeItem('userId');
   localStorage.removeItem('userEmail');
   localStorage.removeItem('role');
+  // Очищаем кеш магазина и инвентаря
+  localStorage.removeItem('shop-storage'); 
+  // Почему это важно: shopStore (zustand) кеширует items, 
+  // lastFetch и catalogPatches в localStorage под ключом shop-storage. 
+  // Если не очистить это при выходе, 
+  // новый пользователь увидит catalogPatches от старого 
+  // (и, соответственно, «В инвентаре»).
+  localStorage.removeItem('shop_balance_cache');
   window.dispatchEvent(new Event('authChange'));
 }
 

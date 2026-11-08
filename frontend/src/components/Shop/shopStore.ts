@@ -145,7 +145,8 @@ export const useShopStore = create<ShopState>()(
           set({ 
             items: shopItems, 
             loading: false,
-            lastFetch: now 
+            lastFetch: now,
+            catalogPatches: {},
           });
         } catch (error: any) {
           console.error('❌ Ошибка загрузки товаров:', error);
@@ -376,7 +377,7 @@ export const useShopStore = create<ShopState>()(
       partialize: (state) => ({
         items: state.items,
         lastFetch: state.lastFetch,
-        catalogPatches: state.catalogPatches,
+        // catalogPatches: state.catalogPatches,
         // Не сохраняем баланс, т.к. он должен быть актуальным
       }),
     }
