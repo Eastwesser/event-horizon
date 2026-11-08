@@ -26,6 +26,7 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     fetchInventory,
     fetchBalance,
     clearError,
+    buying,
   } = useShopStore();
 
   const [items, setItems] = useState<ShopItem[]>([]);
@@ -88,13 +89,14 @@ export const ShopWithInfiniteScroll: React.FC = () => {
   }, []);
 
   // Загрузка инвентаря и баланса
+  const userId = localStorage.getItem('userId');
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
+    if (token && userId) {
       fetchBalance();
       fetchInventory();
     }
-  }, [fetchBalance, fetchInventory]);
+  }, [userId, fetchBalance, fetchInventory]); // <-- добавили userId в зависимости (instead of hard refresh)
 
   // Обновление отображаемых товаров при изменении фильтра
   useEffect(() => {
@@ -363,7 +365,8 @@ export const ShopWithInfiniteScroll: React.FC = () => {
           balance={balance}
           onConfirm={handleConfirmPurchase}
           onClose={handleCloseModal}
-          loading={useShopStore.getState().buying}
+          // loading={useShopStore.getState().buying}
+          loading={buying}
         />
     </PageShell>
   );
