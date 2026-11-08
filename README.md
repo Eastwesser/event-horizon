@@ -5,12 +5,12 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.4-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.5-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3.4** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
+**Event Horizon v1.1.3.5** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
 
-### Что нового в v1.1.3.4
+### Что нового в v1.1.3.5
 
 - **P0-8 Inventory IDOR closed:** `UpdateItem` / `DeleteItem` / `SoftDeleteItem` / `RestoreItem` проверяют `author_id` на бэкенде (`checkAuthorAccess` + `x-user-id` из metadata). Чужой юзер — `403`, админ — без изменений.
 - **P0-6 Authors soft-delete:** `RevertApplication` больше не делает `DELETE FROM authors`, а ставит `active = false`. Межбазовые ссылки (`inventory.author_id`, `payment.revenue_splits`, `shop.purchases`) остаются валидными. Новый gRPC `GetMyAuthor` отделяет `/authors/me` (200 всегда, включая inactive) от `/authors/:user_id` (404 для soft-deleted).
@@ -483,9 +483,50 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.3.4** (07.11.2026).
+Текущая: **v1.1.3.5** (08.11.2026).
 
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+### Что нового в v1.1.3.5
+
+Патч-релиз по UX, карточкам товаров и надёжности. Закрывает P0-6 (soft-delete Authors), P0-8 (IDOR Inventory) и несколько фронтенд-долгов.
+
+**Фронтенд: карточки товаров**
+
+- Стоимость карты ККИ берётся из `attributes.cost` (золото/серебро), а не из `market_rub`.
+- Ход карты: если `move = 0` — прочерк, а не «0».
+- Класс карты (например, «Компаньон») выводится в карточке товара.
+- Бейдж «Карточка» вместо «Товар» — исправлен маппинг в `shopItemMap.ts`.
+- Иконки карт — бейджи вместо `[object Object]`.
+
+**Фронтенд: UX и мобилки**
+
+- Убран горизонтальный скролл (`overflow-x-hidden`).
+- Исправлены отступы, центрирование модалок и колокольчика.
+- Модалка «Подтверждение покупки» — заголовок по центру, кнопки внизу.
+- Вкладка «Инвентарь» доступна только авторам и админам.
+
+**Фронтенд: кэш**
+
+- При выходе из аккаунта очищается `shop-storage` и `shop_balance_cache`.
+- `catalogPatches` убран из `persist` — галочка «В инвентаре» больше не кэшируется.
+- `Owned` сбрасывается в `false` перед установкой (фикс `shop_service.go`).
+
+**Админка**
+
+- Статистика инвентаря: «Уникальных позиций», «Общее кол-во товаров в наличии».
+- Тип «Не указан» кликабельный — можно посмотреть список товаров без типа.
+
+**Бэкенд**
+
+- P0-8 (IDOR Inventory): `checkAuthorAccess` проверяет `author_id` на `UpdateItem`, `DeleteItem`, `SoftDeleteItem`, `RestoreItem`.
+- P0-6 (Authors soft-delete): `RevertApplication` ставит `active = false`, а не `DELETE`. `GetMyAuthor` отделяет `/me` от публичного `/:user_id`.
+- Billing: `reference_id` из `event.Timestamp`, `forceStreamRecreation` для залипшего лидера NATS, анти-спам через Redis `SetNX`.
+- History: Durable-консьюмер исправлен (точки → подчёркивания).
+- Leaderboard: Gateway тянет ник из Auth.
+- Profile: синхронизация ника через NATS.
+- Authors: дашборд продаж (85% заработка).
+
+- Also, added Nginx before Load Balancers
 
 ### Что нового в v1.1.3.4
 
