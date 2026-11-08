@@ -38,12 +38,31 @@ function PurchaseModal({
   const isCard = (item.type || item.category) === 'карточка';
 
   return (
-    <Modal open={isOpen} onClose={onClose} title="Подтверждение покупки">
+    <Modal 
+      open={isOpen} 
+      onClose={onClose} 
+      title="Подтверждение покупки"
+      footer={
+        <div className="flex w-full gap-3">
+          <Button variant="ghost" className="flex-1" onClick={onClose} disabled={loading}>
+            Отмена
+          </Button>
+          <Button
+            variant="primary"
+            className="flex-1"
+            onClick={onConfirm}
+            disabled={!canAfford || loading || merchBlocked}
+          >
+            {loading ? 'Покупка...' : 'Да, купить'}
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-col items-center text-center">
         <CardImage
           src={item.image_url || item.images?.[0] || item.icon_url}
           alt={item.name}
-          className="mb-4 w-[240px]"
+          className="mb-4 w-[200px]"
           fit="cover"
           fallback={
             <Icon name={itemFallbackIcon(item)} className="h-12 w-12 text-horizon-gold" />
@@ -91,20 +110,6 @@ function PurchaseModal({
             Недостаточно билетиков!
           </div>
         )}
-
-        <div className="mt-6 flex w-full gap-3">
-          <Button variant="ghost" className="flex-1" onClick={onClose} disabled={loading}>
-            Отмена
-          </Button>
-          <Button
-            variant="primary"
-            className="flex-1"
-            onClick={onConfirm}
-            disabled={!canAfford || loading || merchBlocked}
-          >
-            {loading ? 'Покупка...' : 'Да, купить'}
-          </Button>
-        </div>
       </div>
     </Modal>
   );

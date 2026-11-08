@@ -203,7 +203,7 @@ export const InventoryPage: React.FC = () => {
         <FilterChip active={inStock} onClick={() => toggleFlag('in_stock', inStock)}>
           В наличии
         </FilterChip>
-        {type === 'карточка' || type === '' ? (
+        {/* {type === 'карточка' || type === '' ? (
           <>
             <FilterChip active={foil} onClick={() => toggleFlag('foil', foil)}>
               Фойл
@@ -215,7 +215,7 @@ export const InventoryPage: React.FC = () => {
               Летающие
             </FilterChip>
           </>
-        ) : null}
+        ) : null} */}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

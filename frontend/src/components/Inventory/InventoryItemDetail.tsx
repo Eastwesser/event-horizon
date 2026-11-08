@@ -14,6 +14,7 @@ import { loadCatalogNav, navNeighbors } from '../../lib/catalogNav';
 import { CardAttributesView, CardFlagBadges } from '../Shop/cardAttributes';
 import { NoizReviewBlock } from '../Shop/NoizReviewBlock';
 
+
 export const InventoryItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -155,11 +156,33 @@ export const InventoryItemDetail: React.FC = () => {
             </p>
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-2 text-sm">
+          {/* <div className="flex flex-wrap items-center gap-2 text-sm">
             <Badge tone="cyan">{selectedItem.type}</Badge>
             <span className="font-hud tabular-nums text-horizon-gold">
               {formatTicketPrice(selectedItem.price)}
             </span>
+            {stockText !== null && (
+              <span className="text-text-muted">{stockText}</span>
+            )}
+          </div> */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <Badge tone="cyan">{selectedItem.type}</Badge>
+            
+            {/* Класс (Компаньон, Тролль, Дитя Кронга и т.д.) */}
+            {(() => {
+              const rawClass = attrs.class;
+              const classes = (Array.isArray(rawClass) ? rawClass : rawClass ? [rawClass] : [])
+                .filter((cls) => cls && String(cls).trim() !== '');
+              if (classes.length === 0) return null;
+              return classes.map((cls: string) => (
+                <Badge key={cls} tone="neutral">{cls}</Badge>
+              ));
+            })()}
+
+            <span className="font-hud tabular-nums text-horizon-gold">
+              {formatTicketPrice(selectedItem.price)}
+            </span>
+
             {stockText !== null && (
               <span className="text-text-muted">{stockText}</span>
             )}
