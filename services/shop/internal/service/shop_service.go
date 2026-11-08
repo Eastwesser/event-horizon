@@ -122,6 +122,15 @@ func (s *shopService) applyOwnedFlags(ctx context.Context, userID string, items 
 	if len(items) == 0 || userID == "" {
 		return
 	}
+	// Сбрасываем все owned в false перед установкой (чтобы кэш не влиял)
+	for i := range items {
+		items[i].Owned = false
+	}
+	/*
+		Почему это работает: теперь, если ids пустой (у юзера нет покупок), 
+		Owned всё равно сбросится в false. Кэш в Redis не будет влиять.
+	*/
+
 	ids, err := s.pgRepo.ListOwnedItemIDs(ctx, userID)
 	if err != nil {
 		return
