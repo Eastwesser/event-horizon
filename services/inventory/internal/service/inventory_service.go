@@ -45,9 +45,20 @@ func (s *InventoryService) CreateItem(ctx context.Context, item *model.Item) err
 	if item.AuthorID == "" {
 		return fmt.Errorf("author_id is required")
 	}
+
+	// Fallback: если пусто, но есть маркеры ККИ — ставим "карточка"
+	if item.Type == "" && item.Attributes != nil {
+		if _, ok := item.Attributes["market_rub"]; ok {
+			item.Type = "карточка"
+		} else if _, ok := item.Attributes["element"]; ok {
+			item.Type = "карточка"
+		}
+	}
+
 	if item.Type == "" {
 		return fmt.Errorf("type is required")
 	}
+
 	if item.Name == "" {
 		return fmt.Errorf("name is required")
 	}
@@ -57,7 +68,7 @@ func (s *InventoryService) CreateItem(ctx context.Context, item *model.Item) err
 	if item.Stock < 0 {
 		return fmt.Errorf("stock cannot be negative")
 	}
-
+	
 	if s.outbox != nil {
 		event := map[string]interface{}{
 			"event":      "item.created",
