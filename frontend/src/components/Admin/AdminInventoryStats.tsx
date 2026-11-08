@@ -7,6 +7,8 @@ import { Card } from '../ui/Card';
 import { Spinner } from '../ui/Spinner';
 import { StatCard } from '../ui/StatCard';
 import { Icon } from '../ui/Icon';
+import { Modal } from '../ui/Modal';
+import { inventoryApi } from '../../services/inventoryApi';
 
 function truncateId(id: string): string {
   if (id.length <= 12) return id;
@@ -87,6 +89,29 @@ export function AdminInventoryStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [typeItems, setTypeItems] = useState<any[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  const openTypeModal = async (type: string) => {
+    setSelectedType(type === 'Тип не указан' ? '' : type);
+    setLoadingItems(true);
+    try {
+      // Запрашиваем все товары, фильтруя по типу (если пустой — без фильтра)
+      const res = await inventoryApi.searchAllItems(
+        type === 'Тип не указан' ? {} : { type }
+      );
+      // Если ищем "Тип не указан", фильтруем вручную
+      const items = type === 'Тип не указан' 
+        ? res.items.filter((i) => !i.type) 
+        : res.items;
+      setTypeItems(items);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +136,15 @@ export function AdminInventoryStats() {
     };
   }, [reloadKey]);
 
-  const byType = stats ? sortedEntries(stats.by_type) : [];
+  // const byType = stats ? sortedEntries(stats.by_type) : [];
+  const byType = stats ? sortedEntries(
+    Object.fromEntries(
+      Object.entries(stats.by_type).map(([type, count]) => [
+        type === '' ? 'Тип не указан' : type, // если пусто — показываем 'Без типа'
+        count,
+      ])
+    )
+  ) : [];
   const byAuthor = stats ? sortedEntries(stats.by_author) : [];
   const isEmpty =
     !!stats &&
@@ -167,7 +200,20 @@ export function AdminInventoryStats() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <CountList title="По типу" entries={byType} renderKey={(key) => key} />
+            <CountList 
+              title="По типу" 
+              entries={byType} 
+              renderKey={(key) => (
+                <button
+                  type="button"
+                  onClick={() => void openTypeModal(key)}
+                  className="hover:text-horizon-cyan hover:underline text-left"
+                >
+                  {key}
+                </button>
+              )} 
+            />
+            
             <CountList
               title="По автору"
               entries={byAuthor}
@@ -191,6 +237,30 @@ export function AdminInventoryStats() {
           </div>
         </>
       ) : null}
+
+      {selectedType !== null && (
+        <Modal
+          open
+          onClose={() => setSelectedType(null)}
+          title={`Товары: ${selectedType || 'Без типа'}`}
+          className="max-w-2xl"
+        >
+          {loadingItems ? (
+            <Spinner />
+          ) : typeItems.length === 0 ? (
+            <p className="text-text-secondary">Товары не найдены</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {typeItems.map((item) => (
+                <li key={item.id} className="border-b border-white/10 pb-2 flex justify-between">
+                  <span>{item.name}</span>
+                  <span className="text-text-muted">{item.author_id.slice(0, 8)}…</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+      )}  
     </div>
   );
 }

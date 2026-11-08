@@ -38,7 +38,7 @@ export function CardImage({
   return (
     <div
       className={cn(
-        'flex items-center justify-center overflow-hidden rounded-md bg-nebula',
+        'flex items-center justify-center overflow-hidden rounded-md bg-nebula max-w-full',
         fixedAspect && 'aspect-[5/7]',
         className
       )}
