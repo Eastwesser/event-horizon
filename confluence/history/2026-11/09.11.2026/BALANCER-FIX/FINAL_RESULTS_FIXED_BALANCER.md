@@ -111,3 +111,32 @@ balancer_requests_total 2
 [denismatveev@c0der event_horizon]$ for i in {1..10}; do curl -sI http://localhost/health | grep -i "X-Balancer-Backend"; done | sort | uniq -c
      10 X-Balancer-Backend: gateway:8080
 [denismatveev@c0der event_horizon]$ 
+
+----
+✅ balancer-2 метрики — да, prometheus.yml ты нашёл правильно
+Файл: deployments/prometheus/prometheus.yml
+
+Место: job_name balancer (строки 56-59).
+
+Сниппет (заменить блок):
+
+yaml
+  - job_name: 'balancer'
+    static_configs:
+      - targets:
+          - 'balancer:9098'
+          - 'balancer-2:9098'
+    metrics_path: '/metrics'
+Почему balancer-2:9098, а не :9099: внутри docker-сети balancer-2 слушает :9098 (как и balancer-1). :9099 — это только на хосте (проброс 9099:9098). Prometheus ходит по внутренним портам контейнеров, поэтому :9098. ✅
+
+И в deployments/docker-compose.cluster.yml — секция balancer-2, ports:
+
+Сниппет (заменить ports):
+
+yaml
+    ports:
+      - "8080:8079"   # HTTP
+      - "9099:9098"   # метрики (9098 занят balancer-1)
+
+
+      
