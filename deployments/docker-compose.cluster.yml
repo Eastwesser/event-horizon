@@ -1239,17 +1239,30 @@ services:
     ports:
       - "8079:8079"   # HTTP
       - "9098:9098"   # метрики
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9098/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     depends_on:
       - gateway
       - gateway-2
       - gateway-3
     networks:
       - event-horizon-net
+
   balancer-2:
     image: eastwesser/balancer:latest
     container_name: deployments-balancer-2
     ports:
-      - "8080:8079" # На хосте 8080, внутри 8079
+      - "8080:8079"   # На хосте 8080, внутри 8079
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9098/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     depends_on:
       - gateway
       - gateway-2
@@ -1261,7 +1274,7 @@ services:
     image: nginx:alpine
     container_name: deployments-nginx
     ports:
-      - "80:80" # Теперь сайт открывается на 80 порту (http://localhost)
+      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
