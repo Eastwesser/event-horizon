@@ -67,7 +67,7 @@ test-smoke:
 	@echo "Smoke: curl /health|/ready on local metrics ports (cluster must be up)"
 	@set -e; \
 	for url in \
-      http://127.0.0.1/health \         
+	  http://127.0.0.1/health \
 	  http://127.0.0.1:8079/ready \
 	  http://127.0.0.1:8081/ready \
 	  http://127.0.0.1:9091/health \
