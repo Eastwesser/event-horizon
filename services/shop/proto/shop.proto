@@ -13,6 +13,9 @@ service ShopService {
     rpc GetInventory(GetInventoryRequest) returns (GetInventoryResponse);
     // Wave 3 C3 — author sales (purchases of given inventory item ids).
     rpc ListPurchasesByItemIDs(ListPurchasesByItemIDsRequest) returns (ListPurchasesByItemIDsResponse);
+    // AdminCancelPurchase — отменяет покупку ЛЮБОГО пользователя.
+    // Только для admin. Не проверяет, что callerID == userID.
+    rpc AdminCancelPurchase(AdminCancelPurchaseRequest) returns (CancelPurchaseResponse);
 }
 
 message Item {
@@ -68,6 +71,11 @@ message CancelPurchaseResponse {
     int32 new_balance = 3;
     int32 refunded_amount = 4;
     bool already_refunded = 5;
+}
+
+message AdminCancelPurchaseRequest {
+  string user_id = 1;  // тот, чью покупку отменяем
+  string item_id = 2;
 }
 
 message GetInventoryRequest {

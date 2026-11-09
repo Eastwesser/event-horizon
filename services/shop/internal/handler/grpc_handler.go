@@ -90,6 +90,25 @@ func (h *ShopHandler) CancelPurchase(ctx context.Context, req *pb.CancelPurchase
     }, nil
 }
 
+func (h *ShopHandler) AdminCancelPurchase(ctx context.Context, req *pb.AdminCancelPurchaseRequest) (*pb.CancelPurchaseResponse, error) {
+    result, err := h.shopService.AdminCancelPurchase(ctx, req.UserId, req.ItemId)
+    if err != nil {
+        return nil, mapShopErr(err)
+    }
+
+    msg := "Purchase cancelled by admin"
+    if result.AlreadyRefunded {
+        msg = "Already refunded"
+    }
+    return &pb.CancelPurchaseResponse{
+        Success:         true,
+        Message:         msg,
+        NewBalance:      result.NewBalance,
+        RefundedAmount:  result.RefundedAmount,
+        AlreadyRefunded: result.AlreadyRefunded,
+    }, nil
+}
+
 func (h *ShopHandler) GetInventory(ctx context.Context, req *pb.GetInventoryRequest) (*pb.GetInventoryResponse, error) {
     items, err := h.shopService.GetInventory(ctx, req.UserId)
     if err != nil {

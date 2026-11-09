@@ -24,6 +24,7 @@ const (
 	ShopService_CancelPurchase_FullMethodName         = "/shop.ShopService/CancelPurchase"
 	ShopService_GetInventory_FullMethodName           = "/shop.ShopService/GetInventory"
 	ShopService_ListPurchasesByItemIDs_FullMethodName = "/shop.ShopService/ListPurchasesByItemIDs"
+	ShopService_AdminCancelPurchase_FullMethodName    = "/shop.ShopService/AdminCancelPurchase"
 )
 
 // ShopServiceClient is the client API for ShopService service.
@@ -36,6 +37,9 @@ type ShopServiceClient interface {
 	GetInventory(ctx context.Context, in *GetInventoryRequest, opts ...grpc.CallOption) (*GetInventoryResponse, error)
 	// Wave 3 C3 — author sales (purchases of given inventory item ids).
 	ListPurchasesByItemIDs(ctx context.Context, in *ListPurchasesByItemIDsRequest, opts ...grpc.CallOption) (*ListPurchasesByItemIDsResponse, error)
+	// AdminCancelPurchase — отменяет покупку ЛЮБОГО пользователя.
+	// Только для admin. Не проверяет, что callerID == userID.
+	AdminCancelPurchase(ctx context.Context, in *AdminCancelPurchaseRequest, opts ...grpc.CallOption) (*CancelPurchaseResponse, error)
 }
 
 type shopServiceClient struct {
@@ -91,6 +95,15 @@ func (c *shopServiceClient) ListPurchasesByItemIDs(ctx context.Context, in *List
 	return out, nil
 }
 
+func (c *shopServiceClient) AdminCancelPurchase(ctx context.Context, in *AdminCancelPurchaseRequest, opts ...grpc.CallOption) (*CancelPurchaseResponse, error) {
+	out := new(CancelPurchaseResponse)
+	err := c.cc.Invoke(ctx, ShopService_AdminCancelPurchase_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShopServiceServer is the server API for ShopService service.
 // All implementations must embed UnimplementedShopServiceServer
 // for forward compatibility
@@ -101,6 +114,9 @@ type ShopServiceServer interface {
 	GetInventory(context.Context, *GetInventoryRequest) (*GetInventoryResponse, error)
 	// Wave 3 C3 — author sales (purchases of given inventory item ids).
 	ListPurchasesByItemIDs(context.Context, *ListPurchasesByItemIDsRequest) (*ListPurchasesByItemIDsResponse, error)
+	// AdminCancelPurchase — отменяет покупку ЛЮБОГО пользователя.
+	// Только для admin. Не проверяет, что callerID == userID.
+	AdminCancelPurchase(context.Context, *AdminCancelPurchaseRequest) (*CancelPurchaseResponse, error)
 	mustEmbedUnimplementedShopServiceServer()
 }
 
@@ -122,6 +138,9 @@ func (UnimplementedShopServiceServer) GetInventory(context.Context, *GetInventor
 }
 func (UnimplementedShopServiceServer) ListPurchasesByItemIDs(context.Context, *ListPurchasesByItemIDsRequest) (*ListPurchasesByItemIDsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPurchasesByItemIDs not implemented")
+}
+func (UnimplementedShopServiceServer) AdminCancelPurchase(context.Context, *AdminCancelPurchaseRequest) (*CancelPurchaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AdminCancelPurchase not implemented")
 }
 func (UnimplementedShopServiceServer) mustEmbedUnimplementedShopServiceServer() {}
 
@@ -226,6 +245,24 @@ func _ShopService_ListPurchasesByItemIDs_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShopService_AdminCancelPurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminCancelPurchaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShopServiceServer).AdminCancelPurchase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShopService_AdminCancelPurchase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShopServiceServer).AdminCancelPurchase(ctx, req.(*AdminCancelPurchaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ShopService_ServiceDesc is the grpc.ServiceDesc for ShopService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +289,10 @@ var ShopService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPurchasesByItemIDs",
 			Handler:    _ShopService_ListPurchasesByItemIDs_Handler,
+		},
+		{
+			MethodName: "AdminCancelPurchase",
+			Handler:    _ShopService_AdminCancelPurchase_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
