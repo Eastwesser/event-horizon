@@ -111,6 +111,7 @@ func (r *PostgresRepo) CreateItem(ctx context.Context, item *model.Item) error {
 	}
 	item.CreatedAt = time.Now()
 	item.UpdatedAt = time.Now()
+	item.Version = 1
 
 	attrsJSON, err := json.Marshal(item.Attributes)
 	if err != nil {
@@ -119,13 +120,13 @@ func (r *PostgresRepo) CreateItem(ctx context.Context, item *model.Item) error {
 
 	query := `
 		INSERT INTO inventory_items (
-			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at, version
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 	_, err = r.db.ExecContext(ctx, query,
 		item.ID, item.AuthorID, item.Type, item.Name, item.Description,
 		item.Price, item.Stock, attrsJSON, pq.Array(item.Images),
-		item.CreatedAt, item.UpdatedAt,
+		item.CreatedAt, item.UpdatedAt, item.Version,
 	)
 	return err
 }
@@ -292,8 +293,8 @@ func (r *PostgresRepo) BulkCreateItems(ctx context.Context, items []*model.Item)
 
 	query := `
 		INSERT INTO inventory_items (
-			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at, version
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
 	for _, item := range items {
@@ -302,6 +303,7 @@ func (r *PostgresRepo) BulkCreateItems(ctx context.Context, items []*model.Item)
 		}
 		item.CreatedAt = time.Now()
 		item.UpdatedAt = time.Now()
+		item.Version = 1
 
 		attrsJSON, err := json.Marshal(item.Attributes)
 		if err != nil {
@@ -311,7 +313,7 @@ func (r *PostgresRepo) BulkCreateItems(ctx context.Context, items []*model.Item)
 		_, err = tx.ExecContext(ctx, query,
 			item.ID, item.AuthorID, item.Type, item.Name, item.Description,
 			item.Price, item.Stock, attrsJSON, pq.Array(item.Images),
-			item.CreatedAt, item.UpdatedAt,
+			item.CreatedAt, item.UpdatedAt, item.Version,
 		)
 		if err != nil {
 			return err
@@ -499,6 +501,7 @@ func (r *PostgresRepo) CreateItemWithOutbox(ctx context.Context, item *model.Ite
 	}
 	item.CreatedAt = time.Now()
 	item.UpdatedAt = time.Now()
+	item.Version = 1 // explicit, matches DB DEFAULT
 
 	attrsJSON, err := json.Marshal(item.Attributes)
 	if err != nil {
@@ -507,13 +510,13 @@ func (r *PostgresRepo) CreateItemWithOutbox(ctx context.Context, item *model.Ite
 
 	query := `
 		INSERT INTO inventory_items (
-			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			id, author_id, type, name, description, price, stock, attributes, images, created_at, updated_at, version
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 	_, err = tx.ExecContext(ctx, query,
 		item.ID, item.AuthorID, item.Type, item.Name, item.Description,
 		item.Price, item.Stock, attrsJSON, pq.Array(item.Images),
-		item.CreatedAt, item.UpdatedAt,
+		item.CreatedAt, item.UpdatedAt, item.Version,
 	)
 	if err != nil {
 		return err

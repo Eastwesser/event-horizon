@@ -3,6 +3,7 @@ package handler
 import (
     "context"
     "errors"
+    "log/slog"
     "strconv"
 
     "google.golang.org/grpc/codes"
@@ -108,25 +109,66 @@ func (h *GRPCHandler) GetItem(ctx context.Context, req *pb.GetItemRequest) (*pb.
 
 func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*pb.ItemResponse, error) {
 
-    existing, err := h.service.GetItem(ctx, req.Id) // или req.Id
+    existing, err := h.service.GetItem(ctx, req.Id)
     if err != nil {
         return nil, status.Error(codes.NotFound, "item not found")
     }
+    slog.Info("UpdateItem: existing loaded",
+        "id", existing.ID,
+        "version", existing.Version,
+        "attrs_len", len(existing.Attributes),
+        "attrs", existing.Attributes,
+    )
     if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
         return nil, err
-}
+    }
 
-    item := converter.ItemFromUpdateRequest(req)
+    // P0-10: merge into existing so partial PUT (e.g. only name)
+    // does not wipe attributes / images / price / stock.
+    item := *existing
 
-    if err := validateItem(item); err != nil {
-		return nil, err
-	}
+    if req.Type != "" {
+        item.Type = req.Type
+    }
+    if req.Name != "" {
+        item.Name = req.Name
+    }
+    if req.Description != "" {
+        item.Description = req.Description
+    }
+    // Price: proto3 int32/float64 default 0. We can't distinguish "not sent" from "sent 0".
+    // Accept only positive; 0 means "keep existing" (known limitation, BUG-2026-11-08-2).
+    if req.Price > 0 {
+        item.Price = req.Price
+    }
+    // Stock: same issue. 0 means "keep existing" (known limitation, BUG-2026-11-08-3).
+    // NOTE: this also means "set stock to 0" is impossible via PATCH. Accept for now.
+    if req.Stock > 0 {
+        item.Stock = int(req.Stock)
+    }
+    if req.Images != nil {
+        item.Images = req.Images
+    }
+    /*
+        Причина: len(AsMap()) > 0 отсекает пустой &Struct{} (Gateway-артефакт). 
+        Если клиент хочет очистить атрибуты — он должен прислать attributes: {} явно, и это сейчас тоже не пройдёт. 
+    */
+    if req.Attributes != nil && len(req.Attributes.AsMap()) > 0 {
+        item.Attributes = req.Attributes.AsMap()
+    }
+    if req.Version > 0 {
+        item.Version = int(req.Version)
+    }
 
-    if err := h.service.UpdateItem(ctx, item); err != nil {
+    if err := validateItem(&item); err != nil {
+        return nil, err
+    }
+
+    if err := h.service.UpdateItem(ctx, &item); err != nil {
         return nil, mapInventoryErr(err, "failed to update item")
     }
 
-    protoItem, err := converter.ItemToProto(item)
+    protoItem, err := converter.ItemToProto(&item)
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to convert item: %v", err)
     }
@@ -134,19 +176,18 @@ func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest)
     return &pb.ItemResponse{Item: protoItem}, nil
 }
 
-// func (h *GRPCHandler) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*pb.EmptyResponse, error) {
-//     if err := h.service.DeleteItem(ctx, req.Id); err != nil {
-//         return nil, status.Errorf(codes.Internal, "failed to delete item: %v", err)
-//     }
-//     return &pb.EmptyResponse{}, nil
-// }
-
 func (h *GRPCHandler) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*pb.EmptyResponse, error) {
 	// 1. Достаем товар из БД, чтобы узнать автора
 	existing, err := h.service.GetItem(ctx, req.Id)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "item not found")
 	}
+    slog.Info("UpdateItem: existing loaded",
+        "id", existing.ID,
+        "version", existing.Version,
+        "attrs_len", len(existing.Attributes),
+        "attrs", existing.Attributes,
+    )
 
 	// 2. Проверяем, что это владелец (или админ)
 	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
@@ -301,6 +342,12 @@ func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItem
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "item not found")
 	}
+    slog.Info("UpdateItem: existing loaded",
+        "id", existing.ID,
+        "version", existing.Version,
+        "attrs_len", len(existing.Attributes),
+        "attrs", existing.Attributes,
+    )
 	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
 		return nil, err
 	}
@@ -325,6 +372,12 @@ func (h *GRPCHandler) RestoreItem(ctx context.Context, req *pb.RestoreItemReques
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "item not found")
 	}
+    slog.Info("UpdateItem: existing loaded",
+        "id", existing.ID,
+        "version", existing.Version,
+        "attrs_len", len(existing.Attributes),
+        "attrs", existing.Attributes,
+    )
 	if err := checkAuthorAccess(ctx, existing.AuthorID); err != nil {
 		return nil, err
 	}

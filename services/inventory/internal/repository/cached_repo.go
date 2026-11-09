@@ -63,7 +63,10 @@ func (c *CachedRepository) UpdateItem(ctx context.Context, item *model.Item) err
 	if err := c.next.UpdateItem(ctx, item); err != nil {
 		return err
 	}
-	c.warmItem(ctx, item)
+	// Do NOT warmItem here: cache stores what was written, not what is in DB.
+	// If underlying repo (or DB trigger) changes fields, cache would lie.
+	// Delete instead — next GetItem will reload from DB and warm correctly.
+	_ = c.cache.DeleteItem(ctx, item.ID)
 	c.invalidateSearch(ctx)
 	return nil
 }
