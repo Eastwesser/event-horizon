@@ -1,14 +1,15 @@
 package balancer
 
 import (
-    "log/slog"
-    "net/http"
-    "net/http/httputil"
-    "net/url"
-    "sync"
-    "sync/atomic"
+	"log/slog"
+	"math/rand/v2"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"sync"
+	"sync/atomic"
 
-    "github.com/Eastwesser/event-horizon/services/balancer/internal/metrics"
+	"github.com/Eastwesser/event-horizon/services/balancer/internal/metrics"
 )
 
 type Backend struct {
@@ -122,6 +123,8 @@ func (lb *LeastConnBalancer) getLeastConnBackend() *Backend {
 }
 
 // getLeastConnBackendExcluding skips healthy=false and any backend already in `skip`.
+// When several backends share the minimum ActiveConns, pick one at random (jitter)
+// so sequential traffic is spread across the pool instead of always hitting the first.
 func (lb *LeastConnBalancer) getLeastConnBackendExcluding(skip map[*Backend]struct{}) *Backend {
 	lb.mu.RLock()
 	defer lb.mu.RUnlock()
@@ -130,7 +133,7 @@ func (lb *LeastConnBalancer) getLeastConnBackendExcluding(skip map[*Backend]stru
 		return nil
 	}
 
-	var selected *Backend
+	candidates := make([]*Backend, 0, len(lb.backends))
 	var minConns int32 = 2147483647 // MaxInt32
 
 	for _, b := range lb.backends {
@@ -143,13 +146,23 @@ func (lb *LeastConnBalancer) getLeastConnBackendExcluding(skip map[*Backend]stru
 			}
 		}
 		conns := atomic.LoadInt32(&b.ActiveConns)
-		if conns < minConns {
+		switch {
+		case conns < minConns:
 			minConns = conns
-			selected = b
+			candidates = candidates[:0]
+			candidates = append(candidates, b)
+		case conns == minConns:
+			candidates = append(candidates, b)
 		}
 	}
 
-	return selected
+	if len(candidates) == 0 {
+		return nil
+	}
+	if len(candidates) == 1 {
+		return candidates[0]
+	}
+	return candidates[rand.IntN(len(candidates))]
 }
 
 // func (lb *LeastConnBalancer) getTotalActiveConns() int32 {

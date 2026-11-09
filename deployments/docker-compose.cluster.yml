@@ -1256,7 +1256,8 @@ services:
     image: eastwesser/balancer:latest
     container_name: deployments-balancer-2
     ports:
-      - "8080:8079"   # На хосте 8080, внутри 8079
+      - "8080:8079"   # HTTP
+      - "9190:9098"   # метрики (9098 занят balancer-1)
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9098/ready"]
       interval: 10s
