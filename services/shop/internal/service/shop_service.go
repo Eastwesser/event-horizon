@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/Eastwesser/event-horizon/contracts/events"
 	"github.com/Eastwesser/event-horizon/platform/pkg/kafka"
@@ -35,6 +36,7 @@ type ShopService interface {
 	GetItems(ctx context.Context, category, gameID, userID string) ([]repository.Item, error)
 	PurchaseItem(ctx context.Context, userID, itemID string) (int32, error)
 	CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error)
+	AdminCancelPurchase(ctx context.Context, targetUserID, itemID string) (*CancelResult, error)
 	GetInventory(ctx context.Context, userID string) ([]repository.Item, error)
 	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
 	SetKafkaProducer(p kafka.Producer)
@@ -54,7 +56,7 @@ type ShopStore interface {
 	EnqueueOutbox(ctx context.Context, eventType string, payload []byte) (string, error)
 	MarkOutboxProcessed(ctx context.Context, id string) error
 	GetUserInventory(ctx context.Context, userID string) ([]repository.Item, error)
-	RefundPurchase(ctx context.Context, userID, itemID string) (*repository.RefundResult, error)
+	RefundPurchase(ctx context.Context, userID, itemID string, ignoreFulfilled bool) (*repository.RefundResult, error)
 	MarkPurchaseFulfilled(ctx context.Context, purchaseID string) error
 	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
 	CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64, stock int) error
@@ -393,15 +395,32 @@ func canCancelInventoryItem(item repository.Item, now time.Time) bool {
 	return true
 }
 
+// checkAdminAccess checks if the caller has the admin role.
+func checkAdminAccess(ctx context.Context) bool {
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        return false
+    }
+    roles := md.Get("x-user-role")
+    return len(roles) > 0 && roles[0] == "admin"
+}
 func (s *shopService) CancelPurchase(ctx context.Context, userID, itemID string) (*CancelResult, error) {
+	return s.cancelPurchaseInternal(ctx, userID, itemID, false)
+}
+
+func (s *shopService) AdminCancelPurchase(ctx context.Context, targetUserID, itemID string) (*CancelResult, error) {
+	return s.cancelPurchaseInternal(ctx, targetUserID, itemID, true)
+}
+
+func (s *shopService) cancelPurchaseInternal(ctx context.Context, userID, itemID string, isAdmin bool) (*CancelResult, error) {
+	// Если caller — админ, он может отменить любую покупку.
 	item, err := s.pgRepo.GetItemByID(ctx, itemID)
 	if err != nil {
 		// Still allow refund if purchase exists but shop item row is gone.
 		item = &repository.Item{ID: itemID, Category: "merch"}
 	}
-	_ = item
 
-	refund, err := s.pgRepo.RefundPurchase(ctx, userID, itemID)
+	refund, err := s.pgRepo.RefundPurchase(ctx, userID, itemID, isAdmin)
 	if err != nil {
 		if errors.Is(err, model.ErrRefundWindowExpired) || errors.Is(err, model.ErrAlreadyFulfilled) {
 			return nil, err

@@ -80,7 +80,7 @@ func (m *mockShopStore) MarkOutboxProcessed(context.Context, string) error { ret
 func (m *mockShopStore) GetUserInventory(context.Context, string) ([]repository.Item, error) {
 	return m.inventory, nil
 }
-func (m *mockShopStore) RefundPurchase(context.Context, string, string) (*repository.RefundResult, error) {
+func (m *mockShopStore) RefundPurchase(_ context.Context, _, _ string, _ bool) (*repository.RefundResult, error) {
 	m.refundCalls++
 	if m.refundErr != nil {
 		return nil, m.refundErr
@@ -297,6 +297,7 @@ func TestCancelPurchase_AlreadyRefundedIdempotent(t *testing.T) {
 	if err != nil || !got.AlreadyRefunded || got.NewBalance != 42 || got.RefundedAmount != 0 {
 		t.Fatalf("%+v err=%v", got, err)
 	}
+	// AddCurrency вызывается, даже если AlreadyRefunded, чтобы проверить идемпотентность ключа
 	if billing.addCalls != 1 {
 		t.Fatal("retry must send the same cancel reference")
 	}

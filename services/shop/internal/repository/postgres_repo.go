@@ -274,7 +274,7 @@ func (r *PostgresShopRepo) CancelPendingPurchase(ctx context.Context, purchaseID
 // RefundPurchase marks the latest completed purchase as REFUNDED, removes the
 // inventory row, and restores shop.items stock. Idempotent via refunded_at.
 // Enforces 7-day refundable_until and blocks physical items after fulfilled_at.
-func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID string) (*RefundResult, error) {
+func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID string, ignoreFulfilled bool) (*RefundResult, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -319,7 +319,7 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 	if now.After(refundableUntil) {
 		return nil, model.ErrRefundWindowExpired
 	}
-	if fulfilledAt.Valid && model.IsPhysicalItem(category) {
+	if fulfilledAt.Valid && model.IsPhysicalItem(category) && !ignoreFulfilled {
 		return nil, model.ErrAlreadyFulfilled
 	}
 
