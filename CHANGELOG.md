@@ -3754,3 +3754,70 @@ DETAILS:
 - Leaderboard: Gateway тянет ник из Auth.
 - Profile: синхронизация ника через NATS.
 - Authors: дашборд продаж (85% заработка).
+
+============= v.1.1.3.6 =============
+
+### Что нового в v1.1.3.6
+
+Патч-релиз по балансировщику, инфре и синхронизации OpenAPI.
+
+**Балансер (Least Connections)**
+
+- Health checks бэкендов: горутина раз в 5s пингует `/ready` каждого gateway, флипает `Healthy atomic.Bool`. `getLeastConnBackend` пропускает `unhealthy`.
+- Jitter при равных `ActiveConns`: `math/rand/v2` выбирает случайного из равных → последовательная нагрузка распределяется по пулу, а не бьёт в первый.
+- Метрики: `balancer_backend_healthy{backend}`, `balancer_backend_active_connections{backend}`.
+- `/ready` балансера → 503, если `HealthyBackends() == 0` (было всегда 200).
+- `slog` вместо `log.Printf` в hot path; `atomic.LoadInt32` в логах (была гонка чтения).
+- `X-Balancer-Backend` переехал из request в response header (было debug-неудобно).
+- `503` при отсутствии healthy backends → `Retry-After: 5`.
+
+**Nginx**
+
+- `proxy_next_upstream error timeout http_502` + `proxy_next_upstream_tries 2`: connection error и 502 ретраятся на второй балансер. 503 (CB open) и 504 (timeout после обработки) — не ретраятся.
+- `max_fails=0` — не помечаем балансер dead по одному connection error (Nginx и так ретраит через `proxy_next_upstream`).
+- Исправлена пропущенная `;` в `location /`.
+
+**Docker**
+
+- `Dockerfile.balancer.bin`: `scratch` → `alpine:3.20` + `wget` — compose healthcheck теперь работает.
+- `balancer-2` метрики на хосте `:9190` (`9099` занят Profile, `9098` — `balancer-1`).
+- `nginx` `depends_on` — без `condition: service_healthy` (на cold boot блокировал `make deploy`).
+
+**Prometheus**
+
+- `balancer-2:9098` target — оба балансера скрейпятся.
+
+**OpenAPI**
+
+- `services/gateway/api/openapi.yaml` синхронизирован с `docs/openapi.yaml`:
+  - `password.minLength: 8` (было 6 — врало против Auth).
+  - `enum games` = 8 игр (hexagon, flappy, memory, towers, hanoi, 2048, gears, tamagotchi) — было 4.
+  - `include_deleted` в `GET /inventory/items`, `version` в `PUT /inventory/items/{id}`, `idempotency_key` в bulk.
+  - `nickname` в `GET /leaderboard` → `entries[]`.
+  - `days` в `GET /analytics/dau|mau`, `cohort_days_ago`/`window_days` в `GET /analytics/retention`.
+  - `id=all` в `POST /notifications/{id}/read`.
+  - `GET /authors/me` — soft-deleted (200), `GET /authors/{user_id}` — 404 для soft-deleted.
+  - Добавлены: `POST /admin/shop/purchases/cancel`, `POST /admin/payments/grant-subscription`, `POST /admin/payments/revoke-subscription`.
+
+Патч-релиз по фиксам мержа данных при редактировании (P0-10) и вседозволенности админов при отмене заказов (P0-11). А также закрытие архитектурного бага с `protojson` и починка `Makefile`.
+
+**Инвентарь: мерж полей при `PUT` (P0-10)**
+
+- **`UpdateItem`** (`services/inventory/internal/handler/grpc_handler.go`) теперь **мержит** входящие поля в существующий товар, а не перезаписывает его целиком. Если админ/автор передаёт только `name` или `price`, остальные поля (`description`, `images`, `stock`, `attributes`, `author_id`) сохраняются как были.
+- **`protojson` bug** (`PROTOJSON_BUG.md`): выяснилось, что `google.protobuf.Struct` при отсутствии в JSON приходит как `&Struct{}` (пустой), а не `nil`. Из-за этого `attributes` затирались в `{}`. Фикс: `len(req.Attributes.AsMap()) > 0` перед мержем.
+- **`version`** теперь явно инициализируется `1` в `CreateItem` и `CreateItemWithOutbox` (совпадает с `DEFAULT 1` в БД). Инкремент `version = version + 1` при апдейте работает корректно (без «прыжков на 2»).
+- **Кэш**: `CachedRepository.UpdateItem` теперь делает `DeleteItem` (инвалидацию), а не `warmItem`. Кэш больше не хранит устаревшие данные, если БД их изменила (например, через триггер).
+
+**Магазин: админ отменяет `fulfilled_at` (P0-11)**
+
+- **`AdminCancelPurchase`** (`services/shop/internal/service/shop_service.go`) теперь вызывает `cancelPurchaseInternal(..., isAdmin=true)`, который передаёт `ignoreFulfilled=true` в `RefundPurchase`.
+- В `RefundPurchase` (`services/shop/internal/repository/postgres_repo.go`) добавлен флаг `ignoreFulfilled bool`. Для админа проверка `fulfilled_at` пропускается (но проверка окна 7 дней — остаётся). Теперь админ может отменить даже «собранный» товар, игрок — нет.
+- Идемпотентность сохранена: повторный `POST` возвращает `already_refunded: true`, `refunded_amount: 0`.
+
+**Инфраструктура и документация**
+
+- **Makefile**: починен `test-smoke` (сломанный цикл `for` из-за лишних пробелов). `make daily` снова работает.
+- **Постмортем**: `confluence/postmortem/PROTOJSON_BUG.md` — разбор бага с `google.protobuf.Struct`, чтобы не наступить на него снова в других сервисах.
+- **Тесты**: обновлён мок `RefundPurchase` в `shop_service_test.go` (сигнатура с флагом). `make test-all` — зелёный.
+- **Nginx**: добавлен `deployments/nginx/nginx.conf` (reverse proxy перед балансерами) — детали в `NGINX_KEYIDEA.md`.
+- **Чистый TODO**: агрегированный список задач на 09.11.2026 — в `confluence/history/2026-11/09.11.2026/TODO_LIST_9thNOV2026.md`.

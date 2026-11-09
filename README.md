@@ -5,17 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.5-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.6-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3.5** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
-
-### Что нового в v1.1.3.5
-
-- **P0-8 Inventory IDOR closed:** `UpdateItem` / `DeleteItem` / `SoftDeleteItem` / `RestoreItem` проверяют `author_id` на бэкенде (`checkAuthorAccess` + `x-user-id` из metadata). Чужой юзер — `403`, админ — без изменений.
-- **P0-6 Authors soft-delete:** `RevertApplication` больше не делает `DELETE FROM authors`, а ставит `active = false`. Межбазовые ссылки (`inventory.author_id`, `payment.revenue_splits`, `shop.purchases`) остаются валидными. Новый gRPC `GetMyAuthor` отделяет `/authors/me` (200 всегда, включая inactive) от `/authors/:user_id` (404 для soft-deleted).
-- **P0-5 Billing reference_id:** награды за игру берут `reference_id` из `event.Timestamp` вместо `time.Now().UnixNano()` — redelivery не задваивает. Outbox worker: `forceStreamRecreation` для залипшего лидера NATS.
-- **Test hygiene:** `make test-integration` зелёный. Authors: `TestRevertApplication_SoftDeletesAuthor` (testcontainers). Inventory: Mongo-тесты `t.Skipf`, если Mongo нет.
+**Event Horizon v1.1.3.6** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
 
 | | |
 |---|---|
@@ -27,30 +20,6 @@
 | **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI `/docs` только с `DOCS_PASSWORD` (без пароля адрес отвечает 404) |
 | **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
 
-### v1.1.3 highlights (15.10.2026)
-
-- **Patterns catalog:** `confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md` — 17 сервисов, 333 паттерна (Facade, Saga, Outbox, Circuit Breaker, RAG, TF-IDF, Least Conn, WebSocket ticket, etc.)
-- **Roadmap:** `confluence/tech_debt/FUTURE_EVENT_HORIZON.md` — i18n (RU/EN/DE/ES), tech debt, games polish, users & prod, observability & security
-- **Frontend v1.1.2:** BoostCheckbox per-game effects · Gears canvas fix · Pancaker space emojis · Hanoi disk bore · Memonia layout · ShopItemCard `isDigitalItem` (hide 998 stock for skins/themes) · Flappy hint «Нажмите пробел»
-
-### v1.1.0 highlights (07–10.10.2026)
-
-- `/api/v1` public REST · shop/inventory polish · achievements · history NATS  
-- Companion daily tickets · avatar upload · nick→LB · record-beaten deep-link  
-- Mobile safe-area + game touch targets · Miro stickers pack · security audit RU  
-- Ops close: gateway v1 rewrite, Pancaker score trust, Grafana provision, CORE k6 verdict  
-
-### Future decisions (not blockers)
-
-| Track | Status |
-|-------|--------|
-| Miro board polish / Boosty posts / presentations | **You IRL** — research tomorrow |
-| Optional `git tag v1.1.0` | Ask when ready (marker on commit, not a branch) |
-| Unified game chrome · Tamagotchi art pass | Soft polish |
-| C4 payouts · 108 login authors · full 3D | **Locked** until product OK |
-| Loki / Tempo / node-exporter / SLO burn / multi-DB scrape | Dream list — [`DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md) |
-| Next hardware for load demos | Prefer **8 vCPU / 32 GiB** — see SUITABLE_SERVER |
-
 ---
 
 ## 📦 Архитектура (актуально v1.1.0, 09.10.2026)
@@ -60,9 +29,9 @@
 ```text
 [GitHub Actions] ──SSH/Ansible──► [VM] ──docker-compose──► Event Horizon
 
-[React :5173] ──HTTP──► [Balancer :8079] ──HTTP──► [Gateway ×3 :8081–8083]
-                                                      │ JWT · HTTP→gRPC
-                                                      ▼
+[React :5173] -Nginx- ──HTTP──► [Balancer :8079] ──HTTP──► [Gateway ×3 :8081–8083]
+                                                              │ JWT · HTTP→gRPC
+                                                              ▼
 ┌───────────────┬───────────────┬───────────────┬───────────────┬───────────────┐
 │ Auth :50051   │ Game :50052   │ Billing:50053 │ Leaderboard   │ Shop :50055   │
 │ PG:5460 Redis │ PG:5461       │ PG:5462 Redis │ :50054        │ PG:5465 Redis │
@@ -483,9 +452,62 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 ## 📦 Версия
 
-Текущая: **v1.1.3.5** (08.11.2026).
-
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3.6
+
+Патч-релиз: балансировщик, инфра, синхронизация OpenAPI, P0-10 (Inventory merge), P0-11 (admin cancel fulfilled).
+
+**Балансер (Least Connections)**
+
+- Health checks бэкендов: горутина раз в 5s пингует `/ready` каждого gateway, флипает `Healthy atomic.Bool`. `getLeastConnBackend` пропускает `unhealthy`.
+- Jitter при равных `ActiveConns`: `math/rand/v2` выбирает случайного из равных — последовательная нагрузка распределяется по пулу.
+- Метрики: `balancer_backend_healthy{backend}`, `balancer_backend_active_connections{backend}`.
+- `/ready` балансера → 503, если `HealthyBackends() == 0` (было всегда 200).
+- `slog` вместо `log.Printf` в hot path; `atomic.LoadInt32` в логах.
+- `X-Balancer-Backend` переехал из request в response header.
+- `503` при отсутствии healthy backends → `Retry-After: 5`.
+
+**Nginx**
+
+- `proxy_next_upstream error timeout http_502` + `proxy_next_upstream_tries 2`: connection error и 502 ретраятся на второй балансер. 503 и 504 — не ретраятся.
+- `max_fails=0` — не помечаем балансер dead по одному connection error.
+- Исправлена пропущенная `;` в `location /`.
+
+**Docker**
+
+- `Dockerfile.balancer.bin`: `scratch` → `alpine:3.20` + `wget` — compose healthcheck работает.
+- `balancer-2` метрики на хосте `:9190` (`9099` занят Profile, `9098` — `balancer-1`).
+- `nginx` `depends_on` — без `condition: service_healthy` (на cold boot блокировал `make deploy`).
+
+**Prometheus**
+
+- `balancer-2:9098` target — оба балансера скрейпятся.
+
+**OpenAPI**
+
+- `services/gateway/api/openapi.yaml` синхронизирован с `docs/openapi.yaml` (копия для Swagger `//go:embed`).
+
+**Инвентарь: мерж полей при `PUT` (P0-10)**
+
+- `UpdateItem` теперь **мержит** входящие поля в существующий товар, а не перезаписывает целиком. Если передать только `name` или `price`, остальные поля сохраняются.
+- `protojson` bug: `google.protobuf.Struct` при отсутствии в JSON приходит как `&Struct{}` (пустой), а не `nil`. Фикс: `len(req.Attributes.AsMap()) > 0` перед мержем.
+- `version` явно инициализируется `1` в `CreateItem` и `CreateItemWithOutbox`. Инкремент `version + 1` работает без «прыжков на 2».
+- `CachedRepository.UpdateItem` делает `DeleteItem` (инвалидацию), а не `warmItem`.
+
+**Магазин: админ отменяет `fulfilled_at` (P0-11)**
+
+- `AdminCancelPurchase` вызывает `cancelPurchaseInternal(..., isAdmin=true)` → `ignoreFulfilled=true` в `RefundPurchase`. Админ может отменить «собранный» товар, игрок — нет. Окно 7 дней остаётся.
+- Идемпотентность сохранена: повторный `POST` → `already_refunded: true`, `refunded_amount: 0`.
+
+**Инфраструктура и документация**
+
+- `Makefile`: починен `test-smoke` (сломанный цикл `for`). `make daily` работает.
+- Постмортем: `confluence/postmortem/PROTOJSON_BUG.md`.
+- Тесты: обновлён мок `RefundPurchase` в `shop_service_test.go`. `make test-all` — зелёный.
+- Nginx: `deployments/nginx/nginx.conf` — детали в `NGINX_KEYIDEA.md`.
+- TODO: `confluence/history/2026-11/09.11.2026/TODO_LIST_9thNOV2026.md`.
+
 ### Что нового в v1.1.3.5
 
 Патч-релиз по UX, карточкам товаров и надёжности. Закрывает P0-6 (soft-delete Authors), P0-8 (IDOR Inventory) и несколько фронтенд-долгов.
