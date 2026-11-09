@@ -855,6 +855,56 @@ paths:
                     type: string
                     example: InvalidArgument
 
+  /api/v1/admin/shop/purchases/cancel:
+    post:
+      summary: Cancel any user's purchase (admin only)
+      description: |
+        Отменяет покупку ЛЮБОГО пользователя. Возвращает билетики на баланс
+        покупателя. Только для admin. В отличие от `POST /api/v1/shop/purchase/{id}/cancel`,
+        не проверяет, что callerID == userID.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, item_id]
+              properties:
+                user_id:
+                  type: string
+                  description: ID пользователя, чью покупку отменяем
+                item_id:
+                  type: string
+                  description: ID товара (catalog / shop item id)
+      responses:
+        '200':
+          description: Success (idempotent if already refunded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  new_balance:
+                    type: integer
+                  refunded_amount:
+                    type: integer
+                  already_refunded:
+                    type: boolean
+        '400':
+          description: Refund window expired or physical item already fulfilled
+        '401':
+          description: Unauthorized
+        '403':
+          description: Admin role required
+        '404':
+          description: No completed purchase found
+
   /api/v1/shop/inventory:
     get:
       summary: Get user inventory

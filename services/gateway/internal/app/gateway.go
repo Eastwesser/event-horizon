@@ -1455,6 +1455,38 @@ func runGateway() {
 		})
 	})
 
+	r.POST("/api/v1/admin/shop/purchases/cancel", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
+		var req struct {
+			UserID string `json:"user_id"`
+			ItemID string `json:"item_id"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.UserID == "" || req.ItemID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user_id and item_id are required"})
+			return
+		}
+
+		out, err := throughBreaker(shopCB, c, func() (any, error) {
+			return shopClient.AdminCancelPurchase(c.Request.Context(), &shopPb.AdminCancelPurchaseRequest{
+				UserId: req.UserID,
+				ItemId: req.ItemID,
+			})
+		})
+		if err == circuit.ErrOpen {
+			return
+		}
+		if handleRPCError(c, err) {
+			return
+		}
+		resp := out.(*shopPb.CancelPurchaseResponse)
+		c.JSON(http.StatusOK, gin.H{
+			"success":          resp.GetSuccess(),
+			"message":          resp.GetMessage(),
+			"new_balance":      resp.GetNewBalance(),
+			"refunded_amount":  resp.GetRefundedAmount(),
+			"already_refunded": resp.GetAlreadyRefunded(),
+		})
+	})
+
 	r.POST("/api/v1/payment/webhook", func(c *gin.Context) {
 		raw, err := c.GetRawData()
 		if err != nil || len(raw) == 0 {
