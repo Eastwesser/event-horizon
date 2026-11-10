@@ -1,0 +1,1 @@
+docker compose --env-file .env -f deployments/docker-compose.cluster.yml config > /dev/null && echo "OK"

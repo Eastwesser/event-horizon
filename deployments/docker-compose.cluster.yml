@@ -21,6 +21,7 @@ services:
       - "5460:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -39,6 +40,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -59,6 +61,7 @@ services:
       - "5461:5432"
     volumes:
       - postgres_game_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -75,6 +78,7 @@ services:
     container_name: event-horizon-redis-game
     ports:
       - "6380:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -95,6 +99,7 @@ services:
       - "5462:5432"
     volumes:
       - postgres_billing_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -111,6 +116,7 @@ services:
     container_name: event-horizon-redis-billing
     ports:
       - "6381:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -131,6 +137,7 @@ services:
       - "5463:5432"
     volumes:
       - postgres_leaderboard_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -147,6 +154,7 @@ services:
     container_name: event-horizon-redis-leaderboard
     ports:
       - "6382:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -167,6 +175,7 @@ services:
       - "5464:5432"
     volumes:
       - postgres_profile_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -183,6 +192,7 @@ services:
     container_name: event-horizon-redis-profile
     ports:
       - "6385:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -203,6 +213,7 @@ services:
       - "5465:5432"
     volumes:
       - postgres_shop_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -219,6 +230,7 @@ services:
     container_name: event-horizon-redis-shop
     ports:
       - "6383:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -239,6 +251,7 @@ services:
       - "5466:5432"
     volumes:
       - postgres_inventory_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -255,6 +268,7 @@ services:
     container_name: event-horizon-redis-inventory
     ports:
       - "6384:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -275,6 +289,7 @@ services:
       DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-eventhorizon}:${POSTGRES_PASSWORD:-eventhorizon}@event-horizon-postgres:5432/eventhorizon?sslmode=disable"
     ports:
       - "9187:9187"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -286,6 +301,7 @@ services:
       REDIS_ADDR: "redis://event-horizon-redis:6379"
     ports:
       - "9121:9121"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -309,6 +325,7 @@ services:
       "-cluster", "nats://0.0.0.0:6222",
       "-routes", "nats://nats-2:6222,nats://nats-3:6222"
     ]
+    restart: unless-stopped
     networks:
       - event-horizon-net
     healthcheck:
@@ -333,6 +350,7 @@ services:
       "-cluster", "nats://0.0.0.0:6222",
       "-routes", "nats://nats-1:6222,nats://nats-3:6222"
     ]
+    restart: unless-stopped
     networks:
       - event-horizon-net
     healthcheck:
@@ -357,6 +375,7 @@ services:
       "-cluster", "nats://0.0.0.0:6222",
       "-routes", "nats://nats-1:6222,nats://nats-2:6222"
     ]
+    restart: unless-stopped
     networks:
       - event-horizon-net
     healthcheck:
@@ -371,7 +390,7 @@ services:
     container_name: nats-exporter
     command: ["-varz", "http://event-horizon-nats-1:8222"]
     ports:
-      - "7777:7777"
+      - "7777:7777" 
     networks:
       - event-horizon-net
     depends_on:
@@ -389,10 +408,10 @@ services:
     depends_on:
       - nats-1
       - nats-2
-      - nats-3
+      - nats-3     
     networks:
       - event-horizon-net
-    restart: on-failure
+    restart: unless-stopped
 
 
   # ============================================================
@@ -500,6 +519,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -546,6 +566,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    restart: unless-stopped    
     networks:
       - event-horizon-net
 
@@ -616,6 +637,7 @@ services:
         condition: service_healthy
       billing:
         condition: service_healthy
+    restart: unless-stopped    
     networks:
       - event-horizon-net
 
@@ -644,6 +666,7 @@ services:
       - DB_USER=${POSTGRES_USER:-eventhorizon}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-eventhorizon}
       - DB_NAME=eventhorizon_leaderboard
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     depends_on:
@@ -694,6 +717,7 @@ services:
         condition: service_healthy
       redis-profile:
         condition: service_healthy
+    restart: unless-stopped    
     networks:
       - event-horizon-net
 
@@ -731,6 +755,7 @@ services:
       - nats-1
       - nats-2
       - nats-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -748,7 +773,7 @@ services:
     depends_on:
       - nats-1
       - nats-2
-      - nats-3
+      - nats-3 
     networks:
       - event-horizon-net
     restart: unless-stopped
@@ -765,6 +790,7 @@ services:
       - "5470:5432"
     volumes:
       - postgres_notification_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -837,6 +863,7 @@ services:
       - postgres-inventory
       - redis-inventory
       - nats-1
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -852,6 +879,7 @@ services:
       - "5467:5432"
     volumes:
       - postgres_payment_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -867,6 +895,7 @@ services:
     container_name: event-horizon-redis-payment
     ports:
       - "6386:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -921,6 +950,7 @@ services:
       - "5468:5432"
     volumes:
       - postgres_authors_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -936,6 +966,7 @@ services:
     container_name: event-horizon-redis-authors
     ports:
       - "6387:6379"
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -987,6 +1018,7 @@ services:
       - "5469:5432"
     volumes:
       - postgres_history_data:/var/lib/postgresql/data
+    restart: unless-stopped  
     networks:
       - event-horizon-net
     healthcheck:
@@ -1046,6 +1078,7 @@ services:
       nofile:
         soft: 262144
         hard: 262144
+    restart: unless-stopped    
     networks:
       - event-horizon-net
     healthcheck:
@@ -1064,6 +1097,7 @@ services:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -1141,6 +1175,7 @@ services:
       - nats-1
       - nats-2
       - nats-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -1185,6 +1220,7 @@ services:
       - nats-1
       - nats-2
       - nats-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -1229,6 +1265,7 @@ services:
       - nats-1
       - nats-2
       - nats-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -1249,6 +1286,7 @@ services:
       - gateway
       - gateway-2
       - gateway-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
@@ -1268,6 +1306,7 @@ services:
       - gateway
       - gateway-2
       - gateway-3
+    restart: unless-stopped  
     networks:
       - event-horizon-net
 
