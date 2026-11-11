@@ -737,6 +737,7 @@ services:
     environment:
       - GRPC_PORT=50055
       - METRICS_PORT=9095
+      - JAEGER_ENDPOINT=jaeger:4317
       # - NATS_URL=nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - DB_HOST=event-horizon-postgres-shop
@@ -767,6 +768,7 @@ services:
       - "9101:9101"
     environment:
       - METRICS_PORT=9101
+      - JAEGER_ENDPOINT=jaeger:4317
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
       - KAFKA_BROKERS=${KAFKA_BROKERS:-}
       - LOG_LEVEL=info
@@ -816,6 +818,7 @@ services:
     environment:
       - GRPC_PORT=50063
       - METRICS_PORT=9102
+      - JAEGER_ENDPOINT=jaeger:4317
       - DB_HOST=event-horizon-postgres-notification
       - DB_PORT=5432
       - DB_USER=${POSTGRES_USER:-eventhorizon}
@@ -859,6 +862,7 @@ services:
       - INVENTORY_PG_DB=eventhorizon_inventory
       - INVENTORY_REDIS_ADDR=event-horizon-redis-inventory:6379
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222
+      - JAEGER_ENDPOINT=jaeger:4317 
     depends_on:
       - postgres-inventory
       - redis-inventory
@@ -919,6 +923,7 @@ services:
     environment:
       - GRPC_PORT=50058
       - METRICS_PORT=9103
+      - JAEGER_ENDPOINT=jaeger:4317
       - DB_HOST=event-horizon-postgres-payment
       - DB_PORT=5432
       - DB_USER=${POSTGRES_USER:-eventhorizon}
@@ -990,6 +995,7 @@ services:
     environment:
       - GRPC_PORT=50061
       - METRICS_PORT=9104
+      - JAEGER_ENDPOINT=jaeger:4317
       - DB_HOST=event-horizon-postgres-authors
       - DB_PORT=5432
       - DB_USER=${POSTGRES_USER:-eventhorizon}
@@ -1044,6 +1050,7 @@ services:
     environment:
       - GRPC_PORT=50062
       - METRICS_PORT=9105
+      - JAEGER_ENDPOINT=jaeger:4317
       - DB_HOST=event-horizon-postgres-history
       - DB_PORT=5432
       - DB_USER=${POSTGRES_USER:-eventhorizon}
@@ -1116,6 +1123,7 @@ services:
     environment:
       - GRPC_PORT=50057
       - METRICS_PORT=9106
+      - JAEGER_ENDPOINT=jaeger:4317
       - CLICKHOUSE_URL=http://event-horizon-clickhouse:8123
       - CLICKHOUSE_DB=eventhorizon
       - NATS_URL=nats://event-horizon-nats-1:4222,event-horizon-nats-2:4222,event-horizon-nats-3:4222

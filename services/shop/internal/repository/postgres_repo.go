@@ -274,6 +274,16 @@ func (r *PostgresShopRepo) CancelPendingPurchase(ctx context.Context, purchaseID
 // RefundPurchase marks the latest completed purchase as REFUNDED, removes the
 // inventory row, and restores shop.items stock. Idempotent via refunded_at.
 // Enforces 7-day refundable_until and blocks physical items after fulfilled_at.
+//
+// P0 deadlock fix (10.11.2026): lock order now matches PurchaseItemWithStock —
+// items → inventory → purchases. Before this fix RefundPurchase locked
+// purchases first (FOR UPDATE OF p) and items last, while PurchaseItemWithStock
+// locked items first — concurrent buy+cancel on the same item deadlocked (40P01).
+//
+// The purchases SELECT is a plain read (no FOR UPDATE): the actual row lock is
+// taken by the UPDATE below, and RowsAffected()==0 still means "already refunded",
+// so idempotency is preserved. The items anchor (FOR UPDATE) serialises buy and
+// cancel on the same item before they touch inventory/purchases at all.
 func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID string, ignoreFulfilled bool) (*RefundResult, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -281,21 +291,43 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 	}
 	defer tx.Rollback()
 
+	// 2s lock_timeout: if a deadlock somehow still happens, fail fast (40P01)
+	// instead of hanging for 30s behind a gateway timeout.
+	if _, err := tx.ExecContext(ctx, `SET LOCAL lock_timeout = '2000ms'`); err != nil {
+		return nil, fmt.Errorf("set lock_timeout: %w", err)
+	}
+
+	// 1) Anchor on items FIRST — same first lock as PurchaseItemWithStock.
+	//    This serialises buy+cancel on the same item before inventory/purchases
+	//    are touched, which removes the cross-order deadlock.
+	if _, err := tx.ExecContext(ctx, `SELECT 1 FROM items WHERE id = $1 FOR UPDATE`, itemID); err != nil {
+		return nil, fmt.Errorf("lock item: %w", err)
+	}
+
+	// 2) Read the candidate purchase (plain read — the row lock happens in the
+	//    UPDATE below, keeping the lock order items → inventory → purchases).
 	var purchaseID string
 	var price int
 	var refundableUntil time.Time
 	var fulfilledAt sql.NullTime
-	var category string
+	
 	err = tx.QueryRowContext(ctx, `
-		SELECT p.id, p.price, p.refundable_until, p.fulfilled_at, i.category
-		FROM purchases p
-		JOIN items i ON i.id = p.item_id
-		WHERE p.user_id = $1 AND p.item_id = $2
-		  AND p.status = 'COMPLETED' AND p.refunded_at IS NULL
-		ORDER BY COALESCE(p.completed_at, p.purchased_at) DESC
+		SELECT id, price, refundable_until, fulfilled_at
+		FROM purchases
+		WHERE user_id = $1 AND item_id = $2
+		  AND status = 'COMPLETED' AND refunded_at IS NULL
+		ORDER BY COALESCE(completed_at, purchased_at) DESC
 		LIMIT 1
-		FOR UPDATE OF p
-	`, userID, itemID).Scan(&purchaseID, &price, &refundableUntil, &fulfilledAt, &category)
+	`, userID, itemID).Scan(&purchaseID, &price, &refundableUntil, &fulfilledAt)
+	// SELECT p.id, p.price, p.refundable_until, p.fulfilled_at, i.category
+	// 	FROM purchases p
+	// 	JOIN items i ON i.id = p.item_id
+	// 	WHERE p.user_id = $1 AND p.item_id = $2
+	// 	  AND p.status = 'COMPLETED' AND p.refunded_at IS NULL
+	// 	ORDER BY COALESCE(p.completed_at, p.purchased_at) DESC
+	// 	LIMIT 1
+	// 	FOR UPDATE OF p
+	
 	if err == sql.ErrNoRows {
 		var alreadyID string
 		var alreadyPrice int
@@ -315,6 +347,13 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 		return nil, err
 	}
 
+	// 3) Category for the physical-item gate. Plain SELECT — items is already
+	//    anchored above, no extra lock needed.
+	var category string
+	if err := tx.QueryRowContext(ctx, `SELECT category FROM items WHERE id = $1`, itemID).Scan(&category); err != nil {
+		return nil, fmt.Errorf("load item category: %w", err)
+	}
+
 	now := time.Now().UTC()
 	if now.After(refundableUntil) {
 		return nil, model.ErrRefundWindowExpired
@@ -323,6 +362,16 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 		return nil, model.ErrAlreadyFulfilled
 	}
 
+	// 4) Drop the inventory row (second lock, after items — matches purchase).
+	if _, err := tx.ExecContext(ctx, `
+		DELETE FROM inventory WHERE user_id = $1 AND item_id = $2
+	`, userID, itemID); err != nil {
+		return nil, err
+	}
+
+	// 5) Close the purchase row. Row lock is taken here (third lock, matches
+	//    purchase: items → inventory → purchases). RowsAffected()==0 means
+	//    another tx already refunded it — keep idempotency.
 	res, err := tx.ExecContext(ctx, `
 		UPDATE purchases
 		SET status = 'REFUNDED', refunded_at = NOW()
@@ -335,12 +384,14 @@ func (r *PostgresShopRepo) RefundPurchase(ctx context.Context, userID, itemID st
 		return &RefundResult{PurchaseID: purchaseID, Price: price, AlreadyRefunded: true}, nil
 	}
 
-	if _, err := tx.ExecContext(ctx, `
-		DELETE FROM inventory WHERE user_id = $1 AND item_id = $2
-	`, userID, itemID); err != nil {
-		return nil, err
-	}
+	// WRONG ORDER
+	// if _, err := tx.ExecContext(ctx, `
+	// 	DELETE FROM inventory WHERE user_id = $1 AND item_id = $2
+	// `, userID, itemID); err != nil {
+	// 	return nil, err
+	// }
 
+	// 6) Restore stock (items was already locked in step 1).
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE items SET stock = stock + 1, version = version + 1 WHERE id = $1
 	`, itemID); err != nil {
@@ -439,8 +490,67 @@ func (r *PostgresShopRepo) MarkOutboxProcessed(ctx context.Context, id string) e
 	return err
 }
 
-// PurchaseItemWithStock — покупка с проверкой стока. purchaseID is the row id
-// and the PurchaseUUID of every outbox event written in this transaction.
+// // PurchaseItemWithStock — покупка с проверкой стока. purchaseID is the row id
+// // and the PurchaseUUID of every outbox event written in this transaction.
+// func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []OutboxRecord) error {
+// 	tx, err := r.db.BeginTx(ctx, nil)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer tx.Rollback()
+
+// 	// Pessimistic row lock + optimistic version bump on stock change.
+// 	var stock, version int
+// 	err = tx.QueryRowContext(ctx, `SELECT stock, version FROM items WHERE id = $1 FOR UPDATE`, itemID).Scan(&stock, &version)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if stock <= 0 {
+// 		return fmt.Errorf("item out of stock")
+// 	}
+
+// 	res, err := tx.ExecContext(ctx, `
+//         UPDATE items SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2`, itemID, version)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if n, _ := res.RowsAffected(); n == 0 {
+// 		return fmt.Errorf("optimistic lock conflict on item %s", itemID)
+// 	}
+
+// 	// Добавляем в инвентарь
+// 	_, err = tx.ExecContext(ctx, `INSERT INTO inventory (user_id, item_id) VALUES ($1, $2)`, userID, itemID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	_, err = tx.ExecContext(ctx, `
+//         INSERT INTO purchases (id, user_id, item_id, price, status, refundable_until)
+//         VALUES ($1, $2, $3, $4, 'COMPLETED', NOW() + INTERVAL '7 days')`, purchaseID, userID, itemID, price)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	for _, rec := range records {
+// 		if rec.EventType == "" || len(rec.Payload) == 0 {
+// 			continue
+// 		}
+// 		if _, err := tx.ExecContext(ctx, `
+//             INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
+// 			rec.EventType, rec.Payload); err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	return tx.Commit()
+// }
+
+// PurchaseItemWithStock — покупка с проверкой стока.
+// P0 (10.11.2026): резерв мгновенный (UPDATE ... WHERE stock >= 1), без
+// SELECT FOR UPDATE. Лок на items держится микросекунды, не 2с (Billing
+// gRPC внутри лока — это была причина contention на 10 items).
+// Order: items (UPDATE) → inventory → purchases → outbox.
+// Совпадает с RefundPurchase (items → inventory → purchases).
 func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []OutboxRecord) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -448,44 +558,41 @@ func (r *PostgresShopRepo) PurchaseItemWithStock(ctx context.Context, userID, it
 	}
 	defer tx.Rollback()
 
-	// Pessimistic row lock + optimistic version bump on stock change.
+	// 1) Мгновенный резерв: одна строка, атомарно, без SELECT FOR UPDATE.
 	var stock, version int
-	err = tx.QueryRowContext(ctx, `SELECT stock, version FROM items WHERE id = $1 FOR UPDATE`, itemID).Scan(&stock, &version)
-	if err != nil {
-		return err
-	}
-	if stock <= 0 {
+	err = tx.QueryRowContext(ctx, `
+		UPDATE items SET stock = stock - 1, version = version + 1
+		WHERE id = $1 AND stock >= 1
+		RETURNING stock, version
+	`, itemID).Scan(&stock, &version)
+	if err == sql.ErrNoRows {
 		return fmt.Errorf("item out of stock")
 	}
-
-	res, err := tx.ExecContext(ctx, `
-        UPDATE items SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2`, itemID, version)
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return fmt.Errorf("optimistic lock conflict on item %s", itemID)
-	}
 
-	// Добавляем в инвентарь
+	// 2) Inventory row.
 	_, err = tx.ExecContext(ctx, `INSERT INTO inventory (user_id, item_id) VALUES ($1, $2)`, userID, itemID)
 	if err != nil {
 		return err
 	}
 
+	// 3) Purchase row.
 	_, err = tx.ExecContext(ctx, `
-        INSERT INTO purchases (id, user_id, item_id, price, status, refundable_until)
-        VALUES ($1, $2, $3, $4, 'COMPLETED', NOW() + INTERVAL '7 days')`, purchaseID, userID, itemID, price)
+		INSERT INTO purchases (id, user_id, item_id, price, status, refundable_until)
+		VALUES ($1, $2, $3, $4, 'COMPLETED', NOW() + INTERVAL '7 days')`, purchaseID, userID, itemID, price)
 	if err != nil {
 		return err
 	}
 
+	// 4) Outbox.
 	for _, rec := range records {
 		if rec.EventType == "" || len(rec.Payload) == 0 {
 			continue
 		}
 		if _, err := tx.ExecContext(ctx, `
-            INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
+			INSERT INTO outbox (event_type, payload) VALUES ($1, $2)`,
 			rec.EventType, rec.Payload); err != nil {
 			return err
 		}
@@ -558,4 +665,27 @@ func (r *PostgresShopRepo) ListPurchasesByItemIDs(ctx context.Context, itemIDs [
 		out = append(out, p)
 	}
 	return out, total, salesCount, ticketsEarned, rows.Err()
+}
+
+// ListOwnedItemIDsByItemIDs returns owned ids among the given item ids (one round-trip).
+func (r *PostgresShopRepo) ListOwnedItemIDsByItemIDs(ctx context.Context, userID string, itemIDs []string) ([]string, error) {
+	if len(itemIDs) == 0 {
+		return nil, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT item_id FROM inventory
+		WHERE user_id = $1 AND item_id = ANY($2)`, userID, pq.Array(itemIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }

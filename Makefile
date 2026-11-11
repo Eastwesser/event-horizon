@@ -61,7 +61,15 @@ test-unit:
 	(cd pkg/migrator && GOWORK=off go test ./...) || failed=1; \
 	(cd platform && GOWORK=off go test ./...) || failed=1; \
 	exit $$failed
-	
+
+# Ride-on: build all → docker-build-all → docker-push-all → deploy.
+# Use after code changes when you want the full cycle in one command.
+.PHONY: ride-on
+ride-on: build-all docker-build-all docker-push-all
+	@echo "🚀 All images built and pushed. Deploying..."
+	$(MAKE) deploy
+	@echo "✅ ALL SYSTEMS NOMINAL"
+
 # Nginx entrypoint (балансирует 2 balancer'а)
 test-smoke:
 	@echo "Smoke: curl /health|/ready on local metrics ports (cluster must be up)"

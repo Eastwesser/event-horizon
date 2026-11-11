@@ -98,17 +98,37 @@ func withUserRole(ctx context.Context, c *gin.Context) context.Context {
 	)
 }
 
-func newServiceBreaker(name string) *circuit.Breaker {
+// newServiceBreaker builds a circuit breaker + bulkhead.
+// maxConcurrent caps in-flight calls to this downstream. Read-heavy services
+// (shop/inventory/leaderboard/profile) get a higher cap; write-heavy
+// (billing/payment/authors) stay lower so a slow write path cannot starve
+// the read path.
+func newServiceBreaker(name string, maxConcurrent int) *circuit.Breaker {
+	if maxConcurrent <= 0 {
+		maxConcurrent = 32
+	}
 	return circuit.New(circuit.Settings{
 		Name:          name,
 		MaxRequests:   3,
 		Timeout:       10 * time.Second,
-		MaxConcurrent: 32, // bulkhead: cap in-flight calls per downstream
+		MaxConcurrent: uint32(maxConcurrent),
 		ReadyToTrip: func(counts circuit.Counts) bool {
 			return counts.ConsecutiveFailures >= 5
 		},
 	})
 }
+// OLD REALIZATION:
+// func newServiceBreaker(name string) *circuit.Breaker {
+// 	return circuit.New(circuit.Settings{
+// 		Name:          name,
+// 		MaxRequests:   3,
+// 		Timeout:       10 * time.Second,
+// 		MaxConcurrent: 32, // bulkhead: cap in-flight calls per downstream
+// 		ReadyToTrip: func(counts circuit.Counts) bool {
+// 			return counts.ConsecutiveFailures >= 5
+// 		},
+// 	})
+// }
 
 // appendPartialJSON adds "_partial": true to a cached whoami JSON object.
 func appendPartialJSON(cached []byte) []byte {
@@ -462,7 +482,7 @@ func runGateway() {
 		log.Fatalf("Failed to connect to auth: %v", err)
 	}
 	defer authClient.Close()
-	authCB := newServiceBreaker("auth")
+	authCB := newServiceBreaker("auth", 128)
 
 	gameConn, err := client.Dial(cfg.GameAddr)
 	if err != nil {
@@ -470,7 +490,7 @@ func runGateway() {
 	}
 	defer gameConn.Close()
 	gameClient := gamePb.NewGameServiceClient(gameConn)
-	gameCB := newServiceBreaker("game")
+	gameCB := newServiceBreaker("game", 128)
 
 	profileConn, err := client.Dial(cfg.ProfileAddr)
 	if err != nil {
@@ -478,7 +498,7 @@ func runGateway() {
 	}
 	defer profileConn.Close()
 	profileClient := profilePb.NewProfileServiceClient(profileConn)
-	profileCB := newServiceBreaker("profile")
+	profileCB := newServiceBreaker("profile", 128)
 
 	leaderboardConn, err := client.Dial(cfg.LeaderboardAddr)
 	if err != nil {
@@ -486,7 +506,7 @@ func runGateway() {
 	}
 	defer leaderboardConn.Close()
 	leaderboardClient := leaderboardPb.NewLeaderboardServiceClient(leaderboardConn)
-	leaderboardCB := newServiceBreaker("leaderboard")
+	leaderboardCB := newServiceBreaker("leaderboard", 128)
 
 	// NATS SECTION
 	var js nats.JetStreamContext
@@ -938,7 +958,7 @@ func runGateway() {
 	}
 	defer billingConn.Close()
 	billingClient := billingPb.NewBillingServiceClient(billingConn)
-	billingCB := newServiceBreaker("billing")
+	billingCB := newServiceBreaker("billing", 64)
 
 	r.GET("/api/v1/billing/balance/all", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		out, err := throughBreaker(billingCB, c, func() (any, error) {
@@ -1049,7 +1069,7 @@ func runGateway() {
 	}
 	defer inventoryConn.Close()
 	inventoryClient := inventoryPb.NewInventoryServiceClient(inventoryConn)
-	inventoryCB := newServiceBreaker("inventory")
+	inventoryCB := newServiceBreaker("inventory", 256)
 
 	shopConn, err := client.Dial(cfg.ShopAddr)
 	if err != nil {
@@ -1057,7 +1077,7 @@ func runGateway() {
 	}
 	defer shopConn.Close()
 	shopClient := shopPb.NewShopServiceClient(shopConn)
-	shopCB := newServiceBreaker("shop")
+	shopCB := newServiceBreaker("shop", 256)
 
 	// Добавь эндпоинты:
 	r.GET("/api/v1/shop/items", middleware.RequireAuth(authClient), func(c *gin.Context) {
@@ -1217,7 +1237,7 @@ func runGateway() {
 	}
 	defer paymentConn.Close()
 	paymentClient := paymentPb.NewPaymentServiceClient(paymentConn)
-	paymentCB := newServiceBreaker("payment")
+	paymentCB := newServiceBreaker("payment", 64)
 
 	r.POST("/api/v1/payment/checkout", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		var req struct {
@@ -1619,7 +1639,7 @@ func runGateway() {
 	}
 	defer authorsConn.Close()
 	authorsClient := authorsPb.NewAuthorsServiceClient(authorsConn)
-	authorsCB := newServiceBreaker("authors")
+	authorsCB := newServiceBreaker("authors", 64)
 
 	r.PUT("/api/v1/authors/me", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {
 		var req struct {
@@ -2038,7 +2058,7 @@ func runGateway() {
 	}
 	defer notificationConn.Close()
 	notificationClient := notificationPb.NewNotificationServiceClient(notificationConn)
-	notificationCB := newServiceBreaker("notification")
+	notificationCB := newServiceBreaker("notification", 64)
 
 	r.GET("/api/v1/notifications", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
@@ -2094,7 +2114,7 @@ func runGateway() {
 	}
 	defer historyConn.Close()
 	historyClient := historyPb.NewHistoryServiceClient(historyConn)
-	historyCB := newServiceBreaker("history")
+	historyCB := newServiceBreaker("history", 64)
 
 	r.GET("/api/v1/history", middleware.RequireAuth(authClient), func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
@@ -2124,7 +2144,7 @@ func runGateway() {
 	}
 	defer analyticsConn.Close()
 	analyticsClient := analyticsPb.NewAnalyticsServiceClient(analyticsConn)
-	analyticsCB := newServiceBreaker("analytics")
+	analyticsCB := newServiceBreaker("analytics", 32)
 
 	r.GET("/api/v1/analytics/dau", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAdmin), func(c *gin.Context) {
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
