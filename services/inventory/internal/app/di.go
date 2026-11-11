@@ -107,7 +107,7 @@ func (a *App) initRepository(ctx context.Context) error {
 	switch a.cfg.Driver {
 	case "postgres":
 		a.log.Info("using PostgreSQL driver")
-		repo, db, err := a.connectPostgres()
+		repo, db, err := a.connectPostgres(ctx)
 		if err != nil {
 			return err
 		}
@@ -136,22 +136,34 @@ func (a *App) initRepository(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) connectPostgres() (repository.InventoryRepository, *sql.DB, error) {
+func (a *App) connectPostgres(ctx context.Context) (repository.InventoryRepository, *sql.DB, error) {
 	db, err := sql.Open("postgres", a.cfg.PGDSN())
 	if err != nil {
 		return nil, nil, fmt.Errorf("postgres open: %w", err)
 	}
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
+
+	// P0 (10.11.2026): 25 connections starved under P=200 — 160 concurrent
+	// gRPC (140 browse + 20 purchase) → 6.4 per conn → 1.2s SearchItems →
+	// circuit inventory opened. 100 matches PG max_connections=100.
+	// If PG max_connections is raised later, bump this too.
+	db.SetMaxOpenConns(100)
+	db.SetMaxIdleConns(50)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
 		return nil, nil, fmt.Errorf("postgres ping: %w", err)
 	}
+	// Warmup: preload inventory_items into PG shared_buffers so the first
+	// SearchItems after deploy does not hit disk (cold start caused
+	// circuit inventory to open at P=200 on 10.11.2026).
 	if err := migrator.Up(db, invMigrations.FS); err != nil {
 		_ = db.Close()
 		return nil, nil, fmt.Errorf("migrations: %w", err)
+	}
+	// Warmup after migrations so inventory_items exists.
+	if _, err := db.ExecContext(context.Background(), `SELECT pg_prewarm('inventory_items')`); err != nil {
+		a.log.Warn("pg_prewarm failed (non-fatal)", "err", err)
 	}
 	a.log.Info("postgres ready, migrations applied")
 	return repository.NewPostgresRepo(db), db, nil

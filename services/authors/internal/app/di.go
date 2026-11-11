@@ -84,7 +84,10 @@ func (a *App) initPostgres(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	poolCfg.MaxConns, poolCfg.MinConns, poolCfg.MaxConnLifetime = 25, 10, 5*time.Minute
+	// P0 (10.11.2026): 25/10 starved under P=200 — same pattern as inventory/shop.
+	// PG max_connections=100. See confluence/history/2026-11/10.11.2026/POOL/.
+	// 32/16 — applications, редко (admin), write. 32 — норм.
+	poolCfg.MaxConns, poolCfg.MinConns, poolCfg.MaxConnLifetime = 32, 16, 5*time.Minute
 	db, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return err

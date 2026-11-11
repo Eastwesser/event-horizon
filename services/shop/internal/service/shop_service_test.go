@@ -458,3 +458,26 @@ func TestSetKafkaProducer(t *testing.T) {
 		t.Fatal("expected nil producer")
 	}
 }
+
+// ListOwnedItemIDsByItemIDs — batch owned flags (P1 10.11.2026).
+// Returns the subset of itemIDs that the user owns.
+func (m *mockShopStore) ListOwnedItemIDsByItemIDs(_ context.Context, _ string, itemIDs []string) ([]string, error) {
+	if m.listOwnedErr != nil {
+		return nil, m.listOwnedErr
+	}
+	if m.ownedIDs == nil {
+		return nil, nil
+	}
+	// Return only ids that are in both m.ownedIDs and itemIDs.
+	want := make(map[string]struct{}, len(itemIDs))
+	for _, id := range itemIDs {
+		want[id] = struct{}{}
+	}
+	out := make([]string, 0, len(m.ownedIDs))
+	for _, id := range m.ownedIDs {
+		if _, ok := want[id]; ok {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}

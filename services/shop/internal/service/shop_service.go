@@ -47,7 +47,7 @@ type ShopStore interface {
 	GetItems(ctx context.Context, category, gameID string) ([]repository.Item, error)
 	GetItemByID(ctx context.Context, itemID string) (*repository.Item, error)
 	IsItemOwned(ctx context.Context, userID, itemID string) (bool, error)
-	ListOwnedItemIDs(ctx context.Context, userID string) ([]string, error)
+	// ListOwnedItemIDs(ctx context.Context, userID string) ([]string, error)
 	PurchaseItemWithStock(ctx context.Context, userID, itemID, purchaseID string, price int, records []repository.OutboxRecord) error
 	NextSpendCycle(ctx context.Context, userID, itemID string) (int, error)
 	BumpSpendCycle(ctx context.Context, userID, itemID string) error
@@ -60,6 +60,7 @@ type ShopStore interface {
 	MarkPurchaseFulfilled(ctx context.Context, purchaseID string) error
 	ListPurchasesByItemIDs(ctx context.Context, itemIDs []string, limit, offset int) ([]repository.PurchaseRecord, int64, int64, int64, error)
 	CreateItemFromInventory(ctx context.Context, itemID, name, description string, price float64, stock int) error
+	ListOwnedItemIDsByItemIDs(ctx context.Context, userID string, itemIDs []string) ([]string, error)
 }
 
 // ShopCache is the Redis port for catalog lists / invalidation.
@@ -120,6 +121,9 @@ func (s *shopService) GetItems(ctx context.Context, category, gameID, userID str
 }
 
 // applyOwnedFlags sets Owned from one inventory query (avoids N+1 IsItemOwned).
+// P1 (10.11.2026): batch — 2 SQL per shop/items (GetItems + ListOwnedItemIDs)
+// × 140 VU = 280 SQL/s. Batch owned flags by item_ids in one query:
+// SELECT item_id FROM inventory WHERE user_id = $1 AND item_id = ANY($2).
 func (s *shopService) applyOwnedFlags(ctx context.Context, userID string, items []repository.Item) {
 	if len(items) == 0 || userID == "" {
 		return
@@ -128,17 +132,32 @@ func (s *shopService) applyOwnedFlags(ctx context.Context, userID string, items 
 	for i := range items {
 		items[i].Owned = false
 	}
+
 	/*
 		Почему это работает: теперь, если ids пустой (у юзера нет покупок), 
 		Owned всё равно сбросится в false. Кэш в Redis не будет влиять.
 	*/
+	// ids, err := s.pgRepo.ListOwnedItemIDs(ctx, userID)
+	// if err != nil {
+	// 	return
+	// }
 
-	ids, err := s.pgRepo.ListOwnedItemIDs(ctx, userID)
+	// One query for all ids.
+	itemIDs := make([]string, 0, len(items))
+	for _, it := range items {
+		if it.ID != "" {
+			itemIDs = append(itemIDs, it.ID)
+		}
+	}
+	if len(itemIDs) == 0 {
+		return
+	}
+	ownedIDs, err := s.pgRepo.ListOwnedItemIDsByItemIDs(ctx, userID, itemIDs)
 	if err != nil {
 		return
 	}
-	owned := make(map[string]struct{}, len(ids))
-	for _, id := range ids {
+	owned := make(map[string]struct{}, len(ownedIDs))
+	for _, id := range ownedIDs {
 		owned[id] = struct{}{}
 	}
 	for i := range items {

@@ -391,54 +391,44 @@ K6_VUS=5 make test-k6-purchase
 
 ## 🔮 Планы на следующие спринты
 
-Статус на **v1.1.3** (15.10.2026).
-
-Статус на **v1.1.0** (10.10.2026). Ниже — то, что уже в продукте, что осталось лично, и что лежит в парковке.
-
 Живые списки:
 
 - что закрыто и что осталось лично: [`LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md)
 - идеи на потом: [`DREAM_DEVOPS_IDEAS.md`](confluence/history/2026-10/09.10.2026/DREAM_DEVOPS_IDEAS.md)
 
-### Уже в продукте
-
-- **v1.0.9** — каталог Берсерк, тонкий list DTO, отмена покупки, отзывы Noiz
-- **v1.0.7–v1.0.8** — circuit breaker на gRPC gateway, OpenAPI `/docs`, Payment / Authors / History / Analytics, покупка через NATS, секреты из `.env`
-- **v1.0.6** — CI (GitHub Actions), Ansible, манифесты k3s
-- **v1.1.0** — публичный `/api/v1`, буст за лампочки, достижения, полировка Hanoi / Gears / Hexagon / Pancaker / компаньон, Grafana, прогон CORE k6
-
-### Инженерный хвост v1.1
-
-Закрыт. Разбор — в `LEFT_TO_FINISH.md`.
-
-### Что ещё не код
-
-- стикеры на Miro
-- единый хром мини-игр и арт тамагочи
-- витрина на 108 авторов и 3D: нет текстов и ассетов
-- смена пароля: отдельный сценарий auth, не недостающий глагол
-- WAF и пентест: это контур перед приложением и отчёт человека, не флаг в репозитории
-- ротация `JWT_SECRET`
-
-Доля 85/15 пишется в `revenue_splits` при закрытии подписки. Перевода на карту автора нет.
-
-Тег `v1.1.1` стоит на коммите с сагой покупки, билетом сокета, закрытым `/docs` и этой таблицей портов.
-
 ### Парковка
 
-Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`. Rate limit на gateway уже стоит.
+| Задача | 
+|--------|
+- Порог покрытия в CI | Юнит-тесты есть, порог ≥70% не включён |
+- Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
 
-### Если открывать следующий эпик
+- Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
+- BILLING FOR GAMES STRICT TICKET-PER-GAME RULES
+- единый хром мини-игр и арт тамагочи
+— Batch owned, pgbouncer, 6 Gateway — v1.2.
 
-| Задача | Зачем |
-|--------|--------|
-| Пагинация каталога на сервере | Имеет смысл до 1000+ карт |
-| Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
-| Порог покрытия в CI | Юнит-тесты есть, порог ≥70% не включён |
-| Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
-| i18n (RU/EN/DE/ES) | Смена языка сессии, флаг рядом с бургером |
+- смена пароля: отдельный сценарий auth, не недостающий глагол
 
-Подробный roadmap: [`FUTURE_EVENT_HORIZON.md`](confluence/tech_debt/FUTURE_EVENT_HORIZON.md).
+- витрина на 108 авторов и 3D: нет текстов и ассетов
+- ротация `JWT_SECRET`
+- Про ORDER-сервис Записал в идеи: корзина, заказы, доставка, резерв на время корзины. v1.2+. Не сейчас.
+
+- Пагинация каталога на сервере | Имеет смысл до 1000+ карт |
+- i18n (RU/EN/DE/ES) | Смена языка сессии, флаг рядом с бургером |
+- API GATEWAY GOD OBJECT DECOMPOSITION
+
+- стикеры на Miro
+
+- WAF и пентест: это контур перед приложением и отчёт человека, не флаг в репозитории
+- Доля 85/15 пишется в `revenue_splits` при закрытии подписки. Перевода на карту автора нет.
+- Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`. Rate limit на gateway уже стоит.
+
+
+- 200ms — цель для P=50 на 8 GiB, не для P=200. P=200 на 8 GiB — ~1–10s browse, это потолок железа, не кода. Для 200ms на P=200 — 32 GiB, pgbouncer, batch owned, 6 Gateway.
+- Upload to prod -> "eastwessers-event-horizon.com"
+
+Подробный roadmap: [`FUTURE_EVENT_HORIZON.md`](confluence/tech_debt/FUTURE_EVENT_HORIZON.md). Some tasks has already been done.
 
 ---
 
@@ -453,6 +443,42 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 ## 📦 Версия
 
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3.7
+
+Патч-релиз по **highload** **k6**, **deadlock**, **N+1**, **pool**, **warmup**.
+
+**Highload k6 (P=50 → P=200)**
+- `10k-probe.js` — 3 сценария (browse 70%, submit 20%, purchase 10%), `PROFILE` env, мягкие thresholds, метрики по ручкам.
+- `seed-users.js` + `scripts/k6-seed-and-run.sh` — пул 10 юзеров, balance 100k, JSON, run.
+- **P=100** — 6044ms browse, 0% errors, 0% 5xx. **P=150** — 7359ms, 0% errors, 0% 5xx. **P=200** — 14027ms, 4% errors (contention), 0.94% 5xx.
+
+**Shop**
+- **Deadlock fix** — `RefundPurchase` lock order items → inventory → purchases (было purchases → inventory → items). `lock_timeout = 2s`.
+- **Purchase резерв** — `UPDATE items SET stock = stock - 1 WHERE stock >= 1 RETURNING` вместо `SELECT FOR UPDATE`. Лок микросекунды, не 2s.
+- **Batch owned** — `applyOwnedFlags` 2 SQL → 1 SQL (`ListOwnedItemIDsByItemIDs`). `circuit shop` исчез, `purchase_owned` 72% → 5.63%.
+- Pool 100/50, `pg_prewarm('items'/'purchases'/'inventory')`.
+
+**Inventory**
+- Pool 100/50, `pg_prewarm('inventory_items')`.
+- **GIN индексы** — attributes, type, price, author, name trgm. `inventory/items` ×3.4 быстрее.
+- `JAEGER_ENDPOINT=jaeger:4317`.
+
+**Gateway**
+- **ValidateToken кэш 1s** — `sync.Map`, fast path при hit. ×10 быстрее (ручной тест 680→66ms).
+- **Bulkhead** — 256 (shop/inventory), 128 (auth/profile/leaderboard/game), 64 (billing/payment/authors/history/notification), 32 (analytics). `bulkhead full` исчез.
+
+**Nginx**
+- `proxy_read_timeout 30s → 5s`, `proxy_next_upstream error timeout` (без `http_502`), `worker_connections 4096`. p99 36s → 8s.
+
+**Pool 11 сервисов**
+- auth/profile 100/50, billing/leaderboard 64/32, payment/authors/history/notification 32/16, game 100/50.
+
+**Docs**
+- `confluence/postmortem/` — 8GiB_ISSUE, DEADLOCK_ISSUE_#1, LOW_CONNECTION_POOL_ISSUE, COLD_START_AFTER_RESTART, CACHE_P100, UNDERSTANDING_RELIABILITY.
+- `confluence/architecture/` — RESERVE_MARKETPLACE_PATTERN, RULES_FOR_PG_POOL, WARMUP_COMMANDS.
+
+**Итог:** P=100 — baseline 8 GiB. P=200 — потолок (contention на 9 items). Для 200ms на P=200 — 32 GiB (roadmap v1.2).
 
 ### Что нового в v1.1.3.6
 

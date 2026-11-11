@@ -141,8 +141,11 @@ func (a *App) initPostgres(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("postgres config: %w", err)
 	}
-	poolCfg.MaxConns = 25
-	poolCfg.MinConns = 10
+	// P0 (10.11.2026): 25/10 starved under P=200 — same pattern as inventory/shop.
+	// PG max_connections=100. See confluence/history/2026-11/10.11.2026/POOL/.
+	// 64/32 — Redis Sorted Set основной, PG бэкап. Read идёт в Redis, PG редко.
+	poolCfg.MaxConns = 64
+	poolCfg.MinConns = 32
 	poolCfg.MaxConnLifetime = 5 * time.Minute
 
 	dbpool, err := pgxpool.NewWithConfig(ctx, poolCfg)

@@ -124,8 +124,11 @@ func (a *App) initPostgres(_ context.Context) error {
 	if err != nil {
 		return fmt.Errorf("postgres open: %w", err)
 	}
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
+	// P0 (10.11.2026): 25 connections starved under P=200 — same pattern as
+	// inventory/shop. 40 submit VUs + retries → 6.4 per conn → submit p95 12s.
+	// 100 matches PG max_connections=100.
+	db.SetMaxOpenConns(100)
+	db.SetMaxIdleConns(50)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	if err := db.Ping(); err != nil {

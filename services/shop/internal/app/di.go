@@ -105,13 +105,16 @@ func (a *App) initTracer(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initPostgres(_ context.Context) error {
+func (a *App) initPostgres(ctx context.Context) error {
 	db, err := sql.Open("postgres", a.cfg.PostgresConfig().DSN())
 	if err != nil {
 		return fmt.Errorf("postgres open: %w", err)
 	}
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
+	// P0 (10.11.2026): 25 connections starved under P=200 — same pattern as
+	// inventory. 140 browse + 20 purchase = 160 concurrent gRPC → 6.4 per
+	// conn → shop/items p95 6.9s. 100 matches PG max_connections=100.
+	db.SetMaxOpenConns(100)
+	db.SetMaxIdleConns(50)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	if err := db.Ping(); err != nil {
@@ -121,6 +124,13 @@ func (a *App) initPostgres(_ context.Context) error {
 	if err := migrator.Up(db, migrations.FS); err != nil {
 		_ = db.Close()
 		return fmt.Errorf("migrations: %w", err)
+	}
+
+	// Warmup after migrations so items/purchases/inventory exist.
+	for _, tbl := range []string{"items", "purchases", "inventory"} {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`SELECT pg_prewarm('%s')`, tbl)); err != nil {
+			a.log.Warn("pg_prewarm failed (non-fatal)", "table", tbl, "err", err)
+		}
 	}
 
 	a.di.db = db
