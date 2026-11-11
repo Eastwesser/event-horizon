@@ -5,24 +5,21 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.6-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.7-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3.6** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
+**Event Horizon v1.1.3.7** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
 
 | | |
 |---|---|
 | **Repository** | [github.com/Eastwesser/event-horizon](https://github.com/Eastwesser/event-horizon) |
 | **Architecture** | Clean Architecture · Gateway HTTP **`/api/v1/*`** → gRPC |
 | **Security** | JWT in Redis, bcrypt cost 12, rate limits, secrets via env |
-| **v1.1.0 pack** | [`LEFT_TO_FINISH.md`](confluence/history/2026-10/09.10.2026/LEFT_TO_FINISH.md) · [`API_V1.md`](confluence/history/2026-10/08.10.2026/API_V1.md) · [`DAILY_OPS.md`](confluence/history/2026-10/09.10.2026/DAILY_OPS.md) |
-| **Load (measured)** | [`K6_VERDICT.md`](confluence/history/2026-10/10.10.2026/K6_VERDICT.md) · [`SUITABLE_SERVER.md`](confluence/history/2026-10/09.10.2026/SUITABLE_SERVER.md) |
-| **Docs** | [`confluence/architecture/`](confluence/architecture/) · OpenAPI `/docs` только с `DOCS_PASSWORD` (без пароля адрес отвечает 404) |
 | **Boosty** | [boosty.to/eastwesser](https://boosty.to/eastwesser) |
 
 ---
 
-## 📦 Архитектура (актуально v1.1.0, 09.10.2026)
+## 📦 Архитектура (актуально v1.1.3.7, 11.11.2026)
 
 Схемы: [`EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro export: [`08.10.2026/miro/`](confluence/history/2026-10/08.10.2026/miro/) · stickers: [`MIRO_STICKERS_PASTE.md`](confluence/history/2026-10/08.10.2026/miro/MIRO_STICKERS_PASTE.md)
 
@@ -327,7 +324,7 @@ Gateway слушает метрики внутри контейнера (`9095`,
 
 ---
 
-## 📚 Документация
+## 📚 Документация (hidden since 11.11.2026)
 
 | Тема | Путь |
 |------|------|
@@ -364,6 +361,20 @@ Gateway слушает метрики внутри контейнера (`9095`,
 Unit-тесты (Week 2 Clean Architecture + testify):
 
 ```bash
+# 1. Полный деплой с новыми restart:
+make ride-on
+
+# 2. Гигиена (status + smoke + obs)
+make daily
+
+# 3. Unit-тесты
+make test-all
+
+# 4. (опционально)
+make test-smoke
+make test-k6
+make test-integration
+
 task test              # все сервисы
 task test-coverage     # покрытие по gRPC-сервисам
 task w2-check          # структурный чеклист W2
@@ -402,29 +413,20 @@ K6_VUS=5 make test-k6-purchase
 |--------|
 - Порог покрытия в CI | Юнит-тесты есть, порог ≥70% не включён |
 - Retry с джиттером, bulkhead | У gateway уже есть circuit breaker |
-
 - Уровни лидерборда 2–3 | Сейчас все доски читают `level=1` |
 - BILLING FOR GAMES STRICT TICKET-PER-GAME RULES
 - единый хром мини-игр и арт тамагочи
-— Batch owned, pgbouncer, 6 Gateway — v1.2.
-
+- Batch owned, pgbouncer, 6 Gateway — v1.2.
 - смена пароля: отдельный сценарий auth, не недостающий глагол
-
 - витрина на 108 авторов и 3D: нет текстов и ассетов
 - ротация `JWT_SECRET`
 - Про ORDER-сервис Записал в идеи: корзина, заказы, доставка, резерв на время корзины. v1.2+. Не сейчас.
-
 - Пагинация каталога на сервере | Имеет смысл до 1000+ карт |
 - i18n (RU/EN/DE/ES) | Смена языка сессии, флаг рядом с бургером |
 - API GATEWAY GOD OBJECT DECOMPOSITION
-
-- стикеры на Miro
-
 - WAF и пентест: это контур перед приложением и отчёт человека, не флаг в репозитории
 - Доля 85/15 пишется в `revenue_splits` при закрытии подписки. Перевода на карту автора нет.
 - Consul, Helm как повседневный деплой, Alertmanager → Telegram, Loki, Tempo, SLO burn. Список — в `DREAM_DEVOPS_IDEAS.md`. Rate limit на gateway уже стоит.
-
-
 - 200ms — цель для P=50 на 8 GiB, не для P=200. P=200 на 8 GiB — ~1–10s browse, это потолок железа, не кода. Для 200ms на P=200 — 32 GiB, pgbouncer, batch owned, 6 Gateway.
 - Upload to prod -> "eastwessers-event-horizon.com"
 
@@ -479,353 +481,6 @@ BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/F
 - `confluence/architecture/` — RESERVE_MARKETPLACE_PATTERN, RULES_FOR_PG_POOL, WARMUP_COMMANDS.
 
 **Итог:** P=100 — baseline 8 GiB. P=200 — потолок (contention на 9 items). Для 200ms на P=200 — 32 GiB (roadmap v1.2).
-
-### Что нового в v1.1.3.6
-
-Патч-релиз: балансировщик, инфра, синхронизация OpenAPI, P0-10 (Inventory merge), P0-11 (admin cancel fulfilled).
-
-**Балансер (Least Connections)**
-
-- Health checks бэкендов: горутина раз в 5s пингует `/ready` каждого gateway, флипает `Healthy atomic.Bool`. `getLeastConnBackend` пропускает `unhealthy`.
-- Jitter при равных `ActiveConns`: `math/rand/v2` выбирает случайного из равных — последовательная нагрузка распределяется по пулу.
-- Метрики: `balancer_backend_healthy{backend}`, `balancer_backend_active_connections{backend}`.
-- `/ready` балансера → 503, если `HealthyBackends() == 0` (было всегда 200).
-- `slog` вместо `log.Printf` в hot path; `atomic.LoadInt32` в логах.
-- `X-Balancer-Backend` переехал из request в response header.
-- `503` при отсутствии healthy backends → `Retry-After: 5`.
-
-**Nginx**
-
-- `proxy_next_upstream error timeout http_502` + `proxy_next_upstream_tries 2`: connection error и 502 ретраятся на второй балансер. 503 и 504 — не ретраятся.
-- `max_fails=0` — не помечаем балансер dead по одному connection error.
-- Исправлена пропущенная `;` в `location /`.
-
-**Docker**
-
-- `Dockerfile.balancer.bin`: `scratch` → `alpine:3.20` + `wget` — compose healthcheck работает.
-- `balancer-2` метрики на хосте `:9190` (`9099` занят Profile, `9098` — `balancer-1`).
-- `nginx` `depends_on` — без `condition: service_healthy` (на cold boot блокировал `make deploy`).
-
-**Prometheus**
-
-- `balancer-2:9098` target — оба балансера скрейпятся.
-
-**OpenAPI**
-
-- `services/gateway/api/openapi.yaml` синхронизирован с `docs/openapi.yaml` (копия для Swagger `//go:embed`).
-
-**Инвентарь: мерж полей при `PUT` (P0-10)**
-
-- `UpdateItem` теперь **мержит** входящие поля в существующий товар, а не перезаписывает целиком. Если передать только `name` или `price`, остальные поля сохраняются.
-- `protojson` bug: `google.protobuf.Struct` при отсутствии в JSON приходит как `&Struct{}` (пустой), а не `nil`. Фикс: `len(req.Attributes.AsMap()) > 0` перед мержем.
-- `version` явно инициализируется `1` в `CreateItem` и `CreateItemWithOutbox`. Инкремент `version + 1` работает без «прыжков на 2».
-- `CachedRepository.UpdateItem` делает `DeleteItem` (инвалидацию), а не `warmItem`.
-
-**Магазин: админ отменяет `fulfilled_at` (P0-11)**
-
-- `AdminCancelPurchase` вызывает `cancelPurchaseInternal(..., isAdmin=true)` → `ignoreFulfilled=true` в `RefundPurchase`. Админ может отменить «собранный» товар, игрок — нет. Окно 7 дней остаётся.
-- Идемпотентность сохранена: повторный `POST` → `already_refunded: true`, `refunded_amount: 0`.
-
-**Инфраструктура и документация**
-
-- `Makefile`: починен `test-smoke` (сломанный цикл `for`). `make daily` работает.
-- Постмортем: `confluence/postmortem/PROTOJSON_BUG.md`.
-- Тесты: обновлён мок `RefundPurchase` в `shop_service_test.go`. `make test-all` — зелёный.
-- Nginx: `deployments/nginx/nginx.conf` — детали в `NGINX_KEYIDEA.md`.
-- TODO: `confluence/history/2026-11/09.11.2026/TODO_LIST_9thNOV2026.md`.
-
-### Что нового в v1.1.3.5
-
-Патч-релиз по UX, карточкам товаров и надёжности. Закрывает P0-6 (soft-delete Authors), P0-8 (IDOR Inventory) и несколько фронтенд-долгов.
-
-**Фронтенд: карточки товаров**
-
-- Стоимость карты ККИ берётся из `attributes.cost` (золото/серебро), а не из `market_rub`.
-- Ход карты: если `move = 0` — прочерк, а не «0».
-- Класс карты (например, «Компаньон») выводится в карточке товара.
-- Бейдж «Карточка» вместо «Товар» — исправлен маппинг в `shopItemMap.ts`.
-- Иконки карт — бейджи вместо `[object Object]`.
-
-**Фронтенд: UX и мобилки**
-
-- Убран горизонтальный скролл (`overflow-x-hidden`).
-- Исправлены отступы, центрирование модалок и колокольчика.
-- Модалка «Подтверждение покупки» — заголовок по центру, кнопки внизу.
-- Вкладка «Инвентарь» доступна только авторам и админам.
-
-**Фронтенд: кэш**
-
-- При выходе из аккаунта очищается `shop-storage` и `shop_balance_cache`.
-- `catalogPatches` убран из `persist` — галочка «В инвентаре» больше не кэшируется.
-- `Owned` сбрасывается в `false` перед установкой (фикс `shop_service.go`).
-
-**Админка**
-
-- Статистика инвентаря: «Уникальных позиций», «Общее кол-во товаров в наличии».
-- Тип «Не указан» кликабельный — можно посмотреть список товаров без типа.
-
-**Бэкенд**
-
-- P0-8 (IDOR Inventory): `checkAuthorAccess` проверяет `author_id` на `UpdateItem`, `DeleteItem`, `SoftDeleteItem`, `RestoreItem`.
-- P0-6 (Authors soft-delete): `RevertApplication` ставит `active = false`, а не `DELETE`. `GetMyAuthor` отделяет `/me` от публичного `/:user_id`.
-- Billing: `reference_id` из `event.Timestamp`, `forceStreamRecreation` для залипшего лидера NATS, анти-спам через Redis `SetNX`.
-- History: Durable-консьюмер исправлен (точки → подчёркивания).
-- Leaderboard: Gateway тянет ник из Auth.
-- Profile: синхронизация ника через NATS.
-- Authors: дашборд продаж (85% заработка).
-
-- Also, added Nginx before Load Balancers
-
-### Что нового в v1.1.3.4
-
-Патч-релиз по безопасности и надёжности. Закрывает два P0 из аудита и один P0 по деньгам.
-
-**Безопасность: Inventory IDOR (P0-8)**
-
-- `grpc_handler.go`: `checkAuthorAccess(ctx, existing.AuthorID)` вызывается в `UpdateItem`, `DeleteItem`, `SoftDeleteItem`, `RestoreItem`. Сравнение идёт с `x-user-id` из metadata, а не с телом запроса.
-- `md.Get("x-user-id")` — единственный источник правды о юзере. Подделать `author_id` в body нельзя.
-- Чужой юзер получает `403 {"error":"you can only edit your own items"}`. Админ — без изменений.
-
-**Authors: soft-delete вместо hard delete (P0-6)**
-
-- `repo.RevertApplication`: `DELETE FROM authors` → `UPDATE authors SET active = false, updated_at = now()`. Строка жива, `inventory.author_id` / `payment.revenue_splits` / `shop.purchases` не осиротеют.
-- `repo.GetActiveByUserID` (новый) — только `active = true`, для публичного `GET /authors/:user_id`.
-- `repo.GetByUserID` — без фильтра, для `/authors/me`.
-- `service.GetAuthor` — публичный, только активные. `service.GetMyAuthor` (новый) — включая `active = false`.
-- `handler.GetAuthor` → `GetActiveByUserID`, `handler.GetMyAuthor` (новый) → `GetByUserID`.
-- `proto`: `rpc GetMyAuthor(GetMyAuthorRequest) returns (GetMyAuthorResponse)`.
-- `gateway.go`: `GET /api/v1/authors/me` → `GetMyAuthor`. `GET /api/v1/authors/:user_id` — не трогали, фильтр в сервисе.
-- `mapErr`: `AlreadyReviewed` → `FailedPrecondition` (409), `AlreadyPrivileged` → `PermissionDenied` (403). Раньше оба были `InvalidArgument` (400).
-
-**Billing: reference_id из события (P0-5)**
-
-- `outbox_worker.go`: `reference_id` для наград — `event.Timestamp`, не `time.Now().UnixNano()`. Redelivery больше не задваивает.
-- `forceStreamRecreation`: при `no response from stream` стрим `EVENTS` удаляется и пересоздаётся, чтобы сбросить залипшего лидера NATS. (См. комментарий в `outbox_worker.go`: core-подписка на `balance.updated` глушит `ErrNoResponders`, и `js.Publish` виснет до таймаута.)
-- `SetNX` анти-спам: `score_lock:{user_id}:{game_id}:{score}`, TTL 30s.
-
-**Test hygiene**
-
-- `revert_integration_test.go` (Authors): `uuid.NewString()` для `id`/`app_id` (в `authors.id` тип `uuid`, а `"aid-1"` не парсится → `SQLSTATE 22P02`).
-- `mongo_repo_test.go` (Inventory): `Ping` + `t.Skipf`, если Mongo нет. Раньше был `nil pointer dereference` при недоступной Mongo.
-- `make test-integration` — зелёный по всем 7 сервисам.
-
-**API / docs**
-
-- `docs/openapi.yaml`: `GET /authors/:user_id` — `404` для soft-deleted. `GET /authors/me` — `200` всегда (включая `active = false`).
-- `confluence/architecture/API_ROUTES.md`: пометки P0-6 / P0-8.
-- `confluence/history/2026-11/07.11.2026/AUTHORS_P0_6.md` — разбор soft-delete.
-- `confluence/history/2026-11/07.11.2026/FOREIGN_KEY_DELETE_ISSUES.md` — почему межбазовые ссылки требуют soft-delete.
-
-### Что нового в v1.1.3.3
-
-1. Админка: выдача и отзыв подписки
-  - Добавлен API POST /api/v1/admin/payments/grant-subscription (галочка) и revoke-subscription (крестик).
-  - В AdminPage.tsx добавлены кнопки подписки (зелёная галочка / красный крестик) под селектом ролей.
-  - В payment_service.go добавлены методы GrantSubscription и RevokeSubscription, в postgres_repo.go — CreateSubscription и RevokeSubscription (с погашением старой подписки).
-
-2. Критические баги с начислением валюты
-  - Billing: награды не начислялись при no response from stream. Исправлено: добавлен ретрай с пересозданием стрима (forceStreamRecreation) при «залипшем» лидере NATS. Теперь balance.updated публикуется успешно.
-  - Анти-спам в Billing. Добавлен SetNX в Redis с ключом score_lock:{user_id}:{game_id}:{score} и TTL 30 секунд. Повторное сохранение того же счета в течение 30 секунд игнорируется.
-  - Двойное начисление при redelivery. reference_id для наград теперь берётся из event.Timestamp, а не из time.Now().UnixNano().
-
-3. История (History)
-  - Починен Durable-консьюмер: nats.Durable("history-score_updated") (точки заменены на подчёркивания). События снова пишутся в базу.
-  - Фронтенд (HistoryPage.tsx) переведен на красивые карточки: иконки игр, результаты рекордов, суммы покупок. Убран сырой JSON.
-
-4. Лидерборд: ники вместо UUID
-  - Gateway теперь при POST /game/submit самостоятельно достаёт nickname из Auth (GetUser) и передаёт в Game. Это гарантирует, что для любой игры ник улетает в score.updated.
-  - В Leaderboard (Redis) ники сохраняются и корректно отображаются на фронте.
-
-5. Кабинет автора: Дашборд продаж
-  - Создан компонент AuthorSales.tsx. Выводит количество продаж, заработок автора (85%) и таблицу покупок с маскировкой email покупателей.
-  - AuthorDashboard.tsx очищен от дублирующегося кода.
-
-6. Профиль: синхронизация ника через NATS
-  - При смене ника в Auth Gateway публикует event.user.nickname.updated.
-  - Profile ловит это событие через NATS (Durable Consumer profile-nickname-updated) и обновляет свою базу и кэш.
-  - Теперь /profile всегда отдаёт актуальный ник.
-
-7. Фиксы UI
-  - Modal.tsx: исправлен конфликт max-w-lg / max-w-3xl, добавлен фиксированный заголовок и скролл только для тела.
-  - HanoiTower.tsx: убран align="bottom" и max-w-sm, модалка победы больше не уезжает.
-  - InventoryItemDetail.tsx: исправлен рендер [object Object] в атрибутах (иконки, массивы).
-  - Кнопки «Сохранить рекорд» в играх выровнены по центру.
-
-### Что нового в v1.1.3.2
-
-Патч-релиз, закрывающий сквозные баги синхронизации профиля, истории и лидерборда.
-Внедрена event-driven синхронизация ника и авторасчет заработка в кабинете автора.
-
-**Фронтенд**: История и Кабинет автора
-
-- HistoryPage.tsx — переработан дизайн. Сырой JSON заменен на человекочитаемые карточки: иконки игр, результаты рекордов, суммы покупок. Добавлен безопасный парсинг (safeParse), чтобы битые события не роняли страницу.
-
-- AuthorSales.tsx — создан новый компонент дашборда продаж для автора. Выводит количество продаж, заработок автора (85%), а также таблицу последних покупок с маскировкой email покупателей.
-
-- AuthorDashboard.tsx — очищен от дублирующегося кода загрузки продаж, теперь использует вынесенный компонент AuthorSales.
-
-**Бэкенд**: Gateway
-
-- game/submit — исправлен баг с отсутствием ника в лидерборде. Теперь Gateway при отправке рекорда самостоятельно достает актуальный ник из Auth (GetUser), а не полагается на фронтенд. Добавлен fallback на email.
-
-Это гарантирует, что для любой игры ник корректно улетает в событие score.updated.
-
-**Бэкенд**: Profile (Синхронизация ника)
-
-- app.go (di.go) — добавлена подписка на событие event.user.nickname.updated через NATS JetStream (Durable Consumer profile-nickname-updated).
-
-- profile_service.go — добавлен метод UpdateNickname, который обновляет только поле ника в базе Profile и инвалидирует Redis-кэш, не затирая очки и ачивки.
-
-Теперь при смене ника в Auth, Profile автоматически синхронизируется, и эндпоинт /profile отдает актуальные данные.
-
-**Бэкенд**: Leaderboard
-
-- redis_repo.go — код сохранения nickname в Redis (хэш ...:info) проверен и оставлен без изменений, так как проблема крылась в отсутствии ника в самом событии от Gateway.
-
-**Бэкенд**: History
-
-- workers.go — исправлена критическая ошибка подписки на NATS. Ранее при попытке создать Durable-консьюмер с точкой в имени (например, history-score.updated) NATS выдавал invalid consumer name, и события не записывались. Теперь точки заменяются на подчеркивания (strings.ReplaceAll).
-
-### Что нового в v1.1.3.1
-
-Патч-релиз, сфокусированный на критических исправлениях UX в кабинете автора, стабильности редактирования карточек ККИ и безопасности бэкенда.
-
-**Фронтенд**: Кабинет автора и Навигация
-
-- AppNavbar — пункт меню «Автор» переименован в «Кабинет автора» для устранения путаницы с общей страницей «Авторы». Улучшена человеко-ориентированность UI.
-
-- Modal — исправлен конфликт ширины (max-w-lg перебивал max-w-3xl). Добавлен проп align для позиционирования. Заголовок теперь зафиксирован, скроллится только тело формы (решает проблему «уезжающей» шапки при длинных формах).
-
-- InventoryEditModal — починен рендеринг полей ККИ (isCard). Если бэкенд присылал кривой item.type, форма теперь распознает карточку по маркерам в attributes (market_rub, element).
-
-- InventoryEditModal — починено сохранение текста (card_text). Ранее текст терялся из-за неверного условия при формировании attributes.
-
-- InventoryEditModal — починен пересчет цены. Убрана путаница между price и market_rub, цена в билетиках теперь корректно пересчитывается и отправляется на бэк.
-
-- InventoryEditModal — удален дублирующийся вызов updateItem, из-за которого при сохранении улетало два запроса и возникал конфликт версий.
-
-- inventoryApi — добавлено поле version в UpdateItemRequest. Включает оптимистичную блокировку (защита от перезаписи устаревшими данными).
-
-**Бэкенд**: Inventory
-
-- grpc_handler.go — добавлен validateItem. Теперь бэкенд отклоняет создание и обновление товаров с отрицательными price, stock и отрицательными значениями в attributes (закрывает баг с «Совой колдуна» и market_rub: -1).
-
-#### Зафиксировано в техдолг (P0):
-
-IDOR в Inventory — на бэкенде отсутствует проверка author_id при вызове UpdateItem/DeleteItem. Фронт скрывает кнопки, но нужна проверка на уровне gRPC.
-
-### Что нового в v1.1.3
-
-Только докуменация и фронтенд-полировка. Бэкенд не менялся.
-
-**Patterns catalog.** 17 сервисов прочитаны, 333 паттерна задокументированы: Facade, Repository, Port, Adapter, Decorator, Strategy, Saga, Outbox, Circuit Breaker, Retry, Rate Limiter, RAG, TF-IDF, Least Connections, WebSocket Ticket, HMAC, SQL Sandbox, и др. Файл: `confluence/architecture/EVENT_HORIZON_PATTERNS_15.10.2026.md`.
-
-**Roadmap.** `confluence/tech_debt/FUTURE_EVENT_HORIZON.md` — i18n (RU/EN/DE/ES), tech debt, games polish, users & prod, observability & security.
-
-**Фронтенд v1.1.2 (в составе v1.1.3):**
-- BoostCheckbox — per-game эффект буста, `gameId` проброшен.
-- Pancaker — космические эмодзи.
-- Gears — исправлен рендер канваса (`skinsLoading` в `useEffect`).
-- Hanoi — дырки дисков интегрированы в диск.
-- Memonia — поле не схлопывается (CSS `aspect-ratio`).
-- Flappy — «Нажмите пробел».
-- ShopItemCard / ShopItemDetail — `isDigitalItem`, скрытие «В наличии: 998» для скинов и тем.
-- `itemIcons` — fallback-иконка из `GAME_ICON`.
-
-### Что нового в v1.1.2
-
-Только фронтенд. Правила, очки и лидерборд те же. Бэкенд и образы сервисов пересобирать не нужно.
-
-**1.1.2.1 Tamagotchi.** Комната — ровный вид сбоку: окно с луной и звёздами за стеклом, кровать, стол. Виды: звезда, кот, дракон, лисичка, зайчик. Серия заботы меняет форму: малыш (1–6 дн.), растёт (7–20), вырос (21+). Сон кладёт на кровать, кормление ставит миску, подарок дня оставляет вещь в комнате.
-
-**1.1.2.2 Builder.** Вид сверху, плиты ходят по двум диагоналям: с северо-запада и с северо-востока. Ровное попадание не режет плиту. Если часть свешивается, этот край падает, а на башне остаётся только нахлёст. Очки считаются как раньше. Камера держит верхушку в кадре. Экран конца партии по центру.
-
-**1.1.2.3 Gears.** Колодец с латунной рамкой, пунктир прицела, лоток следующих шестерней снизу. Две одинаковые вспыхивают при слиянии. Уровни 1–10, опасная линия и физика те же. Подсолнух, Роза и Анютины глазки — скины из магазина, не бесплатные кнопки.
-
-**1.1.2.4 Memonia.** Сетка 6 колонок, найденная пара остаётся на месте. Лица — свой набор Event Horizon, не чужие фрукты. До старта уже лежат рубашки.
-
-**1.1.2.5 Hanoi.** Три деревянных стержня с круглой базой. Диски с верхом, боком и тенью, цифра мелкая. Выбранный диск поднимается. Победа — модалка снизу, башня C остаётся в кадре. Правила те же: 3 стержня, 3–8 колец.
-
-**1.1.2.6 2048.** Светлое поле, плитки теплеют с номиналом, 2048 — золото Horizon. Над полем счёт, рекорд и «Заново». Сохранить — на конце партии. Буст в «Как играть?». Поле 4×4 и спавн 2/4 те же.
-
-**1.1.2.7 Pancaker.** Стопка — слои со сдвигом и своим знаком типа, не эмодзи. Поднос те же фишки. Пустая клетка — тихий контур. Поле в рамке сцены, в шапке уровень и цель.
-
-**1.1.2.8 Flappy.** Пиксельный зверь (крыло вверх / середина / вниз / падение), плоское небо, город, земля, трубы с ободком в палитре Horizon. До старта птица и первая пара труб уже в кадре. Хитбоксы те же.
-
-### Что нового в v1.1.1
-
-- Покупка пишет `purchase.paid` в outbox с настоящим `purchases.id`. Воркер shop и game публикует с `FOR UPDATE SKIP LOCKED`.
-- Списание билетиков идёт со стабильным `reference_id` на цикл покупки. Повтор клика не списывает второй раз. Строка `purchase_sagas` дожимает покупку, если процесс умер после списания.
-- Повтор отмены снова зовёт `AddCurrency` с ключом `cancel-{id}`. Уникальный ключ не задваивает деньги.
-- Сокет `/ws/leaderboard` открывается одноразовым билетом (`POST /api/v1/ws-ticket`), не JWT в query. Origin проверяется.
-- `GET /docs` и `GET /openapi.yaml` скрыты, пока не задан `DOCS_PASSWORD`. Swagger UI лежит в репозитории.
-- Успешная подписка пишет `revenue_splits`: автору 85%, платформе остаток. Перевода автору нет.
-- `GET /api/v1/billing/balance` и `GET /api/v1/billing/transactions` читают id из токена.
-- Fulfillment и notification читают Kafka только когда JetStream не поднят.
-- Упавший Redis на проверке сессии отдаёт 503, а не «токен жив».
-- На дашборде Grafana есть ряд «paid → fulfilled» и счётчик неудачных возвратов.
-- Первый `make deploy` после перезагрузки ждёт `pg_isready`, потом goose.
-
-### Что нового в v1.1.0
-
-- **API:** public REST under `/api/v1/*` (legacy `/api/*` rewritten); OpenAPI + FE + k6 aligned  
-- **Games / FE:** boost gate, Pancaker score fix (hexagon empty-moves trust), Hanoi multipliers, Gears skins, Companion daily gift, LB level-1 only, profile edit disclosure  
-- **Ops:** Grafana dashboard provision fix, Prom alerts expand, `make daily` / `obs-check`, cold-boot healthchecks  
-- **Load:** CORE k6 browse/purchase; verdict on 8 GiB VM — 20 VU green ceiling  
-- **Docs:** postmortem API v1, DAILY_OPS, SUITABLE_SERVER, DREAM_DEVOPS_IDEAS, interview EH answers  
-
-**10k DAU vs 10k VUs:** planning model ≈ 10k *daily active users* (~30–50 RPS peak), **not** 10 000 concurrent k6 VUs. On an 8 GiB all-in-one compose host, `K6_VUS=10000` will die (RAM + bcrypt/login + PG pools). Use CORE 20–50 VU locally; move load demos to ~8c/32G.
-
-### Что нового в v1.0.9
-
-- **Berserk CCG catalog:** 280 карт засеяно (5 сетов, 4–8), attribute filters (element / rarity / class / flags / stats / icons / artist), URL-shareable state, sort (name / rarity / price / artist / set / element), pagination
-- **Purchase + refund:** cancel purchase (`POST /api/shop/purchase/:id/cancel`), refund по цене покупки, idempotent, restore stock, RBAC fix (user allowed on Reserve/Release)
-- **Noiz reviews:** «Мнение Noiz» блок на картах 8-го сета (127 rows), `attributes.noiz_review` `{text, rating, verdict, author}`
-- **UI polish:** CardImage (5/7, cover/contain), CatalogPager, artist pages + per-artist grid, prev/next navigation, attribute grouping in detail, cancel modal
-- **Data:** element normalization (`леса` → `woods`, 56 cards), slim list DTO `InventoryItemsCatalog` (−26% payload)
-- **Full review:** [`REVIEW_RESULT.md`](confluence/history/2026-10/03.10.2026/REVIEW_RESULT.md)
-
-### Что нового в v1.0.8
-
-- **Secrets:** `.env.example`, compose/Patroni/k3s via `${…}` (no hardcoded DB passwords in yaml)
-- **Thin deploy:** `make deploy` = NATS + obs + fulfillment/notification/analytics; Kafka → `make deploy-heavy`
-- **Purchase on NATS:** Shop publishes `purchase.paid`; fulfillment & notification consume JetStream
-- **Gateway:** response cache + `_partial` profile; gRPC InvalidArgument → 400; Boosty HMAC webhook
-- **Frontend Auth:** password min 8 (match Auth); clearer errors
-- **Ops:** game waits for healthy PG; notification `/metrics`; analytics durable names + CH readiness
-- **Tooling:** `scripts/rebuild-*.sh`, `docker-push-images.sh`, `coverage-gate.sh`
-- Issue log: [`Issues.md`](confluence/history/2026-08/30.08.2026/Issues.md)
-
-### Что нового в v1.0.7
-
-- Payment / Authors / History / Analytics (+ ClickHouse) за Gateway
-- Circuit breaker на всех gRPC-клиентах Gateway
-- Frontend: подписка, авторы, аналитика, Ханойская башня, merch-gate (403 + `subscription_required`)
-- Game **Outbox** для `score.updated` (миграция + worker; пересобери образ `game`)
-- MCP/RAG (stdio) для Cursor · OpenAPI sync (auth refresh / whoami / logout)
-- Patroni Auth **stubs** · ClickHouse Docker-network fix · compose `--env-file .env`
-- Документация: API routes, load resilience, status codes, rebuild scripts
-
-### Что нового в v1.0.6
-
-- Inventory Service — управление мерчем авторов, интеграция с Shop через NATS
-- CI/CD — GitHub Actions собирает и пушит образы на Docker Hub
-- Ansible — автоматический деплой на сервер
-- k3s (Kubernetes) — установлен и настроен кластер
-- Makefile — новые команды: docker-build-all, docker-push-all, deploy-k3s, undeploy-k3s
-- Delivery Pipeline — полный пайплайн для production
-- Документация — обновлены README, добавлены гайды по деплою
-
-### Что нового в v1.0.5
-
-- Магазин (Shop Service) — покупка скинов, инвентарь, интеграция с Billing
-- Космические блины — полный маппинг 8 типов для Hexagon
-- Memory — скин "Карточки со зверями" (15 видов)
-- Flappy Bird — синяя птичка, радужные трубы (сохранена форма)
-- Towers — дефолтные красные блоки + радужные скины
-- Дата покупки — добавлено поле purchased_at в /api/shop/inventory
-- NATS кластер — 3 ноды + мониторинг в Prometheus
-- WebSocket — исправлено подключение через балансировщик
 
 ---
 
