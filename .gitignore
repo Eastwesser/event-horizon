@@ -77,3 +77,6 @@ __pycache__/
 node_modules/
 node_modules/
 .git-backup-*/
+
+# Confluence docs — local knowledge base, not for the public repo
+confluence/
