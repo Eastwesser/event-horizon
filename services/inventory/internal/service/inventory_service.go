@@ -199,3 +199,12 @@ func (s *InventoryService) RestoreItem(ctx context.Context, id string) error {
 func (s *InventoryService) GetStats(ctx context.Context) (*model.Stats, error) {
 	return s.repo.GetStats(ctx)
 }
+
+// GetItemIncludingDeleted получает товар по ID, включая удаленные (для проверки прав).
+func (s *InventoryService) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	if id == "" {
+		return nil, fmt.Errorf("id is required")
+	}
+	// Предполагаем, что ты добавил метод в интерфейс InventoryRepository
+	return s.repo.GetItemIncludingDeleted(ctx, id)
+}

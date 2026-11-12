@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -604,5 +605,29 @@ func TestUpdateRole_InvalidatesCache(t *testing.T) {
 	got, err := svc.GetUser(context.Background(), "uid-1")
 	if err != nil || got.Role != "author" {
 		t.Fatalf("after invalidate should load author from repo: %+v err=%v", got, err)
+	}
+}
+
+func TestLogin_AcceptsPHP2yHash(t *testing.T) {
+	// Хеш, сгенерированный htpasswd (PHP, $2y$), должен логиниться.
+	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Эмулируем $2y$: заменяем префикс $2a$/$2b$ на $2y$.
+	phpHash := strings.Replace(string(hash), "$2b$", "$2y$", 1)
+	phpHash = strings.Replace(phpHash, "$2a$", "$2y$", 1)
+
+	repo := &mocks.UserRepository{
+		GetByEmailFn: func(ctx context.Context, email string) (*model.User, error) {
+			return &model.User{ID: "uid-1", Email: email, PasswordHash: phpHash, Role: "user"}, nil
+		},
+	}
+	pair, err := newTestService(repo).Login(context.Background(), "user@example.com", "password123")
+	if err != nil {
+		t.Fatalf("login with $2y$ hash must succeed: %v", err)
+	}
+	if pair.AccessToken == "" {
+		t.Fatal("expected access token")
 	}
 }

@@ -166,3 +166,9 @@ func (c *CachedRepository) warmItem(ctx context.Context, item *model.Item) {
 func (c *CachedRepository) invalidateSearch(ctx context.Context) {
 	_ = c.cache.InvalidateSearchCache(ctx)
 }
+
+// GetItemIncludingDeleted — проксируем в нижележащий репозиторий (без кэша).
+// Кэш для удалённых не нужен: они читаются редко (restore / soft-delete).
+func (c *CachedRepository) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	return c.next.GetItemIncludingDeleted(ctx, id)
+}

@@ -52,7 +52,7 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
   return (
     <Card
       interactive={!isOwned && canAfford && !outOfStock}
-      className={`flex h-full flex-col${!canAfford && !isOwned ? ' opacity-60' : ''}${outOfStock ? ' opacity-70' : ''}`}
+      className={`flex h-full flex-col overflow-hidden${!canAfford && !isOwned ? ' opacity-60' : ''}${outOfStock ? ' opacity-70' : ''}`}
     >
       <Link to={to} className="flex min-h-0 flex-1 flex-col text-inherit no-underline">
         <CardImage
@@ -64,19 +64,11 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
         />
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
 
-          <div className="mb-2 flex items-start justify-between gap-3">
-            <h3 className="font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2 min-h-[2.8rem]">
+          {/* 1. ИМЯ КАРТОЧКИ (ТЕПЕРЬ НА ВСЮ ШИРИНУ, БЕЗ БЕЙДЖА) */}
+          <div className="mb-2">
+            <h3 className="min-w-0 font-display text-lg font-semibold leading-snug text-text-primary line-clamp-2 break-words min-h-[2.8rem]">
               {item.name}
             </h3>
-            <div className="shrink-0 pt-1">
-              <Badge tone={isOwned ? 'success' : 'indigo'}>
-                {isOwned ? (
-                  <Icon name="check" className="h-3 w-3" title="В инвентаре" />
-                ) : (
-                  categoryLabel
-                )}
-              </Badge>
-            </div>
           </div>
 
           {flagBadges.length > 0 ? (
@@ -88,29 +80,42 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
               ))}
             </div>
           ) : null}
-          <div className="mt-auto pt-3">
-            {stockText !== null && !isDigital && (
-              <p className={`text-xs ${outOfStock ? 'text-text-muted' : 'text-text-secondary'}`}>
-                {stockText}
-              </p>
-            )}
+
+          {/* 2. НИЗ: СТОК + БЕЙДЖ "КАРТОЧКА" */}
+          <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+            <div className="text-xs">
+              {stockText !== null && !isDigital ? (
+                <p className={outOfStock ? 'text-text-muted' : 'text-text-secondary'}>
+                  {stockText}
+                </p>
+              ) : null}
+            </div>
+            <Badge tone={isOwned ? 'success' : 'indigo'}>
+              {isOwned ? (
+                <Icon name="check" className="h-3 w-3" title="В инвентаре" />
+              ) : (
+                categoryLabel
+              )}
+            </Badge>
           </div>
         </div>
       </Link>
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
-        <span className="inline-flex items-center gap-1 font-hud tabular-nums text-horizon-gold">
+      {/* 3. НИЖНИЙ БЛОК: ЦЕНА + КНОПКА (ТЕПЕРЬ С FLEX-WRAP) */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+        <span className="inline-flex min-w-0 shrink-0 items-center gap-1 font-hud tabular-nums text-horizon-gold">
           <Icon name="ticket" className="h-3.5 w-3.5" />
           {formatTicketPrice(item.price_tickets)}
         </span>
         {isOwned ? (
-          <Button variant="ghost" size="sm" disabled>
+          <Button variant="ghost" size="sm" disabled className="shrink-0 whitespace-nowrap">
             В инвентаре
           </Button>
         ) : (
           <Button
             variant={canAfford && !outOfStock ? 'primary' : 'ghost'}
             size="sm"
+            className="shrink-0 whitespace-nowrap"
             disabled={!canAfford || outOfStock}
             onClick={(e) => {
               e.preventDefault();
@@ -122,7 +127,8 @@ function ShopItemCard({ item, balance, onBuyClick, detailTo }: ShopItemCardProps
           </Button>
         )}
       </div>
-    </Card>
+
+    </Card> 
   );
 }
 

@@ -54,3 +54,8 @@ func TestCachedRepository_implementsInterface(t *testing.T) {
 	base := &stubRepo{item: &model.Item{ID: "1", Name: "x"}}
 	var _ repository.InventoryRepository = repository.NewCachedRepository(base, nil)
 }
+
+// GetItemIncludingDeleted — заглушка для теста (возвращает ошибку).
+func (s *stubRepo) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	return nil, model.ErrItemNotFound
+}

@@ -307,6 +307,20 @@ func (r *MongoRepo) GetItem(ctx context.Context, id string) (*model.Item, error)
 	return mapToItem(result), nil
 }
 
+// GetItemIncludingDeleted возвращает товар по ID, включая мягко удалённые.
+// Нужен для проверки прав в SoftDeleteItem / RestoreItem (тот же контракт, что и в PostgresRepo).
+func (r *MongoRepo) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	var result bson.M
+	err := r.collection.FindOne(ctx, bson.M{"id": id}).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, model.ErrItemNotFound
+		}
+		return nil, err
+	}
+	return mapToItem(result), nil
+}
+
 // UpdateItem обновляет все поля товара (стратегия PUT).
 func (r *MongoRepo) UpdateItem(ctx context.Context, item *model.Item) error {
 	item.UpdatedAt = time.Now()

@@ -5,10 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.7-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.8-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3.7** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
+**Event Horizon v1.1.3.8** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
 
 | | |
 |---|---|
@@ -445,6 +445,38 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 ## 📦 Версия
 
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
+
+### Что нового в v1.1.3.8
+
+Патч-релиз по **Auth**, **Inventory**, **NATS** и **UI карточек**. Закрывает инцидент с bcrypt, восстановление карточек, MERGE атрибутов и стабильность лидерборда.
+
+**Auth**
+- **bcrypt `$2y$`** — нормализация `$2y$` → `$2b$` в `Login`. PHP/htpasswd-хеши теперь работают.
+- **Тест:** `TestLogin_AcceptsPHP2yHash` (проверяет `$2y$` → успешный логин).
+
+**Inventory**
+- **`RestoreItem`** — работает (soft-delete + restore, `deleted_at: NULL`).
+- **`UpdateItem` MERGE** — `card_text`, `market_rub`, `images` не затираются (P0-10).
+- **Оптимистичный UI** — `deleteItem` убирает карточку мгновенно, при ошибке — возвращает.
+- **`GetItemIncludingDeleted`** — для проверки прав в `SoftDelete`/`Restore` (Postgres + Mongo + Cached).
+
+**Gateway**
+- **Полные `attributes`** для author/admin в `GET /api/v1/inventory/items` (форма редактирования).
+- **`Images=[]`** — защита от затирания (`if len(req.Images) > 0`).
+
+**NATS**
+- **`Replicas: 3`** — stream `EVENTS` реплицирован на 3 ноды (`jsz` везде `1`).
+- **`--cluster_advertise`** — стабильный кластер (без дублей маршрутов).
+
+**Leaderboard**
+- **Ники** отображаются (Renoir, Raya) — `SaveUserInfo` + `UpdateScoreOnly` в Redis.
+
+**UI**
+- **Бейдж «Карточка»** — вниз, к стоку (без переносов «Придворны / й»).
+- **Кнопка «Нет в наличии»** — не вылезает за рамку (`overflow-hidden`, `flex-wrap`).
+- **`line-clamp-2`** — «Придворный чародей» в 2 строки, «Контрабандист» в 1.
+
+**Итог:** Auth-инцидент закрыт, восстановление карточек работает, NATS стабилен, лидерборд показывает ники. Массовый засев 108+ — v1.1.3.9.
 
 ### Что нового в v1.1.3.7
 

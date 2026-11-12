@@ -3860,3 +3860,38 @@ DETAILS:
 - `confluence/architecture/` — RESERVE_MARKETPLACE_PATTERN, RULES_FOR_PG_POOL, WARMUP_COMMANDS.
 
 **Итог:** P=100 — baseline 8 GiB. P=200 — потолок (contention на 9 items). Для 200ms на P=200 — 32 GiB (roadmap v1.2).
+
+
+======== 1.1.3.8 =============
+
+### Что нового в v1.1.3.8
+
+Патч-релиз по **Auth**, **Inventory**, **NATS** и **UI карточек**. Закрывает инцидент с bcrypt, восстановление карточек, MERGE атрибутов и стабильность лидерборда.
+
+**Auth**
+- **bcrypt `$2y$`** — нормализация `$2y$` → `$2b$` в `Login`. PHP/htpasswd-хеши теперь работают.
+- **Тест:** `TestLogin_AcceptsPHP2yHash` (проверяет `$2y$` → успешный логин).
+
+**Inventory**
+- **`RestoreItem`** — работает (soft-delete + restore, `deleted_at: NULL`).
+- **`UpdateItem` MERGE** — `card_text`, `market_rub`, `images` не затираются (P0-10).
+- **Оптимистичный UI** — `deleteItem` убирает карточку мгновенно, при ошибке — возвращает.
+- **`GetItemIncludingDeleted`** — для проверки прав в `SoftDelete`/`Restore` (Postgres + Mongo + Cached).
+
+**Gateway**
+- **Полные `attributes`** для author/admin в `GET /api/v1/inventory/items` (форма редактирования).
+- **`Images=[]`** — защита от затирания (`if len(req.Images) > 0`).
+
+**NATS**
+- **`Replicas: 3`** — stream `EVENTS` реплицирован на 3 ноды (`jsz` везде `1`).
+- **`--cluster_advertise`** — стабильный кластер (без дублей маршрутов).
+
+**Leaderboard**
+- **Ники** отображаются (Renoir, Raya) — `SaveUserInfo` + `UpdateScoreOnly` в Redis.
+
+**UI**
+- **Бейдж «Карточка»** — вниз, к стоку (без переносов «Придворны / й»).
+- **Кнопка «Нет в наличии»** — не вылезает за рамку (`overflow-hidden`, `flex-wrap`).
+- **`line-clamp-2`** — «Придворный чародей» в 2 строки, «Контрабандист» в 1.
+
+**Итог:** Auth-инцидент закрыт, восстановление карточек работает, NATS стабилен, лидерборд показывает ники. Массовый засев 108+ — v1.1.3.9.

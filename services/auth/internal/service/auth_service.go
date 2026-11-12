@@ -100,9 +100,18 @@ func (s *authService) Login(ctx context.Context, email, password string) (*Token
 	if user == nil {
 		return nil, model.ErrInvalidCredentials
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+
+	// Нормализация $2y$ → $2b$
+	// Go-bcrypt понимает только $2a$ и $2b$, а $2y$ — тот же алгоритм, но с другим префиксом.
+	hash := user.PasswordHash
+	if strings.HasPrefix(hash, "$2y$") {
+		hash = "$2b$" + hash[4:]
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
 		return nil, model.ErrInvalidCredentials
 	}
+
 	role := user.Role
 	if role == "" {
 		role = "user"

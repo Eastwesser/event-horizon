@@ -41,6 +41,7 @@ func (s *leaderboardService) UpdateScore(ctx context.Context, gameID, userID, us
 	return s.repo.UpdateScore(ctx, gameID, userID, userEmail, nickname, score, level)
 }
 
+
 func (s *leaderboardService) UpdateScoreOnly(ctx context.Context, gameID, userID, userEmail string, score, level int) error {
 	return s.repo.UpdateScoreOnly(ctx, gameID, userID, userEmail, score, level)
 }
