@@ -122,3 +122,56 @@ func TestInventory_ReserveAndVersionConflict(t *testing.T) {
 		t.Fatalf("want ErrNotEnoughStock, got %v", err)
 	}
 }
+
+func TestInventory_SoftDeleteRestore(t *testing.T) {
+	db, cleanup := inventoryDB(t)
+	defer cleanup()
+	ctx := context.Background()
+	repo := repository.NewPostgresRepo(db)
+
+	item := &model.Item{
+		ID:       uuid.NewString(),
+		AuthorID: uuid.NewString(),
+		Type:     "карточка",
+		Name:     "Гронда",
+		Price:    50000,
+		Stock:    1,
+		Attributes: map[string]interface{}{
+			"card_text": "В начале хода...",
+			"element":   "swamps",
+		},
+		Images: []string{},
+	}
+	if err := repo.CreateItem(ctx, item); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	// Soft delete
+	if err := repo.SoftDeleteItem(ctx, item.ID); err != nil {
+		t.Fatalf("soft delete: %v", err)
+	}
+
+	// GetItem должен вернуть NotFound
+	if _, err := repo.GetItem(ctx, item.ID); err == nil {
+		t.Fatal("GetItem must return NotFound for soft-deleted")
+	}
+
+	// GetItemIncludingDeleted должен вернуть
+	if _, err := repo.GetItemIncludingDeleted(ctx, item.ID); err != nil {
+		t.Fatalf("GetItemIncludingDeleted: %v", err)
+	}
+
+	// Restore
+	if err := repo.RestoreItem(ctx, item.ID); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+
+	// После restore GetItem работает
+	got, err := repo.GetItem(ctx, item.ID)
+	if err != nil {
+		t.Fatalf("GetItem after restore: %v", err)
+	}
+	if got.DeletedAt != nil {
+		t.Fatal("deleted_at must be NULL after restore")
+	}
+}

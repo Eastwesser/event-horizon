@@ -541,3 +541,40 @@ func (r *PostgresRepo) CreateItemWithOutbox(ctx context.Context, item *model.Ite
 
 	return tx.Commit()
 }
+
+// GetItemIncludingDeleted возвращает товар по ID, даже если он мягко удален.
+// Нужен для проверки прав в SoftDeleteItem и RestoreItem.
+func (r *PostgresRepo) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	query := `
+		SELECT id, author_id, type, name, description, price, stock, COALESCE(version,1), attributes, images, created_at, updated_at, deleted_at
+		FROM inventory_items WHERE id = $1
+	`
+	var item model.Item
+	var attrsJSON []byte
+	var images []string
+	var deletedAt sql.NullTime
+
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&item.ID, &item.AuthorID, &item.Type, &item.Name, &item.Description,
+		&item.Price, &item.Stock, &item.Version, &attrsJSON, pq.Array(&images),
+		&item.CreatedAt, &item.UpdatedAt, &deletedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, model.ErrItemNotFound
+		}
+		return nil, err
+	}
+
+	if len(attrsJSON) > 0 {
+		if err := json.Unmarshal(attrsJSON, &item.Attributes); err != nil {
+			return nil, fmt.Errorf("unmarshal attributes: %w", err)
+		}
+	}
+	item.Images = images
+	if deletedAt.Valid {
+		t := deletedAt.Time.UTC()
+		item.DeletedAt = &t
+	}
+	return &item, nil
+}

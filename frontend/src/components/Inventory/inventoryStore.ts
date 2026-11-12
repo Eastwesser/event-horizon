@@ -13,11 +13,12 @@ interface InventoryState {
   createItem: (data: any) => Promise<void>;
   updateItem: (id: string, data: any) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
+  softDeleteItem: (id: string) => Promise<void>;
   clearSelected: () => void;
   clearError: () => void;
 }
 
-export const useInventoryStore = create<InventoryState>((set) => ({
+export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
   total: 0,
   loading: false,
@@ -91,20 +92,41 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   },
 
   deleteItem: async (id: string) => {
-    set({ loading: true, error: null });
+    // 1. Сохраняем текущее состояние для отката
+    const prevItems = get().items;
+    const prevTotal = get().total;
+
+    // 2. Оптимистично убираем карточку из стейта
+    set({
+      items: prevItems.filter((i) => i.id !== id),
+      total: prevTotal - 1,
+      error: null,
+    });
+
+    // 3. Отправляем запрос на бэк
     try {
       await inventoryApi.deleteItem(id);
-      set((state) => ({
-        items: state.items.filter((i) => i.id !== id),
-        total: state.total - 1,
-        selectedItem: state.selectedItem?.id === id ? null : state.selectedItem,
-        loading: false,
-      }));
     } catch (error: any) {
+      // 4. Откат: если упало, возвращаем карточку и показываем ошибку
       set({
+        items: prevItems,
+        total: prevTotal,
         error: error.response?.data?.error || 'Не удалось удалить товар',
-        loading: false,
       });
+      throw error;
+    }
+  },
+
+  softDeleteItem: async (id: string) => {
+    const prevItems = get().items;
+    set({
+      items: prevItems.map((i) => (i.id === id ? { ...i, deleted: true } : i)),
+      error: null,
+    });
+    try {
+      await inventoryApi.softDeleteItem(id);
+    } catch (error: any) {
+      set({ items: prevItems, error: error?.response?.data?.error || 'Ошибка' });
       throw error;
     }
   },

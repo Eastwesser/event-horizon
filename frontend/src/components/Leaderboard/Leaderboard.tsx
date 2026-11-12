@@ -8,6 +8,7 @@ import { Icon, IconLabel } from '../ui/Icon';
 import { GAME_LB_TABS, type GameTabId } from '../../lib/gameIcons';
 
 interface LeaderboardEntry {
+  nickname: string;
   rank: number;
   userId: string;
   user_email: string;
@@ -40,11 +41,18 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
 
   const fetchLeaderboard = async (gid: GameId = selectedGame, level = selectedLevel) => {
     try {
-      // Product: single board per game (level=1). Multi-level Flappy UI is commented out.
       void level;
       const { data } = await getLeaderboard(gid, 10, 1);
-      const raw = data?.entries;
-      setEntries(Array.isArray(raw) ? raw.filter(Boolean) : []);
+      const raw = Array.isArray(data?.entries) ? data.entries : [];
+      setEntries(
+        raw.map((e: any, i: number) => ({
+          rank: e.rank ?? i + 1,
+          userId: e.userId || e.user_id || `anon-${i}`,
+          user_email: e.user_email || '',
+          nickname: e.nickname || '',
+          score: typeof e.score === 'number' ? e.score : 0,
+        })),
+      );
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
       setEntries([]);
@@ -179,7 +187,8 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
                       {entry.user_email?.split('@')[0]?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <span className="truncate text-sm text-text-primary">
-                      {entry.user_email?.split('@')[0] || 'Аноним'}
+                      {/* {entry.user_email?.split('@')[0] || 'Аноним'} */}
+                      {entry.nickname || entry.user_email?.split('@')[0] || 'Аноним'}
                     </span>
                   </div>
                   <div className="font-hud text-sm tabular-nums text-horizon-gold">

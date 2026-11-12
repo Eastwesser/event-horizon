@@ -2260,12 +2260,42 @@ func runGateway() {
 			return
 		}
 		resp := out.(*inventoryPb.SearchItemsResponse)
+		
+		// Author/admin видит полные attributes (для формы редактирования).
+		// User видит урезанный DTO (для витрины).
+		role := middleware.Role(c)
+		if role == RoleAuthor || role == RoleAdmin {
+			// Полный DTO: все attributes, images, и т.д.
+			fullItems := make([]gin.H, 0, len(resp.GetItems()))
+			for _, item := range resp.GetItems() {
+				fullItems = append(fullItems, gin.H{
+					"id":          item.GetId(),
+					"author_id":   item.GetAuthorId(),
+					"type":        item.GetType(),
+					"name":        item.GetName(),
+					"description": item.GetDescription(),
+					"price":       item.GetPrice(),
+					"stock":       item.GetStock(),
+					"attributes":  item.GetAttributes().AsMap(), // <-- ПОЛНЫЕ
+					"images":      item.GetImages(),
+					"created_at":  item.GetCreatedAt(),
+					"updated_at":  item.GetUpdatedAt(),
+					"version":     item.GetVersion(),
+				})
+			}
+			c.JSON(http.StatusOK, gin.H{"items": fullItems, "total": resp.GetTotal()})
+			return
+		}
+
 		// Catalog list DTO: omit card_text / flavor_text (detail GET stays full).
+		// User (витрина) — урезанный DTO (без card_text, flavor_text).
 		c.JSON(http.StatusOK, gin.H{
 			"items": dto.InventoryItemsCatalog(resp.GetItems()),
 			"total": resp.GetTotal(),
-		})
+		})	
 	})
+
+
 
 	// POST /api/inventory/items — создать товар (только author/admin)
 	r.POST("/api/v1/inventory/items", middleware.RequireAuth(authClient), middleware.RequireRole(RoleAuthor, RoleAdmin), func(c *gin.Context) {

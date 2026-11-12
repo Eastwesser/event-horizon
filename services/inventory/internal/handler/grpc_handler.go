@@ -146,9 +146,10 @@ func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest)
     if req.Stock > 0 {
         item.Stock = int(req.Stock)
     }
-    if req.Images != nil {
-        item.Images = req.Images
-    }
+    // BUG-08-6: Images=[] не должен затирать существующие
+	if req.Images != nil && len(req.Images) > 0 {
+		item.Images = req.Images
+	}
     /*
         Причина: len(AsMap()) > 0 отсекает пустой &Struct{} (Gateway-артефакт). 
         Если клиент хочет очистить атрибуты — он должен прислать attributes: {} явно, и это сейчас тоже не пройдёт. 
@@ -156,10 +157,21 @@ func (h *GRPCHandler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest)
     if req.Attributes != nil && len(req.Attributes.AsMap()) > 0 {
         item.Attributes = req.Attributes.AsMap()
     }
+
     if req.Version > 0 {
         item.Version = int(req.Version)
     }
 
+    // P0-10 MERGE: копируем новые атрибуты поверх старых, не затирая остальные
+	if req.Attributes != nil && len(req.Attributes.AsMap()) > 0 {
+		if item.Attributes == nil {
+			item.Attributes = make(map[string]interface{})
+		}
+		for k, v := range req.Attributes.AsMap() {
+			item.Attributes[k] = v
+		}
+	}
+    
     if err := validateItem(&item); err != nil {
         return nil, err
     }
@@ -338,7 +350,7 @@ func (h *GRPCHandler) ReleaseItem(ctx context.Context, req *pb.ReleaseItemReques
 //     return &pb.EmptyResponse{}, nil
 // }
 func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItemRequest) (*pb.EmptyResponse, error) {
-	existing, err := h.service.GetItem(ctx, req.Id)
+	existing, err := h.service.GetItemIncludingDeleted(ctx, req.Id) // <-- ВКЛЮЧАЯ УДАЛЕННЫЕ
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "item not found")
 	}
@@ -368,7 +380,8 @@ func (h *GRPCHandler) SoftDeleteItem(ctx context.Context, req *pb.SoftDeleteItem
 //     return &pb.EmptyResponse{}, nil
 // }
 func (h *GRPCHandler) RestoreItem(ctx context.Context, req *pb.RestoreItemRequest) (*pb.EmptyResponse, error) {
-	existing, err := h.service.GetItem(ctx, req.Id)
+    
+	existing, err := h.service.GetItemIncludingDeleted(ctx, req.Id) // <-- ВКЛЮЧАЯ УДАЛЕННЫЕ
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "item not found")
 	}

@@ -45,6 +45,7 @@ export interface PurchasedItem {
 }
 
 interface ShopState {
+  invalidateCache(): unknown;
   items: ShopItem[];
   inventory: PurchasedItem[];
   balance: number;
@@ -82,6 +83,9 @@ export const useShopStore = create<ShopState>()(
       error: null,
       lastFetch: 0,
       catalogPatches: {},
+
+      // ✅ ВОТ ОН, НА УРОВНЕ ОБЪЕКТА
+      invalidateCache: () => set({ lastFetch: 0, items: [] }),
 
       patchCatalogItem: (id, patch) => {
         set((state) => ({

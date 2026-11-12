@@ -462,3 +462,11 @@ func TestReserveRelease_RepoErrorsPropagate(t *testing.T) {
 		t.Fatal("expected release error")
 	}
 }
+
+// GetItemIncludingDeleted — заглушка для теста (возвращает item по ID, даже если удалён).
+func (m *memRepo) GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) {
+	if item, ok := m.items[id]; ok {
+		return item, nil
+	}
+	return nil, model.ErrItemNotFound
+}

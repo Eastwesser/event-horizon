@@ -69,18 +69,37 @@ func New(ctx context.Context) (*App, error) {
 		Storage:  nats.FileStorage,
 		MaxAge:   7 * 24 * time.Hour,
 		MaxBytes: 1024 * 1024 * 1024,
+		Replicas: 3,  // <-- added in v.1.1.3.8
 	}
 
+	// if info, err := js.AddStream(streamConfig); err != nil {
+	// 	a.log.Warn("stream create (may exist)", "err", err)
+	// 	// Try to update if stream exists
+	// 	if _, uerr := js.UpdateStream(streamConfig); uerr != nil {
+	// 		a.log.Warn("stream update failed", "err", uerr)
+	// 		// Last resort: check if stream exists
+	// 		if _, ierr := js.StreamInfo("EVENTS"); ierr != nil {
+	// 			a.log.Error("stream info failed", "err", ierr)
+	// 			return nil, fmt.Errorf("jetstream stream EVENTS unavailable: %w", ierr)
+	// 		}
+	// 	} else {
+	// 		a.log.Info("stream EVENTS subjects updated")
+	// 	}
+	// 	if info, err := js.StreamInfo("EVENTS"); err == nil {
+	// 		a.log.Info("stream EVENTS exists", "messages", info.State.Msgs)
+	// 	}
+	// } else {
+	// 	a.log.Info("stream EVENTS created", "name", info.Config.Name)
+	// }
 	if info, err := js.AddStream(streamConfig); err != nil {
 		a.log.Warn("stream create (may exist)", "err", err)
 		if _, uerr := js.UpdateStream(streamConfig); uerr != nil {
 			a.log.Warn("stream update failed", "err", uerr)
-		} else {
-			a.log.Info("stream EVENTS subjects updated")
+			if _, ierr := js.StreamInfo("EVENTS"); ierr != nil {
+				return nil, fmt.Errorf("jetstream stream EVENTS unavailable: %w", ierr)
+			}
 		}
-		if info, err := js.StreamInfo("EVENTS"); err != nil {
-			a.log.Error("stream info failed", "err", err)
-		} else {
+		if info, err := js.StreamInfo("EVENTS"); err == nil {
 			a.log.Info("stream EVENTS exists", "messages", info.State.Msgs)
 		}
 	} else {

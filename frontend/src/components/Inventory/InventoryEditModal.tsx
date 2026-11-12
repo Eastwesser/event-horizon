@@ -4,6 +4,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import type { InventoryItem } from '../../services/inventoryApi';
 import { InventoryImageUrlField } from './InventoryImageUrlField';
+import { useShopStore } from '../Shop/shopStore';
 
 interface InventoryEditModalProps {
   item: InventoryItem;
@@ -154,6 +155,8 @@ export const InventoryEditModal: React.FC<InventoryEditModalProps> = ({ item, on
         images: trimmed ? [trimmed] : [],
         version: item.version,
       });
+
+      useShopStore.getState().invalidateCache();
 
       onClose();
     } catch (error) {

@@ -20,4 +20,5 @@ type InventoryRepository interface {
     SoftDeleteItem(ctx context.Context, id string) error
     RestoreItem(ctx context.Context, id string) error
     GetStats(ctx context.Context) (*model.Stats, error)
+    GetItemIncludingDeleted(ctx context.Context, id string) (*model.Item, error) 
 }
