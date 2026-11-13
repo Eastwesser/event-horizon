@@ -43,8 +43,8 @@ scripts/.env.seed.user
 frontend/.env.local
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
 
 .git.backup/services/*/*-service
 services/*/*-service-*
@@ -61,6 +61,7 @@ services/*/*-service
 
 # Local Cursor / agent tooling
 .agents/
+.cursor/
 skills-lock.json
 
 # Gateway local uploads (inventory images)
@@ -80,3 +81,6 @@ node_modules/
 
 # Confluence docs — local knowledge base, not for the public repo
 confluence/
+
+# Testing 
+load_test_results/
