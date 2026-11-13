@@ -60,8 +60,8 @@ services/*/*-service
 !services/*/*-service/
 
 # Local Cursor / agent tooling
-.agents/
 .cursor/
+.agents/
 skills-lock.json
 
 # Gateway local uploads (inventory images)
