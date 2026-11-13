@@ -84,3 +84,9 @@ confluence/
 
 # Testing 
 load_test_results/
+
+# Local artifacts and old deploy files
+monitoring/
+deployments/compose/
+deployments/deployments/
+metrics_snapshots/
