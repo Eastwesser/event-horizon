@@ -8,6 +8,8 @@ on:
       - 'frontend/**'
   workflow_dispatch:
 
+permissions: {}   # отключает все права GITHUB_TOKEN по умолчанию
+
 env:
   REGISTRY: docker.io
   IMAGE_NAME: eastwesser/event-horizon
@@ -15,6 +17,8 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read   # только чтение кода
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -37,6 +41,8 @@ jobs:
   build:
     needs: [lint, coverage]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read   # только чтение кода
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

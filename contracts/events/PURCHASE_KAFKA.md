@@ -1,4 +1,4 @@
-# Kafka purchase-flow contracts (Week 5 / Kozirev Order+Assembly adapted to Event Horizon)
+# Kafka purchase-flow contracts (Week 5 / Order+Assembly adapted to Event Horizon)
 
 ## Topics
 
