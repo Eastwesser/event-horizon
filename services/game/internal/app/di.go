@@ -39,6 +39,7 @@ import (
 	pb "github.com/Eastwesser/event-horizon/services/game/proto"
 )
 
+
 type diContainer struct {
 	cfg config.ConfigProvider
 
@@ -119,7 +120,7 @@ func (a *App) initTracer(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initPostgres(_ context.Context) error {
+func (a *App) initPostgres(ctx context.Context) error {
 	db, err := sql.Open("postgres", a.cfg.PostgresConfig().DSN())
 	if err != nil {
 		return fmt.Errorf("postgres open: %w", err)
@@ -138,6 +139,10 @@ func (a *App) initPostgres(_ context.Context) error {
 	if err := migrator.Up(db, migrations.FS); err != nil {
 		_ = db.Close()
 		return fmt.Errorf("migrations: %w", err)
+	}
+	// Warmup: preload highscores into PG shared_buffers.
+	if _, err := db.ExecContext(ctx, `SELECT pg_prewarm('highscores')`); err != nil {
+		a.log.Warn("pg_prewarm failed (non-fatal)", "err", err)
 	}
 
 	a.di.db = db

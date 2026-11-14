@@ -29,6 +29,7 @@ import (
 	pb "github.com/Eastwesser/event-horizon/services/profile/proto"
 )
 
+
 type ScoreEvent struct {
 	UserID        string `json:"user_id"`
 	GameID        string `json:"game_id"`
@@ -125,6 +126,13 @@ func (a *App) initPostgres(ctx context.Context) error {
 	if err := migrator.Up(stdlib.OpenDBFromPool(dbpool), migrations.FS); err != nil {
 		dbpool.Close()
 		return fmt.Errorf("migrations: %w", err)
+	}
+
+	// Warmup: preload user_profiles/achievements into PG shared_buffers.
+	for _, tbl := range []string{"user_profiles", "achievements"} {
+		if _, err := dbpool.Exec(ctx, fmt.Sprintf(`SELECT pg_prewarm('%s')`, tbl)); err != nil {
+			a.log.Warn("pg_prewarm failed (non-fatal)", "table", tbl, "err", err)
+		}
 	}
 
 	a.di.dbpool = dbpool

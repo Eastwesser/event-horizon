@@ -36,6 +36,7 @@ import (
 	pb "github.com/Eastwesser/event-horizon/services/leaderboard/proto"
 )
 
+
 // ScoreEvent is the NATS payload for score.updated.
 type ScoreEvent struct {
 	UserID    string `json:"user_id"`
@@ -159,6 +160,10 @@ func (a *App) initPostgres(ctx context.Context) error {
 	if err := migrator.Up(stdlib.OpenDBFromPool(dbpool), migrations.FS); err != nil {
 		dbpool.Close()
 		return fmt.Errorf("migrations: %w", err)
+	}
+	// Warmup: preload leaderboard_backup into PG shared_buffers.
+	if _, err := dbpool.Exec(ctx, `SELECT pg_prewarm('leaderboard_backup')`); err != nil {
+		a.log.Warn("pg_prewarm failed (non-fatal)", "err", err)
 	}
 
 	a.di.dbpool = dbpool
