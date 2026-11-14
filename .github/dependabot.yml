@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Go модули (ищет go.mod во всех подпапках сервисов)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3 # Ограничиваем, чтобы не завалил PR-ами
+    groups:
+      go-dependencies:
+        patterns:
+          - "*" # Группирует все обновления Go в один PR
+
+  # Фронтенд
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "minimatch" # Игнорируем сломанный ESLint пакет
