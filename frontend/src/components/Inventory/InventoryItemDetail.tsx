@@ -217,10 +217,10 @@ export const InventoryItemDetail: React.FC = () => {
           ) : null}
 
           {isCard ? (
-              <>
-                <CardAttributesView attrs={attrs} />
-                <NoizReviewBlock attrs={attrs} />
-              </>
+            <>
+              <CardAttributesView attrs={attrs} />
+              <NoizReviewBlock attrs={attrs} />
+            </>
           ) : selectedItem.attributes && Object.keys(selectedItem.attributes).length > 0 ? (
             <div>
               <h3 className="mb-2 font-display text-base font-semibold text-text-primary">
@@ -228,15 +228,21 @@ export const InventoryItemDetail: React.FC = () => {
               </h3>
               <div className="flex flex-col gap-1">
                 {Object.entries(selectedItem.attributes)
-                  .filter(
-                    ([key]) =>
-                      ![
-                        'artist_id',
-                        'market_rub',
-                        'idempotency_key',
-                        'noiz_review',
-                      ].includes(key)
-                  )
+                  .filter(([key, value]) => {
+                    // Скрываем служебные и ККИ-поля
+                    const hidden = [
+                      'artist_id', 'market_rub', 'idempotency_key', 'noiz_review',
+                      'card_text', 'flavor_text', 'health', 'strike', 'move',
+                      'cost', 'cost_tier', 'icons', 'class', 'element',
+                      'rarity', 'set', 'year', 'card_no', 'type_main', 'type_sub',
+                    ];
+                    if (hidden.includes(key)) return false;
+                    // Пропускаем пустые значения
+                    if (value === undefined || value === null || value === '') return false;
+                    if (Array.isArray(value) && value.length === 0) return false;
+                    if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) return false;
+                    return true;
+                  })
                   .map(([key, value]) => (
                     <div key={key} className="text-sm text-text-secondary">
                       <strong className="text-text-primary">{key}:</strong>{' '}
@@ -254,6 +260,7 @@ export const InventoryItemDetail: React.FC = () => {
               </div>
             </div>
           ) : null}
+
         </div>
       </div>
     </PageShell>
