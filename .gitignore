@@ -32,6 +32,7 @@ services/gateway/gateway-service
 services/leaderboard/leaderboard-service
 services/profile/profile-service
 services/shop/shop-service
+services/nats-hub/nats-hub
 
 # env file
 .env
