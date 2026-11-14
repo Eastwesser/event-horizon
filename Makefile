@@ -164,6 +164,20 @@ test-integration:
 
 test-all: test-unit
 	@echo "Unit OK. Optional: make test-smoke | make test-k6 | make test-integration"
+
+# ===== TIDY VULNERABILITIES =====
+
+tidy-all-back:
+	@for service in $(SERVICES); do \
+		echo "===== TIDY $$service ====="; \
+		(cd services/$$service && GOWORK=off go get -u=patch ./... && GOWORK=off go mod tidy); \
+	done
+
+tidy-all-front:
+	@echo "===== TIDY frontend ====="
+	cd frontend && npm update && npm audit fix
+	@echo "✅ Frontend dependencies updated"
+
 # ===== MIGRATIONS =====
 migrate-auth:
 	cd services/auth && goose -dir migrations postgres "postgres://eventhorizon:eventhorizon@localhost:5460/eventhorizon?sslmode=disable" up
