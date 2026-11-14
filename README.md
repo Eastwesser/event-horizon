@@ -19,7 +19,7 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.1.3.7, 11.11.2026)
+## 📦 Архитектура (актуально v1.1.3.8, 14.11.2026)
 
 Схемы: [`EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro export: [`08.10.2026/miro/`](confluence/history/2026-10/08.10.2026/miro/) · stickers: [`MIRO_STICKERS_PASTE.md`](confluence/history/2026-10/08.10.2026/miro/MIRO_STICKERS_PASTE.md)
 
