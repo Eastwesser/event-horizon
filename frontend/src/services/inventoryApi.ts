@@ -1,6 +1,7 @@
 import api from './api';
 
 export interface InventoryItem {
+  category: string;
   game_id: any;
   id: string;
   author_id: string;

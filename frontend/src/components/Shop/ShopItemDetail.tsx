@@ -193,6 +193,7 @@ export function ShopItemDetail() {
   }
 
   // ── Derived values (single source of truth) ─────────────────────────
+  const isCard = item.type === 'карточка' || item.category === 'карточка'; 
   const attrs = (item.attributes || {}) as Record<string, unknown>;
   const gameId = typeof attrs.game_id === 'string' ? attrs.game_id : undefined;
   const isDigital = isDigitalItem(item);
@@ -357,7 +358,7 @@ export function ShopItemDetail() {
             </p>
           ) : null}
 
-          {cardText ? (
+          {isCard && cardText ? (
             <div>
               <button
                 type="button"
@@ -373,61 +374,65 @@ export function ShopItemDetail() {
                 </p>
               ) : null}
             </div>
+          ) : !isCard && cardText ? (
+            <p className="text-text-secondary">{cardText}</p>
           ) : null}
 
-          <CardAttributesView
-            attrs={attrs}
-            trailingAction={
-              <div className="flex flex-col items-end gap-1">
-                {owned ? (
-                  <>
-                    {ownedPurchase?.can_cancel ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={cancelling}
-                        onClick={() => setShowCancelModal(true)}
-                        className="gap-1.5"
+          {isCard ? (
+            <CardAttributesView
+              attrs={attrs}
+              trailingAction={
+                <div className="flex flex-col items-end gap-1">
+                  {owned ? (
+                    <>
+                      {ownedPurchase?.can_cancel ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={cancelling}
+                          onClick={() => setShowCancelModal(true)}
+                          className="gap-1.5"
+                        >
+                          <Icon name="undo" className="h-3.5 w-3.5" />
+                          Отменить
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled
+                          className="gap-1.5 opacity-50"
+                          title={
+                            ownedPurchase?.fulfilled_at
+                              ? 'Товар уже отправлен — возврат недоступен.'
+                              : 'Срок возврата истёк (7 дней с покупки).'
+                          }
+                        >
+                          <Icon name="undo" className="h-3.5 w-3.5" />
+                          Отменить
+                        </Button>
+                      )}
+                      <Link
+                        to="/shop?tab=inventory"
+                        className="text-xs text-horizon-cyan underline-offset-2 hover:underline"
                       >
-                        <Icon name="undo" className="h-3.5 w-3.5" />
-                        Отменить
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled
-                        className="gap-1.5 opacity-50"
-                        title={
-                          ownedPurchase?.fulfilled_at
-                            ? 'Товар уже отправлен — возврат недоступен.'
-                            : 'Срок возврата истёк (7 дней с покупки).'
-                        }
-                      >
-                        <Icon name="undo" className="h-3.5 w-3.5" />
-                        Отменить
-                      </Button>
-                    )}
-                    <Link
-                      to="/shop?tab=inventory"
-                      className="text-xs text-horizon-cyan underline-offset-2 hover:underline"
+                        Мой инвентарь
+                      </Link>
+                    </>
+                  ) : (
+                    <Button
+                      variant={!outOfStock && balance >= item.price ? 'primary' : 'ghost'}
+                      size="sm"
+                      disabled={outOfStock || balance < item.price || buying}
+                      onClick={() => void handleBuyClick()}
                     >
-                      Мой инвентарь
-                    </Link>
-                  </>
-                ) : (
-                  <Button
-                    variant={!outOfStock && balance >= item.price ? 'primary' : 'ghost'}
-                    size="sm"
-                    disabled={outOfStock || balance < item.price || buying}
-                    onClick={() => void handleBuyClick()}
-                  >
-                    {outOfStock ? 'Нет в наличии' : balance < item.price ? 'Не хватает' : 'Купить'}
-                  </Button>
-                )}
-              </div>
-            }
-          />
+                      {outOfStock ? 'Нет в наличии' : balance < item.price ? 'Не хватает' : 'Купить'}
+                    </Button>
+                  )}
+                </div>
+              }
+            />
+          ) : null}
 
           <NoizReviewBlock attrs={attrs} />
         </div>
