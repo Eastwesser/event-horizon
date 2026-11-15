@@ -20,7 +20,7 @@ profile.cov
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# Go workspace — tracked for Week-1 monorepo (Kozirev-style).
+# Go workspace — tracked for Week-1 monorepo
 # Local override: GOWORK=off
 
 # Task / tool binaries

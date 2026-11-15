@@ -1,4 +1,4 @@
-# Shared interceptor reference (Week 1 / Kozirev)
+# Shared interceptor reference (Week 1)
 
 Live copies used by services live under:
 

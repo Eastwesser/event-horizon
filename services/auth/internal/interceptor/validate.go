@@ -13,7 +13,7 @@ type protoValidator interface {
 }
 
 // Validate rejects requests that implement Validate() and fail their rules.
-// Matches Kozirev week_1 pattern (req.Validate() → InvalidArgument).
+// Matches week_1 pattern (req.Validate() → InvalidArgument).
 func Validate() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,

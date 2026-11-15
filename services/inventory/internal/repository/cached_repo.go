@@ -7,7 +7,7 @@ import (
 	"github.com/Eastwesser/event-horizon/services/inventory/internal/model"
 )
 
-// CachedRepository decorates InventoryRepository with Redis cache-aside (Kozirev W6 pattern).
+// CachedRepository decorates InventoryRepository with Redis cache-aside (W6 pattern).
 // RedisCacheRepo remains the low-level storage adapter; this type is the repository decorator.
 type CachedRepository struct {
 	next  InventoryRepository
