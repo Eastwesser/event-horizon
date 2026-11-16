@@ -168,6 +168,16 @@ func (r *PostgresUserRepo) ListUsers(ctx context.Context, query string, limit, o
 	}
 
 	q := strings.TrimSpace(query)
+
+	// 🔒 Защита от DoS: обрезаем поисковый запрос до 100 символов
+	if len(q) > 100 {
+		q = q[:100]
+	}
+	/*
+		Мы страхуемся на случай, если в будущем кто-то напишет новый handler и забудет про проверку. 
+		Репозиторий — это последний рубеж, он всегда обрежет строку и спасёт базу от зависания.
+	*/
+
 	var (
 		total     int64
 		listSQL   string

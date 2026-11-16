@@ -196,7 +196,17 @@ func (h *AuthHandler) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (
 		offset = 0
 	}
 
-	users, total, err := h.authService.ListUsers(ctx, req.GetQuery(), int(limit), int(offset))
+	// 🔒 Защита от DoS: не даём передать слишком длинный поисковый запрос
+	query := req.GetQuery()
+	if len(query) > 100 {
+		return nil, status.Error(codes.InvalidArgument, "query too long (max 100 characters)")
+	}
+	/*
+		Мы говорим клиенту: «Ты передал слишком длинную строку, это невалидный запрос». 
+		Это правильно с точки зрения API.
+	*/
+
+	users, total, err := h.authService.ListUsers(ctx, query, int(limit), int(offset))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
