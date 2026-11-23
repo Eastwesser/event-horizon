@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../../services/api';
 import { Button } from '../ui/Button';
+import { PasswordInput } from '../ui/PasswordInput';
 
 const inputClass =
   'rounded-md border border-white/10 bg-void px-4 py-3 text-base text-text-primary placeholder:text-text-muted focus:border-photon-cyan/60 focus-visible:outline-none';
@@ -27,7 +28,8 @@ export function Register() {
         const uid = data.user_id || data.userId;
         if (uid) localStorage.setItem('userId', uid);
         setSuccess('Регистрация прошла успешно! Перенаправляем на вход...');
-        setTimeout(() => navigate('/login'), 1500);
+        // setTimeout(() => navigate('/login'), 1500);
+        setTimeout(() => navigate('/login', { state: { email } }), 1500); // e-mail autofill, auth UX help
       } else {
         const msg = data.message || data.error;
         if (msg?.includes('already exists')) {
@@ -74,8 +76,8 @@ export function Register() {
           </label>
           <label className="flex flex-col gap-2 text-left text-sm font-medium text-text-secondary">
             Пароль (мин. 8 символов)
-            <input
-              type="password"
+            <PasswordInput
+              // type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

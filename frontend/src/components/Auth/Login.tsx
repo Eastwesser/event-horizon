@@ -3,14 +3,21 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../services/api';
 import { setTokens } from '../../lib/auth';
 import { Button } from '../ui/Button';
+import { useLocation } from 'react-router-dom';
+import { PasswordInput } from '../ui/PasswordInput';
 
 const inputClass =
   'rounded-md border border-white/10 bg-void px-4 py-3 text-base text-text-primary placeholder:text-text-muted focus:border-photon-cyan/60 focus-visible:outline-none';
 
 export function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const location = useLocation();
+  const prefilledEmail = (location.state as { email?: string } | null)?.email ?? '';
+  // const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefilledEmail);
+  const [password, setPassword] = useState(''); 
+  // Пароль автозаполнять не надо (это дыра в безопасности и UX-антипаттерн) — тикет говорит «email/пароля», но реально после регистрации пароль в открытом виде нигде не лежит. 
+  // безопасный вариант — только email + фокус на поле пароля. 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -81,8 +88,8 @@ export function Login() {
           </label>
           <label className="flex flex-col gap-2 text-left text-sm font-medium text-text-secondary">
             Пароль
-            <input
-              type="password"
+            <PasswordInput
+              // type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
