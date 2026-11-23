@@ -5,10 +5,10 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20%7C%20k3s-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Release-v1.1.3.8-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
+[![Status](https://img.shields.io/badge/Release-v1.1.3.9-brightgreen.svg)](https://github.com/Eastwesser/event-horizon)
 [![CI](https://img.shields.io/github/actions/workflow/status/Eastwesser/event-horizon/main.yml?branch=main&label=CI)](https://github.com/Eastwesser/event-horizon/actions)
 
-**Event Horizon v1.1.3.8** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
+**Event Horizon v1.1.3.9** — Clean Architecture per service, gRPC mesh, NATS JetStream, OpenAPI gateway (`/api/v1`), observability (Prometheus / Grafana / Jaeger), React client with mobile-safe shells. One-command local deploy. 
 
 | | |
 |---|---|
@@ -19,7 +19,7 @@
 
 ---
 
-## 📦 Архитектура (актуально v1.1.3.8, 14.11.2026)
+## 📦 Архитектура (актуально v1.1.3.9, 23.11.2026)
 
 Схемы: [`EH_SCHEMAS.md`](confluence/architecture/EH_SCHEMAS.md) · Miro export: [`08.10.2026/miro/`](confluence/history/2026-10/08.10.2026/miro/) · stickers: [`MIRO_STICKERS_PASTE.md`](confluence/history/2026-10/08.10.2026/miro/MIRO_STICKERS_PASTE.md)
 
@@ -446,37 +446,20 @@ Backend & DevOps: Денис Матвеев (Eastwesser)
 
 BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/FUTURE_EVENT_HORIZON.md
 
-### Что нового в v1.1.3.8
+### Что нового в v1.1.3.9
 
-Патч-релиз по **Auth**, **Inventory**, **NATS** и **UI карточек**. Закрывает инцидент с bcrypt, восстановление карточек, MERGE атрибутов и стабильность лидерборда.
+Мини-патч по **Auth UX** и **Frontend-инфраструктуре**. Улучшает пользовательский опыт на экранах входа/регистрации и подтягивает версии зависимостей.
 
-**Auth**
-- **bcrypt `$2y$`** — нормализация `$2y$` → `$2b$` в `Login`. PHP/htpasswd-хеши теперь работают.
-- **Тест:** `TestLogin_AcceptsPHP2yHash` (проверяет `$2y$` → успешный логин).
+**Auth UX**
+- **Глазик (показать/скрыть пароль)** — добавлен в поля ввода пароля на экранах `Login` и `Register`. Реализован через переиспользуемый компонент `PasswordInput`.
+- **Интеграция в поле** — иконка позиционирована *внутри* инпута (`absolute right-2`), текст не наезжает благодаря `pr-12`.
+- **Автозаполнение Email** — после успешной регистрации email пробрасывается на экран входа через `navigate('/login', { state: { email } })`. Пароль не передаётся из соображений безопасности.
 
-**Inventory**
-- **`RestoreItem`** — работает (soft-delete + restore, `deleted_at: NULL`).
-- **`UpdateItem` MERGE** — `card_text`, `market_rub`, `images` не затираются (P0-10).
-- **Оптимистичный UI** — `deleteItem` убирает карточку мгновенно, при ошибке — возвращает.
-- **`GetItemIncludingDeleted`** — для проверки прав в `SoftDelete`/`Restore` (Postgres + Mongo + Cached).
+**Frontend (Chores)**
+- **Tailwind Update** — обновлены зависимости CSS-фреймворка (v.1.1.3.9).
+- **Рефакторинг `inputClass`** — вынесен в переиспользуемые стили для избежания дублирования в формах.
 
-**Gateway**
-- **Полные `attributes`** для author/admin в `GET /api/v1/inventory/items` (форма редактирования).
-- **`Images=[]`** — защита от затирания (`if len(req.Images) > 0`).
-
-**NATS**
-- **`Replicas: 3`** — stream `EVENTS` реплицирован на 3 ноды (`jsz` везде `1`).
-- **`--cluster_advertise`** — стабильный кластер (без дублей маршрутов).
-
-**Leaderboard**
-- **Ники** отображаются (Renoir, Raya) — `SaveUserInfo` + `UpdateScoreOnly` в Redis.
-
-**UI**
-- **Бейдж «Карточка»** — вниз, к стоку (без переносов «Придворны / й»).
-- **Кнопка «Нет в наличии»** — не вылезает за рамку (`overflow-hidden`, `flex-wrap`).
-- **`line-clamp-2`** — «Придворный чародей» в 2 строки, «Контрабандист» в 1.
-
-**Итог:** Auth-инцидент закрыт, восстановление карточек работает, NATS стабилен, лидерборд показывает ники. 
+**Итог:** Auth-формы стали удобнее (видимость пароля + автозаполнение почты), зависимости обновлены. 
 
 ---
 
