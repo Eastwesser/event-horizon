@@ -9,12 +9,18 @@ export function PasswordInput({ className, ...rest }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
+    // 1. Контейнер с relative — точка отсчёта для absolute-кнопки
+    <div className="relative w-full">
       <input
         {...rest}
         type={visible ? 'text' : 'password'}
-        className={cn(className, 'pr-12')}
-      />
+        // 2. pr-12 — место под иконку, чтобы текст не заезжал под неё
+        className={cn(
+          'w-full rounded-md border border-white/10 bg-void px-4 py-3 text-base text-text-primary placeholder:text-text-muted focus:border-photon-cyan/60 focus-visible:outline-none pr-12',
+          className,
+        )}
+      />  
+      {/* 3. Кнопка absolute, прижата к правому краю, центрирована по вертикали */}
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
