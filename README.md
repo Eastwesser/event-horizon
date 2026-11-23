@@ -461,6 +461,8 @@ BACKEND PATTERNS REVISION (+ future ideas): event_horizon/confluence/tech_debt/F
 
 **Итог:** Auth-формы стали удобнее (видимость пароля + автозаполнение почты), зависимости обновлены. 
 
+P.S.: Sanitizing done for go-services matching dependabot vulnerability issues.
+
 ---
 
 ## ⭐ Если проект полезен
