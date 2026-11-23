@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "tailwind-merge": "^3.7.1",
     "wscat": "^6.1.0"
   }
 }
