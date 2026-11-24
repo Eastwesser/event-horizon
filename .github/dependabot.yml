@@ -11,7 +11,7 @@ updates:
         patterns:
           - "*" # Группирует все обновления Go в один PR
 
-  # Фронтенд
+    # Фронтенд
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
@@ -22,4 +22,6 @@ updates:
         patterns:
           - "*"
     ignore:
-      - dependency-name: "minimatch" # Игнорируем сломанный ESLint пакет
+      - dependency-name: "minimatch" # пакет "minimatch" сломан
+        update-types: 
+          - "version-update:semver-major" # Игнорируем только мажорные обновления

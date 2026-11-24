@@ -5,17 +5,17 @@ go 1.26.0
 require (
 	github.com/Eastwesser/event-horizon/platform v0.0.0
 	github.com/Eastwesser/event-horizon/services/analytics/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261123233219-30af9e9abf2e
 	github.com/Eastwesser/event-horizon/services/authors/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261123233219-30af9e9abf2e
 	github.com/Eastwesser/event-horizon/services/history/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20261123162911-654fe2659402
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261123233219-30af9e9abf2e
 	github.com/Eastwesser/event-horizon/services/notification/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261123162911-654fe2659402
-	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261123233219-30af9e9abf2e
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
@@ -48,7 +48,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.6 // indirect
 	github.com/goccy/go-json v0.11.2 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.20.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
@@ -73,7 +73,7 @@ require (
 	go.opentelemetry.io/otel/log v1.47.0 // indirect
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/arch v0.31.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect

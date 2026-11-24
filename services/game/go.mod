@@ -15,7 +15,7 @@ replace event_horizon/services/game/proto => ./proto
 require (
 	github.com/nats-io/nats.go v1.56.0
 	github.com/prometheus/client_golang v1.25.0
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.71.0
 )
 
 require (
@@ -25,7 +25,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/klauspost/compress v1.20.5 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/nkeys v0.4.17 // indirect
@@ -34,11 +34,11 @@ require (
 	github.com/prometheus/common v0.72.1 // indirect
 	github.com/prometheus/procfs v0.22.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
 	go.opentelemetry.io/otel/log v1.47.0 // indirect
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
@@ -53,7 +53,7 @@ replace github.com/Eastwesser/event-horizon/services/billing/proto => ../billing
 
 require (
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261123233219-30af9e9abf2e
 	github.com/lib/pq v1.12.3
 )
 

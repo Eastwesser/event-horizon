@@ -32,7 +32,8 @@ export function Leaderboard({ gameId }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<GameId>(gameId ?? 'hexagon');
-  const [selectedLevel, setSelectedLevel] = useState(1);
+  // const [selectedLevel, setSelectedLevel] = useState(1);
+  const [selectedLevel] = useState(1);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {

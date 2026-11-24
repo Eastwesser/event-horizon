@@ -21,7 +21,7 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -48,7 +48,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/net v0.61.0 // indirect
@@ -71,6 +71,6 @@ replace github.com/Eastwesser/event-horizon/contracts/events => ../../contracts/
 require (
 	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261123162911-654fe2659402
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261123162911-654fe2659402
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261123233219-30af9e9abf2e
 )
