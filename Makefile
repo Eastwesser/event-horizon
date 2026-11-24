@@ -421,3 +421,4 @@ seed-user:
 # Generic: make seed-dev SEED_ROLE=author SEED_EMAIL=a@x SEED_PASSWORD=secret
 seed-dev:
 	python3 scripts/seed_admin.py
+
