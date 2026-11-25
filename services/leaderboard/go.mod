@@ -58,7 +58,7 @@ require (
 replace github.com/Eastwesser/event-horizon/services/leaderboard/proto => ./proto
 
 require (
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/jackc/pgx/v5 v5.13.0
 )
 
@@ -68,5 +68,5 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
 )

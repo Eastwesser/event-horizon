@@ -5,17 +5,17 @@ go 1.26.0
 require (
 	github.com/Eastwesser/event-horizon/platform v0.0.0
 	github.com/Eastwesser/event-horizon/services/analytics/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/Eastwesser/event-horizon/services/authors/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/Eastwesser/event-horizon/services/history/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20261123233219-30af9e9abf2e
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/inventory v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/Eastwesser/event-horizon/services/notification/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261123233219-30af9e9abf2e
-	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3

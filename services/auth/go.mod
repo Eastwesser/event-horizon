@@ -65,7 +65,7 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/sqb v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261123233219-30af9e9abf2e
-	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261123233219-30af9e9abf2e
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261124202038-865cb2804b47
 	github.com/alicebob/miniredis/v2 v2.40.0
 )
