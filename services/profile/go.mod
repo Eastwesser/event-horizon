@@ -73,5 +73,5 @@ require (
 	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/platform v0.0.0-20261127191611-e298f919ef20
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261125220443-103ca8525a65
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261127191611-e298f919ef20
 )

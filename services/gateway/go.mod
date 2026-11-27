@@ -14,7 +14,7 @@ require (
 	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/Eastwesser/event-horizon/services/notification/proto v0.0.0
 	github.com/Eastwesser/event-horizon/services/payment/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261125220443-103ca8525a65
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
