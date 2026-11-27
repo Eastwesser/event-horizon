@@ -22,6 +22,6 @@ updates:
         patterns:
           - "*"
     ignore:
-      - dependency-name: "minimatch" # пакет "minimatch" сломан
-        update-types: 
-          - "version-update:semver-major" # Игнорируем только мажорные обновления
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+        

@@ -7,7 +7,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/nats-io/nats.go v1.56.0
 	github.com/prometheus/client_golang v1.25.0
-	github.com/redis/go-redis/v9 v9.24.0
+	github.com/redis/go-redis/v9 v9.24.1
 	go.mongodb.org/mongo-driver v1.17.10
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12

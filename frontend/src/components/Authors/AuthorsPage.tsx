@@ -60,7 +60,7 @@ export function AuthorsPage() {
 
   useEffect(() => {
     loadAuthors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   useEffect(() => {

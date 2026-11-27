@@ -2,7 +2,7 @@ import api from './api';
 
 export interface InventoryItem {
   category: string;
-  game_id: any;
+  game_id: unknown;
   id: string;
   author_id: string;
   type: string;
@@ -10,7 +10,7 @@ export interface InventoryItem {
   description: string;
   price: number;
   stock: number;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   images: string[];
   created_at: string;
   updated_at: string;
@@ -25,7 +25,7 @@ export interface CreateItemRequest {
   description?: string;
   price: number;
   stock?: number;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, unknown>;
   images?: string[];
 }
 
@@ -35,7 +35,7 @@ export interface UpdateItemRequest {
   description?: string;
   price?: number;
   stock?: number;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, unknown>;
   images?: string[];
   version?: number;
 }

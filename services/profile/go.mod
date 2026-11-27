@@ -6,7 +6,7 @@ require (
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/nats-io/nats.go v1.56.0
 	github.com/prometheus/client_golang v1.25.0
-	github.com/redis/go-redis/v9 v9.24.0
+	github.com/redis/go-redis/v9 v9.24.1
 	google.golang.org/grpc v1.85.0
 )
 
@@ -72,6 +72,6 @@ replace github.com/Eastwesser/event-horizon/contracts/events => ../../contracts/
 require (
 	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
-	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261127191611-e298f919ef20
+	github.com/Eastwesser/event-horizon/services/profile/proto v0.0.0-20261125220443-103ca8525a65
 )

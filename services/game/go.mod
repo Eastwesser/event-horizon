@@ -53,7 +53,7 @@ replace github.com/Eastwesser/event-horizon/services/billing/proto => ../billing
 
 require (
 	github.com/Eastwesser/event-horizon/services/billing/proto v0.0.0
-	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/services/game/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/lib/pq v1.12.3
 )
 

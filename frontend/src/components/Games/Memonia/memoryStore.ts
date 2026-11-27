@@ -195,7 +195,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     const isMatch = card1.emoji === card2.emoji;
     const newMoves = moves + 1;
     
-    let newCards = [...cards];
+    const newCards = [...cards];
     let newMatchedPairs = matchedPairs;
     let newCombo = combo;
     let newMultiplier = 1;

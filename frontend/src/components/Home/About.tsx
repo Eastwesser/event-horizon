@@ -39,7 +39,7 @@ export function About() {
           <aside className="rounded-md border border-white/10 bg-nebula p-4 text-sm text-text-muted">
             <p className="mb-2 font-semibold text-indigo-soft">Только для админов</p>
             <p className="mb-2">
-              Экономика (ориентир): Базовый ~200 ₽ и Расширенный на Boosty; билетики —
+              Экономика (ориентир): Базовый ~200 ₽ и Расширенный на Boosty; билетики —
               валюта магазина; лампы — бусты. Выплаты авторам в ₽ (C4) отложены — сейчас
               витрина продаж в билетиках (<code className="text-text-secondary">/authors/me/sales</code>
               ). Всё, что не карточная «карточка» и не мелкий физ. тип, ложится в тип

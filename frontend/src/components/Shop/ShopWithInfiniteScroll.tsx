@@ -125,6 +125,27 @@ export const ShopWithInfiniteScroll: React.FC = () => {
     });
   }, [inventory]);
 
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    const start = (nextPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const newItems = items.slice(start, end);
+
+    if (newItems.length === 0) {
+      setHasMore(false);
+      setLoadingMore(false);
+      return;
+    }
+
+    setDisplayedItems(prev => [...prev, ...newItems]);
+    setPage(nextPage);
+    setHasMore(end < items.length);
+    setLoadingMore(false);
+  }, [items, page, loadingMore, hasMore]);
+
   // Intersection Observer для бесконечной прокрутки
   useEffect(() => {
     if (observerRef.current) {
@@ -150,27 +171,6 @@ export const ShopWithInfiniteScroll: React.FC = () => {
       }
     };
   }, [hasMore, loadingMore, displayedItems]);
-
-  const loadMore = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    const start = (nextPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const newItems = items.slice(start, end);
-
-    if (newItems.length === 0) {
-      setHasMore(false);
-      setLoadingMore(false);
-      return;
-    }
-
-    setDisplayedItems(prev => [...prev, ...newItems]);
-    setPage(nextPage);
-    setHasMore(end < items.length);
-    setLoadingMore(false);
-  }, [items, page, loadingMore, hasMore]);
 
   const handleBuyClick = (item: ShopItem) => {
     setSelectedItem(item);

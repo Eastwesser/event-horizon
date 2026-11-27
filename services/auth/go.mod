@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/redis/go-redis/v9 v9.24.0
+	github.com/redis/go-redis/v9 v9.24.1
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
@@ -65,7 +65,7 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/sqb v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
-	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261127191611-e298f919ef20
+	github.com/Eastwesser/event-horizon/services/auth/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/alicebob/miniredis/v2 v2.40.0
 )

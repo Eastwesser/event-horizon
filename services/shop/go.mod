@@ -8,7 +8,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/nats-io/nats.go v1.56.0
 	github.com/prometheus/client_golang v1.25.0
-	github.com/redis/go-redis/v9 v9.24.0
+	github.com/redis/go-redis/v9 v9.24.1
 	google.golang.org/grpc v1.85.0
 )
 
@@ -110,8 +110,8 @@ replace github.com/Eastwesser/event-horizon/contracts/events => ../../contracts/
 require (
 	github.com/Eastwesser/event-horizon/contracts/events v0.0.0
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
-	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261127191611-e298f919ef20
+	github.com/Eastwesser/event-horizon/services/shop/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.45.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.72.0

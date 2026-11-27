@@ -119,7 +119,7 @@ export const register = (email: string, password: string) =>
 export const login = (email: string, password: string) =>
   api.post('/auth/login', { email, password });
 
-export const submitScore = (userId: string, gameId: string, level: number, seed: string, moves: any[]) =>
+export const submitScore = (userId: string, gameId: string, level: number, seed: string, moves: unknown[]) =>
   api.post('/game/submit', { user_id: userId, game_id: gameId, level, seed, moves });
 
 export const getLeaderboard = (gameId: string, limit = 10, level = 1) =>

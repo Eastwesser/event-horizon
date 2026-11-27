@@ -140,12 +140,13 @@ export function GearsGame() {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const orbsRef = useRef<Orb[]>([]);
-  const queueRef = useRef<number[]>(makeQueue());
   const flashesRef = useRef<Flash[]>([]);
   const aimXRef = useRef(W / 2);
   const droppingRef = useRef(false);
   const [score, setScore] = useState(0);
-  const [queue, setQueue] = useState<number[]>(() => queueRef.current);
+  // const [queue, setQueue] = useState<number[]>(() => queueRef.current);
+  const [queue, setQueue] = useState<number[]>(() => makeQueue());
+  const queueRef = useRef<number[]>(queue);
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
   const [notif, setNotif] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -159,8 +160,9 @@ export function GearsGame() {
     const raw = localStorage.getItem(SKIN_KEY) as FlowerSkin | null;
     return raw && COLOR_PALETTES[raw] ? raw : 'metal';
   });
-  const colorsRef = useRef(COLOR_PALETTES.metal);
-  colorsRef.current = COLOR_PALETTES[skin] || COLOR_PALETTES.metal;
+  // const colorsRef = useRef(COLOR_PALETTES.metal);
+  // colorsRef.current = COLOR_PALETTES[skin] || COLOR_PALETTES.metal;
+  const colors = COLOR_PALETTES[skin] || COLOR_PALETTES.metal;
   const {
     useBoost,
     setUseBoost,
@@ -351,17 +353,17 @@ export function GearsGame() {
       ctx.clearRect(0, 0, W, H);
       drawWell(ctx, W, H, dangerY);
       const flower = skin !== 'metal';
-      const COLORS = colorsRef.current;
+      // const COLORS = colorsRef.current;
       if (!droppingRef.current && !lost && !won) {
         const lvl = queueRef.current[0];
         const r = RADIUS[lvl];
         const gx = aimXRef.current;
         const gy = r + 8;
         drawAim(ctx, gx, gy + r, H - 10);
-        drawGear(ctx, gx, gy, r, COLORS[lvl], lvl, 0.4, flower, 0);
+        drawGear(ctx, gx, gy, r, colors[lvl], lvl, 0.4, flower, 0);
       }
       for (const o of orbsRef.current) {
-        drawGear(ctx, o.x, o.y, RADIUS[o.level], COLORS[o.level], o.level, 1, flower, o.rot);
+        drawGear(ctx, o.x, o.y, RADIUS[o.level], colors[o.level], o.level, 1, flower, o.rot);
       }
       flashesRef.current = flashesRef.current
         .map((f) => ({ ...f, life: f.life - 1 }))

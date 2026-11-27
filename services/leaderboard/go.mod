@@ -3,7 +3,7 @@ module github.com/Eastwesser/event-horizon/services/leaderboard
 go 1.26.0
 
 require (
-	github.com/redis/go-redis/v9 v9.24.0
+	github.com/redis/go-redis/v9 v9.24.1
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
@@ -58,7 +58,7 @@ require (
 replace github.com/Eastwesser/event-horizon/services/leaderboard/proto => ./proto
 
 require (
-	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/services/leaderboard/proto v0.0.0-20261127191611-e298f919ef20
 	github.com/jackc/pgx/v5 v5.13.0
 )
 
@@ -68,5 +68,5 @@ replace github.com/Eastwesser/event-horizon/platform => ../../platform
 
 require (
 	github.com/Eastwesser/event-horizon/pkg/migrator v0.0.0
-	github.com/Eastwesser/event-horizon/platform v0.0.0-20261124202038-865cb2804b47
+	github.com/Eastwesser/event-horizon/platform v0.0.0-20261127191611-e298f919ef20
 )

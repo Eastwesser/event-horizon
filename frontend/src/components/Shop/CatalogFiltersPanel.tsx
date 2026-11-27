@@ -279,7 +279,7 @@ export function CatalogFiltersPanel({
           {physicalFilters || productType === 'all' ? (
             <Group title="Цена (билетики)">
               <p className="text-xs text-text-muted">
-                Сортировка «Цена ↑/↓» над каталогом. Физ. мерч от 100 000 билетиков.
+                Сортировка «Цена ↑/↓» над каталогом. Физ. мерч от 100000 билетиков.
               </p>
             </Group>
           ) : null}
