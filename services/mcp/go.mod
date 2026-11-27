@@ -6,7 +6,7 @@ require (
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/mark3labs/mcp-go v1.6.0
 	github.com/nats-io/nats.go v1.56.0
-	github.com/redis/go-redis/v9 v9.23.0
+	github.com/redis/go-redis/v9 v9.24.0
 )
 
 require (
